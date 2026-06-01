@@ -412,3 +412,56 @@ For a QA cluster the `components:` reference is the `qa/` Component. This separa
 - **kube-secrets owns** the per-cluster decision of which environment tier the cluster belongs to (encoded as which Component to apply)
 
 Build output of `kustomize build remote/` (without applying a Component) leaves OIDC bindings with `subjects[0].name: MUST_BE_SET_IN_OVERLAY` — this is intentional and serves as a tripwire if the per-cluster overlay forgets to apply an environment Component. It is governed by the `Per-environment component composition delegated to kube-secrets per-cluster overlays` requirement in `kustomize-resource-splitting`.
+
+## SAP-CC deployment-wide defaults absorbed into the kustomize base
+
+The kustomize base at `host/base/` and the webhook-injector Component carry SAP-CC deployment defaults that are uniform across the fleet, so per-cluster overlays only need to substitute genuinely cluster-specific values via `*_PLACEHOLDER` substitution. Empirical verification was done by inspecting all 6 currently-deployed clusters' values in `cc/kube-secrets`, plus a live cert decode from `m-eu-de-1`'s production VWC `caBundle` on 2026-06-01.
+
+### Manager args (verified across 6 clusters)
+
+7 of 8 controller-manager `args` are byte-identical across `a-qa-de-200`, `rt-eu-de-1`, `rt-eu-de-2`, `rt-eu-de-3`, `rt-na-us-2`, `rt-qa-de-1`:
+
+```
+--mac-prefixes-file=/etc/macdb/macdb.yaml
+--probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.5.0
+--probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux:1770.0
+--manager-namespace=metal-servers
+--insecure=false
+--enforce-first-boot
+--enforce-power-off
+```
+
+The 8th arg, `--registry-url`, varies per cluster: `https://metal-operator-remote.<clusterType>.<region>.<tld>` where `<clusterType>` is `runtime` for runtime clusters and `garden2` for `a-qa-de-200`. Base ships `--registry-url=REGISTRY_URL_PLACEHOLDER` for kube-secrets per-cluster substitution.
+
+### macdb Secret (verified across 6 clusters)
+
+The macdb structure is identical across all 6 clusters: 4 macPrefixes — Dell `c4cbe1b1`, Dell `d08e79`, Lenovo `0894ef`, HPE `5ced8c` — all Redfish protocol, port 443, type `bmc`. Vault references use `vault+kvv2:///secrets/<region>/ironic/ipmi-user/ironic/<username|password>`. Only the `<region>` token varies per cluster. Base ships the structure with `REGION_PLACEHOLDER` for the region token.
+
+### Sidecar args (matches helm chart hardcoded values + PR #10 v2 patch mode)
+
+Production sidecar args (read live from `rt-eu-de-1`'s shoot deployment):
+
+```
+--webhook-config-name=metal-operator-remote-webhook-config       (ConfigMap mode flag — Scope 3 drops this)
+--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+--leader-election-id=metal-operator-remote-webhook-injector-leader
+--cert-secret-name=metal-operator-remote-cert-secret-name
+```
+
+In Scope 3 with webhook-injector PR #10 v2's patch mode (label-based, no URL rewriting), sidecar args become:
+
+```
+--webhook-label=webhook-injector.cloud.sap/managed=true                 (NEW — replaces --webhook-config-name)
+--cert-sans=metal-operator-webhook-service,                              (NEW — required in patch mode; covers
+            webhook-service.system.svc,                                    production cert SAN + Scope 3 SNI)
+            webhook-service.system.svc.cluster.local
+--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+--leader-election-id=metal-operator-remote-webhook-injector-leader
+--cert-secret-name=metal-operator-remote-cert-secret-name
+```
+
+The workerless `ValidatingWebhookConfiguration` is labeled `webhook-injector.cloud.sap/managed: "true"` via a kustomize patch on the upstream-shipped resource (name unchanged: `validating-webhook-configuration`). The sidecar's `--webhook-label` selector finds it by label.
+
+### Cert SANs evidence
+
+Decoded the production cert's caBundle from `m-eu-de-1`'s `metal-operator-validating-webhook-configuration` VWC on 2026-06-01 — single SAN: `DNS:metal-operator-webhook-service` (auto-derived by the binary from URL-form clientConfigs per `pkg/certificates/generator.go` in webhook-injector main branch). Scope 3 ships Service-form clientConfigs (`webhook-service.system.svc`) so the SNI changes — but the production SAN is preserved in our `--cert-sans` list to maintain compatibility during cutover and for any direct URL-form callers.

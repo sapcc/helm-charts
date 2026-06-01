@@ -1,19 +1,49 @@
 ## ADDED Requirements
 
-### Requirement: Webhook-injector sidecar configured for caBundle-rotation mode
+### Requirement: Webhook-injector sidecar configured for caBundle-rotation patch mode
 
-The kustomize tree SHALL configure the webhook-injector sidecar container to run in caBundle-rotation mode by setting the appropriate mode signal (env var `WEBHOOK_INJECTOR_MODE=ca-rotation` or equivalent flag exposed by the SAP-internal binary). The exact behavior of the binary in this mode (filtering rules, update strategy, reconcile loop semantics) is the responsibility of the binary itself and is out of scope for this kustomize-tree spec; this requirement governs only that the kustomize tree signals the mode correctly.
+The kustomize tree SHALL configure the webhook-injector sidecar container to run in caBundle-rotation **patch mode** as defined by the SAP-internal binary's PR-10-v2 API (label-based webhook selection, no URL rewriting). The sidecar's task is limited to refreshing the `caBundle` field on labeled resources on the workerless cluster; it MUST NOT create resources, MUST NOT rewrite `clientConfig.URL`, and MUST NOT clear `clientConfig.Service`. The exact reconciliation semantics (filtering, sync period, lease behavior) are the responsibility of the SAP-internal binary itself and out of scope for this kustomize-tree spec; this requirement governs only that the kustomize tree configures the sidecar's flags correctly.
 
-#### Scenario: Mode signal set on the sidecar container
+#### Scenario: Patch mode signaled via `--webhook-label` (no `--webhook-config-name`)
 
 - **WHEN** examining the rendered Deployment from `kustomize build host/base/`
-- **THEN** the webhook-injector initContainer SHALL have an env var `WEBHOOK_INJECTOR_MODE` with value `ca-rotation` (or an equivalent mode flag/env per the SAP-internal binary's API as agreed in the coordinated webhook-injector binary issue)
+- **THEN** the webhook-injector initContainer's `args` SHALL contain a `--webhook-label=<key>=<value>` entry (label selector identifying which webhook configurations on the target cluster to patch)
+- **AND** the `args` SHALL NOT contain `--webhook-config-name` (that flag selects ConfigMap mode, which is mutually exclusive with patch mode)
 
-#### Scenario: --webhook-config-name argument names the workerless WebhookConfiguration
+#### Scenario: `--cert-sans` provided explicitly (required in patch mode)
 
-- **WHEN** examining the sidecar's `--webhook-config-name` argument in the rendered Deployment
-- **THEN** the value SHALL be the name of a workerless `ValidatingWebhookConfiguration` resource (typically `validating-webhook-configuration` matching upstream's webhook configuration name)
-- **AND** the kustomize tree SHALL NOT deploy a host-cluster ConfigMap of the same name (since in this mode the binary references the workerless resource, not a local ConfigMap)
+- **WHEN** examining the sidecar's `args`
+- **THEN** the `args` SHALL contain a `--cert-sans=<comma-separated DNS names>` entry covering at minimum the workerless-side service DNS names (`<service>.<namespace>.svc` and `<service>.<namespace>.svc.cluster.local`) the workerless API server's TLS handshake will SNI for
+- **AND** SHOULD additionally include the host-side service short name (e.g., `metal-operator-webhook-service`) to maintain compatibility with the production cert SAN during cutover and any direct URL-form clientConfigs that may exist
+
+#### Scenario: Sidecar args match production cluster customizations
+
+- **WHEN** examining the sidecar's `args`
+- **THEN** the `args` SHALL contain `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig`
+- **AND** SHALL contain `--leader-election-id=metal-operator-remote-webhook-injector-leader` (matches helm chart's hardcoded value verified on rt-eu-de-1)
+- **AND** SHALL contain `--cert-secret-name=metal-operator-remote-cert-secret-name` (matches helm chart's hardcoded value verified on rt-eu-de-1)
+
+---
+
+### Requirement: Workerless ValidatingWebhookConfiguration labeled for webhook-injector patch-mode selection
+
+The `remote/upstream/webhooks/` kustomize tree SHALL apply a label to the workerless `ValidatingWebhookConfiguration` (and any `MutatingWebhookConfiguration` if added in the future) so that the webhook-injector sidecar's `--webhook-label` selector finds it. The label key SHALL be `webhook-injector.cloud.sap/managed` and the value SHALL be `"true"`. This label is applied via a kustomize patch on the upstream-shipped resource — the upstream resource's `metadata.name` (currently `validating-webhook-configuration` per `config/webhook/manifests.yaml@v0.4.0`) SHALL NOT be renamed; selection is by label, not by name.
+
+#### Scenario: Workerless VWC carries the management label
+
+- **WHEN** `kustomize build remote/` is executed
+- **THEN** every `ValidatingWebhookConfiguration` (and any `MutatingWebhookConfiguration`) in the build output SHALL have `metadata.labels."webhook-injector.cloud.sap/managed": "true"`
+
+#### Scenario: Sidecar's `--webhook-label` and the VWC label match
+
+- **WHEN** comparing the workerless VWC's labels (from `kustomize build remote/`) to the sidecar's `--webhook-label` arg (from `kustomize build host/base/`)
+- **THEN** the label key=value pair on the VWC SHALL be exactly the key=value selector in the sidecar arg (`webhook-injector.cloud.sap/managed=true`)
+
+#### Scenario: VWC name unchanged from upstream
+
+- **WHEN** `kustomize build remote/` is executed
+- **THEN** the `ValidatingWebhookConfiguration` SHALL have `metadata.name` equal to upstream's name (`validating-webhook-configuration` for metal-operator v0.4.0)
+- **AND** SHALL NOT be renamed to `metal-operator-validating-webhook-configuration` or any other prefixed name (the kustomize tree consumes upstream verbatim except for the label addition)
 
 ---
 

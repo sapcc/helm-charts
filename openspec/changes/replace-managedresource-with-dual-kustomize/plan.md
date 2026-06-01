@@ -1143,7 +1143,8 @@ Tracking: cc/unified-kubernetes#831"
   **Restructured: `system/kustomize/metal-operator-remote/host/base/`**
 
   - Two patch files (`manager-remote-patch.yaml`, `manager-webhook-patch.yaml`) consolidated into a single `manager-patch.yaml` — all controller-manager Deployment customizations (env, args, volumes, ports, securityContext, network labels, hostNetwork, resources) in one reviewable place. The Pod-level `serviceAccountName` override lives in the webhook-injector Component now (see "Component encapsulation" below).
-  - **Restored 6 SAP-specific manager args** missed by the kustomize POC (only `--leader-elect` from upstream was present). Now includes: `--mac-prefixes-file`, `--probe-image`, `--probe-os-image`, `--insecure`, `--registry-url`, `--manager-namespace`.
+  - **Manager args restored from SAP-CC fleet defaults** (verified byte-identical across 6 clusters in `cc/kube-secrets`): `--mac-prefixes-file=/etc/macdb/macdb.yaml`, `--probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.5.0`, `--probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux:1770.0`, `--manager-namespace=metal-servers`, `--insecure=false`, `--enforce-first-boot`, `--enforce-power-off`, plus `--registry-url=REGISTRY_URL_PLACEHOLDER` (per-cluster substitution).
+  - **macdb Secret populated** with the SAP-CC fleet vendor list (4 macPrefixes: Dell c4cbe1b1, Dell d08e79, Lenovo 0894ef, HPE 5ced8c — all Redfish/443/bmc; vault refs use `REGION_PLACEHOLDER` for per-cluster substitution).
   - `webhook-config.yaml` ConfigMap **deleted** — no longer needed because the workerless `remote/` kustomize root is the source-of-truth for the `ValidatingWebhookConfiguration`.
   - `webhook-injector-rbac.yaml` Role narrowed (drops ConfigMap access; keeps events/secrets/leases) AND moved into the webhook-injector Component (see "Component encapsulation" below).
 
@@ -1157,9 +1158,17 @@ Tracking: cc/unified-kubernetes#831"
 
   **Sidecar configuration: `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml`**
 
-  - Adds `WEBHOOK_INJECTOR_MODE=ca-rotation` env var (binary mode signal — coordinated with [`SAP-cloud-infrastructure/webhook-injector#9`](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9)).
-  - Updates `--webhook-config-name` from `webhook-config` (local ConfigMap, no longer deployed) to `validating-webhook-configuration` (the workerless `ValidatingWebhookConfiguration` name from upstream).
-  - In ca-rotation mode, the sidecar reads the existing workerless WebhookConfiguration and patches only its `caBundle` field — does NOT create or replace the resource.
+  - Args reflect [`SAP-cloud-infrastructure/webhook-injector#10`](https://github.com/SAP-cloud-infrastructure/webhook-injector/pull/10) v2's label-based patch mode (binary release gated):
+    - `--webhook-label=webhook-injector.cloud.sap/managed=true` — selects WebhookConfigurations to patch by label (instead of by name)
+    - `--cert-sans=metal-operator-webhook-service,webhook-service.system.svc,webhook-service.system.svc.cluster.local` — DNS SANs the cert must cover (production-cert SAN preserved + Scope 3 Service-form SNI covered, all empirically validated against `m-eu-de-1`'s production VWC caBundle on 2026-06-01)
+    - `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig` — workerless cluster auth
+    - `--leader-election-id=metal-operator-remote-webhook-injector-leader` — matches helm chart's hardcoded value (verified on rt-eu-de-1)
+    - `--cert-secret-name=metal-operator-remote-cert-secret-name` — matches helm chart's hardcoded value (verified on rt-eu-de-1)
+  - In patch mode the sidecar reads the existing workerless WebhookConfiguration matching the label selector and patches **only its `caBundle` field** — does NOT create or replace the resource, does NOT rewrite `clientConfig.URL`, does NOT clear `clientConfig.Service`.
+
+  **Workerless VWC label patch: `system/kustomize/metal-operator-remote/remote/upstream/webhooks/kustomization.yaml`**
+
+  - Adds a kustomize patch on the upstream-shipped `validating-webhook-configuration` (name unchanged) to set `metadata.labels."webhook-injector.cloud.sap/managed": "true"`. This label is what the sidecar's `--webhook-label` selector matches. VWC is otherwise consumed verbatim from upstream `config/webhook?ref=v0.4.0`.
 
   **Deletions:**
   - `system/Makefile` targets: `regen-metal-operator-remote`, `regen-metal-operator-remote-crds`, `regen-metal-operator-remote-webhooks` + `KUSTOMIZE_METAL_OPERATOR_REMOTE` variable.
@@ -1178,8 +1187,8 @@ Tracking: cc/unified-kubernetes#831"
 
   ### Spec deltas (applied at archive)
 
-  - `kustomize-resource-splitting`: 8 ADDED (including `Per-environment component composition delegated to kube-secrets per-cluster overlays` clarifying the prod/qa Component application contract), 5 MODIFIED, 1 REMOVED (`Remote resources pre-rendered as ManagedResource wrappers`).
-  - `kustomize-sidecar-injection`: 5 ADDED (including `Webhook-injector Component encapsulates all sidecar-introduced resources` added during PR review), 1 MODIFIED.
+  - `kustomize-resource-splitting`: 9 ADDED (including `Per-environment component composition delegated to kube-secrets per-cluster overlays` and `Host base manager and macdb absorb SAP-CC deployment-wide defaults` added during PR review), 5 MODIFIED, 1 REMOVED (`Remote resources pre-rendered as ManagedResource wrappers`).
+  - `kustomize-sidecar-injection`: 6 ADDED (including `Webhook-injector Component encapsulates all sidecar-introduced resources` and `Workerless ValidatingWebhookConfiguration labeled for webhook-injector patch-mode selection` added during PR review; the caBundle-rotation-mode requirement updated in-place to reflect webhook-injector PR #10 v2's label-based patch mode), 1 MODIFIED.
   - `webhook-url-rendering`: 3 REMOVED (entire capability becomes empty — follow-up change to clean up).
 
   ### Validation (Scope 3)

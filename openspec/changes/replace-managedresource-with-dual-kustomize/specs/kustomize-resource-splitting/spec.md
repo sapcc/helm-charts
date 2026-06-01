@@ -187,6 +187,52 @@ The `remote/` kustomize root SHALL aggregate **structural sources only** (`upstr
 
 ---
 
+### Requirement: Host base manager and macdb absorb SAP-CC deployment-wide defaults
+
+The `host/base/manager-patch.yaml` and `host/base/macdb-secret.yaml` SHALL contain the SAP-CC deployment-wide defaults that are uniform across all consumers. Empirical verification: across all 6 currently-deployed SAP-CC clusters (`a-qa-de-200`, `rt-eu-de-1`, `rt-eu-de-2`, `rt-eu-de-3`, `rt-na-us-2`, `rt-qa-de-1`), 7 of 8 manager `args` are byte-identical, and the macdb fleet structure (4 macPrefixes — Dell c4cbe1b1, Dell d08e79, Lenovo 0894ef, HPE 5ced8c, all Redfish/443/bmc) is identical. Per-cluster overlays in kube-secrets SHALL only need to substitute deployment-specific values (currently: registry URL host/region, region token in vault refs) via the existing `*_PLACEHOLDER` placeholder convention.
+
+#### Scenario: Manager args contain the 7 uniform SAP-CC defaults
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the controller-manager container's `args` SHALL contain (in any order):
+  - `--mac-prefixes-file=/etc/macdb/macdb.yaml`
+  - `--probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.5.0`
+  - `--probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux:1770.0`
+  - `--manager-namespace=metal-servers`
+  - `--insecure=false`
+  - `--enforce-first-boot`
+  - `--enforce-power-off`
+
+#### Scenario: Manager `--registry-url` uses placeholder syntax
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the controller-manager container's `args` SHALL contain `--registry-url=REGISTRY_URL_PLACEHOLDER`
+- **AND** SHALL NOT contain a hardcoded URL like `http://[2a10:afc0:e013:d002::]:30010`
+- **AND** per-cluster overlays in kube-secrets SHALL substitute the placeholder with `https://metal-operator-remote.<clusterType>.<region>.<tld>` (e.g., `https://metal-operator-remote.runtime.eu-de-1.cloud.sap` for runtime clusters; `https://metal-operator-remote.garden2.qa-de-1.cloud.sap` for `a-qa-de-200`)
+
+#### Scenario: Manager args do not contain stale upstream/POC defaults
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the controller-manager container's `args` SHALL NOT contain:
+  - `--probe-image=...metalprobe:latest` (was POC default; now `:v0.5.0` per fleet evidence)
+  - `--probe-os-image=...gardenlinux:1443.3` (was POC default; now `gardenlinux:1770.0`)
+  - `--manager-namespace=metal-operator-system` (was POC default; now `metal-servers`)
+  - any `--registry-url=http://[...]` IPv6-literal value (was POC default; now `REGISTRY_URL_PLACEHOLDER`)
+
+#### Scenario: macdb Secret contains the SAP-CC fleet vendor list
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the `Secret` named `macdb` SHALL have `stringData.macdb.yaml` containing 4 macPrefix entries with `manufacturer` values `Dell` (twice — for prefixes `c4cbe1b1` and `d08e79`), `Lenovo` (for `0894ef`), and `HPE` (for `5ced8c`)
+- **AND** every macPrefix SHALL have `protocol: Redfish`, `port: 443`, `type: bmc`
+- **AND** every macPrefix's `defaultCredentials` SHALL reference vault paths of the form `vault+kvv2:///secrets/REGION_PLACEHOLDER/ironic/ipmi-user/ironic/<username|password>`
+
+#### Scenario: macdb Secret is no longer the empty placeholder
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the `Secret` named `macdb`'s `stringData.macdb.yaml` SHALL NOT be the empty value `{}`
+
+---
+
 ## MODIFIED Requirements
 
 ### Requirement: Host base overlay produces all seed cluster resources
