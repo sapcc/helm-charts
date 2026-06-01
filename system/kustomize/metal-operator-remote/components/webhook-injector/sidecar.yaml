@@ -15,24 +15,30 @@ spec:
         - name: webhook-injector
           restartPolicy: Always
           image: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector:latest
-          # caBundle-rotation mode: the sidecar reads the existing workerless
-          # ValidatingWebhookConfiguration (named below) and patches its
-          # caBundle field. Does NOT read a local webhook-config ConfigMap;
-          # does NOT push the WebhookConfiguration content (the workerless
-          # remote/ kustomize root delivers the WebhookConfiguration directly).
+          # Patch mode (per webhook-injector PR #10 v2: label-based selection,
+          # caBundle-only refresh, no URL/Service rewriting). The sidecar reads
+          # the workerless ValidatingWebhookConfiguration matching the
+          # --webhook-label selector and refreshes its caBundle field. Does NOT
+          # create resources, does NOT rewrite clientConfig.URL, does NOT clear
+          # clientConfig.Service. The workerless remote/ kustomize root delivers
+          # the WebhookConfiguration directly (carrying the matching label).
           #
-          # Tracked in SAP-cloud-infrastructure/webhook-injector#9 — the
-          # binary must support this mode before production cutover.
-          env:
-            - name: WEBHOOK_INJECTOR_MODE
-              value: ca-rotation
+          # Cutover-gated on SAP-cloud-infrastructure/webhook-injector#10
+          # merging + a new binary image being published. PR can land on master
+          # regardless (Concourse pipeline triggers stay disabled until cutover).
           args:
-            # In ca-rotation mode, --webhook-config-name names the workerless
-            # ValidatingWebhookConfiguration to patch caBundle into (NOT a
-            # local ConfigMap on host). "validating-webhook-configuration" is
-            # the name from upstream's config/webhook/manifests.yaml.
-            - --webhook-config-name=validating-webhook-configuration
+            - --webhook-label=webhook-injector.cloud.sap/managed=true
+            # cert-sans covers production cert SAN (URL-form compat) +
+            # Scope 3 Service-form SNI for the workerless API server's TLS
+            # connection (workerless API server constructs URL
+            # https://webhook-service.system.svc:443/<path> from the
+            # ValidatingWebhookConfiguration's clientConfig.service field).
+            - --cert-sans=metal-operator-webhook-service,webhook-service.system.svc,webhook-service.system.svc.cluster.local
             - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+            # Sidecar-internal config matching helm chart's hardcoded values
+            # (verified live on rt-eu-de-1's shoot deployment).
+            - --leader-election-id=metal-operator-remote-webhook-injector-leader
+            - --cert-secret-name=metal-operator-remote-cert-secret-name
           ports:
             - name: metrics
               containerPort: 8082

@@ -8,3 +8,17 @@ resources:
   - upstream-no-svc/
   - system-namespace.yaml
   - webhook-service-stub.yaml
+# Label the upstream-shipped ValidatingWebhookConfiguration so the
+# webhook-injector sidecar's --webhook-label selector finds it. The VWC
+# name (validating-webhook-configuration, from upstream config/webhook/
+# manifests.yaml@v0.4.0) is preserved verbatim — selection is by label,
+# not by name. Per webhook-injector PR #10 v2 patch mode contract.
+patches:
+  - target:
+      kind: ValidatingWebhookConfiguration
+      name: validating-webhook-configuration
+    patch: |
+      - op: add
+        path: /metadata/labels
+        value:
+          webhook-injector.cloud.sap/managed: "true"

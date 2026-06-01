@@ -31,12 +31,22 @@ spec:
       containers:
         - name: manager
           args:
+            # SAP-CC deployment-wide defaults — verified byte-identical
+            # across all 6 metal-operator-remote consumers in cc/kube-secrets
+            # (a-qa-de-200, rt-eu-de-1/2/3, rt-na-us-2, rt-qa-de-1).
             - --mac-prefixes-file=/etc/macdb/macdb.yaml
-            - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
-            - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+            - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.5.0
+            - --probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux:1770.0
+            - --manager-namespace=metal-servers
             - --insecure=false
-            - --registry-url=http://[2a10:afc0:e013:d002::]:30010
-            - --manager-namespace=metal-operator-system
+            - --enforce-first-boot
+            - --enforce-power-off
+            # Per-cluster value: kube-secrets per-cluster overlay
+            # substitutes REGISTRY_URL_PLACEHOLDER with the cluster's
+            # https://metal-operator-remote.<clusterType>.<region>.<tld>
+            # (e.g., runtime: https://metal-operator-remote.runtime.eu-de-1.cloud.sap;
+            #  admin-k3s: https://metal-operator-remote.garden2.qa-de-1.cloud.sap).
+            - --registry-url=REGISTRY_URL_PLACEHOLDER
           env:
             - name: KUBERNETES_SERVICE_HOST
               value: "APISERVER_URL_PLACEHOLDER"
