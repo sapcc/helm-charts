@@ -45,7 +45,7 @@ spec:
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- if .Values.proxysql.native_sidecar }}
-      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- tuple . (.Values.proxysql.volume.scale | default 1 | int) | include "utils.proxysql.container" | indent 8 }}
       {{- end }}
       containers:
       - name: cinder-volume-{{ $name }}
@@ -118,7 +118,7 @@ spec:
         {{- include "utils.coordination.volume_mount" . | indent 8 }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
       {{- if not .Values.proxysql.native_sidecar }}
-      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- tuple . (.Values.proxysql.volume.scale | default 1 | int) | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
       {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:

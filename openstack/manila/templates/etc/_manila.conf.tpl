@@ -95,7 +95,6 @@ insecure = True
 {{- if .Values.designate.enabled }}
 [designate]
 enabled = true
-zone_id = {{ .Values.designate.zone_id }}
 ttl = {{ .Values.designate.ttl | default 300 }}
 endpoint_type = {{ .Values.designate.endpoint_type | default "publicURL" }}
 region_name = {{ .Values.designate.region_name | default .Values.global.region }}

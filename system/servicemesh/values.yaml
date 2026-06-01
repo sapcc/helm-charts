@@ -10,13 +10,13 @@ owner-info:
   - Jan Knipper
 
 rootCA:
-  #cert:
-  #key:
+  # cert:
+  # key:
 
 linkerd-control-plane:
   enabled: false
 
-  #identityTrustAnchorsPEM:
+  # identityTrustAnchorsPEM:
 
   identity:
     issuer:
@@ -36,7 +36,7 @@ linkerd-control-plane:
     image:
       name: keppel.global.cloud.sap/ccloud/linkerd/proxy-init
     iptablesMode: "nft"
-    #closeWaitTimeoutSecs: 3600 # moved to separate daemonset
+    # closeWaitTimeoutSecs: 3600 # moved to separate daemonset
     privileged: false
     runAsRoot: false
 
@@ -122,9 +122,15 @@ linkerd-control-plane:
   # service profile validator configuration
   spValidatorResources: *controller_resources
 
-  # for now in ./templates/podmonitor.yaml until upstream labels are fixed
   podMonitor:
-    enabled: false
+    enabled: true
+    controller:
+      enabled: true
+    serviceMirror:
+      enabled: true
+    # disabling proxy samples scrapping because unused and generating a lot of load
+    proxy:
+      enabled: false
     labels:
       prometheus: kubernetes
     scrapeInterval: 20s
@@ -133,7 +139,7 @@ linkerd-control-plane:
 linkerd-viz:
   enabled: false
 
-  #clusterDomain:
+  # clusterDomain:
 
   defaultRegistry: keppel.global.cloud.sap/ccloud/linkerd
 
