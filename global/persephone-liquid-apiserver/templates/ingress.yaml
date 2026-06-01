@@ -10,10 +10,11 @@ metadata:
   name: {{ include "persephone-liquid-apiserver.fullname" . }}
   labels:
     {{- include "persephone-liquid-apiserver.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    kubernetes.io/tls-acme: "true"
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   {{- with .Values.ingress.className }}
   ingressClassName: {{ . }}
