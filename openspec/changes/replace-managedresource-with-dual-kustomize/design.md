@@ -382,3 +382,11 @@ A direct comparison of `kustomize build remote/` against the helm chart's `syste
 | Workerless API server resolves via | URL DNS (workerless API server pod's `/etc/resolv.conf`) | Service object (workerless API server queries its own etcd, then resolves `externalName` via the same `/etc/resolv.conf`) |
 
 This is a **deliberate design choice** (not a bug) — see "Why no per-cluster customization for the externalName" above. Both forms reduce to the same DNS resolution. Service form is more idiomatic Kubernetes. Verified at design time; final cluster-specific verification belongs to cutover testing.
+
+## Deferred design questions
+
+### Fine-grained per-cluster override granularity
+
+Today kube-secrets per-cluster overlays must replace whole `stringData` / `data` values when overriding placeholders embedded in multi-line YAML strings (e.g., the `remote-kubeconfig` ConfigMap's `APISERVER_URL_PLACEHOLDER`, the `metal-token-rotate-kubeconfig` Secret's `NAMESPACE_PLACEHOLDER`). The override granularity is "whole content" rather than "just the essential per-cluster value", which inflates per-cluster overlays and duplicates structure.
+
+A cleaner pattern was explored during PR review (kustomize `replacements`, `configMapGenerator` / `secretGenerator` with `behavior: merge`, post-kustomize-build `envsubst` / Flux `postBuild.substituteFrom`). The mechanism choice depends on Concourse pipeline tooling availability and Flux migration trajectory, both unconfirmed. **Deferred** pending those clarifications. Tracked as follow-up in `tasks.md` §13.8. Affects multiple operators beyond metal-operator-remote — likely a cross-cutting capability candidate for a separate OpenSpec change.
