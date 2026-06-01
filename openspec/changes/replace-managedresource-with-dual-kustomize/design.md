@@ -150,7 +150,7 @@ system/kustomize/metal-operator-remote/
 │       # NOTE: webhook-config.yaml DELETED — sidecar no longer reads webhook content from a local ConfigMap
 │       # NOTE: webhook-injector-rbac.yaml MOVED into components/webhook-injector/ (see § "Webhook-injector Component encapsulation" + Section 14 of tasks.md). All sidecar-introduced host-side resources (SA + Role + RoleBinding + Pod-level serviceAccountName) live there now.
 ├── remote/                                     # APPLIED TO REMOTE (Step 1)
-│   ├── kustomization.yaml                      # combines upstream/crds-and-rbac + upstream/webhooks + custom + prod|qa component
+│   ├── kustomization.yaml                      # aggregates STRUCTURAL SOURCES ONLY: upstream/crds-and-rbac + upstream/webhooks + custom/base. Does NOT bind to a specific environment tier — per-environment components (prod/qa) are applied by kube-secrets per-cluster overlays based on cluster tier.
 │   ├── upstream/
 │   │   ├── crds-and-rbac/
 │   │   │   └── kustomization.yaml              # references upstream config/crd + config/rbac via Git URL ref → plain CRDs + RBAC (no Role→ClusterRole conversion, no MR wrap)
@@ -390,3 +390,25 @@ This is a **deliberate design choice** (not a bug) — see "Why no per-cluster c
 Today kube-secrets per-cluster overlays must replace whole `stringData` / `data` values when overriding placeholders embedded in multi-line YAML strings (e.g., the `remote-kubeconfig` ConfigMap's `APISERVER_URL_PLACEHOLDER`, the `metal-token-rotate-kubeconfig` Secret's `NAMESPACE_PLACEHOLDER`). The override granularity is "whole content" rather than "just the essential per-cluster value", which inflates per-cluster overlays and duplicates structure.
 
 A cleaner pattern was explored during PR review (kustomize `replacements`, `configMapGenerator` / `secretGenerator` with `behavior: merge`, post-kustomize-build `envsubst` / Flux `postBuild.substituteFrom`). The mechanism choice depends on Concourse pipeline tooling availability and Flux migration trajectory, both unconfirmed. **Deferred** pending those clarifications. Tracked as follow-up in `tasks.md` §13.8. Affects multiple operators beyond metal-operator-remote — likely a cross-cutting capability candidate for a separate OpenSpec change.
+
+## Per-environment component composition
+
+The `remote/` kustomize root deliberately aggregates structural sources only — it has no environment tier baked in. Per-environment customization (currently the OIDC group name substitutions in `cc:oidc-ias-*` ClusterRoleBinding subjects, e.g., `CC_IAS_CONTROLPLANE_PROD_ADMIN` vs `CC_IAS_CONTROLPLANE_QA_ADMIN`) lives in kustomize Components under `custom/components/<env>/`. Selection happens at the kube-secrets per-cluster overlay level:
+
+```yaml
+# Example: kube-secrets per-cluster overlay (PROD cluster)
+# values/kustomize/runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/remote/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/sapcc/helm-charts//system/kustomize/metal-operator-remote/remote?ref=master
+components:
+  - https://github.com/sapcc/helm-charts//system/kustomize/metal-operator-remote/remote/custom/components/prod?ref=master
+```
+
+For a QA cluster the `components:` reference is the `qa/` Component. This separation means:
+
+- **helm-charts owns** the kustomize structure and the per-environment Components (since these are a property of the metal-operator deployment, not of an individual cluster)
+- **kube-secrets owns** the per-cluster decision of which environment tier the cluster belongs to (encoded as which Component to apply)
+
+Build output of `kustomize build remote/` (without applying a Component) leaves OIDC bindings with `subjects[0].name: MUST_BE_SET_IN_OVERLAY` — this is intentional and serves as a tripwire if the per-cluster overlay forgets to apply an environment Component. It is governed by the `Per-environment component composition delegated to kube-secrets per-cluster overlays` requirement in `kustomize-resource-splitting`.

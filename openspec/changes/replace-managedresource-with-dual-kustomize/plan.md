@@ -1178,7 +1178,7 @@ Tracking: cc/unified-kubernetes#831"
 
   ### Spec deltas (applied at archive)
 
-  - `kustomize-resource-splitting`: 7 ADDED, 5 MODIFIED, 1 REMOVED (`Remote resources pre-rendered as ManagedResource wrappers`).
+  - `kustomize-resource-splitting`: 8 ADDED (including `Per-environment component composition delegated to kube-secrets per-cluster overlays` clarifying the prod/qa Component application contract), 5 MODIFIED, 1 REMOVED (`Remote resources pre-rendered as ManagedResource wrappers`).
   - `kustomize-sidecar-injection`: 5 ADDED (including `Webhook-injector Component encapsulates all sidecar-introduced resources` added during PR review), 1 MODIFIED.
   - `webhook-url-rendering`: 3 REMOVED (entire capability becomes empty — follow-up change to clean up).
 

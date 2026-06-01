@@ -163,6 +163,30 @@ Webhook callbacks from the workerless API server to the host cluster's webhook s
 
 ---
 
+### Requirement: Per-environment component composition delegated to kube-secrets per-cluster overlays
+
+The `remote/` kustomize root SHALL aggregate **structural sources only** (`upstream/crds-and-rbac/`, `upstream/webhooks/`, `custom/base/`) and SHALL NOT bind to a specific environment tier (PROD vs QA). Per-environment customizations — currently the OIDC group name substitutions in `cc:oidc-ias-*` ClusterRoleBinding subjects — SHALL be exposed as kustomize Components at `custom/components/<env>/`. Selection and application of the appropriate Component SHALL happen at the kube-secrets per-cluster overlay level, based on the cluster's environment tier. This separates **structural ownership** (helm-charts) from **per-cluster environment selection** (kube-secrets), consistent with the broader Scope 2 pattern that placed per-cluster overlays in kube-secrets.
+
+#### Scenario: Build remote/ alone leaves environment-tier placeholders unresolved
+
+- **WHEN** `kustomize build remote/` is executed without applying any environment Component
+- **THEN** the output's OIDC ClusterRoleBindings (`cc:oidc-ias-admin`, `cc:oidc-ias-viewer`, `cc:oidc-ias-metal-viewer`, `cc:oidc-ias-servermaintenance-editor`) SHALL have `subjects[0].name` equal to `MUST_BE_SET_IN_OVERLAY`
+- **AND** no environment-specific value (e.g., `CC_IAS_CONTROLPLANE_PROD_*` or `CC_IAS_CONTROLPLANE_QA_*`) SHALL appear in the build output
+
+#### Scenario: kube-secrets per-cluster overlay applies the appropriate Component
+
+- **WHEN** a kube-secrets per-cluster overlay composes `system/kustomize/metal-operator-remote/remote/` as a base AND lists `system/kustomize/metal-operator-remote/remote/custom/components/prod/` (or `qa/`) in its `components:` field
+- **THEN** the build output's OIDC ClusterRoleBindings SHALL have `subjects[0].name` matching the environment tier (`CC_IAS_CONTROLPLANE_PROD_*` for `prod`, `CC_IAS_CONTROLPLANE_QA_*` for `qa`)
+- **AND** no `MUST_BE_SET_IN_OVERLAY` markers SHALL remain in the final build
+
+#### Scenario: Components are environment-tier-scoped, not cluster-specific
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/custom/components/`
+- **THEN** the directory SHALL contain entries for environment tiers only (`prod`, `qa`, …), NOT individual cluster names
+- **AND** each Component SHALL patch only OIDC group name fields (no other cluster-specific values)
+
+---
+
 ## MODIFIED Requirements
 
 ### Requirement: Host base overlay produces all seed cluster resources
