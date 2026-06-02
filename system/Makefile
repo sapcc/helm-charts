@@ -83,19 +83,17 @@ build-ipam-capi-remote:
 	@$(SED) -i -e '/^      containers:/i\      initContainers:\n      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}' ipam-capi-remote/templates/deployment.yaml
 	@cp kustomize/ipam-capi-remote/templates/* ipam-capi-remote/templates
 	@mkdir ipam-capi-remote/managedresources
-	@kubectl kustomize kustomize/ipam-capi-remote/managedresources > ipam-capi-remote/managedresources/crds-and-rbac.yaml
+	@kubectl kustomize kustomize/ipam-capi-remote/managedresources |\
+		yq eval '(select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration" or .kind == "CustomResourceDefinition") | .metadata.labels."webhook-injector") = "true"' - \
+		> ipam-capi-remote/managedresources/crds-rbac-webhooks.yaml
 	@cp kustomize/ipam-capi-remote/managedresources/rbac.yaml ipam-capi-remote/managedresources
 	@cp kustomize/ipam-capi-remote/managedresources/globalinclusterippool.yaml ipam-capi-remote/managedresources
-	@kubectl kustomize kustomize/ipam-capi-remote/webhooks |\
-		yq eval 'select(.kind != "Service")' - |\
-		yq eval '.metadata.name = "ipam-capi-remote-" + .metadata.name' - |\
-		yq eval '(. | .webhooks[].clientConfig | select(.service)) |= ({"url": "https://ipam-capi-remote-webhook-service:443" + .service.path})' - > ipam-capi-remote/webhooks.yaml
 	@yq eval-all '. as $$item ireduce ({}; . * $$item)' ipam-capi-remote/values.yaml kustomize/ipam-capi-remote/values-override.yaml |\
 		yq eval -i '. *= load("/dev/stdin")' ipam-capi-remote/values.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
 	@yq -i ".version=\"$$CHART_VERSION\"" ipam-capi-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}/g' ipam-capi-remote/templates/deployment.yaml
-	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/crds-and-rbac.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/crds-rbac-webhooks.yaml
 
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
