@@ -11,6 +11,7 @@ groups:
           meta: "No Jumpserver logs shipping to Octobus"
           playbook: 'docs/support/playbook/opensearch/octobus/jumpserver-audit-logs-in-octobus-missing'
           dashboard: audit-log-shipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-log-shipping"
         annotations:
-          description: "Jumpserver log shipping to Octobus not working for `{{ $labels.server_name }}`"
+          description: "Jumpserver log shipping to Octobus not working for {{`{{ $labels.server_name }}`}}"
           summary: "JumpserverLogs2Octobus not working"

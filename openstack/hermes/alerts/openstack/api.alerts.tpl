@@ -57,6 +57,7 @@ groups:
       support_group: observability
       service: hermes
       dashboard: rabbitmq
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 unacknowledged messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
       playbook: "docs/devops/alert/hermes/#{{`{{ $labels.check }}`}}"
     annotations:
@@ -72,6 +73,7 @@ groups:
       support_group: observability
       service: hermes
       dashboard: rabbitmq
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 ready messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
       playbook: "docs/devops/alert/rabbitmq/#ready"
     annotations:

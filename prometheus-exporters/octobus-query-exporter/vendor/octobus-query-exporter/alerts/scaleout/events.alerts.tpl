@@ -1,4 +1,4 @@
- groups:
+groups:
   - name: events
     rules:     
       - alert: EsxiNicError
@@ -16,7 +16,7 @@
           playbook: docs/devops/alert/vcenter/#test_esxi_hs_5
         annotations:
           summary: "An Error String related to possible NIC Failure was captured."
-          description: "This alert is created to prevent the Outage from NIC failure on {{ $labels.hostsystem }}"
+          description: "This alert is created to prevent the Outage from NIC failure on {{`{{ $labels.hostsystem }}`}}"
       - alert: MellanoxIssue
         expr: >
                 vrops_hostsystem_runtime_connectionstate{state="connected"} and
@@ -32,7 +32,7 @@
           playbook: docs/devops/alert/vcenter/#mellanox_issue
         annotations:
           summary: "An Error String related to Mellanox card issue with abort errors "
-          description: "This alert is created to prevent the Outage from Mellanox card issue on {{ $labels.hostsystem }}"
+          description: "This alert is created to prevent the Outage from Mellanox card issue on {{`{{ $labels.hostsystem }}`}}"
 
       - alert: MellanoxIssue15mins
         expr: >
@@ -49,7 +49,7 @@
           playbook: docs/devops/alert/vcenter/#mellanox_issue
         annotations:
           summary: "An Error String related to Mellanox card issue with abort errors "
-          description: "This alert is created to prevent the Outage from Mellanox card issue on {{ $labels.hostsystem }}"
+          description: "This alert is created to prevent the Outage from Mellanox card issue on {{`{{ $labels.hostsystem }}`}}"
 
       - alert: NSXTDisconnectedNodes
         expr: >
@@ -67,7 +67,7 @@
           playbook: docs/devops/alert/nsxt/#troubleshooting-transport-node-controller-status-unknown-in-nsx-t
         annotations:
           summary: "NSXT Transport nodes is disconnected from the NSXT manager"
-          description: "NSXT Transport node {{ $labels.hostsystem }} is disconnected from the NSXT Manager, network provisioning and service availability will be impacted"
+          description: "NSXT Transport node {{`{{ $labels.hostsystem }}`}} is disconnected from the NSXT Manager, network provisioning and service availability will be impacted"
 
       - alert: NFSlockedError
         expr: >
@@ -84,4 +84,4 @@
           playbook: docs/compute/playbooks/vcenter/#NFSlockedError
         annotations:
           summary: "ESXi host detected NFSv4 lock error (NFS4ERR_LOCKED)"
-          description: "ESXi host {{ $labels.hostsystem }} reported an NFSv4 lock error (NFS4ERR_LOCKED), it indicates that a file lock could not be obtained on the NFS datastore, which may impact VM operations such as disk access, snapshots, or migrations"
+          description: "ESXi host {{`{{ $labels.hostsystem }}`}} reported an NFSv4 lock error (NFS4ERR_LOCKED), it indicates that a file lock could not be obtained on the NFS datastore, which may impact VM operations such as disk access, snapshots, or migrations"

@@ -13,7 +13,7 @@ groups:
           playbook: docs/devops/alert/vcenter/#VM%20powered%20off%20during%20vMotion
         annotations:
           summary: "A VM unexpectedly powered down during a failed host migration (vMotion or Storage vMotion)."
-          description: "VM {{ $labels.hit_cloud_instance_name }} ({{ $labels.hit_cloud_instance_id }}) unexpectedly powered down during a failed host migration on {{ $labels.hit_hostsystem }}"
+          description: "VM {{`{{ $labels.hit_cloud_instance_name }}`}} ({{`{{ $labels.hit_cloud_instance_id }}`}}) unexpectedly powered down during a failed host migration on {{`{{ $labels.hit_hostsystem }}`}}"
 
       - alert: VcenterRestarted
         expr: elasticsearch_octobus_vpxd_restart_hit
@@ -39,8 +39,8 @@ groups:
           meta: "Alert for failed volume attachments"
           playbook: docs/devops/alert/vcenter/#test_vvol_ds_7
         annotations:
-          summary: "New volumes cannot be created in {{ $labels.region }} which means volume-attachments might not be happening."
-          description: "New volumes cannot be created in {{ $labels.region }} which means volume-attachments might not be happening."
+          summary: "New volumes cannot be created in {{`{{ $labels.region }}`}} which means volume-attachments might not be happening."
+          description: "New volumes cannot be created in {{`{{ $labels.region }}`}} which means volume-attachments might not be happening."
 
       - alert: EsxiFailedToAddDvPort
         expr: elasticsearch_octobus_dvport_failedtoadd_hostsystem_doc_count > 0
@@ -53,8 +53,8 @@ groups:
           meta: "Alert for failed adding of DV port"
           playbook: docs/devops/alert/vcenter/#how-to-remediate-esxi-host
         annotations:
-          summary: "Failed to add DV Port in vmkernel on {{ $labels.hostsystem }}"
-          description: "Failed to add DV Port in vmkernel on {{ $labels.hostsystem }}"
+          summary: "Failed to add DV Port in vmkernel on {{`{{ $labels.hostsystem }}`}}"
+          description: "Failed to add DV Port in vmkernel on {{`{{ $labels.hostsystem }}`}}"
 
       - alert: VMFailedPowerOff
         expr: sum by (vcenter) (elasticsearch_octobus_vm_failed_poweroff_vcenter_doc_count) > 0
@@ -67,5 +67,5 @@ groups:
           meta: "Alert for failed VM poweroff"
           playbook: docs/devops/alert/vcenter/#vmfailedpoweroff
         annotations:
-          summary: "Failed to poweroff VM on {{ $labels.vcenter }}"
+          summary: "Failed to poweroff VM on {{`{{ $labels.vcenter }}`}}"
           description: "Please check messages <https://ui.octobus.tools.sap/s/ccloud-home/app/discover#/view/2062b560-91c8-11ed-ba46-27897c6bda56?_g=(filters%3A!()%2CrefreshInterval%3A(pause%3A!t%2Cvalue%3A0)%2Ctime%3A(from%3Anow-1h%2Cto%3Anow))|here>"
