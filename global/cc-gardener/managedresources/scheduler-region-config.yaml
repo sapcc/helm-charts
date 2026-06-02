@@ -1,0 +1,18 @@
+{{- if .Values.scheduler.regionConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scheduler-region-config-openstack
+  namespace: garden
+  labels:
+    scheduling.gardener.cloud/purpose: region-config
+  annotations:
+    scheduling.gardener.cloud/cloudprofiles: {{ join "," .Values.scheduler.regionConfig.cloudProfiles }}
+data:
+{{- range $shootRegion, $distances := .Values.scheduler.regionConfig.regions }}
+  {{ $shootRegion }}: |
+{{- range $seedRegion, $distance := $distances }}
+    {{ $seedRegion }}: {{ $distance }}
+{{- end }}
+{{- end }}
+{{- end }}
