@@ -61,6 +61,8 @@ postgresql:
 
   persistence:
     enabled: true
+    # For eu-de-3: ReadWriteOnce, for all other regions: ReadWriteMany (default)
+    # This will be overridden per region in region-specific values files
     accessMode: ReadWriteMany
     size: 10Gi
   resources:
@@ -73,6 +75,13 @@ postgresql:
       cpu: "400m"
   user: elektra
   postgresDatabase: monsoon-dashboard_production
+  # The databases section is required for the postgresql-ng chart to actually create the database.
+  # Without this, the chart only creates the user but not the database, causing the init-database
+  # container to fail with "permission denied to create database" when trying to run rake db:setup.
+  # on a brand new region where never elektra was deployed before
+  # In existing regions, the database was created manually or with older chart versions.
+  databases:
+    monsoon-dashboard_production: {}
   users:
     elektra: {}
   tableOwner: elektra
