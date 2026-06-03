@@ -51,9 +51,15 @@ logstash:
     enabled: false
     topic: hermes
     client_id: hermes-logstash
-    acks: "1"
-    retries: 60
-    compression_type: none
+    # Durability-first defaults: every audit event must reach the SIEM.
+    # acks=all + idempotence + high retries survive single-broker loss
+    # without dropping or duplicating events. Requires broker-side
+    # min.insync.replicas >= 2 to actually deliver the durability acks=all
+    # promises.
+    acks: "all"
+    retries: 2147483647
+    enable_idempotence: true
+    compression_type: zstd
     ssl_endpoint_identification_algorithm: https
   jdbc:
     enabled: false

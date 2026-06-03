@@ -576,6 +576,8 @@ output {
       {{- if .Values.logstash.kafka.enabled }}
       # Kafka output mirroring the Octobus audit filter above.
       # Public CA, no client credentials at present (SSL server-auth only).
+      # Durability: acks=all + idempotence + unbounded retries — every
+      # audit event must reach the SIEM, no duplicates on retry.
       kafka {
         id => "output_kafka_audit"
         bootstrap_servers => "{{ .Values.global.forwarding.kafka.bootstrap_servers }}"
@@ -583,9 +585,10 @@ output {
         codec => "json"
         security_protocol => "SSL"
         ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "https" }}"
-        compression_type => "{{ .Values.logstash.kafka.compression_type | default "none" }}"
-        acks => "{{ .Values.logstash.kafka.acks | default "1" }}"
-        retries => {{ .Values.logstash.kafka.retries | default 60 }}
+        compression_type => "{{ .Values.logstash.kafka.compression_type | default "zstd" }}"
+        acks => "{{ .Values.logstash.kafka.acks | default "all" }}"
+        retries => {{ .Values.logstash.kafka.retries | default 2147483647 }}
+        enable_idempotence => {{ .Values.logstash.kafka.enable_idempotence | default true }}
         client_id => "{{ .Values.logstash.kafka.client_id | default "hermes-logstash" }}"
       }
       {{- end }}
