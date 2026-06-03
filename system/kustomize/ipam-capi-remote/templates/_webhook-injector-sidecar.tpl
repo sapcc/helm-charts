@@ -8,7 +8,9 @@
     - --cert-secret-name=ipam-capi-remote-cert-secret-name
     - --webhook-label=webhook-injector=true
     - --cert-sans=ipam-capi-remote-webhook-service
-    - --external-host=ipam-capi-remote-webhook-service:443
+    - --external-host=ipam-capi-remote-webhook-service
+    - --external-port=443
+    - --admission-external-port=444
   ports:
     - name: metrics
       containerPort: 8082
