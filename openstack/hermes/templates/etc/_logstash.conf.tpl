@@ -582,15 +582,11 @@ output {
         topic_id => "{{ .Values.logstash.kafka.topic | default "hermes" }}"
         codec => "json"
         security_protocol => "SSL"
-        {{- with .Values.logstash.kafka.ssl_endpoint_identification_algorithm }}
-        ssl_endpoint_identification_algorithm => "{{ . }}"
-        {{- end }}
-        {{- with .Values.logstash.kafka.compression_type }}
-        compression_type => "{{ . }}"
-        {{- end }}
+        ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "https" }}"
+        compression_type => "{{ .Values.logstash.kafka.compression_type | default "none" }}"
         acks => "{{ .Values.logstash.kafka.acks | default "1" }}"
         retries => {{ .Values.logstash.kafka.retries | default 60 }}
-            client_id => "{{ .Values.logstash.kafka.client_id | default "hermes-logstash" }}"
+        client_id => "{{ .Values.logstash.kafka.client_id | default "hermes-logstash" }}"
       }
       {{- end }}
     }
