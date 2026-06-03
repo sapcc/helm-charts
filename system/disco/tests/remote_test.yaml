@@ -1,0 +1,36 @@
+suite: remote kubeconfig
+templates:
+  - remote-kubeconfig.yaml
+tests:
+  - it: should not render remote kubeconfig Secret by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render remote kubeconfig Secret when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: disco-remote-kubeconfig
+      - equal:
+          path: metadata.labels["resources.gardener.cloud/purpose"]
+          value: token-requestor
+      - equal:
+          path: metadata.labels["resources.gardener.cloud/class"]
+          value: shoot
+
+  - it: should use remote.serviceAccount.namespace in Gardener SA annotation
+    set:
+      remote.enabled: true
+      remote.serviceAccount.namespace: kube-system
+    asserts:
+      - equal:
+          path: metadata.annotations["serviceaccount.resources.gardener.cloud/namespace"]
+          value: kube-system
