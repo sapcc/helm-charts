@@ -128,7 +128,7 @@ The architecture uses several namespaces, each serving a distinct purpose. None 
 |---|---|---|---|
 | `metal-operator-system` | **HOST** | Implicit at deploy time: `helm install --namespace metal-operator-system` today, equivalently the per-cluster overlay's `namespace:` field for the dual-kustomize world (kube-secrets pins the namespace before applying `kustomize build` output) | Where the controller pod runs. Matches the controller's `--manager-namespace=metal-operator-system` arg (kubebuilder convention: "namespace the manager is running in"). All host-side resources without an explicit `namespace:` field land here. |
 | `metal-servers` | **WORKERLESS** | `remote/custom/base/namespace.yaml` (kustomize tree); `managedresources/namespace.yaml` (helm chart) | User-facing landing namespace for **namespaced** metal-operator CRs: `BMCSecret`, `BIOSSettings`, `BIOSVersion`, `BIOSSettingsSet`, `BIOSVersionSet`, `BMCSettings`, `BMCVersion`, `BMCSettingsSet`, `BMCVersionSet`, `BMCUser`, `ServerClaim`, `ServerMaintenance`, `Endpoint`. Pre-created so operators can `kubectl create -n metal-servers …` without first creating the namespace. Note: `Server` CRs are cluster-scoped (per upstream's `+kubebuilder:resource:scope=Cluster`) and don't live in any namespace. |
-| `system` | **WORKERLESS** | NEW: `remote/upstream/webhooks/system-namespace.yaml` (introduced by this change) | Holds the `webhook-service` ExternalName Service. Matches upstream's `clientConfig.service.namespace=system` placeholder — by deploying upstream's webhook config verbatim and creating this namespace + ExternalName Service, no URL rewrite is required. |
+| `system` | **WORKERLESS** | NEW: `remote/upstream/metal-operator-webhooks/system-namespace.yaml` (introduced by this change) | Holds the `webhook-service` ExternalName Service. Matches upstream's `clientConfig.service.namespace=system` placeholder — by deploying upstream's webhook config verbatim and creating this namespace + ExternalName Service, no URL rewrite is required. |
 | `kube-system` | **WORKERLESS** | Pre-existing on every Kubernetes cluster | Hosts the `metal-token-rotate` ServiceAccount + Role + RoleBinding (per existing `remote/custom/base/rbac.yaml`). Used for token rotation flows. |
 
 The host kustomize tree (`host/base/kustomization.yaml`) **does NOT pin a namespace** — it relies on the consumer (kube-secrets per-cluster overlay) to set `namespace: metal-operator-system` via its own `kustomization.yaml`. This mirrors today's helm install pattern where `--namespace=metal-operator-system` sets `.Release.Namespace` and all unscoped resources flow into it.
@@ -152,7 +152,7 @@ system/kustomize/metal-operator-remote/
 │       # NOTE: webhook-config.yaml DELETED — sidecar no longer reads webhook content from a local ConfigMap
 │       # NOTE: webhook-injector-rbac.yaml MOVED into components/webhook-injector/ (see § "Webhook-injector Component encapsulation" + Section 14 of tasks.md). All sidecar-introduced host-side resources (SA + Role + RoleBinding + Pod-level serviceAccountName) live there now.
 ├── remote/                                     # APPLIED TO REMOTE (Step 1)
-│   ├── kustomization.yaml                      # aggregates STRUCTURAL SOURCES ONLY: upstream/crds-and-rbac + upstream/webhooks + custom/base. Does NOT bind to a specific environment tier — per-environment components (prod/qa) are applied by kube-secrets per-cluster overlays based on cluster tier.
+│   ├── kustomization.yaml                      # aggregates STRUCTURAL SOURCES ONLY: upstream/metal-operator-crds-and-rbac + upstream/metal-operator-webhooks + custom/base. Does NOT bind to a specific environment tier — per-environment components (prod/qa) are applied by kube-secrets per-cluster overlays based on cluster tier.
 │   ├── upstream/
 │   │   ├── crds-and-rbac/
 │   │   │   └── kustomization.yaml              # references upstream config/crd + config/rbac via Git URL ref → plain CRDs + RBAC (no Role→ClusterRole conversion, no MR wrap)
@@ -179,12 +179,12 @@ system/kustomize/metal-operator-remote/
 ### Removed
 
 - `system/kustomize/metal-operator-remote/scripts/wrap-managedresources.sh`
-- `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/managedresources.yaml`
-- `system/kustomize/metal-operator-remote/remote/upstream/webhooks/managedresources.yaml`
-- `system/kustomize/metal-operator-remote/remote/upstream/webhooks/manifests-url-based.yaml` (obsolete — kustomize live-fetches upstream `config/webhook/`)
+- `system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/managedresources.yaml`
+- `system/kustomize/metal-operator-remote/remote/upstream/metal-operator-webhooks/managedresources.yaml`
+- `system/kustomize/metal-operator-remote/remote/upstream/metal-operator-webhooks/manifests-url-based.yaml` (obsolete — kustomize live-fetches upstream `config/webhook/`)
 - `system/kustomize/metal-operator-remote/host/base/webhook-config.yaml` (obsolete — sidecar no longer reads webhook content from a local ConfigMap)
 - `system/Makefile` targets `regen-metal-operator-remote*` (and any helper variables)
-- The `patches:` block in `remote/upstream/crds-and-rbac/kustomization.yaml` that converts upstream `Role` → `ClusterRole` and `RoleBinding` → `ClusterRoleBinding`
+- The `patches:` block in `remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml` that converts upstream `Role` → `ClusterRole` and `RoleBinding` → `ClusterRoleBinding`
 
 ## Why admission-webhook bootstrap, not ExternalName
 
@@ -339,7 +339,7 @@ This avoids a hand-rolled verb list and auto-inherits any future RBAC widening f
 ```
 ┌──────────────────── helm-charts ─────────────────────────────────────┐
 │                                                                       │
-│ remote/upstream/webhooks/upstream-no-svc/kustomization.yaml          │
+│ remote/upstream/metal-operator-webhooks/upstream-no-svc/kustomization.yaml          │
 │   resources:                                                          │
 │     - https://github.com/ironcore-dev/metal-operator                 │
 │         //config/webhook?ref=v0.4.0                                   │
@@ -361,7 +361,7 @@ This avoids a hand-rolled verb list and auto-inherits any future RBAC widening f
 │       # ↑ removes upstream's regular ClusterIP Service. Output of    │
 │         this layer is JUST the ValidatingWebhookConfiguration.        │
 │                                                                       │
-│ remote/upstream/webhooks/kustomization.yaml (outer)                   │
+│ remote/upstream/metal-operator-webhooks/kustomization.yaml (outer)                   │
 │   resources:                                                          │
 │     - upstream-no-svc/                                                │
 │       # ↑ references the inner layer's output: webhook config only.   │
@@ -371,13 +371,13 @@ This avoids a hand-rolled verb list and auto-inherits any future RBAC widening f
 │         upstream's Service because the inner layer already removed    │
 │         it.                                                           │
 │                                                                       │
-│ remote/upstream/webhooks/system-namespace.yaml                       │
+│ remote/upstream/metal-operator-webhooks/system-namespace.yaml                       │
 │   apiVersion: v1                                                      │
 │   kind: Namespace                                                     │
 │   metadata:                                                           │
 │     name: system                                                      │
 │                                                                       │
-│ remote/upstream/webhooks/webhook-service-stub.yaml                   │
+│ remote/upstream/metal-operator-webhooks/webhook-service-stub.yaml                   │
 │   apiVersion: v1                                                      │
 │   kind: Service                                                       │
 │   metadata:                                                           │
@@ -434,9 +434,9 @@ This avoids a hand-rolled verb list and auto-inherits any future RBAC widening f
 
 ### Critical invariant: kustomize tree MUST NOT emit `caBundle`
 
-The webhook-injector sidecar populates `caBundle` at runtime. Subsequent `kubectl apply -k remote/` (or Flux reconciliation) preserves the sidecar's value via `kubectl apply`'s three-way merge — but ONLY if the applied manifest never includes `caBundle`. Upstream's `config/webhook/manifests.yaml` already omits `caBundle`, so the verbatim Git URL ref is safe. Any future patch added to `remote/upstream/webhooks/` MUST NOT introduce a `caBundle` field, even an empty string — that would clobber the sidecar's value on every apply, creating a webhook-failure window.
+The webhook-injector sidecar populates `caBundle` at runtime. Subsequent `kubectl apply -k remote/` (or Flux reconciliation) preserves the sidecar's value via `kubectl apply`'s three-way merge — but ONLY if the applied manifest never includes `caBundle`. Upstream's `config/webhook/manifests.yaml` already omits `caBundle`, so the verbatim Git URL ref is safe. Any future patch added to `remote/upstream/metal-operator-webhooks/` MUST NOT introduce a `caBundle` field, even an empty string — that would clobber the sidecar's value on every apply, creating a webhook-failure window.
 
-Verifiable by `kustomize build remote/upstream/webhooks/ | yq '.. | select(.caBundle? // "missing")'` returning empty (a verify-phase test).
+Verifiable by `kustomize build remote/upstream/metal-operator-webhooks/ | yq '.. | select(.caBundle? // "missing")'` returning empty (a verify-phase test).
 
 ## Webhook-injector sidecar — narrowed to caBundle-rotation-only
 
@@ -494,8 +494,8 @@ The workerless `webhook-service` ExternalName Service uses `externalName: metal-
 - **Drift recovery for webhook content**: the workerless `ValidatingWebhookConfiguration` is kustomize-managed. Manual edits to its `webhooks[*]` entries persist until the next `kubectl apply -k remote/` (Concourse trigger) or Flux Kustomization reconciliation. Flux's default reconciliation interval (typically 10 min) limits drift duration; Concourse-driven flows have longer drift windows tied to deploy cadence.
 - **Drift recovery for caBundle**: the sidecar reconciles `caBundle` continuously. Manual edits to `caBundle` are repaired on the next sidecar reconciliation pass.
 - **Cluster teardown**: when a cluster is decommissioned, `kubectl delete -k remote/` cleanly removes the workerless `ValidatingWebhookConfiguration` + `system` Namespace + ExternalName Service + CRDs + RBAC + custom RBAC + the `metal-servers` user-facing namespace. In typical operations the workerless cluster is destroyed wholesale, making this moot. The explicit teardown command is a useful runbook addition in the kube-secrets coordinated change.
-- **Webhook content updates from upstream**: editing the upstream metal-operator pinned ref in `remote/upstream/webhooks/kustomization.yaml` (e.g., `?ref=v0.4.0` → `?ref=v0.5.0`) updates the workerless `ValidatingWebhookConfiguration` on the next `kubectl apply -k remote/`. No manual regeneration step. The sidecar reconciles `caBundle` against the new webhook configs automatically.
-- **`caBundle` invariant** (already noted in design above): the kustomize tree MUST NOT emit `caBundle` in any webhook entry. Verify-phase test: `kustomize build remote/upstream/webhooks/ | yq '.. | select(.caBundle? // "missing")'` → empty.
+- **Webhook content updates from upstream**: editing the upstream metal-operator pinned ref in `remote/upstream/metal-operator-webhooks/kustomization.yaml` (e.g., `?ref=v0.4.0` → `?ref=v0.5.0`) updates the workerless `ValidatingWebhookConfiguration` on the next `kubectl apply -k remote/`. No manual regeneration step. The sidecar reconciles `caBundle` against the new webhook configs automatically.
+- **`caBundle` invariant** (already noted in design above): the kustomize tree MUST NOT emit `caBundle` in any webhook entry. Verify-phase test: `kustomize build remote/upstream/metal-operator-webhooks/ | yq '.. | select(.caBundle? // "missing")'` → empty.
 
 ## Cross-repo coordination
 

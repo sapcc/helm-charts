@@ -80,7 +80,7 @@ The MWC SHALL be created by the sidecar; the kustomize tree SHALL NOT pre-render
 
 ### Requirement: Workerless ValidatingWebhookConfiguration labeled for webhook-injector patch-mode selection
 
-The `remote/upstream/webhooks/` kustomize tree SHALL apply a label to the workerless `ValidatingWebhookConfiguration` (and any `MutatingWebhookConfiguration` if added in the future) so that the webhook-injector sidecar's `--webhook-label` selector finds it. The label key SHALL be `webhook-injector.cloud.sap/managed` and the value SHALL be `"true"`. This label is applied via a kustomize patch on the upstream-shipped resource — the upstream resource's `metadata.name` (currently `validating-webhook-configuration` per `config/webhook/manifests.yaml@v0.4.0`) SHALL NOT be renamed; selection is by label, not by name.
+The `remote/upstream/metal-operator-webhooks/` kustomize tree SHALL apply a label to the workerless `ValidatingWebhookConfiguration` (and any `MutatingWebhookConfiguration` if added in the future) so that the webhook-injector sidecar's `--webhook-label` selector finds it. The label key SHALL be `webhook-injector.cloud.sap/managed` and the value SHALL be `"true"`. This label is applied via a kustomize patch on the upstream-shipped resource — the upstream resource's `metadata.name` (currently `validating-webhook-configuration` per `config/webhook/manifests.yaml@v0.4.0`) SHALL NOT be renamed; selection is by label, not by name.
 
 #### Scenario: Workerless VWC carries the management label
 
@@ -100,33 +100,62 @@ The `remote/upstream/webhooks/` kustomize tree SHALL apply a label to the worker
 
 ---
 
+### Requirement: Webhook-injector target-cluster RBAC pulled verbatim from upstream
+
+The `remote/upstream/webhook-injector-rbac/` kustomize subtree SHALL pull upstream `webhook-injector`'s canonical target-cluster RBAC (the `ClusterRole` and `ClusterRoleBinding` both named `webhook-injector-target`) into the workerless `remote/` apply target. The pull SHALL consume upstream's `config/` directory verbatim via the kustomize Git-ref form, then prune everything except the target-cluster RBAC and override the binding's `subjects` list to point at our remote-kubeconfig identity.
+
+This delivery model intentionally **lives in this repository**, NOT in `cc/kube-secrets`. The remote-kubeconfig identity that authenticates to the workerless cluster (the workerless `metal-operator-controller-manager` ServiceAccount in `kube-system`, created by upstream metal-operator and authenticated via token rotation) is stable across the fleet, so binding it to the upstream ClusterRole can be expressed as a fleet-uniform invariant in this base. `cc/kube-secrets` continues to deliver only the remote-kubeconfig token + per-cluster value substitutions; it has no parallel hand-rolled RBAC list to maintain.
+
+The exact verb set is the responsibility of the SAP-internal `webhook-injector` binary and is consumed via the upstream ClusterRole — this kustomize-tree spec governs only the upstream pull, the prune set, and the binding subject.
+
+#### Scenario: Webhook-injector RBAC subtree exists and references upstream
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/upstream/webhook-injector-rbac/kustomization.yaml`
+- **THEN** the `resources:` field SHALL contain a Git URL ref of the form `https://github.com/SAP-cloud-infrastructure/webhook-injector//config?ref=<tag-or-branch>` (the directory URL — kustomize's Git-ref form treats single-file paths as Git repository references and fails)
+- **AND** the file SHALL include a `patches:` block that prunes upstream's host-side resources via `$patch: delete` (the `ServiceAccount/webhook-injector`, `Role/webhook-injector`, `RoleBinding/webhook-injector`) and upstream's stand-alone deployment artifacts (`Deployment/webhook-server`, `Service/webhook-service`, `ConfigMap/webhook-config`, `PodDisruptionBudget/webhook-server`)
+- **AND** the file SHALL include a `patches:` entry that JSON-patches `ClusterRoleBinding/webhook-injector-target` to set `.subjects` to a single-element list `[{kind: ServiceAccount, name: metal-operator-controller-manager, namespace: kube-system}]` (overriding upstream's default subject)
+
+#### Scenario: Build output contains target ClusterRole + ClusterRoleBinding only
+
+- **WHEN** `kustomize build remote/` is executed
+- **THEN** the output SHALL contain a `ClusterRole` named `webhook-injector-target` with the rules upstream defines (at minimum: `admissionregistration.k8s.io/{mutatingwebhookconfigurations,validatingwebhookconfigurations}` with verbs `get,list,watch,create,update,patch`; once webhook-injector#10 merges, also `apiextensions.k8s.io/customresourcedefinitions` verbs)
+- **AND** the output SHALL contain a `ClusterRoleBinding` named `webhook-injector-target` whose `subjects[0]` is `{kind: ServiceAccount, name: metal-operator-controller-manager, namespace: kube-system}`
+- **AND** the output SHALL NOT contain any `ServiceAccount`, `Role`, `RoleBinding`, `Deployment`, `Service`, `ConfigMap`, or `PodDisruptionBudget` originating from upstream `webhook-injector`'s `config/` directory (all pruned)
+
+#### Scenario: cc/kube-secrets carries no parallel webhook-injector RBAC
+
+- **WHEN** examining the per-cluster overlay structure in `cc/kube-secrets` for `metal-operator-remote`
+- **THEN** the overlay SHALL NOT include hand-rolled `ClusterRole` / `ClusterRoleBinding` resources granting `mutatingwebhookconfigurations` / `validatingwebhookconfigurations` verbs to the remote-kubeconfig identity
+- **AND** the overlay SHALL NOT consume `https://github.com/SAP-cloud-infrastructure/webhook-injector//config/rbac.yaml` itself (that responsibility is owned by `helm-charts:remote/upstream/webhook-injector-rbac/`)
+
+---
+
 ### Requirement: Webhook-injector ServiceAccount granted target-cluster RBAC for patch mode + admission bootstrap
 
-The kustomize tree SHALL configure a ServiceAccount on the host cluster (used by the webhook-injector sidecar to authenticate to the workerless cluster via remote-kubeconfig) that, on the workerless cluster, is granted Kubernetes RBAC sufficient to (a) periodically refresh `caBundle` and rewrite `clientConfig` on labeled `ValidatingWebhookConfiguration` (and optionally `MutatingWebhookConfiguration`) resources, AND (b) bootstrap the `metal-operator-webhook-injector-mutator` MutatingWebhookConfiguration on first reconcile.
+The kustomize tree SHALL deliver, on the workerless cluster, the Kubernetes RBAC the webhook-injector sidecar's remote-kubeconfig identity needs to (a) periodically refresh `caBundle` and rewrite `clientConfig` on labeled `ValidatingWebhookConfiguration` (and `MutatingWebhookConfiguration`) resources, AND (b) bootstrap the `metal-operator-webhook-injector-mutator` MutatingWebhookConfiguration on first reconcile.
 
-The workerless-cluster RBAC SHALL be delivered via `cc/kube-secrets` (the remote-kubeconfig identity is managed there, not in this repository); the `cc/kube-secrets` overlay SHALL consume the upstream `webhook-injector//config/rbac.yaml` ClusterRole `webhook-injector-target` verbatim where possible (single source of truth for required verbs), overriding only the binding's `subjects` list to point at the remote-kubeconfig user identity. See `tasks.md` Section 16 for the cross-repo coordination note.
+This RBAC is delivered by the `remote/upstream/webhook-injector-rbac/` kustomize subtree (governed by the "Webhook-injector target-cluster RBAC pulled verbatim from upstream" requirement above), which pulls upstream's canonical `webhook-injector-target` ClusterRole + ClusterRoleBinding and overrides the binding's subject to point at the workerless cluster's `metal-operator-controller-manager` ServiceAccount in `kube-system` (the remote-kubeconfig identity).
 
 The exact list of resource types and verbs the binary needs is the responsibility of the SAP-internal `webhook-injector` binary and propagates via consumption of upstream's ClusterRole; this kustomize-tree spec governs only the verb floor (what the sidecar MUST be able to do for patch mode + bootstrap to function).
 
-#### Scenario: Workerless ClusterRole grants MWC verbs including create
+#### Scenario: webhook-injector-target ClusterRole grants MWC verbs including create
 
-- **WHEN** examining the workerless-cluster ClusterRole bound (via ClusterRoleBinding) to the ServiceAccount the sidecar authenticates as via remote-kubeconfig
+- **WHEN** examining the workerless-cluster `ClusterRole` named `webhook-injector-target` (delivered by `remote/upstream/webhook-injector-rbac/`)
 - **THEN** the granted verbs on `mutatingwebhookconfigurations.admissionregistration.k8s.io` SHALL include `create` (required for bootstrapping `metal-operator-webhook-injector-mutator`), `get`, `list`, `watch`, `update`, `patch`
 - **AND** the granted verbs on `validatingwebhookconfigurations.admissionregistration.k8s.io` SHALL include `get`, `list`, `watch`, `update`, `patch` (the existing periodic-rewrite path)
-- **AND** the granted verbs on `customresourcedefinitions.apiextensions.k8s.io` MAY include `get`, `list`, `watch`, `update`, `patch` (the binary uses these if any CRD carries the management label; harmless for our use case where no CRDs are labeled)
+- **AND** the granted verbs on `customresourcedefinitions.apiextensions.k8s.io` MAY include `get`, `list`, `watch`, `update`, `patch` (added by upstream once webhook-injector#10 merges; the binary uses these if any CRD carries the management label, harmless for our use case where no CRDs are labeled)
 
-#### Scenario: ClusterRole does not grant write access to other workerless resources
+#### Scenario: webhook-injector-target ClusterRole does not grant write access to other workerless resources
 
 - **WHEN** examining the same ClusterRole
 - **THEN** it SHALL NOT grant any verbs on resources outside `admissionregistration.k8s.io/v1` and `apiextensions.k8s.io/v1`
 - **AND** SHALL NOT grant access to Secrets, ConfigMaps, Pods, or any other resource categories on the workerless cluster
 
-#### Scenario: ClusterRole consumed verbatim from upstream webhook-injector when possible
+#### Scenario: webhook-injector-target ClusterRoleBinding subject is the remote-kubeconfig identity
 
-- **WHEN** examining the kube-secrets per-cluster overlay's RBAC delivery for metal-operator-remote
-- **THEN** the overlay SHOULD reference upstream's `webhook-injector//config/rbac.yaml` ClusterRole `webhook-injector-target` directly via Git URL ref
-- **AND** the overlay SHALL override only the `ClusterRoleBinding/webhook-injector-target` `.subjects` list (substituting the remote-kubeconfig user identity for upstream's `webhook-injector` ServiceAccount reference)
-- **AND** the overlay MAY drop upstream's host-side `ServiceAccount`, `Role`, and `RoleBinding` (they are irrelevant on the workerless cluster)
+- **WHEN** examining the workerless-cluster `ClusterRoleBinding` named `webhook-injector-target` (delivered by `remote/upstream/webhook-injector-rbac/`)
+- **THEN** the binding's `subjects` field SHALL contain exactly one entry of `{kind: ServiceAccount, name: metal-operator-controller-manager, namespace: kube-system}`
+- **AND** SHALL NOT contain upstream's default subject `{kind: ServiceAccount, name: webhook-injector}` (that subject was specific to upstream's stand-alone Deployment topology, not our split sidecar+remote-kubeconfig topology)
 
 ---
 
@@ -157,9 +186,9 @@ The kustomize-build output of the `remote/` root SHALL NOT include any `caBundle
 
 #### Scenario: Future patches must not introduce caBundle
 
-- **WHEN** any future change adds a `patches:` block or new `resources:` entry under `remote/upstream/webhooks/` (inner or outer layer)
+- **WHEN** any future change adds a `patches:` block or new `resources:` entry under `remote/upstream/metal-operator-webhooks/` (inner or outer layer)
 - **THEN** the modification SHALL NOT introduce a `caBundle` field in any webhook entry
-- **AND** the modification SHALL be testable via `kustomize build remote/upstream/webhooks/ | yq '.. | select(.caBundle? // "missing")'` returning empty
+- **AND** the modification SHALL be testable via `kustomize build remote/upstream/metal-operator-webhooks/ | yq '.. | select(.caBundle? // "missing")'` returning empty
 
 ---
 
@@ -204,7 +233,7 @@ This Component is effectively mandatory for the metal-operator-remote topology (
 
 ### Requirement: Webhook-injector sidecar injected via kustomize Component
 
-The webhook-injector sidecar SHALL be injected into the controller Deployment as a native sidecar (initContainer with `restartPolicy: Always`) using a kustomize Component. In the new design the sidecar runs in caBundle-rotation mode (governed by separate Requirements above) — its image, volume mounts, health probes, and resource limits are unchanged from the previous design, but its args reflect the new mode.
+The webhook-injector sidecar SHALL be injected into the controller Deployment as a native sidecar (initContainer with `restartPolicy: Always`) using a kustomize Component. In the new design the sidecar runs in PR-10-v2 patch mode with admission-webhook bootstrap (governed by separate Requirements above) — its image, volume mounts, health probes, and resource limits are unchanged from the previous design, but its args and ports reflect the new mode.
 
 #### Scenario: Sidecar present in host base output
 
@@ -217,17 +246,20 @@ The webhook-injector sidecar SHALL be injected into the controller Deployment as
 - **WHEN** `kustomize build host/base/` is executed
 - **THEN** the webhook-injector initContainer image SHALL be `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector`
 
-#### Scenario: Sidecar args reflect caBundle-rotation mode
+#### Scenario: Sidecar args reflect patch mode with admission bootstrap
 
 - **WHEN** `kustomize build host/base/` is executed
-- **THEN** the webhook-injector initContainer SHALL have an env var `WEBHOOK_INJECTOR_MODE=ca-rotation` (or equivalent mode signal per the binary's API)
-- **AND** the `--webhook-config-name` argument (or its equivalent) SHALL be set to the name of the workerless `ValidatingWebhookConfiguration` to manage caBundle on (e.g., `validating-webhook-configuration` per upstream)
-- **AND** the `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig` argument (or equivalent) SHALL be set to point at the remote-kubeconfig mount
+- **THEN** the webhook-injector initContainer's `args` SHALL contain `--webhook-label=webhook-injector.cloud.sap/managed=true` (label-based selection of webhook configs to patch)
+- **AND** the `args` SHALL contain `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig` (workerless cluster auth)
+- **AND** the `args` SHALL contain `--external-host=metal-operator-webhook-service` and `--external-port=443` (Service→URL rewrite target)
+- **AND** the `args` SHALL contain `--admission-webhook-name=metal-operator-webhook-injector-mutator` and `--admission-external-port=9444` (admission-webhook bootstrap parameters)
+- **AND** the `args` SHALL NOT contain `--webhook-config-name` (selects the legacy ConfigMap mode, mutually exclusive with patch mode)
+- **AND** the initContainer SHALL NOT have an env var `WEBHOOK_INJECTOR_MODE` (the old caBundle-rotation mode signal is no longer used; mode is inferred from flag presence)
 
 #### Scenario: Sidecar args overridable per environment
 
 - **WHEN** an overlay patches the webhook-injector initContainer args
-- **THEN** the rendered output SHALL use the overridden args (e.g., a different `--webhook-config-name` value if a per-cluster overlay needs to manage a differently-named WebhookConfiguration)
+- **THEN** the rendered output SHALL use the overridden args (e.g., a different `--webhook-label` value if a per-cluster overlay needs to manage a differently-labeled set of webhook configurations)
 
 #### Scenario: Sidecar volume mounts correct
 

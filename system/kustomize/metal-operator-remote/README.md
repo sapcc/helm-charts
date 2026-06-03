@@ -45,7 +45,7 @@ The deployment pipeline (two independent `kubectl apply -k` invocations against 
 │       ├── manager-patch.yaml      # consolidated controller-manager patch (env, volumes, args, sidecar)
 │       └── ...                     # Services, Ingress, Secrets, RBAC, NetworkPolicy
 ├── remote/                         # APPLIED TO REMOTE (workerless cluster, Step 1)
-│   ├── kustomization.yaml          # composes upstream/crds-and-rbac + upstream/webhooks + custom/base
+│   ├── kustomization.yaml          # composes upstream/metal-operator-crds-and-rbac + upstream/metal-operator-webhooks + custom/base
 │   ├── upstream/
 │   │   ├── crds-and-rbac/
 │   │   │   └── kustomization.yaml  # references upstream config/{crd,rbac} via Git URL ref
@@ -219,8 +219,8 @@ pinned tag in three `kustomization.yaml` files:
 ```bash
 # 1. Edit ?ref=v0.4.0 → ?ref=v<NEW> in:
 #    - host/base/kustomization.yaml
-#    - remote/upstream/crds-and-rbac/kustomization.yaml
-#    - remote/upstream/webhooks/kustomization.yaml  (raw.githubusercontent.com URL — pin tag in path, not ?ref)
+#    - remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml
+#    - remote/upstream/metal-operator-webhooks/kustomization.yaml  (raw.githubusercontent.com URL — pin tag in path, not ?ref)
 
 # 2. Verify the build still succeeds:
 kustomize build system/kustomize/metal-operator-remote/host/base/  > /dev/null && echo OK
@@ -248,12 +248,12 @@ artifacts and mechanisms no longer exist; their replacements are listed below.
 | Removed | Replacement |
 |---|---|
 | `scripts/wrap-managedresources.sh` (base64-wrapping rendered YAML into ManagedResource Secret payloads) | Direct `kubectl apply` of `kustomize build remote/` against the workerless cluster |
-| `remote/upstream/crds-and-rbac/managedresources.yaml` (pre-rendered) | Live `kustomize build` of `remote/upstream/crds-and-rbac/` (Git URL ref to upstream `config/{crd,rbac}`) |
-| `remote/upstream/webhooks/managedresources.yaml` (pre-rendered) | Single `remote/upstream/webhooks/kustomization.yaml` that pulls upstream's `manifests.yaml` (the VWC) directly via `raw.githubusercontent.com` URL pinned to a tag, plus a kustomize patch that adds the `webhook-injector.cloud.sap/managed: "true"` label so the webhook-injector sidecar selects it |
-| `remote/upstream/webhooks/manifests-url-based.yaml` (pre-rendered URL-form webhook config) | The workerless `ValidatingWebhookConfiguration` ships in upstream's `clientConfig.service` form; the URL form is materialized at admission time by the webhook-injector sidecar's bootstrapped `metal-operator-webhook-injector-mutator` MWC (see [Webhook routing](#webhook-routing)) |
+| `remote/upstream/metal-operator-crds-and-rbac/managedresources.yaml` (pre-rendered) | Live `kustomize build` of `remote/upstream/metal-operator-crds-and-rbac/` (Git URL ref to upstream `config/{crd,rbac}`) |
+| `remote/upstream/metal-operator-webhooks/managedresources.yaml` (pre-rendered) | Single `remote/upstream/metal-operator-webhooks/kustomization.yaml` that pulls upstream's `manifests.yaml` (the VWC) directly via `raw.githubusercontent.com` URL pinned to a tag, plus a kustomize patch that adds the `webhook-injector.cloud.sap/managed: "true"` label so the webhook-injector sidecar selects it |
+| `remote/upstream/metal-operator-webhooks/manifests-url-based.yaml` (pre-rendered URL-form webhook config) | The workerless `ValidatingWebhookConfiguration` ships in upstream's `clientConfig.service` form; the URL form is materialized at admission time by the webhook-injector sidecar's bootstrapped `metal-operator-webhook-injector-mutator` MWC (see [Webhook routing](#webhook-routing)) |
 | `host/base/webhook-config.yaml` (host-side ConfigMap consumed by an old webhook-injector mode) | The webhook-injector sidecar runs in PR-10-v2 patch mode with admission-webhook bootstrap; it selects labeled webhook configs on the workerless cluster directly via `--webhook-label` (no host-side ConfigMap) |
 | `host/base/manager-remote-patch.yaml` + `host/base/manager-webhook-patch.yaml` | Consolidated `host/base/manager-patch.yaml` (single source for env, volumes, args, sidecar) |
-| `Role → ClusterRole` and `RoleBinding → ClusterRoleBinding` conversion patches in `remote/upstream/crds-and-rbac/` | Removed — the workerless cluster receives upstream RBAC verbatim |
+| `Role → ClusterRole` and `RoleBinding → ClusterRoleBinding` conversion patches in `remote/upstream/metal-operator-crds-and-rbac/` | Removed — the workerless cluster receives upstream RBAC verbatim |
 | `make regen-metal-operator-remote{,-crds,-webhooks}` Makefile targets | Removed — no pre-rendering step. Kustomize Git URL refs pull upstream content live at every `kustomize build` |
 | `KUSTOMIZE_METAL_OPERATOR_REMOTE` variable in `system/Makefile` | Removed alongside the regen targets |
 

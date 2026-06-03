@@ -29,7 +29,7 @@ The current `metal-operator-remote` deployment uses Gardener's `ManagedResource`
 - Impact: The local `webhook-config` ConfigMap on host is deleted. **Webhook-injector binary needs PR #10 v2 patch mode + admission-webhook bootstrap** (out-of-repo dependency). **`cc/kube-secrets` needs a coordinated change**: widen remote-kubeconfig RBAC to include `mutatingwebhookconfigurations` `create,get,list,watch,update,patch` (recommended via consumption of upstream `webhook-injector//config/rbac.yaml`); add Concourse pipeline gate task between `host/` and `remote/` apply jobs polling for the bootstrapped MWC.
 
 **Role → ClusterRole conversion**
-- From: `remote/upstream/crds-and-rbac/kustomization.yaml` patches upstream's `kind: Role` and `kind: RoleBinding` to `kind: ClusterRole` and `kind: ClusterRoleBinding` (introduced during the kustomize POC as a defensive measure)
+- From: `remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml` patches upstream's `kind: Role` and `kind: RoleBinding` to `kind: ClusterRole` and `kind: ClusterRoleBinding` (introduced during the kustomize POC as a defensive measure)
 - To: Upstream RBAC applied verbatim — Roles stay Roles, RoleBindings stay RoleBindings
 - Reason: This was a `ManagedResource`-era workaround for GRM's namespace handling; the helm chart's bundled `managedresources/crds-and-rbac.yaml` proves un-converted Roles work in production
 - Impact: Workerless cluster's RBAC layout changes shape (some leader-election roles return to namespace scope) but functional behavior matches the helm-deployed clusters
@@ -55,8 +55,8 @@ None. This change modifies existing capabilities; no new capabilities are introd
 ## Impact
 
 **This repo (`sapcc/helm-charts`)**:
-- `system/kustomize/metal-operator-remote/` restructured: consolidated `host/base/manager-patch.yaml`; `host/base/webhook-service.yaml` exposes a second `admission: 9444` port; `remote/upstream/webhooks/` simplified to a single `kustomization.yaml` consuming upstream's `manifests.yaml` via raw GitHub URL with a label patch; `components/webhook-injector/sidecar.yaml` configured for PR-10-v2 patch mode with admission-webhook bootstrap (4 new flags: `--external-host`, `--external-port`, `--admission-webhook-name`, `--admission-external-port` + admission containerPort)
-- Deletions: `remote/upstream/crds-and-rbac/managedresources.yaml`, `remote/upstream/webhooks/managedresources.yaml`, `remote/upstream/webhooks/manifests-url-based.yaml`, `remote/upstream/webhooks/upstream-no-svc/`, `remote/upstream/webhooks/system-namespace.yaml`, `remote/upstream/webhooks/webhook-service-stub.yaml`, `host/base/webhook-config.yaml`, `scripts/wrap-managedresources.sh`
+- `system/kustomize/metal-operator-remote/` restructured: consolidated `host/base/manager-patch.yaml`; `host/base/webhook-service.yaml` exposes a second `admission: 9444` port; `remote/upstream/metal-operator-webhooks/` simplified to a single `kustomization.yaml` consuming upstream's `manifests.yaml` via raw GitHub URL with a label patch; `components/webhook-injector/sidecar.yaml` configured for PR-10-v2 patch mode with admission-webhook bootstrap (4 new flags: `--external-host`, `--external-port`, `--admission-webhook-name`, `--admission-external-port` + admission containerPort)
+- Deletions: `remote/upstream/metal-operator-crds-and-rbac/managedresources.yaml`, `remote/upstream/metal-operator-webhooks/managedresources.yaml`, `remote/upstream/metal-operator-webhooks/manifests-url-based.yaml`, `remote/upstream/metal-operator-webhooks/upstream-no-svc/`, `remote/upstream/metal-operator-webhooks/system-namespace.yaml`, `remote/upstream/metal-operator-webhooks/webhook-service-stub.yaml`, `host/base/webhook-config.yaml`, `scripts/wrap-managedresources.sh`
 - `system/Makefile` targets `regen-metal-operator-remote-{crds,webhooks}` deleted along with their helper variables
 - 3 capability specs in `openspec/specs/` modified (no new capabilities)
 
