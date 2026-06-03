@@ -218,3 +218,105 @@ Sidecar arg refactor uses webhook-injector PR #10 v2's label-based patch mode (b
 - [x] 15.14 Commit on `poc/kustomize-metal-operator-remote`. Use `git add` for the specific paths only; no `git add -A`. Suggested message: `refactor(metal-operator-remote): absorb SAP-CC deployment-wide defaults into kustomize base`.
 - [x] 15.15 Push to origin: `git push origin poc/kustomize-metal-operator-remote`.
 - [x] 15.16 Update PR #11633 description's Scope 3 section with the new defaults-absorption details (manager args restored to fleet values, macdb populated, sidecar args switched to PR #10 v2 flag scheme, VWC label patch). Apply via `gh pr edit 11633 --body-file ...`.
+
+## 16. Pivot to PR-10-v2 patch mode with admission-webhook bootstrap (Option B)
+
+This section captures a substantive architectural pivot identified during cross-repo review of [`SAP-cloud-infrastructure/webhook-injector#10`](https://github.com/SAP-cloud-infrastructure/webhook-injector/pull/10) v2 by inspecting the actual code at HEAD `06b512f` of branch `optional-webhook-config-and-crd-patching`. Two findings force the pivot:
+
+1. **`--external-host` is mandatory in patch mode.** The binary's `cmd/webhook-injector/main.go` enforces `os.Exit(1)` when patch mode is active and `--external-host` is empty. Our previous design (caBundle-only patch mode without `--external-host`) cannot boot the new binary. Code reference: `cmd/webhook-injector/main.go` ~L130-L142.
+
+2. **PR-10-v2 introduces an admission-webhook bootstrap mechanism that solves a GitOps reconciliation problem we hadn't fully grappled with.** Our previous design relied on an `ExternalName` Service in the workerless cluster's `system` namespace (`webhook-service` → `metal-operator-webhook-service`) to bridge upstream's `clientConfig.service` form to the host cluster's actual webhook service via DNS search paths. ExternalName for webhook clientConfig is rejected by Gardener's default `--enable-aggregator-routing=true` (see [k3s-io/k3s#6659](https://github.com/k3s-io/k3s/issues/6659)) — so ExternalName routing was already a latent risk. The pivot replaces ExternalName routing with admission-time Service→URL rewrite: the sidecar bootstraps `metal-operator-webhook-injector-mutator` on the workerless cluster, the mutator rewrites `clientConfig.Service` → `clientConfig.URL` synchronously at admission time, and the workerless API server stores URL form for callbacks. Reapply idempotency is preserved (admission rewrites before validation, so 3-way-merge re-introductions of the Service field are sanitized in-flight).
+
+**Trade-off accepted:** the host cluster's `metal-operator-webhook-service` Service grows a second exposed port (9444 → sidecar admission server), and `cc/kube-secrets` widens the remote-kubeconfig RBAC to allow `mutatingwebhookconfigurations` `create` so the sidecar can bootstrap the admission webhook. Both are mechanical changes consistent with the existing architecture (same network path, same DNS resolution, same RBAC delivery model).
+
+**Bootstrap-window risk:** on a fresh install of a new workerless cluster, the order between `host/` apply (brings up sidecar → bootstraps admission webhook) and `remote/` apply (delivers the labeled VWC) matters. If `remote/` lands first, the metal3 VWC enters the workerless apiserver in Service form pointing at an endpointless ClusterIP, and the upstream `failurePolicy: Fail` setting (× 7 webhook entries — BiosSettings, BiosVersion, BmcSecret, BmcSettings, BmcVersion, Endpoint, Server) blocks all metal3 CRD writes until the periodic reconcile recovers (up to one `--sync-period`). This is non-catastrophic (auto-recovery) but ugly. Mitigation is enforced via a Concourse pipeline gate task in `cc/kube-secrets` (Section 16.13–16.15 below) — out of scope for this repo, captured as a coordination note.
+
+### Tasks
+
+- [x] 16.1 Edit `system/kustomize/metal-operator-remote/host/base/webhook-service.yaml`: add a second port entry `name: admission, port: 9444, protocol: TCP, targetPort: 9444` after the existing `webhook` port. Verify the existing webhook port retains `port: 443, targetPort: 9443` and gains an explicit `name: webhook`.
+
+- [x] 16.2 Edit `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml`:
+  - Replace the `--cert-sans` value with the single entry `metal-operator-webhook-service` (drop `webhook-service.system.svc` and `webhook-service.system.svc.cluster.local`).
+  - Append four new args after `--cert-secret-name`:
+    - `--external-host=metal-operator-webhook-service`
+    - `--external-port=443`
+    - `--admission-webhook-name=metal-operator-webhook-injector-mutator`
+    - `--admission-external-port=9444`
+  - Add a third entry to the `ports:` list under the webhook-injector initContainer: `name: admission, containerPort: 9444`.
+
+- [x] 16.3 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/webhook-service-stub.yaml` (the ExternalName Service is no longer used).
+
+- [x] 16.4 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/` (entire directory — the Service-strip workaround is no longer needed; we consume upstream's VWC manifest directly).
+
+- [x] 16.5 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/system-namespace.yaml`. With upstream's Service object no longer being applied (we reference only `manifests.yaml`, not the whole `config/webhook/` directory), no resource on the workerless cluster needs the `system` namespace to exist. The VWC's `clientConfig.service.namespace: system` field is harmless because it is replaced with URL form by admission rewrite before any callback fires; K8s does not validate Service existence at VWC apply time.
+
+- [x] 16.6 Edit `system/kustomize/metal-operator-remote/remote/upstream/webhooks/kustomization.yaml`:
+  - Replace the `resources:` list contents with the single entry `- https://github.com/ironcore-dev/metal-operator//config/webhook/manifests.yaml?ref=v0.4.0` (the VWC manifest file directly, NOT the directory URL — the directory URL would re-pull `service.yaml`).
+  - Remove the `- upstream-no-svc/`, `- system-namespace.yaml`, and `- webhook-service-stub.yaml` entries.
+  - Keep the `webhook-injector.cloud.sap/managed: "true"` label patch on the VWC.
+  - The resulting `webhooks/` directory contains a single file: `kustomization.yaml`.
+
+- [x] 16.7 Verify build cleanliness: `kustomize build system/kustomize/metal-operator-remote/host/base/` and `kustomize build system/kustomize/metal-operator-remote/remote/` both succeed.
+
+- [x] 16.8 Verify the host Service has the new admission port:
+  ```
+  kustomize build system/kustomize/metal-operator-remote/host/base/ \
+    | yq 'select(.kind == "Service" and .metadata.name == "metal-operator-webhook-service") | .spec.ports'
+  ```
+  Expected: two entries, one with `port: 443` and one with `port: 9444`, both with explicit `name:` fields.
+
+- [x] 16.9 Verify the sidecar args contain the four new flags:
+  ```
+  kustomize build system/kustomize/metal-operator-remote/host/base/ \
+    | yq 'select(.kind == "Deployment" and .metadata.name == "controller-manager") | .spec.template.spec.initContainers[] | select(.name == "webhook-injector") | .args'
+  ```
+  Expected: includes `--external-host=metal-operator-webhook-service`, `--external-port=443`, `--admission-webhook-name=metal-operator-webhook-injector-mutator`, `--admission-external-port=9444`. The `--cert-sans` value is exactly `metal-operator-webhook-service` (no `.svc` variants).
+
+- [x] 16.10 Verify the sidecar containerPorts include `9444`:
+  ```
+  kustomize build system/kustomize/metal-operator-remote/host/base/ \
+    | yq 'select(.kind == "Deployment") | .spec.template.spec.initContainers[] | select(.name == "webhook-injector") | .ports'
+  ```
+  Expected: three entries (`metrics: 8082`, `health: 8083`, `admission: 9444`).
+
+- [x] 16.11 Verify the workerless VWC ships in upstream Service form (build-time invariant; runtime form is set by admission):
+  ```
+  kustomize build system/kustomize/metal-operator-remote/remote/ \
+    | yq 'select(.kind == "ValidatingWebhookConfiguration") | .webhooks[].clientConfig'
+  ```
+  Expected: every entry has a `service: { name, namespace, path }` field, and no entry has a `url` field. (This is the `kustomize-resource-splitting / Webhook delivery via Service→URL rewrite at admission time` requirement's build-time scenario.)
+
+- [x] 16.12 Verify the VWC management label is preserved (existing requirement, regression check):
+  ```
+  kustomize build system/kustomize/metal-operator-remote/remote/ \
+    | yq 'select(.kind == "ValidatingWebhookConfiguration") | .metadata.labels."webhook-injector.cloud.sap/managed"'
+  ```
+  Expected: `"true"`.
+
+- [x] 16.13 Verify ExternalName + system-namespace + upstream-Service artifacts are all gone:
+  - `! test -f system/kustomize/metal-operator-remote/remote/upstream/webhooks/webhook-service-stub.yaml`
+  - `! test -f system/kustomize/metal-operator-remote/remote/upstream/webhooks/system-namespace.yaml`
+  - `! test -d system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/`
+  - `kustomize build system/kustomize/metal-operator-remote/remote/ | yq 'select(.kind == "Service")'` returns empty (no upstream `webhook-service` Service object in the build output).
+  - `kustomize build system/kustomize/metal-operator-remote/remote/ | yq 'select(.kind == "Namespace" and .metadata.name == "system")'` returns empty.
+
+- [x] 16.14 Document the cross-repo coordination note for `cc/kube-secrets` in this PR's description (and capture it in `design.md` Step 16 once that file is updated). The note SHALL cover:
+  1. **RBAC widening**: the remote-kubeconfig identity needs `mutatingwebhookconfigurations` `create,get,list,watch,update,patch` (in addition to the existing `validatingwebhookconfigurations` `get,patch`). Recommended approach: consume upstream `https://github.com/SAP-cloud-infrastructure/webhook-injector//config/rbac.yaml?ref=<tag>` and override the binding's `.subjects` list. Drop upstream's host-side SA/Role/RoleBinding (irrelevant on workerless).
+  2. **Pipeline gate**: insert a wait task between the `host/` apply job and the `remote/` apply job that polls for the bootstrapped admission MWC on the workerless cluster:
+     ```
+     kubectl --kubeconfig=$REMOTE_KUBECONFIG \
+       wait --for=jsonpath='{.metadata.name}'=metal-operator-webhook-injector-mutator \
+       mutatingwebhookconfiguration/metal-operator-webhook-injector-mutator \
+       --timeout=5m
+     ```
+     This gate is idempotent (instant-return on subsequent runs once the MWC exists) and protects fresh-install fleet additions from the bootstrap-window failure mode described above.
+
+- [x] 16.15 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean. (The spec deltas in `specs/kustomize-resource-splitting/spec.md` and `specs/kustomize-sidecar-injection/spec.md` have been updated in-place to describe the admission-webhook-bootstrap architecture; the previous ExternalName-routing requirements are removed.)
+
+- [x] 16.16 Update `design.md` and `proposal.md` to reflect the architectural pivot:
+  - `proposal.md` "What changes" section: replace the ExternalName-routing description with admission-webhook-bootstrap.
+  - `design.md`: add a new top-level section "Why admission-webhook bootstrap, not ExternalName" referencing PR-10-v2's Q1 finding (`--external-host` mandatory, code @ `06b512f`) and k3s#6659 (ExternalName latent risk on Gardener).
+
+- [ ] 16.17 Commit on `poc/kustomize-metal-operator-remote`. Use `git add` for the specific paths only; no `git add -A`. Suggested message: `refactor(metal-operator-remote): pivot to PR-10-v2 admission-webhook bootstrap`. Push to origin.
+
+- [ ] 16.18 Update PR #11633 description's Scope 3 section: replace the ExternalName-routing paragraph with the admission-webhook-bootstrap paragraph; mention the cc/kube-secrets coordination note (RBAC widening + pipeline gate); update the cutover-gating paragraph if the gating reasoning has shifted (now also gated on cc/kube-secrets pipeline gate task being merged, in addition to the webhook-injector binary release).

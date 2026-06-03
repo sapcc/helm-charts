@@ -1,8 +1,14 @@
 ## ADDED Requirements
 
-### Requirement: Webhook-injector sidecar configured for caBundle-rotation patch mode
+### Requirement: Webhook-injector sidecar configured for patch mode with admission-webhook bootstrap
 
-The kustomize tree SHALL configure the webhook-injector sidecar container to run in caBundle-rotation **patch mode** as defined by the SAP-internal binary's PR-10-v2 API (label-based webhook selection, no URL rewriting). The sidecar's task is limited to refreshing the `caBundle` field on labeled resources on the workerless cluster; it MUST NOT create resources, MUST NOT rewrite `clientConfig.URL`, and MUST NOT clear `clientConfig.Service`. The exact reconciliation semantics (filtering, sync period, lease behavior) are the responsibility of the SAP-internal binary itself and out of scope for this kustomize-tree spec; this requirement governs only that the kustomize tree configures the sidecar's flags correctly.
+The kustomize tree SHALL configure the webhook-injector sidecar container to run in **patch mode** with **admission-webhook bootstrap enabled**, as defined by the SAP-internal binary's PR-10-v2 API. The sidecar's runtime responsibilities are:
+
+1. Bootstrapping a `MutatingWebhookConfiguration` named `metal-operator-webhook-injector-mutator` on the workerless cluster (via remote-kubeconfig) whose `objectSelector` matches the management label.
+2. Periodically refreshing `caBundle` and rewriting `clientConfig.Service` → `clientConfig.URL` on labeled `ValidatingWebhookConfiguration` (and `MutatingWebhookConfiguration`) resources on the workerless cluster.
+3. Serving the bootstrapped admission webhook in-pod (registered handlers `/mutate-mwc`, `/mutate-vwc`, `/mutate-crd`) so that every CREATE/UPDATE on labeled resources receives the rewrite synchronously at admission time.
+
+The exact reconciliation semantics, mutator handler implementation, and certificate management are the responsibility of the SAP-internal binary itself and out of scope for this kustomize-tree spec; this requirement governs only that the kustomize tree configures the sidecar's flags correctly.
 
 #### Scenario: Patch mode signaled via `--webhook-label` (no `--webhook-config-name`)
 
@@ -13,8 +19,21 @@ The kustomize tree SHALL configure the webhook-injector sidecar container to run
 #### Scenario: `--cert-sans` provided explicitly (required in patch mode)
 
 - **WHEN** examining the sidecar's `args`
-- **THEN** the `args` SHALL contain a `--cert-sans=<comma-separated DNS names>` entry covering at minimum the workerless-side service DNS names (`<service>.<namespace>.svc` and `<service>.<namespace>.svc.cluster.local`) the workerless API server's TLS handshake will SNI for
-- **AND** SHOULD additionally include the host-side service short name (e.g., `metal-operator-webhook-service`) to maintain compatibility with the production cert SAN during cutover and any direct URL-form clientConfigs that may exist
+- **THEN** the `args` SHALL contain `--cert-sans=metal-operator-webhook-service` (the host-side Service short name; resolves identically across all clusters via host-cluster CoreDNS from the workerless API server pod's `/etc/resolv.conf` search paths)
+- **AND** the `args` SHALL NOT contain workerless-side service DNS variants (`webhook-service.system.svc`, `webhook-service.system.svc.cluster.local`) — the admission webhook rewrites the workerless VWC's `clientConfig.Service` to URL form pointing at the host-side Service before any callback is attempted
+
+#### Scenario: `--external-host` and `--external-port` configured (required in patch mode)
+
+- **WHEN** examining the sidecar's `args`
+- **THEN** the `args` SHALL contain `--external-host=metal-operator-webhook-service` (target host for the Service→URL rewrite)
+- **AND** the `args` SHALL contain `--external-port=443` (target port matching the host-side webhook-service port, which forwards to the manager container's `containerPort: 9443`)
+
+#### Scenario: Admission-webhook bootstrap configured
+
+- **WHEN** examining the sidecar's `args`
+- **THEN** the `args` SHALL contain `--admission-webhook-name=metal-operator-webhook-injector-mutator` (per-consumer prefixed name to avoid collision with other webhook-injector consumers on the same workerless cluster in the future)
+- **AND** the `args` SHALL contain `--admission-external-port=9444` (port the workerless API server uses to reach the in-pod admission server, matching the `admission` port on the host-side Service)
+- **AND** the `args` MAY contain `--admission-webhook-port=9444` explicitly, or rely on the binary's default of `9444`
 
 #### Scenario: Sidecar args match production cluster customizations
 
@@ -22,6 +41,40 @@ The kustomize tree SHALL configure the webhook-injector sidecar container to run
 - **THEN** the `args` SHALL contain `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig`
 - **AND** SHALL contain `--leader-election-id=metal-operator-remote-webhook-injector-leader` (matches helm chart's hardcoded value verified on rt-eu-de-1)
 - **AND** SHALL contain `--cert-secret-name=metal-operator-remote-cert-secret-name` (matches helm chart's hardcoded value verified on rt-eu-de-1)
+
+#### Scenario: Sidecar exposes admission containerPort
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the webhook-injector initContainer SHALL declare `containerPort: 9444` with `name: admission` (in addition to the existing `metrics: 8082` and `health: 8083` ports), matching the in-pod admission server bind port
+
+---
+
+### Requirement: Webhook-injector admission webhook bootstrapped on workerless cluster
+
+In steady state, the workerless cluster SHALL contain a `MutatingWebhookConfiguration` named `metal-operator-webhook-injector-mutator`, bootstrapped by the webhook-injector sidecar (via remote-kubeconfig). This MWC's role is to make the periodic Service→URL rewrite **idempotent across re-applies** — without it, every Concourse / Flux reapply of the workerless VWC manifest would re-introduce the Service field (the `kubectl apply` 3-way merge re-injects fields from the unchanged source manifest), causing the apiserver's admission validation to reject the resulting state with `exactly one of url or service is required`. With the admission webhook present, the mutating phase rewrites Service→URL **before** validation, so the validating phase only ever sees URL form and the apply succeeds idempotently.
+
+The MWC SHALL be created by the sidecar; the kustomize tree SHALL NOT pre-render this MWC (it is bootstrapped at runtime). The kustomize tree's responsibility is limited to providing the sidecar with the flags needed to bootstrap correctly.
+
+#### Scenario: Admission MWC exists on workerless after first reconcile
+
+- **WHEN** the host kustomize root has been applied (webhook-injector sidecar running) AND the sidecar has completed at least one successful reconcile
+- **THEN** the workerless cluster SHALL contain a `MutatingWebhookConfiguration` named `metal-operator-webhook-injector-mutator`
+- **AND** the MWC SHALL have three webhook entries pointing at `/mutate-mwc`, `/mutate-vwc`, `/mutate-crd` paths
+- **AND** every entry's `clientConfig.url` SHALL be of the form `https://metal-operator-webhook-service:9444/mutate-{mwc,vwc,crd}`
+- **AND** every entry's `clientConfig.caBundle` SHALL be a valid CA bundle matching the sidecar's TLS cert
+- **AND** the MWC's `webhooks[*].objectSelector` SHALL match the management label (`webhook-injector.cloud.sap/managed=true`)
+
+#### Scenario: Admission MWC name follows per-consumer naming
+
+- **WHEN** examining the bootstrapped MWC on the workerless cluster
+- **THEN** the MWC name SHALL be `metal-operator-webhook-injector-mutator` (NOT the binary's default `webhook-injector-mutator`)
+- **AND** the prefix `metal-operator-` SHALL distinguish this MWC from any future webhook-injector consumer on the same workerless cluster
+
+#### Scenario: Admission MWC is empty-labeled (self-bootstrap exclusion)
+
+- **WHEN** examining the bootstrapped MWC on the workerless cluster
+- **THEN** `metadata.labels` SHALL be empty (or absent)
+- **AND** SHALL NOT contain `webhook-injector.cloud.sap/managed: "true"` — the sidecar handler short-circuits any MWC whose name equals `--admission-webhook-name`, but the empty-labels invariant is belt-and-suspenders
 
 ---
 
@@ -47,22 +100,33 @@ The `remote/upstream/webhooks/` kustomize tree SHALL apply a label to the worker
 
 ---
 
-### Requirement: Webhook-injector ServiceAccount granted narrowed RBAC for caBundle rotation
+### Requirement: Webhook-injector ServiceAccount granted target-cluster RBAC for patch mode + admission bootstrap
 
-The kustomize tree SHALL configure a ServiceAccount on the host cluster (used by the webhook-injector sidecar to authenticate to the workerless cluster via remote-kubeconfig) that, on the workerless cluster, is granted Kubernetes RBAC limited to `get` and `patch` verbs on `validatingwebhookconfigurations.admissionregistration.k8s.io` (and `mutatingwebhookconfigurations.admissionregistration.k8s.io` if applicable). The exact filtering and update behavior of the binary (which WebhookConfigurations it selects, which fields it updates, retry semantics) is the responsibility of the SAP-internal `webhook-injector` binary and is out of scope for this kustomize-tree spec.
+The kustomize tree SHALL configure a ServiceAccount on the host cluster (used by the webhook-injector sidecar to authenticate to the workerless cluster via remote-kubeconfig) that, on the workerless cluster, is granted Kubernetes RBAC sufficient to (a) periodically refresh `caBundle` and rewrite `clientConfig` on labeled `ValidatingWebhookConfiguration` (and optionally `MutatingWebhookConfiguration`) resources, AND (b) bootstrap the `metal-operator-webhook-injector-mutator` MutatingWebhookConfiguration on first reconcile.
 
-#### Scenario: ClusterRole on workerless has narrowed verbs
+The workerless-cluster RBAC SHALL be delivered via `cc/kube-secrets` (the remote-kubeconfig identity is managed there, not in this repository); the `cc/kube-secrets` overlay SHALL consume the upstream `webhook-injector//config/rbac.yaml` ClusterRole `webhook-injector-target` verbatim where possible (single source of truth for required verbs), overriding only the binding's `subjects` list to point at the remote-kubeconfig user identity. See `tasks.md` Section 16 for the cross-repo coordination note.
+
+The exact list of resource types and verbs the binary needs is the responsibility of the SAP-internal `webhook-injector` binary and propagates via consumption of upstream's ClusterRole; this kustomize-tree spec governs only the verb floor (what the sidecar MUST be able to do for patch mode + bootstrap to function).
+
+#### Scenario: Workerless ClusterRole grants MWC verbs including create
 
 - **WHEN** examining the workerless-cluster ClusterRole bound (via ClusterRoleBinding) to the ServiceAccount the sidecar authenticates as via remote-kubeconfig
-- **THEN** the granted verbs SHALL be limited to `get` and `patch` (and optionally `list`, `watch` if the binary requires them)
-- **AND** the granted resources SHALL be limited to `validatingwebhookconfigurations.admissionregistration.k8s.io` (and optionally `mutatingwebhookconfigurations.admissionregistration.k8s.io`)
-- **AND** the granted verbs SHALL NOT include `create`, `delete`, or `*` (broad wildcards)
+- **THEN** the granted verbs on `mutatingwebhookconfigurations.admissionregistration.k8s.io` SHALL include `create` (required for bootstrapping `metal-operator-webhook-injector-mutator`), `get`, `list`, `watch`, `update`, `patch`
+- **AND** the granted verbs on `validatingwebhookconfigurations.admissionregistration.k8s.io` SHALL include `get`, `list`, `watch`, `update`, `patch` (the existing periodic-rewrite path)
+- **AND** the granted verbs on `customresourcedefinitions.apiextensions.k8s.io` MAY include `get`, `list`, `watch`, `update`, `patch` (the binary uses these if any CRD carries the management label; harmless for our use case where no CRDs are labeled)
 
 #### Scenario: ClusterRole does not grant write access to other workerless resources
 
 - **WHEN** examining the same ClusterRole
-- **THEN** it SHALL NOT grant any verbs on resources outside `admissionregistration.k8s.io/v1`
-- **AND** SHALL NOT grant access to Secrets, ConfigMaps, CRDs, or any other resource categories on the workerless cluster
+- **THEN** it SHALL NOT grant any verbs on resources outside `admissionregistration.k8s.io/v1` and `apiextensions.k8s.io/v1`
+- **AND** SHALL NOT grant access to Secrets, ConfigMaps, Pods, or any other resource categories on the workerless cluster
+
+#### Scenario: ClusterRole consumed verbatim from upstream webhook-injector when possible
+
+- **WHEN** examining the kube-secrets per-cluster overlay's RBAC delivery for metal-operator-remote
+- **THEN** the overlay SHOULD reference upstream's `webhook-injector//config/rbac.yaml` ClusterRole `webhook-injector-target` directly via Git URL ref
+- **AND** the overlay SHALL override only the `ClusterRoleBinding/webhook-injector-target` `.subjects` list (substituting the remote-kubeconfig user identity for upstream's `webhook-injector` ServiceAccount reference)
+- **AND** the overlay MAY drop upstream's host-side `ServiceAccount`, `Role`, and `RoleBinding` (they are irrelevant on the workerless cluster)
 
 ---
 

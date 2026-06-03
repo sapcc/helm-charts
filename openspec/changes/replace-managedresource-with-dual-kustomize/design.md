@@ -2,6 +2,8 @@
 
 > Pre-filled from the brainstorming session. The OpenSpec `design` artifact (when promoted via `/opsx-continue`) may extend or refine this document; the brainstorm-stage content below is the architectural foundation.
 
+> **⚠️ ARCHITECTURAL PIVOT (post-PR-push, see "Why admission-webhook bootstrap, not ExternalName" section below).** This document was originally written assuming ExternalName-based routing on the workerless cluster + caBundle-only patch mode in the sidecar. Code-level inspection of [SAP-cloud-infrastructure/webhook-injector#10](https://github.com/SAP-cloud-infrastructure/webhook-injector/pull/10) v2 (HEAD `06b512f`) revealed `--external-host` is mandatory in patch mode (forces a Service→URL rewrite), and PR-10-v2 ships an admission-webhook bootstrap mechanism that solves a GitOps-reconciliation idempotency problem the ExternalName approach hadn't grappled with. ExternalName was independently a latent risk on Gardener ([k3s-io/k3s#6659](https://github.com/k3s-io/k3s/issues/6659)). The final architecture replaces ExternalName routing entirely with PR-10-v2 patch mode + admission-webhook bootstrap. **Read the "Why admission-webhook bootstrap, not ExternalName" section first**, then the rest of this document for context. Inline references to ExternalName / `system` namespace / `webhook-service-stub.yaml` / `upstream-no-svc/` throughout this doc remain as historical record of the pre-pivot exploration; the spec deltas in `specs/` are authoritative for the final state.
+
 ## Context
 
 `metal-operator-remote` deploys a metal-operator controller in a split-cluster topology: the controller pod runs on a **host cluster** (= workload cluster, Gardener seed, or any platform where the workerless control plane is co-located), while the resources it reconciles (CRDs, RBAC, custom RBAC, Namespace, webhook configurations) live on a **workerless cluster** (= remote cluster, Gardener shoot, just an API server with no nodes).
@@ -184,7 +186,155 @@ system/kustomize/metal-operator-remote/
 - `system/Makefile` targets `regen-metal-operator-remote*` (and any helper variables)
 - The `patches:` block in `remote/upstream/crds-and-rbac/kustomization.yaml` that converts upstream `Role` → `ClusterRole` and `RoleBinding` → `ClusterRoleBinding`
 
+## Why admission-webhook bootstrap, not ExternalName
+
+**(Final architecture — supersedes the "Webhook delivery via ExternalName + Git URL ref" section that follows.)**
+
+### Two findings that forced the pivot
+
+1. **`--external-host` is mandatory in PR-10-v2 patch mode.** Code inspection of `SAP-cloud-infrastructure/webhook-injector` branch `optional-webhook-config-and-crd-patching` at HEAD `06b512f`:
+
+   ```go
+   // cmd/webhook-injector/main.go ~L130-L142
+   if patchModeActive && externalHost == "" {
+       setupLog.Error(nil, "--external-host is required in patch mode")
+       os.Exit(1)
+   }
+   if patchModeActive && (externalPort < 1 || externalPort > 65535) {
+       setupLog.Error(nil, "--external-port is required in patch mode and must be in [1, 65535]", "value", externalPort)
+       os.Exit(1)
+   }
+   ```
+
+   The previous design ran patch mode without `--external-host` (caBundle-only refresh). The new binary refuses to start in that configuration. Either we provide an `--external-host`/`--external-port` (which triggers Service→URL rewrite on every reconcile) or we use ConfigMap mode (which we don't want).
+
+2. **Service→URL rewrite without admission interception breaks GitOps reconciliation.** The K8s admissionregistration validation explicitly rejects resources where both `clientConfig.Service` and `clientConfig.URL` are set:
+
+   ```go
+   // pkg/apis/admissionregistration/validation/validation.go
+   case (cc.URL == nil) == (cc.Service == nil):
+       allErrors = append(allErrors, field.Required(fldPath.Child("clientConfig"),
+           "exactly one of url or service is required"))
+   ```
+
+   Without admission interception, every Concourse re-apply re-introduces the Service field via `kubectl apply`'s 3-way merge (last-applied-annotation: Service form; new manifest: Service form, unchanged; live state: URL form set by the periodic sidecar reconciler). Merge result has both fields set → validation rejects the apply. Server-Side Apply with field-manager separation doesn't fix this — validation runs after merge regardless of ownership.
+
+### How admission-webhook bootstrap solves both
+
+PR-10-v2 ships an admission-webhook bootstrap mechanism (new in this revision of the PR). When `--admission-webhook-name` is set in patch mode (default `webhook-injector-mutator`), the controller bootstraps a `MutatingWebhookConfiguration` on the **target cluster** (= workerless cluster in our topology) whose `objectSelector` matches `--webhook-label`. This MWC has three webhook entries pointing at `/mutate-mwc`, `/mutate-vwc`, `/mutate-crd` paths served by the controller's in-pod admission server. CREATE/UPDATE on labeled MWC/VWC/CRD resources is mutated synchronously — `caBundle` is stamped and `clientConfig.Service` is rewritten to `clientConfig.URL` form **at admission time**, so the workerless apiserver only ever **stores** URL form. Re-applies become idempotent:
+
+```
+Concourse re-apply → kubectl apply -k remote/        (Service form)
+                  ↓
+Workerless apiserver → mutating-admission phase     (mutator rewrites Service → URL)
+                  ↓
+                  → validating-admission phase      (only URL set → passes)
+                  ↓
+                  → etcd                             (URL form stored)
+```
+
+The periodic reconciler stays as a drift safety net; the admission webhook is the primary mechanism. Webhook entries use `failurePolicy: Ignore`, `sideEffects: None`, `timeoutSeconds: 5` (per PR description) — so the workerless cluster's writes to labeled webhook configs continue to work even when webhook-injector itself is down (degraded-mode tolerance).
+
+### Why not ExternalName
+
+ExternalName routing was independently a latent risk on Gardener: k3s/Gardener default `--enable-aggregator-routing=true` rejects ExternalName for webhook clientConfig per [k3s-io/k3s#6659](https://github.com/k3s-io/k3s/issues/6659). The aggregator-routing feature gate makes the apiserver bypass cluster DNS for webhook Service resolution — it queries the Service object directly and routes to Pod IPs from the Service's selector. ExternalName has no Pod IPs (the externalName field is a CNAME for DNS, not a selector for endpoints), so the apiserver's webhook router can't dispatch the call. The pivot to admission-webhook bootstrap eliminates the dependency on ExternalName entirely.
+
+### Final architecture (steady state)
+
+```
+┌─────────────────────────────── HOST CLUSTER ───────────────────────────────┐
+│                                                                            │
+│  controller-manager Pod                                                    │
+│  ├── manager container (port 9443, webhook server)                         │
+│  └── webhook-injector sidecar initContainer                                │
+│      ├── --webhook-label=webhook-injector.cloud.sap/managed=true           │
+│      ├── --external-host=metal-operator-webhook-service                    │
+│      ├── --external-port=443                                               │
+│      ├── --admission-webhook-name=metal-operator-webhook-injector-mutator  │
+│      ├── --admission-external-port=9444                                    │
+│      └── in-pod admission server (port 9444)                               │
+│                                                                            │
+│  Service metal-operator-webhook-service                                    │
+│    ports:                                                                  │
+│      - name: webhook,    port: 443  → targetPort 9443  (manager webhook)   │
+│      - name: admission,  port: 9444 → targetPort 9444  (sidecar admission) │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+                                ▲
+                                │ DNS via host-cluster CoreDNS
+                                │ (workerless apiserver Pod's /etc/resolv.conf)
+                                │
+┌─────────────────────── WORKERLESS CLUSTER ─────────────────────────────────┐
+│                                                                            │
+│  ValidatingWebhookConfiguration validating-webhook-configuration           │
+│    metadata.labels.webhook-injector.cloud.sap/managed: "true"              │
+│    webhooks[*].clientConfig:                                               │
+│      build-time:  service: { name: webhook-service, namespace: system }    │
+│      stored:      url: https://metal-operator-webhook-service:443/<path>   │
+│                   caBundle: <base64 cert from sidecar>                     │
+│                                                                            │
+│  MutatingWebhookConfiguration metal-operator-webhook-injector-mutator      │
+│    (bootstrapped by sidecar on first reconcile; not in git)                │
+│    objectSelector: webhook-injector.cloud.sap/managed=true                 │
+│    webhooks:                                                               │
+│      - /mutate-mwc                                                         │
+│      - /mutate-vwc  ← intercepts the VWC above on every CREATE/UPDATE      │
+│      - /mutate-crd                                                         │
+│    All entries: clientConfig.url =                                         │
+│      https://metal-operator-webhook-service:9444/mutate-{mwc,vwc,crd}      │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+No ExternalName Service. No `system` Namespace (the upstream `service.yaml` is not applied to the workerless cluster — we consume only `manifests.yaml`). The VWC's `clientConfig.service.namespace=system` field reference is harmless: K8s does not validate Service existence at VWC apply time, and admission rewrite replaces it with URL form before any callback fires.
+
+### Bootstrap-window risk and mitigation
+
+On a **fresh install** of a new workerless cluster, the order between `host/` apply (brings up sidecar → bootstraps the admission webhook on the workerless cluster) and `remote/` apply (delivers the labeled VWC) matters. If `remote/` lands first, the VWC enters the workerless apiserver in Service form pointing at a non-existent Service, and upstream's `failurePolicy: Fail` × 7 webhook entries (BiosSettings, BiosVersion, BmcSecret, BmcSettings, BmcVersion, Endpoint, Server) blocks all metal3 CRD writes until the periodic reconciler recovers (up to one `--sync-period`). Mitigation lives in the Concourse pipeline (`cc/kube-secrets`): a gate task between the two apply jobs that polls for the bootstrapped MWC:
+
+```
+kubectl --kubeconfig=$REMOTE_KUBECONFIG \
+  wait --for=jsonpath='{.metadata.name}'=metal-operator-webhook-injector-mutator \
+  mutatingwebhookconfiguration/metal-operator-webhook-injector-mutator \
+  --timeout=5m
+```
+
+The gate is idempotent (instant return on subsequent runs once the MWC exists). See `tasks.md` Section 16.14 and `plan.md` Task 14.6 for full coordination notes.
+
+### RBAC widening (cross-repo)
+
+The remote-kubeconfig identity (delivered via `cc/kube-secrets`) needs `mutatingwebhookconfigurations` `create,get,list,watch,update,patch` on the workerless cluster (to bootstrap `metal-operator-webhook-injector-mutator`), in addition to the existing `validatingwebhookconfigurations` verbs. The recommended pattern is to consume upstream's canonical target-cluster RBAC verbatim:
+
+```yaml
+# cc/kube-secrets per-cluster overlay
+resources:
+  - https://github.com/SAP-cloud-infrastructure/webhook-injector//config/rbac.yaml?ref=<tag>
+patches:
+  # Override only the binding subjects to point at the remote-kubeconfig user identity
+  - target: { kind: ClusterRoleBinding, name: webhook-injector-target }
+    patch: |
+      - op: replace
+        path: /subjects
+        value:
+          - kind: User
+            name: <remote-kubeconfig user>
+            apiGroup: rbac.authorization.k8s.io
+  # Drop upstream's host-side SA/Role/RoleBinding (irrelevant on workerless)
+  - target: { kind: ServiceAccount, name: webhook-injector }
+    patch: '$patch: delete'
+  - target: { kind: Role, name: webhook-injector }
+    patch: '$patch: delete'
+  - target: { kind: RoleBinding, name: webhook-injector }
+    patch: '$patch: delete'
+```
+
+This avoids a hand-rolled verb list and auto-inherits any future RBAC widening from upstream (e.g., new resource types).
+
+---
+
 ## Webhook delivery via ExternalName + Git URL ref
+
+> **⚠️ HISTORICAL — superseded by "Why admission-webhook bootstrap, not ExternalName" above.** The ExternalName approach described in this section was the original architecture during brainstorming, but was discarded during PR review (see pivot callout at top of file). The content below remains as record of the design exploration.
 
 ```
 ┌──────────────────── helm-charts ─────────────────────────────────────┐

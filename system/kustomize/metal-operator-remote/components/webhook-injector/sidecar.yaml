@@ -15,35 +15,60 @@ spec:
         - name: webhook-injector
           restartPolicy: Always
           image: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector:latest
-          # Patch mode (per webhook-injector PR #10 v2: label-based selection,
-          # caBundle-only refresh, no URL/Service rewriting). The sidecar reads
-          # the workerless ValidatingWebhookConfiguration matching the
-          # --webhook-label selector and refreshes its caBundle field. Does NOT
-          # create resources, does NOT rewrite clientConfig.URL, does NOT clear
-          # clientConfig.Service. The workerless remote/ kustomize root delivers
-          # the WebhookConfiguration directly (carrying the matching label).
+          # Patch mode with admission-webhook bootstrap (per webhook-injector
+          # PR #10 v2). The sidecar:
+          #   1. Bootstraps `metal-operator-webhook-injector-mutator` MWC on
+          #      the workerless cluster (via remote-kubeconfig).
+          #   2. Periodically refreshes caBundle and rewrites
+          #      clientConfig.Service → clientConfig.URL on labeled VWC/MWC
+          #      resources matching --webhook-label.
+          #   3. Serves the bootstrapped admission webhook in-pod, so every
+          #      CREATE/UPDATE on labeled webhook configs is rewritten
+          #      synchronously at admission time. This keeps re-applies
+          #      idempotent: the K8s 3-way merge re-introduces the Service
+          #      field from the unchanged source manifest, but the mutator
+          #      strips it before validation, so the apiserver only ever
+          #      stores URL form.
           #
           # Cutover-gated on SAP-cloud-infrastructure/webhook-injector#10
           # merging + a new binary image being published. PR can land on master
           # regardless (Concourse pipeline triggers stay disabled until cutover).
           args:
             - --webhook-label=webhook-injector.cloud.sap/managed=true
-            # cert-sans covers production cert SAN (URL-form compat) +
-            # Scope 3 Service-form SNI for the workerless API server's TLS
-            # connection (workerless API server constructs URL
-            # https://webhook-service.system.svc:443/<path> from the
-            # ValidatingWebhookConfiguration's clientConfig.service field).
-            - --cert-sans=metal-operator-webhook-service,webhook-service.system.svc,webhook-service.system.svc.cluster.local
+            # Single SAN: the host-side Service short name. Resolves identically
+            # across all clusters via host-cluster CoreDNS from the workerless
+            # API server pod's /etc/resolv.conf search paths. Workerless-side
+            # SVC variants (webhook-service.system.svc[.cluster.local]) are not
+            # needed because admission rewrites Service→URL before any callback.
+            - --cert-sans=metal-operator-webhook-service
             - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
             # Sidecar-internal config matching helm chart's hardcoded values
             # (verified live on rt-eu-de-1's shoot deployment).
             - --leader-election-id=metal-operator-remote-webhook-injector-leader
             - --cert-secret-name=metal-operator-remote-cert-secret-name
+            # Service→URL rewrite target. The admission webhook (and the
+            # periodic reconciler) writes
+            # clientConfig.URL = https://metal-operator-webhook-service:443/<path>
+            # on every CREATE/UPDATE of labeled VWC/MWC resources.
+            - --external-host=metal-operator-webhook-service
+            - --external-port=443
+            # Admission webhook bootstrap. Per-consumer prefixed name avoids
+            # collision if another component on the workerless cluster ever
+            # also uses webhook-injector patch mode in the future.
+            - --admission-webhook-name=metal-operator-webhook-injector-mutator
+            # Port the workerless API server reaches the in-pod admission
+            # server on, via the host Service's `admission` port forward
+            # (see host/base/webhook-service.yaml).
+            - --admission-external-port=9444
           ports:
             - name: metrics
               containerPort: 8082
             - name: health
               containerPort: 8083
+            # In-pod admission server (default --admission-webhook-port).
+            # Forwarded by the host Service's `admission` port (9444 → 9444).
+            - name: admission
+              containerPort: 9444
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

@@ -4,9 +4,19 @@ metadata:
   name: metal-operator-webhook-service
 spec:
   ports:
-    - port: 443
+    - name: webhook
+      port: 443
       protocol: TCP
       targetPort: 9443
+    # Admission server exposed by the webhook-injector sidecar (in-pod port
+    # 9444). The workerless API server reaches the bootstrapped
+    # `metal-operator-webhook-injector-mutator` MWC at
+    # https://metal-operator-webhook-service:9444/mutate-{mwc,vwc,crd}.
+    # Port number must match the sidecar's --admission-external-port flag.
+    - name: admission
+      port: 9444
+      protocol: TCP
+      targetPort: 9444
   selector:
     app.kubernetes.io/name: metal-operator
     control-plane: controller-manager

@@ -115,51 +115,84 @@ The `remote/upstream/crds-and-rbac/` kustomization SHALL apply upstream RBAC res
 
 ---
 
-### Requirement: Workerless cluster receives system namespace and webhook-service ExternalName
+### Requirement: Workerless webhooks consume only upstream's VWC manifest
 
-The `remote/upstream/webhooks/` kustomize tree SHALL produce two additional resources on the workerless cluster: (a) a `Namespace` named `system`, and (b) a `Service` named `webhook-service` in namespace `system` with `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`. These resources bridge upstream's `clientConfig.service: webhook-service/system` reference to the host cluster's actual `metal-operator-webhook-service` via the API server pod's DNS search paths, eliminating the need for any URL rewrite of the webhook configuration.
+The `remote/upstream/webhooks/` kustomize tree SHALL consume **only** upstream metal-operator's `config/webhook/manifests.yaml` file (the `ValidatingWebhookConfiguration`), NOT the whole `config/webhook/` directory. Upstream's `service.yaml` (a regular ClusterIP Service in the `system` namespace) SHALL NOT be applied to the workerless cluster — it is endpointless on workerless (the manager Pod runs in the host cluster) and is never used for webhook callbacks in steady state, because the webhook-injector admission webhook rewrites `clientConfig.Service` → `clientConfig.URL` synchronously at admission time. The VWC's `clientConfig.service.namespace: system` field reference is harmless: K8s does not validate Service existence at VWC apply time; the namespace string is only resolved when the apiserver actually invokes the webhook, and that path is replaced by the URL form via admission rewrite before any callback fires.
 
-#### Scenario: System namespace landed on workerless
+NO ExternalName Service SHALL be added (k3s/Gardener default `--enable-aggregator-routing=true` rejects ExternalName for webhook clientConfig per [k3s-io/k3s#6659](https://github.com/k3s-io/k3s/issues/6659)). NO `system` Namespace SHALL be produced — without an upstream Service applied, no resource on the workerless cluster needs that namespace to exist. The kustomize tree SHALL apply the management label patch on the VWC (defined in `kustomize-sidecar-injection`) but otherwise consume the upstream VWC verbatim.
 
-- **WHEN** the kube-secrets per-cluster overlay's `remote/` subpath is applied to the workerless cluster
-- **THEN** the workerless cluster SHALL contain a `Namespace` named `system`
+#### Scenario: Webhooks tree references manifests.yaml directly, not the directory
 
-#### Scenario: webhook-service ExternalName Service landed on workerless
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/upstream/webhooks/kustomization.yaml`
+- **THEN** the `resources:` field SHALL contain `https://github.com/ironcore-dev/metal-operator//config/webhook/manifests.yaml?ref=<tag>` (a file URL, not a directory URL)
+- **AND** SHALL NOT contain `https://github.com/ironcore-dev/metal-operator//config/webhook?ref=<tag>` (the directory URL would pull in `service.yaml` as well)
 
-- **WHEN** the kube-secrets per-cluster overlay's `remote/` subpath is applied to the workerless cluster
-- **THEN** the workerless cluster SHALL contain a `Service` named `webhook-service` in namespace `system`
-- **AND** that Service SHALL have `spec.type: ExternalName`
-- **AND** that Service SHALL have `spec.externalName: metal-operator-webhook-service`
+#### Scenario: No upstream Service on workerless, no system namespace
 
-#### Scenario: ExternalName value identical for all clusters
+- **WHEN** `kustomize build system/kustomize/metal-operator-remote/remote/` is executed
+- **THEN** the output SHALL NOT contain a `Service` named `webhook-service` (in any namespace)
+- **AND** the output SHALL NOT contain a `Namespace` named `system`
+- **AND** the output SHALL NOT contain a `Service` of `spec.type: ExternalName`
 
-- **WHEN** comparing the `spec.externalName` value across `kustomize build` outputs of any per-cluster kube-secrets overlay's `remote/` subpath
-- **THEN** the `spec.externalName` value SHALL be `metal-operator-webhook-service` for every cluster
-- **AND** no per-cluster overlay SHALL be required to patch the `externalName` field
+#### Scenario: Webhooks subtree is minimal
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/upstream/webhooks/`
+- **THEN** there SHALL be no file named `webhook-service-stub.yaml`
+- **AND** there SHALL be no file named `system-namespace.yaml`
+- **AND** there SHALL be no `upstream-no-svc/` subdirectory (the inner-layer Service-strip workaround)
+- **AND** the directory SHALL contain only `kustomization.yaml` (the upstream URL ref, the management label patch on the VWC, and nothing else)
 
 ---
 
-### Requirement: Webhook delivery via ExternalName routing
+### Requirement: Webhook delivery via Service→URL rewrite at admission time
 
-Webhook callbacks from the workerless API server to the host cluster's webhook server SHALL be routed via the `webhook-service` ExternalName Service in the workerless cluster's `system` namespace. The workerless `ValidatingWebhookConfiguration` SHALL use `clientConfig.service: { name: webhook-service, namespace: system, path: /<…> }` form (matching upstream's verbatim configuration). NO `clientConfig.url` rewrite SHALL be performed at any layer (build time, deploy time, or runtime). NO local `webhook-config` ConfigMap SHALL be deployed on the host cluster.
+Webhook callbacks from the workerless API server to the host cluster's webhook server SHALL be routed via `clientConfig.URL = https://metal-operator-webhook-service:443/<path>` after the webhook-injector admission webhook (bootstrapped on the workerless cluster — see `kustomize-sidecar-injection` capability) intercepts every CREATE/UPDATE on labeled `ValidatingWebhookConfiguration` and `MutatingWebhookConfiguration` resources and rewrites Service-form `clientConfig` to URL form. The kustomize-built manifest in `remote/` SHALL ship the VWC in upstream's verbatim Service form; the URL form is materialized in etcd at admission time, not at build time. The workerless API server's actual webhook callback SHALL connect to `metal-operator-webhook-service` in the host cluster (resolved via the workerless API server pod's `/etc/resolv.conf` search paths to the host cluster's CoreDNS).
 
-#### Scenario: Workerless ValidatingWebhookConfiguration uses service form
+NO `clientConfig.url` substitution SHALL be performed at build time or deploy time. NO local `webhook-config` ConfigMap SHALL be deployed on the host cluster.
+
+#### Scenario: Workerless VWC ships in Service form (build-time)
 
 - **WHEN** examining the `ValidatingWebhookConfiguration` produced by `kustomize build remote/`
 - **THEN** every `webhooks[*].clientConfig` SHALL contain a `service: { name, namespace, path }` field
 - **AND** no `webhooks[*].clientConfig` SHALL contain a `url` field
+- **AND** no caBundle SHALL be present (per the existing "Kustomize tree must not emit caBundle" requirement)
+
+#### Scenario: Steady-state stored VWC has clientConfig.URL (runtime)
+
+- **WHEN** examining the workerless cluster's stored `ValidatingWebhookConfiguration` after the webhook-injector admission webhook has been bootstrapped and at least one Flux/Concourse apply has occurred
+- **THEN** every `webhooks[*].clientConfig` SHALL contain a `url` field of the form `https://metal-operator-webhook-service:443/<path>`
+- **AND** no `webhooks[*].clientConfig` SHALL contain a `service` field
+- **AND** every `webhooks[*].clientConfig.caBundle` SHALL be a valid CA bundle matching the TLS cert served by the host cluster's webhook service
+
+#### Scenario: Reapplying the manifest is idempotent (the GitOps invariant)
+
+- **WHEN** Concourse/Flux reapplies `kustomize build remote/` (manifest is Service form, unchanged from previous apply)
+- **THEN** the workerless API server's mutating-admission phase SHALL invoke `metal-operator-webhook-injector-mutator` which rewrites `clientConfig.Service` → `clientConfig.URL`
+- **AND** the validating-admission phase SHALL accept the resulting URL-form (only `url` set, not `service`)
+- **AND** the apply SHALL NOT error with `exactly one of url or service is required` (the K8s admissionregistration validation gate)
+- **AND** the apply SHALL succeed regardless of how many times it is retried
 
 #### Scenario: No local webhook-config ConfigMap on host
 
 - **WHEN** examining the output of `kustomize build host/base/`
 - **THEN** the output SHALL NOT contain a `ConfigMap` named `webhook-config`
 
-#### Scenario: Webhook callback resolves via ExternalName CNAME
+---
 
-- **WHEN** the workerless API server invokes a webhook with `clientConfig.service: webhook-service/system`
-- **THEN** the API server SHALL look up the Service in the workerless cluster's etcd
-- **AND** finding the ExternalName Service, SHALL resolve `metal-operator-webhook-service` via the API server pod's `/etc/resolv.conf` search paths to the host cluster's `metal-operator-webhook-service` ClusterIP
-- **AND** SHALL successfully connect to the host cluster's webhook server
+### Requirement: Host webhook Service exposes admission webhook server port
+
+The host cluster's `metal-operator-webhook-service` Service SHALL expose two named ports: (a) the existing `webhook` port forwarding to the manager container's webhook server, and (b) a new `admission` port forwarding to the webhook-injector sidecar's in-pod admission server. The admission port SHALL match the `--admission-external-port` flag value configured on the sidecar (default `9444`), so the workerless cluster's bootstrapped `metal-operator-webhook-injector-mutator` MWC reaches the sidecar at `https://metal-operator-webhook-service:<admission-external-port>/mutate-{mwc,vwc,crd}` resolvable from the workerless API server pod via host-cluster CoreDNS.
+
+#### Scenario: Service exposes admission port
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the `Service` named `metal-operator-webhook-service` SHALL contain a port entry with `name: admission, port: 9444, protocol: TCP, targetPort: 9444` (in addition to the existing `name: webhook, port: 443, targetPort: 9443` entry for the manager's webhook server)
+
+#### Scenario: Existing webhook port unchanged
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the `Service` `metal-operator-webhook-service` SHALL still contain a port entry with `port: 443, protocol: TCP, targetPort: 9443` and `name: webhook`
+- **AND** the Service's `selector` SHALL still match `control-plane: controller-manager, app.kubernetes.io/name: metal-operator` (Pod hosts both manager container and webhook-injector sidecar)
 
 ---
 
