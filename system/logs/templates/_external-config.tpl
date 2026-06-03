@@ -4,7 +4,7 @@ webhookevent/external-alerts:
 
 tcplog/external-deployments:
   listen_address: "0.0.0.0:{{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.deployments_port}}"
-  operators:
+#  operators:
 #  - id: type
 #    type: add
 #    field: attributes["log.type"]
