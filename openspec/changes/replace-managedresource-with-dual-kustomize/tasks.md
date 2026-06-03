@@ -317,6 +317,6 @@ This section captures a substantive architectural pivot identified during cross-
   - `proposal.md` "What changes" section: replace the ExternalName-routing description with admission-webhook-bootstrap.
   - `design.md`: add a new top-level section "Why admission-webhook bootstrap, not ExternalName" referencing PR-10-v2's Q1 finding (`--external-host` mandatory, code @ `06b512f`) and k3s#6659 (ExternalName latent risk on Gardener).
 
-- [ ] 16.17 Commit on `poc/kustomize-metal-operator-remote`. Use `git add` for the specific paths only; no `git add -A`. Suggested message: `refactor(metal-operator-remote): pivot to PR-10-v2 admission-webhook bootstrap`. Push to origin.
+- [x] 16.17 Commit on `poc/kustomize-metal-operator-remote`. Use `git add` for the specific paths only; no `git add -A`. Suggested message: `refactor(metal-operator-remote): pivot to PR-10-v2 admission-webhook bootstrap`. Push to origin.
 
-- [ ] 16.18 Update PR #11633 description's Scope 3 section: replace the ExternalName-routing paragraph with the admission-webhook-bootstrap paragraph; mention the cc/kube-secrets coordination note (RBAC widening + pipeline gate); update the cutover-gating paragraph if the gating reasoning has shifted (now also gated on cc/kube-secrets pipeline gate task being merged, in addition to the webhook-injector binary release).
+- [x] 16.18 Update PR #11633 description's Scope 3 section: replace the ExternalName-routing paragraph with the admission-webhook-bootstrap paragraph; mention the cc/kube-secrets coordination note (RBAC widening + pipeline gate); update the cutover-gating paragraph if the gating reasoning has shifted (now also gated on cc/kube-secrets pipeline gate task being merged, in addition to the webhook-injector binary release).
