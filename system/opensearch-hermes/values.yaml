@@ -93,7 +93,7 @@ global:
     suffix: DEFINED_IN_VALUES_FILE
 
 auth:
-  ca_path: certs/admin/tls.crt
+  ca_path: certs/rest/ca.crt
 
 retention:
   ds: "365d"
@@ -219,9 +219,11 @@ opensearch_hermes:
     size: 100Gi
     image: "library/busybox"
   clusterName: "opensearch-hermes"
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "nodes-cert,opensearch-hermes-ca-secret"
   secretMounts:
     - name: opensearch-certificates
-      secretName: cert-manager
+      secretName: nodes-cert
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0700
   plugins:
@@ -270,9 +272,11 @@ opensearch_hermes_master:
     size: 1Gi
     image: "library/busybox"
   clusterName: "opensearch-hermes"
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "nodes-cert,opensearch-hermes-ca-secret"
   secretMounts:
     - name: opensearch-certificates
-      secretName: cert-manager
+      secretName: nodes-cert
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0700
   plugins:

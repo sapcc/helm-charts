@@ -22,15 +22,9 @@ rabbitmq {
 
 filter {
   # Drop events with action "read/list"
-  # Barbican records reads, but has multiple events per read. 
-  # This will keep it to one event per action 
+  # Barbican records reads, but has multiple events per read.
+  # This will keep it to one event per action
   if ([action] == "read/list" or [action] == "read/get") {
-    drop { }
-  }
-
-  # Drop liveliness check events that serve no value
-  # Everything in audit-default adds no value, internal communication
-  if [initiator][domain_id] == "default" {
     drop { }
   }
 
@@ -524,7 +518,11 @@ output {
       index => "hermes"
       action => "create"
       manage_template => false
+      {{- if .Values.global.gardener.enabled }}
+      hosts => ["https://opensearch-hermes.hermes.svc.cluster.local:{{.Values.hermes_elasticsearch_port}}"]
+      {{- else}}
       hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
+      {{- end}}
       auth_type => {
         type => 'basic'
         user => "${OPENSEARCH_USER}"
@@ -533,6 +531,9 @@ output {
       retry_max_interval => 10
       validate_after_inactivity => 1000
       ssl => true
+      {{- if .Values.global.gardener.enabled }}
+      cacert => ["/etc/logstash/certs/ca.crt"]
+      {{- end}}
       ssl_certificate_verification => true
     }
   }
