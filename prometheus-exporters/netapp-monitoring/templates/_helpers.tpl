@@ -75,13 +75,13 @@ Defaults:
 
 {{- define "netapp-monitoring.credentials-entry" -}}
 {{- if eq .Values.netappsd.credentials_secret "local-basic-auth" -}}
-{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/harvest/harvest-ad/local-user") }}
+{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/shared/harvest/harvest-ad/local-user") }}
 {{- else if eq .Values.netappsd.credentials_secret "sci-basic-auth" -}}
-{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/harvest/harvest-ad/sci-user") }}
+{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/shared/harvest/harvest-ad/sci-user") }}
 {{- else if eq .Values.netappsd.credentials_secret "hec-basic-auth" -}}
-{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/harvest/harvest-ad/hec-user") }}
+{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/shared/harvest/harvest-ad/hec-user") }}
 {{- else if eq .Values.netappsd.credentials_secret "internal-basic-auth" -}}
-{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/harvest/harvest-ad/internal-user") }}
+{{ include "netapp-monitoring.defaultCredentialsYaml" (dict "SecretPath" "vault+kvv2:///secrets/shared/harvest/harvest-ad/internal-user") }}
 {{- end }}
 {{- end }}
 
