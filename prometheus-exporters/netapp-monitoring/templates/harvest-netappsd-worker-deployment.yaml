@@ -1,0 +1,144 @@
+{{- if .Values.netappsd.enabled }}
+{{- range $appName, $appValues := .Values.apps }}
+{{- if $appValues.enabled }}
+{{- with $ }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "netapp-monitoring.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: poller
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: storage
+      labels:
+        app: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}
+        name: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-worker
+    spec:
+      serviceAccountName: netappsd
+      containers:
+        - name: poller
+          image: "{{ .Values.harvest.image }}:{{ .Values.harvest.tag }}"
+          command: ["/busybox/sh"]
+          args:
+            - /app/scripts/start-poller.sh
+          ports:
+            - name: metrics
+              containerPort: 13000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 13000
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 13000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.harvest.resources | nindent 12 }}
+          volumeMounts:
+            - name: shared
+              mountPath: /app/shared
+            - name: harvest-sd-config
+              mountPath: /app/scripts/start-poller.sh
+              subPath: start-poller.sh
+            - name: basic-auth
+              mountPath: {{ .Values.netappsd.credentials_file }}
+              subPath: {{ .Values.netappsd.credentials_secret }}.yml
+              readOnly: true
+          securityContext:
+            {{- toYaml .Values.harvest.securityContext | nindent 12 }}
+        - name: worker
+          image: "{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}"
+          imagePullPolicy: {{ .Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
+          command: ["/netappsd", "worker"]
+          args:
+            - --master-url
+            - http://{{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:{{ .Values.netappsd.ports.metrics }}
+            - --listen-addr
+            - :8080
+            - --template-file
+            - /app/harvest.yaml.tpl
+            - --output-file
+            - /app/shared/harvest.yaml
+          env:
+            - name: NETAPP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-monitoring.fullname" . }}
+                  key: netappUsername
+            - name: NETAPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "netapp-monitoring.fullname" . }}
+                  key: netappPassword
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: liveness
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.netappsd.resources | nindent 12 }}
+          volumeMounts:
+            - name: harvest-sd-config
+              mountPath: /app/harvest.yaml.tpl
+              subPath: harvest.yaml.tpl
+            - name: shared
+              mountPath: /app/shared
+      volumes:
+        - name: harvest-sd-config
+          configMap:
+            name: {{ include "netapp-monitoring.fullname" . }}-sd-config
+        - name: shared
+          emptyDir: {}
+        - name: basic-auth
+          secret:
+            secretName: {{ .Values.netappsd.credentials_secret }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
