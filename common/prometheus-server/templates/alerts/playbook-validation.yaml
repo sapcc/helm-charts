@@ -1,0 +1,37 @@
+{{- $root := . }}
+{{- if .Values.alertmanagers.hosts }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "prometheus.fullName" (list $name $root) }}-playbook-validation
+  labels:
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $.Values.alerts.prometheus }}
+
+spec:
+  groups:
+    - name: alert-validation
+      interval: 30s
+      rules:
+        - alert: InvalidPlaybookLabel
+          expr: |
+            ALERTS{alertstate="firing", playbook!~"https?://.*"}
+          for: 5m
+          labels:
+            severity: warning
+            playbook: docs/support/playbook/prometheus/invalid_playbook_label
+          annotations:
+            summary: "Alert {{`{{ $labels.alertname }}`}} has invalid or missing playbook label"
+            description: |
+              Alert "{{`{{ $labels.alertname }}`}}" in namespace "{{`{{ $labels.namespace }}`}}" 
+              has a playbook label that doesn't match the required format.
+              Current value: {{`{{ $labels.playbook }}`}}
+              Expected format: Must start with http:// or https://
+              
+              This indicates that the playbook label was not properly transformed by the 
+              alertmanager relabel configuration, or the alert definition has an invalid playbook value.
+
+{{- end }}
+{{- end }}
