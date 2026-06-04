@@ -70,6 +70,18 @@ filter {
     ]
   }
 
+  # Set @timestamp from the CADF eventTime so every output (OpenSearch,
+  # Octobus, S3, Kafka) reflects when the audited action happened, not
+  # when Logstash saw the event. Must run after f05's ISO8601 format fix.
+  # On parse failure we tag instead of failing closed: the event still
+  # ships with @timestamp = ingest time, surfaced for debugging.
+  date {
+    id => "f05a_eventtime_to_timestamp"
+    match => [ "eventTime", "ISO8601" ]
+    target => "@timestamp"
+    tag_on_failure => ["_eventtime_parse_failure"]
+  }
+
   # Keystone specific transformations to compensate for scope missing from initiator element
   # When scope is missing from initiator, get it from action-specific parameters
   if ![initiator][project_id] and ![initiator][domain_id] {
