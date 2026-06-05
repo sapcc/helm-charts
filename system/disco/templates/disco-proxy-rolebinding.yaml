@@ -1,3 +1,4 @@
+{{- if .Values.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -8,5 +9,11 @@ roleRef:
   name: disco-proxy-role
 subjects:
 - kind: ServiceAccount
-  name: disco-controller-manager
+  {{- if .Values.remote.enabled }}
+  name: {{ .Values.remote.clusterRoleBindings.subjectName | default .Values.serviceAccount.name }}
+  namespace: {{ .Values.remote.clusterRoleBindings.subjectNamespace | default .Release.Namespace }}
+  {{- else }}
+  name: {{ .Values.serviceAccount.name }}
   namespace: {{ .Release.Namespace }}
+  {{- end }}
+{{- end }}

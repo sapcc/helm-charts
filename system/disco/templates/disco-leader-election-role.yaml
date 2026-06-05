@@ -1,7 +1,13 @@
+{{- if .Values.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: disco-leader-election-role
+  {{- if .Values.remote.enabled }}
+  namespace: {{ .Values.remote.role.namespace | default .Release.Namespace }}
+  {{- else }}
+  namespace: {{ .Release.Namespace }}
+  {{- end }}
 rules:
 - apiGroups:
   - ""
@@ -34,3 +40,4 @@ rules:
   verbs:
   - create
   - patch
+{{- end }}
