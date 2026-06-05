@@ -373,7 +373,7 @@ This section captures gaps found by rendering the helm chart with `cc/kube-secre
 
 - [x] 17.9 Update `proposal.md` "What changes" section briefly mentioning the additional 4 NetworkPolicies and the cutover decision (a/b/c).
 
-- [ ] 17.10 Update PR #11633 description: add a row to the Scope 3 "What changed" sub-section documenting the NP additions; add the cutover decision (a/b/c) and the documented runbook (or `commonLabels` bridge) to the "Pre-merge gates" or a new "Cutover runbook" sub-section.
+- [x] 17.10 Update PR #11633 description: add a row to the Scope 3 "What changed" sub-section documenting the NP additions; add the cutover decision (a/b/c) and the documented runbook (or `commonLabels` bridge) to the "Pre-merge gates" or a new "Cutover runbook" sub-section.
 
 - [ ] 17.11 Cross-repo: in the `cc/kube-secrets` companion PR's `verify.md`, add a "Helm-vs-kustomize equivalence verification (PASS WITH WARNINGS)" section that captures the comparison evidence (helm-rendered vs kustomize-built diff for `a-qa-de-200`/k3s-admin), lists the 7 gaps, and cross-links to this repo's `tasks.md` Section 17 + the eventual follow-up issues. Item 5 (image SHA) is explicitly flagged as operator-decision-time, not a code gap. **This task lives in the cc/kube-secrets PR; helm-charts only owns the cross-link target.**
 

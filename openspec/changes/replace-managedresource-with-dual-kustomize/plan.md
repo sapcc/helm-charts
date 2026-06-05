@@ -1745,7 +1745,7 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
   git push origin poc/kustomize-metal-operator-remote
   ```
 
-- [ ] **Step 15.10: Update PR #11633 description**
+- [x] **Step 15.10: Update PR #11633 description**
 
   Add a row to the Scope 3 "What changed" sub-section documenting the NP additions; add the cutover decision (a/b/c) and the documented runbook (or `commonLabels` bridge) to a new "Cutover runbook" sub-section. Apply via `gh pr edit 11633 --body-file ...`.
 
