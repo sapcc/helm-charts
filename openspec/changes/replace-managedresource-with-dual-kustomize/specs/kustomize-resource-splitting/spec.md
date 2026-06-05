@@ -181,7 +181,40 @@ NO `clientConfig.url` substitution SHALL be performed at build time or deploy ti
 
 ---
 
-### Requirement: Host webhook Service exposes admission webhook server port
+### Requirement: Host base produces fleet-uniform NetworkPolicies for the manager Pod
+
+The host base SHALL render the same set of NetworkPolicies that the helm chart renders, since these policies are uniform across the SAP-CC fleet (no per-cluster value substitution required). The kustomize tree SHALL render exactly **5** NetworkPolicies — the existing `metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000` plus four additional policies whose absence was detected by diffing helm output against `kustomize build host/base/` for `a-qa-de-200`/k3s-admin values:
+
+1. `metalapi-egress-to-ingress-nginx-controller-tcp-443` — egress from the manager Pod to ingress-nginx controller in `kube-system` and `ingress-nginx` namespaces, port 443/TCP.
+2. `metalapi-ingress-from-kube-apiserver-9443` — ingress to the manager Pod from any pod labeled `app=kubernetes,role=apiserver`, port 9443/TCP (webhook callbacks).
+3. `kube-apiserver-egress-to-metalapi` — egress from any pod labeled `app=kubernetes,role=apiserver` to the manager Pod, port 9443/TCP. The `podSelector` here targets the apiserver pod, NOT the manager Pod (this is the only one of the 5 whose `podSelector` is not the manager Pod).
+4. `metalapi-ingress-from-kube-monitoring` — ingress to the manager Pod from the `kube-monitoring` namespace, port 8082/TCP (metrics).
+
+Every NetworkPolicy SHALL declare `spec.policyTypes` explicitly (`[Ingress]` or `[Egress]` per the rule type), even when K8s would default the value. This matches the helm chart's pattern and is best-practice explicitness.
+
+Pod-selector labels MUST be consistent across the kustomize host base — the NetworkPolicies' `podSelector.matchLabels` (for the 4 manager-Pod-targeting policies) MUST match the labels carried by the manager Pod's spec.template.metadata.labels and the Services' selectors. The exact label scheme (`app.kubernetes.io/name: metal-operator` vs `metal-operator-remote`) is determined by the cutover-compatibility decision documented in `design.md` "Helm-vs-kustomize equivalence gap analysis"; whichever scheme is chosen, all four references (Deployment, Services, NetworkPolicies, and any `commonLabels:` directive) MUST agree.
+
+#### Scenario: Build renders all 5 NetworkPolicies
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the output SHALL contain exactly 5 resources of `kind: NetworkPolicy`
+- **AND** their names SHALL be (in any order) `metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000`, `metalapi-egress-to-ingress-nginx-controller-tcp-443`, `metalapi-ingress-from-kube-apiserver-9443`, `kube-apiserver-egress-to-metalapi`, and `metalapi-ingress-from-kube-monitoring`
+
+#### Scenario: Every NetworkPolicy declares policyTypes explicitly
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** every `NetworkPolicy` in the output SHALL contain a `spec.policyTypes` field with a non-empty list
+- **AND** the value SHALL be `[Ingress]` for the four ingress-only policies and `[Egress]` for the two egress-only policies (per the rule type)
+
+#### Scenario: Pod-selector labels are consistent across host base
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the manager `Deployment`'s `spec.template.metadata.labels`, the Services `metal-operator-webhook-service` and `metal-operator-metal-registry-service` `spec.selector`, and the four manager-Pod-targeting NetworkPolicies' `spec.podSelector.matchLabels` SHALL all reference the same `app.kubernetes.io/name` value (the value chosen by the cutover decision in `design.md`)
+- **AND** the `kube-apiserver-egress-to-metalapi` NetworkPolicy's `spec.podSelector.matchLabels` SHALL be `{app: kubernetes, role: apiserver}` (apiserver-pod target, not manager-Pod target)
+
+---
+
+
 
 The host cluster's `metal-operator-webhook-service` Service SHALL expose two named ports: (a) the existing `webhook` port forwarding to the manager container's webhook server, and (b) a new `admission` port forwarding to the webhook-injector sidecar's in-pod admission server. The admission port SHALL match the `--admission-external-port` flag value configured on the sidecar (default `9444`), so the workerless cluster's bootstrapped `metal-operator-webhook-injector-mutator` MWC reaches the sidecar at `https://metal-operator-webhook-service:<admission-external-port>/mutate-{mwc,vwc,crd}` resolvable from the workerless API server pod via host-cluster CoreDNS.
 

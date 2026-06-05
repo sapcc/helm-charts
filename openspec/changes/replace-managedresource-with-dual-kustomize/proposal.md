@@ -40,6 +40,12 @@ The current `metal-operator-remote` deployment uses Gardener's `ManagedResource`
 - Reason: Closes a deploy-readiness gap from the kustomize POC where the args were only in helm's `values-overrides.yaml`; consolidates patch surface for review clarity
 - Impact: Kustomize tree is end-to-end deploy-ready; `manager-webhook-patch.yaml`'s historical mixing of webhook concerns and macdb is resolved
 
+**NetworkPolicies and pod-selector labels (post-PR-review equivalence closure)**
+- From: Kustomize host base renders 1 NetworkPolicy (lacking `policyTypes`); helm chart renders 5 NetworkPolicies (with explicit `policyTypes`). Kustomize uses upstream's bare `app.kubernetes.io/name: metal-operator` label; helm uses chart-fullname-prefixed `metal-operator-remote`.
+- To: Kustomize host base renders all 5 NetworkPolicies (matching helm's set: `metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000`, `metalapi-egress-to-ingress-nginx-controller-tcp-443`, `metalapi-ingress-from-kube-apiserver-9443`, `kube-apiserver-egress-to-metalapi`, `metalapi-ingress-from-kube-monitoring`), each with explicit `spec.policyTypes`. Pod-selector labels are aligned per a documented cutover decision (option (a) `commonLabels` bridge, option (b) accept-rename + tested runbook, or option (c) `matchExpressions` selector — see `design.md` "Helm-vs-kustomize equivalence gap analysis").
+- Reason: Closes the equivalence gap surfaced by helm-vs-kustomize diffing for `a-qa-de-200`/k3s-admin values. NetworkPolicies are fleet-uniform — same 4 policies render across every SAP-CC cluster — so they belong with the chart, not duplicated per-cluster overlay (consistent with the OQ10 transitivity argument that absorbed the webhook-injector RBAC into this repo). Pod-selector / Deployment-name alignment is necessary for cutover compatibility (without it, the kustomize Service finds zero endpoints during transition while helm-deployed Pods still carry the helm-naming).
+- Impact: Brings kustomize-rendered output to fleet-equivalence with the helm chart's host-side resources. The cutover decision (a/b/c) is captured in `design.md` and the chosen option's mechanical consequence (e.g., `commonLabels:` block in `host/base/kustomization.yaml`) is encoded in the kustomize tree. Manager image SHA divergence (helm pin vs cc/kube-secrets per-cluster pin) is explicitly out of scope — it's an operator-time decision, not a code gap.
+
 ## Capabilities
 
 ### New Capabilities

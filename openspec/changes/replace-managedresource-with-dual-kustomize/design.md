@@ -488,7 +488,47 @@ The workerless `webhook-service` ExternalName Service uses `externalName: metal-
 | `kustomize-sidecar-injection` | **Significant rewrite.** **REMOVE** "Sidecar args match current configuration" (push semantics), "Sidecar pushes WebhookConfiguration from local ConfigMap". **ADD** "Sidecar runs in caBundle-rotation mode (`WEBHOOK_INJECTOR_MODE=ca-rotation` or equivalent)", "Sidecar manages TLS cert lifecycle for metal-operator-webhook-service on host", "Sidecar patches caBundle field of named workerless WebhookConfiguration via remote-kubeconfig", "Sidecar RBAC on remote scoped to `get` + `patch` on `webhooks[*].clientConfig.caBundle` only", "Local `webhook-config` ConfigMap on host is not required and not deployed". **MODIFY** removability and image-tag-override scenarios (they continue to work). |
 | `webhook-url-rendering` | **OBSOLETE** — capability is fully replaced by ExternalName-based routing. **DELETE** "Pre-rendered webhook manifests checked into repository", "Regeneration Makefile target for upstream upgrades", "Webhook configurations transformed from service-based to URL-based". The capability either gets removed entirely OR renamed to something like `webhook-routing-via-externalname` to govern the new mechanism. Decision belongs in the specs phase. |
 
-## Operational notes
+## Helm-vs-kustomize equivalence gap analysis (post-PR review, 2026-06-05)
+
+A diff between `helm template metal-operator-remote ./system/metal-operator-remote -f <a-qa-de-200/k3s-admin values>` and `kustomize build system/kustomize/metal-operator-remote/host/base/` (with the post-pivot architecture from Section 16) surfaced 7 gaps. Each is dispositioned per the OQ10 transitivity argument applied during webhook-injector RBAC absorption (Section 16): **fleet-uniform values belong in helm-charts; per-cluster values belong in kube-secrets**.
+
+| # | Gap | Disposition |
+|---|---|---|
+| 1 | Kustomize renders **1** NetworkPolicy; helm renders **5**. 4 NPs missing in kustomize, all fleet-uniform (no per-cluster value substitution required, verified by reading `system/metal-operator-remote/templates/networkpolicy.yaml`). | **fix in this repo** (Section 17) |
+| 2 | The 1 NP that exists in kustomize lacks `spec.policyTypes`. K8s defaults to `[Ingress]` when only Ingress rules are present (functionally equivalent), but explicit form matches helm's pattern + best practice. | **fix in this repo** (Section 17) |
+| 3 | Pod selector label mismatch: kustomize `app.kubernetes.io/name: metal-operator` (upstream's bare name) vs helm `metal-operator-remote` (chart-fullname-prefixed). Internal consistency in the kustomize stack is preserved; mismatch only affects cutover transition. | **decision required** (this section) |
+| 4 | Deployment name mismatch: kustomize `controller-manager` vs helm `metal-operator-controller-manager`. Same root cause as #3. | **decision required** (this section) |
+| 5 | Manager image SHA divergence (helm pin in `values.yaml` vs cc/kube-secrets per-cluster overlay pin in the `images:` block). The kustomize base ships `:PLACEHOLDER` (literal) which the kube-secrets `images:` block substitutes per-cluster — this is the correct architectural division. The divergence observed is an operational artifact (which SHA to roll forward with), not a code gap. | **no code change** — operator decision, runbook material |
+| 6 | `metal-operator-remote-webhook-config` ConfigMap eliminated in kustomize. | **already correct** (Section 5 — pivot artifact) |
+| 7 | webhook-injector Role rule `configmaps: get,list,watch` dropped in kustomize. | **already correct** (Section 5 — pivot artifact) |
+
+### Cutover decision for items 3 + 4 (label + Deployment rename)
+
+**Cutover failure mode without mitigation.** After `kubectl apply -k host/` lands in a cluster currently running the helm chart, the kustomize Service `metal-operator-webhook-service` (selector: `app.kubernetes.io/name=metal-operator,control-plane=controller-manager`) finds zero endpoints — helm-deployed Pods carry `app.kubernetes.io/name=metal-operator-remote`. The Service VIP exists but routes nowhere. Webhook callbacks (workerless apiserver → host Service) fail with TCP connection refused. With `failurePolicy: Fail` × 7 metal3 webhook entries (Section 16 bootstrap-window discussion), all metal3 CRD writes block until the kustomize Deployment becomes Ready and pods labeled `metal-operator` exist. Item 4 (Deployment rename) compounds this: if the helm Deployment isn't deleted before kustomize Deployment is applied, **two** Deployments co-exist and fight over RBAC + leader election.
+
+**Three mitigation options:**
+
+- **(a) Bridge with `commonLabels`.** Add `commonLabels: { app.kubernetes.io/name: metal-operator-remote }` to `host/base/kustomization.yaml`. The kustomize tree projects the helm-naming everywhere (Deployment podLabels, Service selectors, NP podSelectors), so the kustomize Service immediately matches helm-deployed Pods during transition. Requires a future cleanup commit post-cutover to drop the override and adopt upstream's bare name. **Safer cutover, more long-term cruft.**
+- **(b) Accept the rename + tested cutover runbook.** Keep the kustomize tree's bare name `metal-operator`. Document a tested cutover runbook in `cc/kube-secrets`: `kubectl scale deployment metal-operator-controller-manager --replicas=0` (helm-deployed) → `kubectl apply -k host/` (kustomize) → wait for kustomize Pods Ready (with new labels) → `kubectl apply -k remote/` → `helm uninstall metal-operator-remote`. Cleaner long-term naming, **requires a tested runbook + scheduled maintenance window**.
+- **(c) Bridging selector with `matchExpressions`.** Service+NP selectors match both pod-label sets via `matchExpressions: [{key: app.kubernetes.io/name, operator: In, values: [metal-operator, metal-operator-remote]}]`. Most flexible during transition; most temporary kustomize cruft.
+
+**Recommendation: (a)** as default unless the cutover runbook (b) is fully tested in non-production first. (a) is mechanical (5-line addition to one file), preserves the dual-kustomize migration's long-term naming intent (just deferred to a follow-up commit), and eliminates the orphan-endpoint failure mode entirely. Once production cutover completes on every cluster and the helm chart is fully retired, a separate small commit drops the `commonLabels` override and the kustomize tree adopts upstream's bare name.
+
+The actual choice belongs in `tasks.md` 17.2 — implementer SHALL document the chosen option in this section once decided.
+
+### Item 5 is not a code gap
+
+The kustomize base correctly carries `:PLACEHOLDER` for the manager image; the cc/kube-secrets per-cluster overlay's `images:` block does the SHA pinning per cluster (already-merged Scope 2 architecture). The "divergence" between helm's `values.yaml` default SHA and the cc/kube-secrets pin is an operational artifact: at any given moment, different clusters may pin to different versions during a rollout. There is no code-side action required in either helm-charts or cc/kube-secrets — only an operator decision at cutover time about which SHA to roll forward with. This is captured in OQ5.
+
+### A+B+C documentation pattern (cross-repo)
+
+Consistent with the cc/kube-secrets verify.md pattern used during Scope 2:
+
+- **(A)** This repo (helm-charts) owns the **fix** for items 1, 2, 3, 4 — captured in `tasks.md` Section 17.
+- **(B)** cc/kube-secrets owns the **comparison evidence record** in its `verify.md` (PASS WITH WARNINGS), listing all 7 gaps and cross-linking to this section + Section 17.
+- **(C)** Cross-link both: this section references the cc/kube-secrets verify.md pattern; cc/kube-secrets verify.md references this section as the authoritative gap inventory.
+
+
 
 - **Bootstrap window**: between step 1 and step 2, the workerless cluster has CRDs and `ValidatingWebhookConfiguration` (with empty `caBundle`). Webhook callbacks fail TLS verification (failurePolicy=Fail blocks writes). The controller is the only writer; it isn't running yet, so the window is operationally benign. Once step 2 brings up the sidecar and it patches caBundle, admission validation works.
 - **Drift recovery for webhook content**: the workerless `ValidatingWebhookConfiguration` is kustomize-managed. Manual edits to its `webhooks[*]` entries persist until the next `kubectl apply -k remote/` (Concourse trigger) or Flux Kustomization reconciliation. Flux's default reconciliation interval (typically 10 min) limits drift duration; Concourse-driven flows have longer drift windows tied to deploy cadence.

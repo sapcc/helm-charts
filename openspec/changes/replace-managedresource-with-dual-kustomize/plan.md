@@ -1632,6 +1632,135 @@ On a fresh install of a new workerless cluster, the order between `host/` apply 
 
 ---
 
+## Task 15: Close helm-vs-kustomize equivalence gaps (post-PR-review)
+
+**Files:**
+
+- Modify: `system/kustomize/metal-operator-remote/host/base/kustomization.yaml` (add new resource + optionally `commonLabels:`)
+- Modify: `system/kustomize/metal-operator-remote/host/base/networkpolicy.yaml` (add `policyTypes`; possibly relabel podSelector)
+- Create: `system/kustomize/metal-operator-remote/host/base/networkpolicies.yaml` (the 4 missing NPs ported from helm)
+- Update spec deltas: `specs/kustomize-resource-splitting/spec.md` (new ADDED requirement for fleet-uniform NetworkPolicies — already drafted alongside Task 15)
+- Update `design.md` "Helm-vs-kustomize equivalence gap analysis" section (already drafted): record the chosen option for items 3+4 cutover decision
+- Update `proposal.md` "What changes" section (brief addition)
+- Cross-repo: `cc/kube-secrets` companion PR's `verify.md` gains a "Helm-vs-kustomize equivalence verification (PASS WITH WARNINGS)" section (this is the cc/kube-secrets PR's task, but lives in the same workflow)
+
+**Why this section (post-PR-review finding):**
+
+The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. Per the OQ10 transitivity argument applied during webhook-injector RBAC absorption (Task 14), fleet-uniform values belong in helm-charts. Items 1+2 (NetworkPolicies) are mechanical; items 3+4 (label/Deployment rename) require a cutover-aware decision; item 5 (image SHA) is a per-cluster operational decision (not a code gap); items 6+7 are pivot artifacts already correctly resolved. Full analysis lives in `design.md` "Helm-vs-kustomize equivalence gap analysis" section.
+
+### Steps
+
+- [ ] **Step 15.1: Decide cutover strategy for items 3 + 4**
+
+  Read `design.md` "Cutover decision for items 3 + 4 (label + Deployment rename)" section. Pick one of:
+  - **(a) `commonLabels` bridge** (recommended default — safer cutover, mechanical 5-line change)
+  - **(b) Accept rename + tested cutover runbook** (cleaner long-term, requires runbook test in non-production)
+  - **(c) Bridging `matchExpressions` selector** (most flexible, most temporary cruft)
+
+  Document the choice in `design.md` "Cutover decision for items 3 + 4" sub-section (replace the "**Recommendation:**" and the trailing "implementer SHALL document the chosen option" paragraph with the actual decision + rationale).
+
+- [ ] **Step 15.2: Port the 4 missing NetworkPolicies**
+
+  Create `system/kustomize/metal-operator-remote/host/base/networkpolicies.yaml` with the 4 policies from `system/metal-operator-remote/templates/networkpolicy.yaml`, in this order:
+  1. `metalapi-egress-to-ingress-nginx-controller-tcp-443`
+  2. `metalapi-ingress-from-kube-apiserver-9443`
+  3. `kube-apiserver-egress-to-metalapi`
+  4. `metalapi-ingress-from-kube-monitoring`
+
+  Substitute the helm template's `{{- include "chart.selectorLabels" . | nindent N }}` with literal labels matching the choice in 15.1:
+  - Option (a): `app.kubernetes.io/name: metal-operator-remote, control-plane: controller-manager` (and the `commonLabels:` step in 15.4 is a no-op for these because they're already explicit)
+  - Option (b): `app.kubernetes.io/name: metal-operator, control-plane: controller-manager`
+  - Option (c): `matchExpressions:` form
+
+  The `kube-apiserver-egress-to-metalapi` NetworkPolicy's outer `podSelector` SHALL be `{app: kubernetes, role: apiserver}` regardless of the chosen option (it targets the apiserver Pod, not the manager Pod). Only its `egress[].to[].podSelector.matchLabels` (the inner one) needs to follow the choice.
+
+- [ ] **Step 15.3: Add `policyTypes` to the existing NetworkPolicy**
+
+  Edit `system/kustomize/metal-operator-remote/host/base/networkpolicy.yaml`:
+  - Add `spec.policyTypes: [Ingress]` after the `spec.podSelector` block.
+  - If option (a) was chosen in 15.1, no further change needed (the existing podSelector already uses `app.kubernetes.io/name: metal-operator` which `commonLabels:` will override at build time).
+  - If option (b) was chosen, the existing podSelector (`app.kubernetes.io/name: metal-operator, control-plane: controller-manager`) is already correct.
+  - If option (c), refactor to `matchExpressions:` form.
+
+- [ ] **Step 15.4: Wire it up in `host/base/kustomization.yaml`**
+
+  Add `networkpolicies.yaml` to the `resources:` list. If option (a) was chosen, also add a top-level `commonLabels:` block:
+  ```yaml
+  commonLabels:
+    app.kubernetes.io/name: metal-operator-remote
+  ```
+  Note: per kustomize semantics, `commonLabels` ALSO injects into selectors of Service / NetworkPolicy / Deployment, which is the desired behavior for cutover compatibility.
+
+- [ ] **Step 15.5: Verify build**
+
+  ```bash
+  cd system/kustomize/metal-operator-remote
+  kustomize build host/base/ > /tmp/host.yaml
+  ```
+  Expected:
+  - `yq -N 'select(.kind == "NetworkPolicy") | .metadata.name' /tmp/host.yaml | wc -l` → 5
+  - `yq -N 'select(.kind == "NetworkPolicy") | .metadata.name + " | " + (.spec.policyTypes | tostring)' /tmp/host.yaml` → 5 lines, each ending with `[Ingress]` or `[Egress]` (no `[ABSENT]`)
+  - Pod-selector consistency check: all manager-Pod-targeting selectors use the same `app.kubernetes.io/name` value (per the chosen option)
+
+- [ ] **Step 15.6: Update spec delta**
+
+  The new ADDED requirement `Host base produces fleet-uniform NetworkPolicies for the manager Pod` is already drafted in `specs/kustomize-resource-splitting/spec.md` (alongside this plan task). After 15.1's decision is recorded, update the requirement's pod-selector-labels-consistency scenario if needed to bind the chosen `app.kubernetes.io/name` value rather than leaving it as "the value chosen by the cutover decision".
+
+- [ ] **Step 15.7: Update `proposal.md`**
+
+  In the "What changes" section, add a brief paragraph (post-Webhook-routing block) documenting the additional 4 NetworkPolicies and the cutover decision. In the "Impact" section, add a line confirming this brings kustomize-rendered output to fleet-equivalence with the helm chart's host-side resources.
+
+- [ ] **Step 15.8: Run openspec validation**
+
+  ```
+  openspec validate replace-managedresource-with-dual-kustomize --strict
+  ```
+  Expected: `Change 'replace-managedresource-with-dual-kustomize' is valid`.
+
+- [ ] **Step 15.9: Commit and push**
+
+  ```
+  git add system/kustomize/metal-operator-remote/host/base/networkpolicies.yaml \
+          system/kustomize/metal-operator-remote/host/base/networkpolicy.yaml \
+          system/kustomize/metal-operator-remote/host/base/kustomization.yaml \
+          openspec/changes/replace-managedresource-with-dual-kustomize/
+
+  git commit -m "feat(metal-operator-remote): close helm-vs-kustomize equivalence gaps
+
+  Add the 4 fleet-uniform NetworkPolicies the kustomize tree was missing
+  (metalapi-egress-to-ingress-nginx-controller-tcp-443,
+  metalapi-ingress-from-kube-apiserver-9443, kube-apiserver-egress-to-metalapi,
+  metalapi-ingress-from-kube-monitoring) and add policyTypes: [Ingress] to the
+  existing metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000
+  policy. All 5 NPs now match helm chart's rendered output.
+
+  Cutover decision for items 3+4 (pod selector label + Deployment name): chose
+  option <a/b/c> per design.md 'Cutover decision for items 3 + 4'.
+
+  Items 5+6+7 are no-code-change (operational decision / pivot artifacts).
+
+  Tracking: helm-vs-kustomize equivalence verification, post-PR-review
+  finding 2026-06-05."
+
+  git push origin poc/kustomize-metal-operator-remote
+  ```
+
+- [ ] **Step 15.10: Update PR #11633 description**
+
+  Add a row to the Scope 3 "What changed" sub-section documenting the NP additions; add the cutover decision (a/b/c) and the documented runbook (or `commonLabels` bridge) to a new "Cutover runbook" sub-section. Apply via `gh pr edit 11633 --body-file ...`.
+
+- [ ] **Step 15.11: Coordinate with cc/kube-secrets companion PR**
+
+  In the cc/kube-secrets PR's `verify.md`, add a "Helm-vs-kustomize equivalence verification (PASS WITH WARNINGS)" section that:
+  - Lists all 7 gaps with their disposition.
+  - Cross-links to this repo's `design.md` "Helm-vs-kustomize equivalence gap analysis" section (authoritative gap inventory) and this `tasks.md` Section 17.
+  - Flags item 5 (image SHA) explicitly as operator-decision-time (OQ5), not a code gap.
+  - Confirms items 1+2+3+4 were addressed in this PR (post-merge cross-link).
+
+  This task lives in cc/kube-secrets; helm-charts only owns the cross-link target.
+
+---
+
 ## Self-Review
 
 After writing the plan, sanity check against the spec.
