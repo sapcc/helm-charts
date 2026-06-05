@@ -1,0 +1,131 @@
+---
+# Ingress: kube-system / ingress-nginx → metal-operator manager Pod
+# (port 10000/TCP, the metal-registry Service backend).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metal-operator
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 10000
+          protocol: TCP
+---
+# Egress: metal-operator manager Pod → ingress-nginx controller (port 443/TCP).
+# Used by the manager when it talks to the ingress-nginx admission webhook
+# or other ingress-nginx-fronted endpoints during reconciliation.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-egress-to-ingress-nginx-controller-tcp-443
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metal-operator
+      control-plane: controller-manager
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 443
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+              app.kubernetes.io/component: controller
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+---
+# Ingress: kube-apiserver → metal-operator manager Pod (port 9443/TCP).
+# This is the host cluster's apiserver calling the manager's webhook server
+# (port 9443) for direct webhook invocations on the host cluster (NOT the
+# workerless apiserver — that path goes through the Service form rewritten
+# to URL form by the webhook-injector admission MWC, see openspec change
+# replace-managedresource-with-dual-kustomize Section 16).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-from-kube-apiserver-9443
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metal-operator
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 9443
+          protocol: TCP
+      from:
+        - podSelector:
+            matchLabels:
+              app: kubernetes
+              role: apiserver
+---
+# Egress: kube-apiserver → metal-operator manager Pod (port 9443/TCP).
+# The complement of metalapi-ingress-from-kube-apiserver-9443 above. This
+# policy's podSelector targets the apiserver pod (NOT the manager Pod) — it
+# governs the apiserver's outgoing traffic to the manager's webhook server.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-apiserver-egress-to-metalapi
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 9443
+          protocol: TCP
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: metal-operator
+              control-plane: controller-manager
+---
+# Ingress: kube-monitoring scraper → metal-operator manager Pod (port 8082/TCP).
+# Allows Prometheus / kube-monitoring stack to scrape the manager's metrics
+# endpoint (containerPort 8082, the metrics port shared with the
+# webhook-injector sidecar).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-from-kube-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metal-operator
+      control-plane: controller-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8082
+          protocol: TCP
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-monitoring

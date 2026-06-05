@@ -1650,7 +1650,7 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
 
 ### Steps
 
-- [ ] **Step 15.1: Decide cutover strategy for items 3 + 4**
+- [x] **Step 15.1: Decide cutover strategy for items 3 + 4**
 
   Read `design.md` "Cutover decision for items 3 + 4 (label + Deployment rename)" section. Pick one of:
   - **(a) `commonLabels` bridge** (recommended default — safer cutover, mechanical 5-line change)
@@ -1659,7 +1659,7 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
 
   Document the choice in `design.md` "Cutover decision for items 3 + 4" sub-section (replace the "**Recommendation:**" and the trailing "implementer SHALL document the chosen option" paragraph with the actual decision + rationale).
 
-- [ ] **Step 15.2: Port the 4 missing NetworkPolicies**
+- [x] **Step 15.2: Port the 4 missing NetworkPolicies**
 
   Create `system/kustomize/metal-operator-remote/host/base/networkpolicies.yaml` with the 4 policies from `system/metal-operator-remote/templates/networkpolicy.yaml`, in this order:
   1. `metalapi-egress-to-ingress-nginx-controller-tcp-443`
@@ -1674,7 +1674,7 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
 
   The `kube-apiserver-egress-to-metalapi` NetworkPolicy's outer `podSelector` SHALL be `{app: kubernetes, role: apiserver}` regardless of the chosen option (it targets the apiserver Pod, not the manager Pod). Only its `egress[].to[].podSelector.matchLabels` (the inner one) needs to follow the choice.
 
-- [ ] **Step 15.3: Add `policyTypes` to the existing NetworkPolicy**
+- [x] **Step 15.3: Add `policyTypes` to the existing NetworkPolicy**
 
   Edit `system/kustomize/metal-operator-remote/host/base/networkpolicy.yaml`:
   - Add `spec.policyTypes: [Ingress]` after the `spec.podSelector` block.
@@ -1682,7 +1682,7 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
   - If option (b) was chosen, the existing podSelector (`app.kubernetes.io/name: metal-operator, control-plane: controller-manager`) is already correct.
   - If option (c), refactor to `matchExpressions:` form.
 
-- [ ] **Step 15.4: Wire it up in `host/base/kustomization.yaml`**
+- [x] **Step 15.4: Wire it up in `host/base/kustomization.yaml`**
 
   Add `networkpolicies.yaml` to the `resources:` list. If option (a) was chosen, also add a top-level `commonLabels:` block:
   ```yaml
@@ -1691,7 +1691,7 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
   ```
   Note: per kustomize semantics, `commonLabels` ALSO injects into selectors of Service / NetworkPolicy / Deployment, which is the desired behavior for cutover compatibility.
 
-- [ ] **Step 15.5: Verify build**
+- [x] **Step 15.5: Verify build**
 
   ```bash
   cd system/kustomize/metal-operator-remote
@@ -1702,22 +1702,22 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
   - `yq -N 'select(.kind == "NetworkPolicy") | .metadata.name + " | " + (.spec.policyTypes | tostring)' /tmp/host.yaml` → 5 lines, each ending with `[Ingress]` or `[Egress]` (no `[ABSENT]`)
   - Pod-selector consistency check: all manager-Pod-targeting selectors use the same `app.kubernetes.io/name` value (per the chosen option)
 
-- [ ] **Step 15.6: Update spec delta**
+- [x] **Step 15.6: Update spec delta**
 
   The new ADDED requirement `Host base produces fleet-uniform NetworkPolicies for the manager Pod` is already drafted in `specs/kustomize-resource-splitting/spec.md` (alongside this plan task). After 15.1's decision is recorded, update the requirement's pod-selector-labels-consistency scenario if needed to bind the chosen `app.kubernetes.io/name` value rather than leaving it as "the value chosen by the cutover decision".
 
-- [ ] **Step 15.7: Update `proposal.md`**
+- [x] **Step 15.7: Update `proposal.md`**
 
   In the "What changes" section, add a brief paragraph (post-Webhook-routing block) documenting the additional 4 NetworkPolicies and the cutover decision. In the "Impact" section, add a line confirming this brings kustomize-rendered output to fleet-equivalence with the helm chart's host-side resources.
 
-- [ ] **Step 15.8: Run openspec validation**
+- [x] **Step 15.8: Run openspec validation**
 
   ```
   openspec validate replace-managedresource-with-dual-kustomize --strict
   ```
   Expected: `Change 'replace-managedresource-with-dual-kustomize' is valid`.
 
-- [ ] **Step 15.9: Commit and push**
+- [x] **Step 15.9: Commit and push**
 
   ```
   git add system/kustomize/metal-operator-remote/host/base/networkpolicies.yaml \

@@ -512,9 +512,29 @@ A diff between `helm template metal-operator-remote ./system/metal-operator-remo
 - **(b) Accept the rename + tested cutover runbook.** Keep the kustomize tree's bare name `metal-operator`. Document a tested cutover runbook in `cc/kube-secrets`: `kubectl scale deployment metal-operator-controller-manager --replicas=0` (helm-deployed) → `kubectl apply -k host/` (kustomize) → wait for kustomize Pods Ready (with new labels) → `kubectl apply -k remote/` → `helm uninstall metal-operator-remote`. Cleaner long-term naming, **requires a tested runbook + scheduled maintenance window**.
 - **(c) Bridging selector with `matchExpressions`.** Service+NP selectors match both pod-label sets via `matchExpressions: [{key: app.kubernetes.io/name, operator: In, values: [metal-operator, metal-operator-remote]}]`. Most flexible during transition; most temporary kustomize cruft.
 
-**Recommendation: (a)** as default unless the cutover runbook (b) is fully tested in non-production first. (a) is mechanical (5-line addition to one file), preserves the dual-kustomize migration's long-term naming intent (just deferred to a follow-up commit), and eliminates the orphan-endpoint failure mode entirely. Once production cutover completes on every cluster and the helm chart is fully retired, a separate small commit drops the `commonLabels` override and the kustomize tree adopts upstream's bare name.
+**Decision (2026-06-05): option (b) — accept upstream/kustomize labels.**
 
-The actual choice belongs in `tasks.md` 17.2 — implementer SHALL document the chosen option in this section once decided.
+The kustomize tree keeps upstream metal-operator's bare naming throughout:
+- Pod label: `app.kubernetes.io/name: metal-operator`
+- Deployment name: `controller-manager`
+- Service selectors and NetworkPolicy podSelectors all reference `metal-operator` (the bare upstream name)
+
+Rationale:
+- The dual-kustomize migration's whole point is to shed chart-fullname legacy and adopt upstream's naming. Adding a `commonLabels:` bridge to project the helm-chart name would defer that goal indefinitely (every cluster would carry the override forever, since "we'll clean it up post-cutover" rarely happens).
+- Cutover-window orphan-endpoint risk is real but bounded — the SAP-CC fleet has 6 metal-operator-remote clusters, cutover happens cluster-by-cluster, and a tested runbook makes the failure window deterministic and short.
+- The cc/kube-secrets companion PR's cutover runbook (Task 15.11 / Section 17.11) MUST be tested in non-production (likely `a-qa-de-200`) before cutover proceeds to runtime clusters.
+
+**Cutover runbook (to be tested + documented in `cc/kube-secrets`):**
+
+1. Pre-cutover health check: `kubectl get deploy metal-operator-controller-manager -n metal-operator-system` (helm-deployed) is Available; webhook validation working.
+2. Scale helm-deployed Deployment to 0: `kubectl scale deployment metal-operator-controller-manager --replicas=0 -n metal-operator-system`. (This stops the manager Pod cleanly without uninstalling the helm release; `kubectl uninstall` would also drop the Service which we want to keep until the kustomize Service is in place.)
+3. Apply kustomize host: `kubectl apply -k system/kustomize/metal-operator-remote/host/base/`. This creates the new Deployment `controller-manager` (with `app.kubernetes.io/name: metal-operator` Pods) and the new `metal-operator-webhook-service` Service (with the same label selector + the new `admission` port).
+4. Wait for kustomize Pod Ready: `kubectl rollout status deployment/controller-manager`. The Service now has endpoints.
+5. Apply remote/ kustomize: `kubectl apply -k system/kustomize/metal-operator-remote/remote/` against the workerless cluster. Webhook callbacks to `metal-operator-webhook-service:443/<path>` succeed (admission webhook bootstrap from Section 16 takes over).
+6. Helm uninstall: `helm uninstall metal-operator-remote -n metal-operator-system`. This removes the helm-deployed Service, Deployment (already at 0), ConfigMap, NetworkPolicy, RBAC, etc. — leaving only the kustomize-deployed resources.
+7. Post-cutover health check: webhook validation working from the kustomize stack; metal3 CRD writes succeed.
+
+The "scale to 0 first" step bounds the orphan-endpoint window to step 3 → step 4 (pods Ready). Without it, both Deployments would race for leader-election + RBAC. The "uninstall last" step ensures the kustomize Service has live endpoints before the helm Service is deleted, so any ongoing webhook callback survives the switch.
 
 ### Item 5 is not a code gap
 
