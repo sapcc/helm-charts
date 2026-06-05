@@ -192,7 +192,7 @@ The host base SHALL render the same set of NetworkPolicies that the helm chart r
 
 Every NetworkPolicy SHALL declare `spec.policyTypes` explicitly (`[Ingress]` or `[Egress]` per the rule type), even when K8s would default the value. This matches the helm chart's pattern and is best-practice explicitness.
 
-Pod-selector labels MUST be consistent across the kustomize host base — the NetworkPolicies' `podSelector.matchLabels` (for the 4 manager-Pod-targeting policies) MUST match the labels carried by the manager Pod's `spec.template.metadata.labels` and the Services' selectors. Per the cutover decision recorded in `design.md` "Helm-vs-kustomize equivalence gap analysis" (option (b) — accept upstream/kustomize labels), the chosen pod-label scheme is `app.kubernetes.io/name: metal-operator, control-plane: controller-manager` (upstream's bare naming, NOT the helm chart's `metal-operator-remote` prefix).
+Pod-selector labels MUST be consistent across the kustomize host base — the NetworkPolicies' `podSelector.matchLabels` (for the 4 manager-Pod-targeting policies) MUST match the labels carried by the manager Pod's `spec.template.metadata.labels` and the Services' selectors. Per the cutover decision recorded in `design.md` "Helm-vs-kustomize equivalence gap analysis" (option (a) — match the helm chart's chart-fullname-prefixed labels for cutover compatibility), the chosen pod-label scheme is `app.kubernetes.io/name: metal-operator-remote, control-plane: controller-manager` (matching the helm chart's labels, NOT upstream's bare `metal-operator`). The label is set explicitly in each local YAML file (no kustomize `labels: includeSelectors: true` directive — that approach over-injects into the apiserver NP's outer podSelector); upstream's metal-operator Deployment is patched via `manager-patch.yaml` to override `spec.selector.matchLabels` and `spec.template.metadata.labels` to match.
 
 #### Scenario: Build renders all 5 NetworkPolicies
 
@@ -209,8 +209,8 @@ Pod-selector labels MUST be consistent across the kustomize host base — the Ne
 #### Scenario: Pod-selector labels are consistent across host base
 
 - **WHEN** `kustomize build host/base/` is executed
-- **THEN** the manager `Deployment`'s `spec.template.metadata.labels`, the Services `metal-operator-webhook-service` and `metal-operator-metal-registry-service` `spec.selector`, and the four manager-Pod-targeting NetworkPolicies' `spec.podSelector.matchLabels` SHALL all reference `app.kubernetes.io/name: metal-operator` (NOT `metal-operator-remote`) along with `control-plane: controller-manager`
-- **AND** the `kube-apiserver-egress-to-metalapi` NetworkPolicy's outer `spec.podSelector.matchLabels` SHALL be `{app: kubernetes, role: apiserver}` (apiserver-pod target, not manager-Pod target); its inner `spec.egress[].to[].podSelector.matchLabels` SHALL be `{app.kubernetes.io/name: metal-operator, control-plane: controller-manager}` (manager-Pod target)
+- **THEN** the manager `Deployment`'s `spec.template.metadata.labels`, the Services `metal-operator-webhook-service` and `metal-operator-metal-registry-service` `spec.selector`, and the four manager-Pod-targeting NetworkPolicies' `spec.podSelector.matchLabels` SHALL all reference `app.kubernetes.io/name: metal-operator-remote` (chart-fullname-prefixed for cutover compatibility with the helm chart) along with `control-plane: controller-manager`
+- **AND** the `kube-apiserver-egress-to-metalapi` NetworkPolicy's outer `spec.podSelector.matchLabels` SHALL be `{app: kubernetes, role: apiserver}` (apiserver-pod target, not manager-Pod target) and SHALL NOT contain `app.kubernetes.io/name`; its inner `spec.egress[].to[].podSelector.matchLabels` SHALL be `{app.kubernetes.io/name: metal-operator-remote, control-plane: controller-manager}` (manager-Pod target)
 
 ---
 

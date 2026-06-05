@@ -6,9 +6,25 @@ metadata:
 spec:
   strategy:
     type: Recreate
+  # Override upstream's spec.selector.matchLabels (which carries
+  # app.kubernetes.io/name=metal-operator) to use the chart-fullname-prefixed
+  # value `metal-operator-remote`. This MUST agree with the Pod labels
+  # (template.metadata.labels below) and with the Service / NetworkPolicy
+  # selectors in this base. The chosen label scheme is documented in the
+  # openspec change replace-managedresource-with-dual-kustomize design.md
+  # "Helm-vs-kustomize equivalence gap analysis" (decision: option (a) —
+  # match the helm chart-fullname-prefixed labels for cutover compatibility).
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metal-operator-remote
+      control-plane: controller-manager
   template:
     metadata:
       labels:
+        # Override upstream's bare app.kubernetes.io/name=metal-operator with
+        # the chart-fullname-prefixed value (matches Service/NP selectors).
+        app.kubernetes.io/name: metal-operator-remote
+        control-plane: controller-manager
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-private-networks: allowed
         networking.gardener.cloud/to-public-networks: allowed

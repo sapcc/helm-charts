@@ -512,29 +512,30 @@ A diff between `helm template metal-operator-remote ./system/metal-operator-remo
 - **(b) Accept the rename + tested cutover runbook.** Keep the kustomize tree's bare name `metal-operator`. Document a tested cutover runbook in `cc/kube-secrets`: `kubectl scale deployment metal-operator-controller-manager --replicas=0` (helm-deployed) → `kubectl apply -k host/` (kustomize) → wait for kustomize Pods Ready (with new labels) → `kubectl apply -k remote/` → `helm uninstall metal-operator-remote`. Cleaner long-term naming, **requires a tested runbook + scheduled maintenance window**.
 - **(c) Bridging selector with `matchExpressions`.** Service+NP selectors match both pod-label sets via `matchExpressions: [{key: app.kubernetes.io/name, operator: In, values: [metal-operator, metal-operator-remote]}]`. Most flexible during transition; most temporary kustomize cruft.
 
-**Decision (2026-06-05): option (b) — accept upstream/kustomize labels.**
+**Decision (2026-06-05, revised): option (a) — match the helm chart's chart-fullname-prefixed labels.**
 
-The kustomize tree keeps upstream metal-operator's bare naming throughout:
-- Pod label: `app.kubernetes.io/name: metal-operator`
-- Deployment name: `controller-manager`
-- Service selectors and NetworkPolicy podSelectors all reference `metal-operator` (the bare upstream name)
+The kustomize tree projects `app.kubernetes.io/name: metal-operator-remote` on every Pod, Service selector, NetworkPolicy podSelector, and Deployment selector — matching the helm chart's existing labels rather than upstream metal-operator's bare `metal-operator` default.
+
+Implementation: explicit override per file (NOT a kustomize `labels: includeSelectors: true` directive — that was attempted first but over-injects into the `kube-apiserver-egress-to-metalapi` NP's outer `podSelector` which must remain `{app: kubernetes, role: apiserver}` to target apiserver Pods, and the patches-after-labels ordering in our kustomize version made the override un-undoable). The explicit-per-file approach:
+- `host/base/networkpolicies.yaml` — 4 manager-Pod-targeting NPs use `app.kubernetes.io/name: metal-operator-remote, control-plane: controller-manager`. The 5th NP (`kube-apiserver-egress-to-metalapi`) keeps its outer `podSelector: {app: kubernetes, role: apiserver}` (apiserver Pod target) and uses `metal-operator-remote` only for the inner `egress[].to[].podSelector` (manager Pod target).
+- `host/base/webhook-service.yaml` and `host/base/metal-registry-service.yaml` — `spec.selector` uses `metal-operator-remote`.
+- `host/base/manager-patch.yaml` — strategic-merge patch on the upstream Deployment overrides `spec.selector.matchLabels` AND `spec.template.metadata.labels` to `metal-operator-remote` (upstream ships `metal-operator`, we override).
 
 Rationale:
-- The dual-kustomize migration's whole point is to shed chart-fullname legacy and adopt upstream's naming. Adding a `commonLabels:` bridge to project the helm-chart name would defer that goal indefinitely (every cluster would carry the override forever, since "we'll clean it up post-cutover" rarely happens).
-- Cutover-window orphan-endpoint risk is real but bounded — the SAP-CC fleet has 6 metal-operator-remote clusters, cutover happens cluster-by-cluster, and a tested runbook makes the failure window deterministic and short.
-- The cc/kube-secrets companion PR's cutover runbook (Task 15.11 / Section 17.11) MUST be tested in non-production (likely `a-qa-de-200`) before cutover proceeds to runtime clusters.
+- **Cutover compatibility.** During a fleet cutover from helm to kustomize, the Service selector matches helm-deployed Pods (which carry `metal-operator-remote`), so `kubectl apply -k host/` does NOT orphan the Service during the transition window. With option (b) (upstream's bare name), the kustomize Service would have zero endpoints from t=apply until the kustomize Deployment becomes Ready, blocking webhook callbacks (`failurePolicy: Fail` × 7 metal3 entries) during that gap.
+- **Helm equivalence.** Reduces the cutover diff to "0 functional differences" — the resource set is byte-equivalent (modulo Deployment name and webhook delivery, which are addressed by Section 16's pivot + the cutover runbook below). Reviewers can sign off the kustomize tree as a drop-in replacement.
+- **No long-term cruft commitment.** A future small commit (post full-fleet cutover, when the helm chart is fully retired) can flip back to upstream's bare name if desired — that's a well-scoped follow-up rather than a deferred-forever cleanup.
 
-**Cutover runbook (to be tested + documented in `cc/kube-secrets`):**
+**Cutover runbook (cc/kube-secrets verify.md cross-link target):**
 
 1. Pre-cutover health check: `kubectl get deploy metal-operator-controller-manager -n metal-operator-system` (helm-deployed) is Available; webhook validation working.
-2. Scale helm-deployed Deployment to 0: `kubectl scale deployment metal-operator-controller-manager --replicas=0 -n metal-operator-system`. (This stops the manager Pod cleanly without uninstalling the helm release; `kubectl uninstall` would also drop the Service which we want to keep until the kustomize Service is in place.)
-3. Apply kustomize host: `kubectl apply -k system/kustomize/metal-operator-remote/host/base/`. This creates the new Deployment `controller-manager` (with `app.kubernetes.io/name: metal-operator` Pods) and the new `metal-operator-webhook-service` Service (with the same label selector + the new `admission` port).
-4. Wait for kustomize Pod Ready: `kubectl rollout status deployment/controller-manager`. The Service now has endpoints.
-5. Apply remote/ kustomize: `kubectl apply -k system/kustomize/metal-operator-remote/remote/` against the workerless cluster. Webhook callbacks to `metal-operator-webhook-service:443/<path>` succeed (admission webhook bootstrap from Section 16 takes over).
-6. Helm uninstall: `helm uninstall metal-operator-remote -n metal-operator-system`. This removes the helm-deployed Service, Deployment (already at 0), ConfigMap, NetworkPolicy, RBAC, etc. — leaving only the kustomize-deployed resources.
-7. Post-cutover health check: webhook validation working from the kustomize stack; metal3 CRD writes succeed.
+2. Apply kustomize host: `kubectl apply -k system/kustomize/metal-operator-remote/host/base/`. This creates a NEW Deployment `controller-manager` (different name from helm's `metal-operator-controller-manager` — both Deployments now co-exist briefly). The kustomize Service `metal-operator-webhook-service` immediately matches helm-deployed Pods (same `app.kubernetes.io/name: metal-operator-remote` label) — webhook callbacks continue working through the helm Pods until the kustomize Pods come up.
+3. Wait for kustomize Pod Ready: `kubectl rollout status deployment/controller-manager`. Now the Service routes to BOTH helm and kustomize Pods (label-equivalent). Leader election ensures only one manager is active.
+4. Apply remote/ kustomize: `kubectl apply -k system/kustomize/metal-operator-remote/remote/` against the workerless cluster. Webhook callbacks succeed (admission-webhook bootstrap from Section 16 takes over).
+5. Helm uninstall: `helm uninstall metal-operator-remote -n metal-operator-system`. This removes the helm Deployment + helm-deployed Pods + helm Service + helm RBAC. The kustomize Service is unaffected (different name), and its endpoint list shrinks back to just the kustomize Pods.
+6. Post-cutover health check: webhook validation working from the kustomize stack; metal3 CRD writes succeed.
 
-The "scale to 0 first" step bounds the orphan-endpoint window to step 3 → step 4 (pods Ready). Without it, both Deployments would race for leader-election + RBAC. The "uninstall last" step ensures the kustomize Service has live endpoints before the helm Service is deleted, so any ongoing webhook callback survives the switch.
+Compared to the previous option (b) runbook, step 2's "scale helm Deployment to 0 first" is **no longer required** — the label match means the Service stays endpoint-populated throughout the transition. This is a meaningful reduction in cutover risk.
 
 ### Item 5 is not a code gap
 
