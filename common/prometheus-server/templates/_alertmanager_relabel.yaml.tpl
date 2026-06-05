@@ -20,5 +20,5 @@
 - action: replace
   source_labels: [playbook]
   target_label: playbook
-  regex: ^(?!https?://)(.*)
-  replacement: {{ printf "http://%s/$1" ($root.Values.global.playbookDomain | default "https://operations.global.cloud.sap") }}
+  regex: '^(docs/.+)$'
+  replacement: {{ printf "%s/$1" ($root.Values.global.playbookDomain | default "https://operations.global.cloud.sap") }}
