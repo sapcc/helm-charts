@@ -185,7 +185,7 @@ mysql_query_rules =
         active = 1,
         apply = 1,
         cache_ttl = {{ printf "%.0f" (float64 $rule.cache_ttl) }},
-        match_pattern = "{{ $rule.match_pattern }}",
+        match_digest = "{{ $rule.match_pattern }}",
     },
 {{- end }}
 )
