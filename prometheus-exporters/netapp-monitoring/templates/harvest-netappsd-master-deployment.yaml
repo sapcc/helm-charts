@@ -24,7 +24,7 @@ spec:
         app: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}
         name: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-master
     spec:
-      serviceAccountName: netappsd
+      serviceAccountName: {{ .Values.netappsd.serviceAccountName | default "netappsd" }}
       containers:
         - name: netappsd
           image: "{{ .Values.netappsd.image.repository }}:{{ .Values.netappsd.image.tag }}"
@@ -36,7 +36,7 @@ spec:
             - --tag
             - {{ $appName }}
             - --listen-addr
-            - 0.0.0.0:{{ .Values.netappsd.ports.metrics }}
+            - 0.0.0.0:{{ .Values.netappsd.ports.master }}
             - --worker
             - {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-worker
           env:
@@ -66,7 +66,7 @@ spec:
                   fieldPath: metadata.namespace
           ports:
             - name: metrics
-              containerPort: {{ .Values.netappsd.ports.metrics }}
+              containerPort: {{ .Values.netappsd.ports.master }}
           resources:
             {{- toYaml .Values.netappsd.resources | nindent 12 }}
 ---

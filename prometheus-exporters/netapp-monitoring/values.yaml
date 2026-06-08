@@ -1,55 +1,67 @@
 ---
 harvest:
   image:
-  tag:
+    repository:
+    tag:
+    pullPolicy: IfNotPresent
   resources:
     requests:
-      cpu:
-      memory:
+      cpu: "100m"
+      memory: "1Gi"
     limits:
-      cpu:
-      memory:
+      cpu: "500m"
+      memory: "2Gi"
   securityContext:
-    runAsNonRoot:
-    runAsUser:
-    runAsGroup:
-    allowPrivilegeEscalation:
-    readOnlyRootFilesystem:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
     capabilities:
       drop:
         - ALL
     seccompProfile:
-      type:
+      type: RuntimeDefault
 
 auth:
-  auth_style:
+  auth_style: basic_auth
 
 exporters:
   prometheus:
-    exporter:
-    port:
+    exporter: Prometheus
+    port: 13000
 
 defaults:
-  collectors: []
-  use_insecure_tls:
-  exporters: []
+  collectors:
+    - Ems
+    - Rest
+    - RestPerf
+    - KeyPerf
+    - Unix
+    - Simple
+  use_insecure_tls: true
+  exporters:
+    - prometheus
 
 netappsd:
-  enabled: false
+  enabled: true
+  serviceAccountName: netappsd
   image:
     repository:
     tag:
-    pullPolicy:
+    pullPolicy: IfNotPresent
   region: ""
   ports:
-    metrics:
+    master: 8000
+    harvest: 13000
+    worker: 8080
   resources:
     requests:
-      cpu:
-      memory:
+      cpu: 50m
+      memory: 128Mi
     limits:
-      cpu:
-      memory:
+      cpu: 200m
+      memory: 256Mi
   netapp_exporter_user: ""
   netapp_exporter_password: ""
   netbox_api_token: ""
@@ -57,9 +69,24 @@ netappsd:
   credentials_file:
   credentials_secret:
 
-apps: {}
+# apps: Configures which filers are discovered by the service discovery.
+# Each key corresponds to a label assigned to devices in Netbox.
+# cinder: Targets filers labeled as cinder storage backends.
+# manila: Targets filers labeled as manila shared filesystem backends.
+# apod: Targets filers labeled as apod storage devices.
+# cinder-manila: Targets filers that have both the cinder and manila labels.
+apps:
+  cinder:
+    enabled: true
+  manila:
+    enabled: true
+  apod:
+    enabled: true
+  cinder-manila:
+    enabled: true
 
-finalizers: []
+finalizers:
+  - dme-storage/prevent-deletion
 
 owner-info:
   support-group: storage

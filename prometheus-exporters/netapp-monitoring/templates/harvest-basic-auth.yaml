@@ -1,4 +1,4 @@
-
+{{- if .Values.netappsd.enabled }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -7,7 +7,10 @@ metadata:
     - {{ . | quote }}
     {{- end }}
   name: {{ .Values.netappsd.credentials_secret }}
+  labels:
+    {{- include "netapp-monitoring.labels" . | nindent 4 }}
   namespace: {{ .Release.Namespace }}
 type: Opaque
 data:
   {{ .Values.netappsd.credentials_secret }}.yml: {{ include "netapp-monitoring.credentials-entry" . | b64enc }}
+{{- end }}

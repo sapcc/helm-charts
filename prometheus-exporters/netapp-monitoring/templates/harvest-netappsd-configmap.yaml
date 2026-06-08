@@ -20,8 +20,8 @@ data:
       {{- toYaml .Values.exporters | nindent 6 }}
     Defaults:
       {{- toYaml .Values.defaults | nindent 6 }}
-      auth_style: {{ .Values.auth.auth_style }}
-      credentials_file: {{ .Values.netappsd.credentials_file }}
+      auth_style: {{ .Values.auth.auth_style | default "basic_auth" }}
+      credentials_file: {{ .Values.netappsd.credentials_file | default "/app/secrets/local-basic-auth.yml" }}
     Pollers:{{`
       {{ .Name }}:
         {{- if .Ip }}
@@ -29,12 +29,12 @@ data:
         {{- else }}
         addr: {{ .Host }}
         {{- end }}
-        datacenter: `}}{{ .Values.netappsd.region }}{{`
+        datacenter: `}}{{ required ".Values.netappsd.region is required" .Values.netappsd.region }}{{`
         labels:
           - Availability_Zone: {{ .AvailabilityZone }}
           - filer: {{ .Name }}
           - host: {{ .Host }}
           - DC: {{ .Facility }}
           - Service: {{ .Service }}
-          - lob: `}}{{ .Values.netappsd.lob }}
+          - lob: `}}{{ required ".Values.netappsd.lob is required" .Values.netappsd.lob }}
 {{- end }}

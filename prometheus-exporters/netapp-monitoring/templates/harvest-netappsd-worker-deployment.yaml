@@ -29,20 +29,21 @@ spec:
         app: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}
         name: {{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-worker
     spec:
-      serviceAccountName: netappsd
+      serviceAccountName: {{ .Values.netappsd.serviceAccountName | default "netappsd" }}
       containers:
         - name: poller
-          image: "{{ .Values.harvest.image }}:{{ .Values.harvest.tag }}"
+          image: "{{ .Values.harvest.image.repository }}:{{ .Values.harvest.image.tag }}"
+          imagePullPolicy: {{ .Values.harvest.image.pullPolicy | default "IfNotPresent" }}
           command: ["/busybox/sh"]
           args:
             - /app/scripts/start-poller.sh
           ports:
             - name: metrics
-              containerPort: 13000
+              containerPort: {{ .Values.netappsd.ports.harvest }}
           livenessProbe:
             httpGet:
               path: /health
-              port: 13000
+              port: {{ .Values.netappsd.ports.harvest }}
             initialDelaySeconds: 60
             periodSeconds: 15
             timeoutSeconds: 5
@@ -50,7 +51,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 13000
+              port: {{ .Values.netappsd.ports.harvest }}
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -75,9 +76,9 @@ spec:
           command: ["/netappsd", "worker"]
           args:
             - --master-url
-            - http://{{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:{{ .Values.netappsd.ports.metrics }}
+            - http://{{ include "netapp-monitoring.fullname" . }}-{{ $appName }}-master.{{ .Release.Namespace }}.svc:{{ .Values.netappsd.ports.master }}
             - --listen-addr
-            - :8080
+            - :{{ .Values.netappsd.ports.worker }}
             - --template-file
             - /app/harvest.yaml.tpl
             - --output-file
@@ -103,11 +104,11 @@ spec:
                   fieldPath: metadata.name
           ports:
             - name: liveness
-              containerPort: 8080
+              containerPort: {{ .Values.netappsd.ports.worker }}
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: {{ .Values.netappsd.ports.worker }}
             initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
@@ -115,7 +116,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: {{ .Values.netappsd.ports.worker }}
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
