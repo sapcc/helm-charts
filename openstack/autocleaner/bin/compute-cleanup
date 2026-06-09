@@ -19,8 +19,13 @@ def mark(connection, today):
         kvm = (server.hypervisor_hostname and "node" in server.hypervisor_hostname) or (
             hypervisor_type and ("CH" in hypervisor_type or "QEMU" in hypervisor_type)
         )
+
         if not kvm:
             continue
+
+        if server.name.startswith("shoot--") or "kubernikus" in server.tags:
+            continue
+
         try:
             server.add_tag(compute, TAG)
             server.add_tag(compute, f"{TAG}:{week:0>2}")
