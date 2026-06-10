@@ -351,7 +351,7 @@ The `host/base/` kustomize overlay SHALL produce all resources needed in the see
 #### Scenario: Build host base overlay
 
 - **WHEN** `kustomize build host/base/` is executed
-- **THEN** the output SHALL contain a Deployment named `controller-manager`
+- **THEN** the output SHALL contain a Deployment named `metal-operator-controller-manager` (matching the helm chart's `templates/controller-manager.yaml` literal name; the upstream `ironcore-dev/metal-operator//config/manager?ref=v0.4.0` ships `metadata.name: controller-manager` and is renamed via a JSON-patch entry in `host/base/kustomization.yaml`'s `patches:` list — see Section 19 / Task 17 for the rationale and the patch-ordering invariant)
 - **THEN** the output SHALL contain a Service named `metal-operator-webhook-service` with TWO named ports: `webhook` (port 443 → targetPort 9443, the manager container's webhook server) AND `admission` (port 9444 → targetPort 9444, the webhook-injector sidecar's in-pod admission server)
 - **THEN** the output SHALL contain a Service for metal-registry (port 10000)
 - **THEN** the output SHALL contain an Ingress for metal-registry

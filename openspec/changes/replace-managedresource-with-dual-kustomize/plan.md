@@ -1922,6 +1922,154 @@ Fix idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree (
 
 ---
 
+## Task 17: Rename kustomize Deployment to match helm chart's literal name (post-deploy parity)
+
+**Files:**
+
+- Modify: `system/kustomize/metal-operator-remote/host/base/kustomization.yaml` (append a JSON-patch entry as the LAST item in `patches:`)
+- Update spec delta: `specs/kustomize-resource-splitting/spec.md` (already drafted alongside this task — the `Build host base overlay` scenario's expected Deployment name)
+- Update `design.md` "Helm-vs-kustomize equivalence gap analysis" Item 4 disposition from "decision required" to "fix in this repo (Section 19)"
+- Update `proposal.md` with a brief What-changes bullet
+- Cross-repo: cc/kube-secrets `a-qa-de-200` overlay must update three name references (`replacements.targets.select.name`, `patches.target.name`, `patches.metadata.name` inside patch body) from `controller-manager` to `metal-operator-controller-manager`. Apply order on cc/kube-secrets side: `kubectl delete -k host/` → bump helm-charts ref → bump references → `kubectl apply -k host/`.
+
+**Why this section (post-deploy parity finding, 2026-06-10):**
+
+The kustomize port inherits upstream `ironcore-dev/metal-operator//config/manager?ref=v0.4.0`'s `metadata.name: controller-manager` (upstream's bare name). Helm chart `templates/controller-manager.yaml` hard-codes `metadata.name: metal-operator-controller-manager` (literal). Production runtime clusters (verified 2026-06-10 against rt-eu-de-1: live Deployment `metal-operator-controller-manager-9d4b46c95`) carry the prefixed name.
+
+Operational impact in any Gardener seed CP namespace: several controller-managers coexist (`gardener-resource-manager`, `kube-controller-manager`, `ipam-capi-controller-manager`, this one). Generic `controller-manager-<hash>-<random>` Pod name requires inspecting labels or images to identify metal-operator-remote. Helm-deployed sister clusters get `metal-operator-controller-manager-<hash>-<random>` — clear at a glance. This rename closes that gap.
+
+**Why this is non-trivial — patch ordering invariant:**
+
+Two existing strategic-merge patches identify the Deployment by `name: controller-manager`:
+- `host/base/manager-patch.yaml:4` (manager args, env, volumes, etc.)
+- `components/webhook-injector/sidecar.yaml:4` (sidecar initContainer + serviceAccountName)
+
+Both MUST continue matching `controller-manager` after the rename, otherwise the manager renders without customizations + sidecar. Kustomize's transformer order: `resources:` → `components:` → `patches:` (in order). Therefore the rename JSON-patch MUST be the LAST entry in `patches:` — earlier strategic-merge patches run first against the original name; only the final entry transforms the name.
+
+`namePrefix:` / `nameSuffix:` are NOT acceptable — global prefix would mangle every already-prefixed local resource (`metal-operator-webhook-service` → `metal-operator-metal-operator-webhook-service`). Targeted JSON-patch is the only correct approach.
+
+### Steps
+
+- [ ] **Step 17.1: Append the rename JSON-patch as the last `patches:` entry**
+
+  Edit `system/kustomize/metal-operator-remote/host/base/kustomization.yaml`. Append a new patch entry AFTER the existing `- path: manager-patch.yaml` entry:
+
+  ```yaml
+  patches:
+    # ... existing entries: Namespace deletion, manager-patch.yaml ...
+
+    # Rename the upstream Deployment to match helm's
+    # `templates/controller-manager.yaml` literal name. JSON-patch
+    # (op: replace /metadata/name) is the only kustomize-native way to
+    # change a resource's name — strategic-merge can't, because kustomize
+    # uses metadata.name as the match key. MUST be the LAST entry in
+    # `patches:` so the two earlier strategic-merge patches
+    # (manager-patch.yaml and the webhook-injector Component's sidecar.yaml)
+    # can still match `controller-manager` before this rename rewrites it.
+    #
+    # Downstream consumers (per-cluster overlays in kube-secrets) MUST
+    # switch all patch.target.name and replacements.targets.select.name
+    # references from `controller-manager` to
+    # `metal-operator-controller-manager` once this lands. Tracked:
+    # cc/kube-secrets a-qa-de-200 overlay update follows this PR.
+    - target:
+        kind: Deployment
+        name: controller-manager
+      patch: |
+        - op: replace
+          path: /metadata/name
+          value: metal-operator-controller-manager
+  ```
+
+  Do NOT touch `manager-patch.yaml` or `components/webhook-injector/sidecar.yaml`. Their `name: controller-manager` references are correct (they run before the rename).
+
+- [ ] **Step 17.2: Verify build + invariants**
+
+  ```bash
+  cd system/kustomize/metal-operator-remote
+  kustomize build host/base/ > /tmp/rendered.yaml
+  ```
+
+  Three invariants:
+  - **Renamed name:**
+    ```bash
+    yq -N 'select(.kind == "Deployment") | .metadata.name' /tmp/rendered.yaml
+    # Expected: metal-operator-controller-manager
+    ```
+  - **Sidecar still merged (proves sidecar.yaml ran successfully against the original name):**
+    ```bash
+    yq -N 'select(.kind == "Deployment") | .spec.template.spec.initContainers[].name' /tmp/rendered.yaml
+    # Expected: webhook-injector
+    ```
+  - **Manager-patch still merged (proves manager-patch.yaml ran successfully against the original name):**
+    ```bash
+    yq -N 'select(.kind == "Deployment") | .spec.template.spec.containers[] | select(.name == "manager") | .args[0]' /tmp/rendered.yaml
+    # Expected: --mac-prefixes-file=/etc/macdb/macdb.yaml
+    ```
+
+- [ ] **Step 17.3: Verify `remote/` build is unaffected**
+
+  ```bash
+  kustomize build remote/ > /tmp/remote.yaml
+  ```
+  No `remote/` resource references the host-side Deployment by name; build should be byte-identical to pre-rename.
+
+- [ ] **Step 17.4: Update `proposal.md` "What changes"**
+
+  Add a brief From/To/Reason/Impact bullet documenting the Deployment rename.
+
+- [ ] **Step 17.5: Run openspec validation**
+
+  ```
+  openspec validate replace-managedresource-with-dual-kustomize --strict
+  ```
+  Expected: `Change 'replace-managedresource-with-dual-kustomize' is valid`.
+
+- [ ] **Step 17.6: Commit and push**
+
+  ```
+  git add system/kustomize/metal-operator-remote/host/base/kustomization.yaml \
+          openspec/changes/replace-managedresource-with-dual-kustomize/
+
+  git commit -m "metal-operator-remote: rename kustomize Deployment to match helm fullname
+
+  The kustomize port of metal-operator-remote inherits the upstream
+  ironcore-dev/metal-operator//config/manager Deployment verbatim, which
+  ships metadata.name: controller-manager. The helm chart's
+  templates/controller-manager.yaml hard-codes
+  metadata.name: metal-operator-controller-manager, and helm-deployed
+  production clusters (rt-eu-de-1 verified 2026-06-10) run pods named
+  metal-operator-controller-manager-<hash>-<random>.
+
+  Add a JSON-patch as the final patches: entry in host/base/kustomization.yaml
+  to rename the rendered Deployment, bringing kustomize-mode naming into
+  parity with helm. The two earlier strategic-merge patches
+  (manager-patch.yaml and components/webhook-injector/sidecar.yaml) continue
+  to match by the original \`controller-manager\` name because patches run
+  in order and the rename runs last.
+
+  Downstream per-cluster overlays in kube-secrets must update their
+  patch.target.name and replacements.targets.select.name references from
+  \`controller-manager\` to \`metal-operator-controller-manager\` once this
+  lands; the a-qa-de-200 overlay's update follows in a separate
+  kube-secrets PR.
+
+  Spec change: openspec/changes/replace-managedresource-with-dual-kustomize/
+  Section 19 / Task 17."
+
+  git push origin poc/kustomize-metal-operator-remote
+  ```
+
+- [ ] **Step 17.7: Update PR #11633 description**
+
+  Add a brief note under Scope 3 documenting the Deployment rename and the kube-secrets follow-up.
+
+- [ ] **Step 17.8: Coordinate with cc/kube-secrets companion PR**
+
+  After this lands, the `a-qa-de-200` overlay's `host/kustomization.yaml` has three references to update (~L46, ~L88, ~L93 — `replacements.targets.select.name`, `patches.target.name`, `patches.metadata.name` in patch body). Apply order: `kubectl delete -k host/` → bump helm-charts ref → bump three references → `kubectl apply -k host/`. helm-charts only owns the cross-link target.
+
+---
+
 ## Self-Review
 
 After writing the plan, sanity check against the spec.
