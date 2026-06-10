@@ -27,4 +27,4 @@ groups:
       playbook: docs/operation/exporters/apic_exporter/#networkapicmetricsscrapedown
     annotations:
       description: "Prometheus cannot scrape APIC exporter for 15 min"
-      summary: "Check APIC exporter {{ $labels.kubernetes_pod_name }} for problems"
+      summary: "Check APIC exporter {{`{{ $labels.kubernetes_pod_name }}`}} for problems"

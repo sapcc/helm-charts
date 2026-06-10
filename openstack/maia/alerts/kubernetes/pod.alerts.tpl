@@ -14,12 +14,11 @@ groups:
           severity: info
           context: cpu
           dashboard: maia-overview
-          meta: "{{ $labels.pod }}/{{ $labels.container }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
         annotations:
           summary: Container is constantly CPU-throttled
-          description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
-            constantly. This is probably impacting performance, so check if we can increase the number
-            of replicas or the resource requests/limits.
+          description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is being CPU-throttled constantly. This is probably impacting performance, so check if we can increase the number of replicas or the resource requests/limits."
 
       - alert: OpenstackMaiaPodSchedulingInsufficientMemory
         expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"maia-.+"}[30m])) by (pod_name) > 0
@@ -31,11 +30,12 @@ groups:
           service: maia
           context: memory
           dashboard: maia-overview
-          meta: "{{ $labels.pod_name }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
         annotations:
           summary: Scheduling failed due to insufficient memory
-          description: The pod {{ $labels.pod_name }} failed to be scheduled. Insufficient memory!
+          description: "The pod {{`{{ $labels.pod_name }}`}} failed to be scheduled. Insufficient memory!"
 
       - alert: OpenstackMaiaPodOOMKilled
         expr: sum(rate(klog_pod_oomkill{pod_name=~"maia-.+"}[30m])) by (pod_name) > 0
@@ -47,11 +47,12 @@ groups:
           severity: info
           context: memory
           dashboard: maia-overview
-          meta: "{{ $labels.pod_name }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
         annotations:
           summary: Pod was oomkilled
-          description: The pod {{ $labels.pod_name }} was oomkilled recently
+          description: "The pod {{`{{ $labels.pod_name }}`}} was oomkilled recently"
 
       - alert: OpenstackMaiaPodOOMExceedingLimits
         # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
@@ -64,7 +65,8 @@ groups:
           severity: info
           context: memory
           dashboard: maia-overview
-          meta: "{{ $labels.pod_name }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod_name }}`}}"
         annotations:
           summary: Exceeding memory limits in 8h
-          description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
+          description: "The pod {{`{{ $labels.pod_name }}`}} will exceed its memory limit in 8h."
