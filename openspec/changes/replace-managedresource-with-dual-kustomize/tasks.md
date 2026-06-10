@@ -489,6 +489,6 @@ Both MUST continue matching the original `controller-manager` name after the ren
 
 - [x] 19.8 Commit on `poc/kustomize-metal-operator-remote`. Suggested message: `metal-operator-remote: rename kustomize Deployment to match helm fullname`. Push to origin.
 
-- [ ] 19.9 Update PR #11633 description: add a brief note under Scope 3 documenting the Deployment rename and the kube-secrets follow-up (per-cluster overlays' `patch.target.name` and `replacements.targets.select.name` references must switch from `controller-manager` to `metal-operator-controller-manager`).
+- [x] 19.9 Update PR #11633 description: add a brief note under Scope 3 documenting the Deployment rename and the kube-secrets follow-up (per-cluster overlays' `patch.target.name` and `replacements.targets.select.name` references must switch from `controller-manager` to `metal-operator-controller-manager`).
 
 - [ ] 19.10 Cross-repo follow-up (in cc/kube-secrets, NOT this repo): once Section 19 merges, the `a-qa-de-200` overlay's `host/kustomization.yaml` has three references to update (`replacements.targets.select.name` ~L46; `patches.target.name` ~L88; `patches.metadata.name` inside the patch body ~L93). Apply order in cc/kube-secrets per-cluster overlay: `kubectl delete -k host/` (removes old-name Deployment) → bump helm-charts ref or rebuild → bump the three name references → `kubectl apply -k host/` (creates new-name Deployment). **This task lives in the cc/kube-secrets PR; helm-charts only owns the cross-link target.**

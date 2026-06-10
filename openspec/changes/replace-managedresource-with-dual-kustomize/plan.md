@@ -2060,7 +2060,7 @@ Both MUST continue matching `controller-manager` after the rename, otherwise the
   git push origin poc/kustomize-metal-operator-remote
   ```
 
-- [ ] **Step 17.7: Update PR #11633 description**
+- [x] **Step 17.7: Update PR #11633 description**
 
   Add a brief note under Scope 3 documenting the Deployment rename and the kube-secrets follow-up.
 
