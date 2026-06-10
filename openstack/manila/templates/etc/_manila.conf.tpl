@@ -65,6 +65,9 @@ server_migration_driver_continue_update_interval = {{ .Values.server_migration_d
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
 ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
+driver_updatable_metadata = snapshot_policy,cross_dedup_disabled
+driver_updatable_subnet_metadata = showmount,pnfs
+
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
