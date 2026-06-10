@@ -45,6 +45,8 @@
   valueFrom: { secretKeyRef:    { name: elektra-secrets, key: two-factor-radius-secret } }
 - name: TWO_FACTOR_AUTH_DOMAINS
   value: {{ .Values.two_factor_auth_domains | quote }}
+- name: MONSOON_DB_NAME
+  value: {{ .Values.postgresql.database_name | default "monsoon-dashboard_production" | quote }}
 - name: MONSOON_DB_USER
   value: {{ .Values.postgresql.user | quote }}
 - name: MONSOON_DB_PASSWORD

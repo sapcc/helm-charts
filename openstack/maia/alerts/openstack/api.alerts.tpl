@@ -7,7 +7,7 @@ groups:
     labels:
       component: '{{`{{ $labels.component }}`}}'
       context: latency
-      dashboard: maia-details
+      dashboard: maia-overview
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
@@ -24,7 +24,7 @@ groups:
     labels:
       component: '{{`{{ $labels.component }}`}}'
       context: latency
-      dashboard: maia-details
+      dashboard: maia-overview
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
@@ -42,7 +42,7 @@ groups:
     labels:
       component: '{{`{{ $labels.component }}`}}'
       context: availability
-      dashboard: maia-details
+      dashboard: maia-overview
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
@@ -59,7 +59,7 @@ groups:
     labels:
       component: '{{`{{ $labels.component }}`}}'
       context: availability
-      dashboard: maia-details
+      dashboard: maia-overview
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
@@ -76,7 +76,7 @@ groups:
     labels:
       component: '{{`{{ $labels.component }}`}}'
       context: availability
-      dashboard: maia-details
+      dashboard: maia-overview
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: critical

@@ -8,8 +8,8 @@ groups:
     for: 5m
     labels:
       context: api
-      dashboard: hermes-overview
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+      dashboard: hermes-api
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-api"
       service: hermes
       severity: info
       support_group: observability
@@ -23,8 +23,8 @@ groups:
     for: 15m
     labels:
       context: availability
-      dashboard: hermes-overview
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+      dashboard: hermes-api
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-api"
       service: hermes
       severity: warning
       tier: os
@@ -38,8 +38,8 @@ groups:
     for: 15m
     labels:
       context: availability
-      dashboard: hermes-overview
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+      dashboard: hermes-api
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-api"
       service: hermes
       severity: warning
       tier: os
@@ -118,8 +118,8 @@ groups:
     labels:
       component: '{{`{{ $labels.component }}`}}'
       context: availability
-      dashboard: hermes-overview
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+      dashboard: hermes-api
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-api"
       service: hermes
       severity: critical
       tier: os
