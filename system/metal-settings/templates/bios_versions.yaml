@@ -11,6 +11,8 @@
 {{- $version := $entry.bios.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
 {{- $serverFilters := default (dict "included" (list) "excluded" (list)) $entry.bios.versionServerFilter }}
+{{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
+{{- $resourceName := default $defaultName $entry.bios.versionSetName }}
 
 {{/* Skip if we've already processed this model-version combination */}}
 {{- if not (hasKey $processedModels $modelKey) }}
@@ -21,7 +23,7 @@
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSVersionSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}
+  name: {{ $resourceName }}
 spec:
   serverSelector:
     matchLabels:

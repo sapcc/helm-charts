@@ -16,10 +16,12 @@
 
 {{/* ClusterType filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.bmcSettings.filters.clusterTypes) }}
+{{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
+{{- $resourceName := default $defaultName $entry.bmc.settingsSetName }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BMCSettingsSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $clusterType }}
+  name: {{ $resourceName }}
 spec:
   bmcSelector:
     matchLabels:

@@ -129,13 +129,17 @@ clusterConfig:
 # Multiple entries for same model: Some models appear twice with different clusterTypes
 # to support cluster-specific BIOS configurations (e.g., KVM vs SCI requirements).
 #
-# OPTIONAL PER-ENTRY SERVER SCOPING:
+# OPTIONAL PER-ENTRY SCOPING:
 # - BIOS uses:
 #   * machines.<vendor>.models[].bios.settingsServerFilter (BIOSSettingsSet)
 #   * machines.<vendor>.models[].bios.versionServerFilter  (BIOSVersionSet)
+#   * machines.<vendor>.models[].bios.settingsSetName       (BIOSSettingsSet metadata.name override)
+#   * machines.<vendor>.models[].bios.versionSetName        (BIOSVersionSet metadata.name override)
 # - BMC uses:
 #   * machines.<vendor>.models[].bmc.settingsServerFilter (BMCSettingsSet)
 #   * machines.<vendor>.models[].bmc.versionServerFilter  (BMCVersionSet)
+#   * machines.<vendor>.models[].bmc.settingsSetName       (BMCSettingsSet metadata.name override)
+#   * machines.<vendor>.models[].bmc.versionSetName        (BMCVersionSet metadata.name override)
 
 machines:
   dell:
@@ -154,10 +158,26 @@ machines:
           # versionServerFilter:
           #   included: [node001-bb001, node002-bb001]
           #   excluded: []
+          # Optional: override BIOSSettingsSet metadata.name for this entry
+          # settingsSetName: dell-poweredge-r640-custom
+          # Optional: override BIOSVersionSet metadata.name for this entry
+          # versionSetName: dell-poweredge-r640-custom
         bmc:
           version: "7.00.00.183"
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+          # Optional: override BMCSettingsSet metadata.name for this entry
+          # settingsSetName: dell-poweredge-r640-custom
+          # Optional: override BMCVersionSet metadata.name for this entry
+          # versionSetName: dell-poweredge-r640-custom
+          # Optional: apply only to BMCSettingsSet for this entry
+          # settingsServerFilter:
+          #   included: [node001-bb001]
+          #   excluded: []
+          # Optional: apply only to BMCVersionSet for this entry
+          # versionServerFilter:
+          #   included: []
+          #   excluded: [node003-bb086]
 
       - model: poweredge-r660
         clusterTypes: *defaultClusterTypes

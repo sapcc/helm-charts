@@ -16,10 +16,12 @@
 
 {{/* ClusterType filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.biosSettings.filters.clusterTypes) }}
+{{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
+{{- $resourceName := default $defaultName $entry.bios.settingsSetName }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSSettingsSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $clusterType }}
+  name: {{ $resourceName }}
 spec:
   serverSelector:
     matchLabels:
