@@ -25,6 +25,25 @@ spec:
   bmcSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
+{{- if or $.Values.bmcVersions.filters.servers.included $.Values.bmcVersions.filters.servers.excluded }}
+    matchExpressions:
+{{- if $.Values.bmcVersions.filters.servers.included }}
+      - key: kubernetes.metal.cloud.sap/name
+        operator: In
+        values:
+{{- range $.Values.bmcVersions.filters.servers.included }}
+          - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- if $.Values.bmcVersions.filters.servers.excluded }}
+      - key: kubernetes.metal.cloud.sap/name
+        operator: NotIn
+        values:
+{{- range $.Values.bmcVersions.filters.servers.excluded }}
+          - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
   bmcVersionTemplate:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
