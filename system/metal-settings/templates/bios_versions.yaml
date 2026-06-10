@@ -10,10 +10,11 @@
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
-{{- $serverFilters := default (dict "included" (list) "excluded" (list)) $entry.bios.versionServerFilter }}
+{{- $versionParams := (get $entry.bios "versionParams") | default dict }}
+{{- $serverFilters := (get $versionParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
 {{/* Skip if we've already processed this model-version combination */}}
-{{- if not (hasKey $processedModels $modelKey) }}
+{{- if and (include "metal-settings.biosVersionRegionMatch" (dict "root" $ "entry" $entry)) (not (hasKey $processedModels $modelKey)) }}
 {{- $_ := set $processedModels $modelKey true }}
 
 {{/* Model and Version filtering */}}
@@ -21,7 +22,9 @@
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSVersionSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}
+  {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
+  {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  name: {{ $resourceName }}
 spec:
   serverSelector:
     matchLabels:
