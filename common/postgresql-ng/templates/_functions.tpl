@@ -28,7 +28,7 @@
 {{/* -----BEGIN TAGS_JSON PAYLOAD----- */}}
 {
   "alpine-kubectl": {
-    "latest": "latest-20260609234544"
+    "latest": "latest-20260610034612"
   },
   "alpine-psql": {
     "latest": "latest-20260610034611"
