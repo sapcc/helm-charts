@@ -31,7 +31,7 @@ transform/perses:
 {{ end }}
 
 {{- define "containerd.receiver" }}
-filelog/containerd:
+file_log/containerd:
   include_file_path: true
   include: [ /var/log/pods/*/*/*.log ]
   exclude: [ /var/log/pods/logs_logs-*/*/*.log, /var/log/pods/logs_fluent*/*/*.log ]
@@ -50,7 +50,7 @@ filelog/containerd:
 
 {{- define "containerd.pipeline" }}
 logs/containerd:
-  receivers: [filelog/containerd]
+  receivers: [file_log/containerd]
   processors: [k8s_attributes,attributes/cluster,transform/ingress,transform/protocol,transform/perses]
   exporters: [routing]
 {{- end }}

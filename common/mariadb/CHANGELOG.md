@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.38.0 - 2026/06/03
+* MariaDB version updated to [10.11.18](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.18)
+* `maria-back-me-up` updated to `10.11-20260603173712`
+* chart version bumped
+
+## v0.37.0 - 2026/05/21
+* MariaDB version updated to [10.11.17](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.17)
+* `maria-back-me-up` updated to `10.11-20260521084302`
+* `user-credential-updater` updated to `python3.13-alpine3.23-20260506191108`
+* `pod-readiness` updated to `20260521132613`
+* chart version bumped
+
 ## v0.36.0 - 2026/05/14
 * skip mariadb PVC mount in backup deployment when access modes don't include `ReadWriteMany`
 * `maria-back-me-up` updated to `10.11-20260515121634`

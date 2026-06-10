@@ -1,0 +1,26 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "archer.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "archer.labels" . | nindent 4 }}
+rules:
+  # kubernetes-entrypoint: pod dependency
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  # kubernetes-entrypoint: service dependency (queries Endpoints)
+  - apiGroups: [""]
+    resources: ["endpoints", "services"]
+    verbs: ["get", "list"]
+  # kubernetes-entrypoint: job dependency
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list"]
+  # kubernetes-entrypoint: daemonset dependency
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    verbs: ["get", "list"]
+{{- end }}

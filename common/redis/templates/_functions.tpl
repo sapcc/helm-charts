@@ -28,13 +28,13 @@
 {{/* -----BEGIN TAGS_JSON PAYLOAD----- */}}
 {
   "alpine-kubectl": {
-    "latest": "latest-20260415235401"
+    "latest": "latest-20260610054610"
   },
   "alpine-valkey": {
-    "9.0": "9.0-20260520095039"
+    "9.1": "9.1-20260520155158"
   },
   "redis-exporter": {
-    "latest": "1.83.0-20260507212050"
+    "latest": "1.83.0-20260603043823"
   }
 }
 {{/* -----END TAGS_JSON PAYLOAD----- */}}

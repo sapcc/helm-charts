@@ -3,6 +3,21 @@
 
 # Regional filtering configuration for selective deployment
 # Use these settings to control which resources are deployed in each region
+#
+# FILTER BEHAVIOR:
+# - included: [] (empty) = include all items (default behavior)
+# - included: [dell, hpe] = ONLY include items in this list
+# - excluded: [lenovo] = exclude these items (takes precedence over included)
+# - If an item appears in both included and excluded, excluded wins
+#
+# CLUSTER TYPES & RESOURCE GENERATION:
+# - BIOSSettingsSet/BMCSettingsSet: Generate one resource PER clusterType listed below
+#   (e.g., if a model has 6 clusterTypes, it generates 6 separate Settings resources)
+# - BIOSVersionSet/BMCVersionSet: Generate one resource PER model (clusterTypes field is ignored)
+#
+# defaultClusterTypes anchor: Used by most models to reference standard cluster types
+# Some models (e.g., proliant-dl560-gen11) may have multiple entries with different
+# clusterTypes to support different BIOS/BMC settings per cluster type.
 
 defaultClusterTypes: &defaultClusterTypes
   - cc-kvm-compute
@@ -109,6 +124,26 @@ clusterConfig:
   managedNamespace: "metal-servers"   # Namespace where BMCSettingsSets related resources are deployed
 
 
+
+# Machine inventory: Hardware configurations for all supported servers
+#
+# SETTINGS FILE ORGANIZATION:
+# BIOS Settings Files (bios_settings/):
+#   - Dell: Most models use "dell-default.yaml" (shared by 10+ models)
+#     Exception: poweredge-r7615 uses "dell-r7615.yaml" (special PXE settings)
+#   - HPE: Most use "hpe-dl380-gen11.yaml"
+#     Exception: proliant-dl560-gen11 has TWO files:
+#       * hpe-dl560-gen11-kvm.yaml (for cc-kvm-compute with AdvancedEcc)
+#       * hpe-dl560-gen11-sci.yaml (for sci-k8s-* with FastFaultTolerantADDDC)
+#   - Lenovo: Each model series has its own file (sr650.yaml, sr850-v3.yaml, etc.)
+#
+# BMC Settings Files (bmc_settings/):
+#   - Dell: "dell-idrac.yaml" (shared by all Dell models)
+#   - HPE: "hpe-ilo.yaml" (shared by all HPE models)
+#   - Lenovo: "lenovo-xcc.yaml" (shared by all Lenovo models)
+#
+# Multiple entries for same model: Some models appear twice with different clusterTypes
+# to support cluster-specific BIOS configurations (e.g., KVM vs SCI requirements).
 
 machines:
   dell:
