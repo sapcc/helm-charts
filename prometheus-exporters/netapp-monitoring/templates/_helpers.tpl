@@ -54,11 +54,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "netapp-monitoring.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "netapp-monitoring.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
+{{- default "netappsd" .Values.netappsd.serviceAccountName }}
 {{- end }}
 
 

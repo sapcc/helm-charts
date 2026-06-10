@@ -65,8 +65,8 @@ spec:
               mountPath: /app/scripts/start-poller.sh
               subPath: start-poller.sh
             - name: basic-auth
-              mountPath: {{ .Values.netappsd.credentials_file }}
-              subPath: {{ .Values.netappsd.credentials_secret }}.yml
+              mountPath: {{ required ".Values.netappsd.credentials_file is required" .Values.netappsd.credentials_file }}
+              subPath: {{ required ".Values.netappsd.credentials_secret is required" .Values.netappsd.credentials_secret }}.yml
               readOnly: true
           securityContext:
             {{- toYaml .Values.harvest.securityContext | nindent 12 }}
@@ -137,7 +137,7 @@ spec:
           emptyDir: {}
         - name: basic-auth
           secret:
-            secretName: {{ .Values.netappsd.credentials_secret }}
+            secretName: {{ required ".Values.netappsd.credentials_secret is required" .Values.netappsd.credentials_secret }}
 ---
 {{- end }}
 {{- end }}
