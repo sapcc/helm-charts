@@ -488,6 +488,53 @@ The workerless `webhook-service` ExternalName Service uses `externalName: metal-
 | `kustomize-sidecar-injection` | **Significant rewrite.** **REMOVE** "Sidecar args match current configuration" (push semantics), "Sidecar pushes WebhookConfiguration from local ConfigMap". **ADD** "Sidecar runs in caBundle-rotation mode (`WEBHOOK_INJECTOR_MODE=ca-rotation` or equivalent)", "Sidecar manages TLS cert lifecycle for metal-operator-webhook-service on host", "Sidecar patches caBundle field of named workerless WebhookConfiguration via remote-kubeconfig", "Sidecar RBAC on remote scoped to `get` + `patch` on `webhooks[*].clientConfig.caBundle` only", "Local `webhook-config` ConfigMap on host is not required and not deployed". **MODIFY** removability and image-tag-override scenarios (they continue to work). |
 | `webhook-url-rendering` | **OBSOLETE** — capability is fully replaced by ExternalName-based routing. **DELETE** "Pre-rendered webhook manifests checked into repository", "Regeneration Makefile target for upstream upgrades", "Webhook configurations transformed from service-based to URL-based". The capability either gets removed entirely OR renamed to something like `webhook-routing-via-externalname` to govern the new mechanism. Decision belongs in the specs phase. |
 
+## Three-namespaces-of-controller-manager problem (post-deploy fix, 2026-06-10)
+
+**Symptom on `a-qa-de-200` first deploy.** After `kubectl apply -k <overlay>/remote/` landed the upstream RBAC verbatim, the controller-manager Pod went `2/2 Running` but reconciled nothing — controller-runtime emitted a forever-loop of:
+
+```
+ERROR controller-runtime.cache.UnhandledError Failed to watch
+{"type": "*v1alpha1.Server", "error": "failed to list *v1alpha1.Server:
+servers.metal.ironcore.dev is forbidden:
+User \"system:serviceaccount:kube-system:metal-operator-controller-manager\"
+cannot list resource \"servers\" in API group \"metal.ironcore.dev\"
+at the cluster scope"}
+```
+
+**Root cause.** Three distinct ServiceAccount identities named "controller-manager"-ish exist in the topology:
+
+| Where | SA name | Created by |
+|---|---|---|
+| Workerless cluster, `kube-system` | `controller-manager` (unprefixed) | Upstream `ironcore-dev/metal-operator//config/rbac/service_account.yaml`, consumed verbatim by `remote/upstream/metal-operator-crds-and-rbac/` |
+| Workerless cluster, `kube-system` | `metal-operator-controller-manager` (Gardener-prefixed) | Gardener token-injector — created in response to the `serviceaccount.resources.gardener.cloud/name: metal-operator-controller-manager` annotation on the host-side `metal-operator-remote-kubeconfig` Secret in `host/base/remote-serviceaccount-secret.yaml` |
+| Seed cluster, shoot CP namespace | `metal-operator-webhook-injector` | The webhook-injector Component — for the sidecar's host-side privileges (different concern) |
+
+The remote-kubeconfig token mounted at `/var/run/secrets/kubernetes.io/remote-serviceaccount/token` inside the controller-manager Pod is for the **Gardener-prefixed** SA — that's what the Secret annotation requested. But upstream's three bindings (`manager-rolebinding`, `metrics-auth-rolebinding` ClusterRoleBindings; `leader-election-rolebinding` RoleBinding) bind their respective Roles to the **unprefixed** `controller-manager` SA. Different identity → no permission. Hence the `forbidden`-loop.
+
+**Why the helm chart doesn't have this issue.** `system/metal-operator-remote/templates/` uses fullname-templated SA + binding names:
+
+```yaml
+# templates/controller-manager.yaml (rendered for Release.Name=metal-operator-remote)
+serviceAccountName: {{ include "metal-operator-core.fullname" . }}-controller-manager
+# templates/managedresource.yaml (binding subjects similarly templated)
+```
+
+Both the SA and the binding subjects render with the same `metal-operator-remote-controller-manager` (or in this code path: `metal-operator-controller-manager` — the helm chart's `metal-operator-core` subchart adds its own prefix). They stay consistent because the same template helper renders both sides.
+
+The kustomize port consumes upstream RBAC verbatim, which means the SA is upstream's `controller-manager` (unprefixed) and so are the binding subjects. The Gardener-prefixed SA created by the token-injector exists separately — without an explicit subject patch, no binding references it.
+
+**Fix.** Add three JSON Patch `op: replace` patches in `remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml`, each overriding the binding's `subjects` list to point at the Gardener-prefixed SA. The patch idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree, which already does the equivalent for `webhook-injector-target` ClusterRoleBinding.
+
+**Out of scope (deliberately):**
+
+- **Don't add `namePrefix:` to the kustomization.** namePrefix would rename the CRDs (e.g., `servers.metal.ironcore.dev` → `metal-operator-servers.metal.ironcore.dev`), which would break the manager (it watches the unprefixed CRD names). Targeted subject patches are the only correct fix.
+- **Don't rename the upstream `controller-manager` SA itself.** It sits in `kube-system` unused. The manager Pod authenticates as the Gardener-prefixed SA via remote-kubeconfig — never as the upstream SA. A future hygiene commit can `$patch: delete` the unused upstream SA, but it's not a correctness fix.
+- **Don't change apply order.** CRDs still come before RBAC; upstream `?ref=v0.4.0` pin unchanged.
+
+**TEST-PHASE precedent in cc/kube-secrets.** A TEST-PHASE block in `cc/kube-secrets//values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/remote/kustomization.yaml` (added 2026-06-10 to unblock the test deployment) carries the same three patches with a comment explicitly saying they MUST be ported to this kustomize tree once the helm-charts PR merges. Section 18 / Task 16 is that port. Once Section 18 lands, the TEST-PHASE block becomes redundant and is removed in a follow-up cc/kube-secrets commit.
+
+---
+
 ## Helm-vs-kustomize equivalence gap analysis (post-PR review, 2026-06-05)
 
 A diff between `helm template metal-operator-remote ./system/metal-operator-remote -f <a-qa-de-200/k3s-admin values>` and `kustomize build system/kustomize/metal-operator-remote/host/base/` (with the post-pivot architecture from Section 16) surfaced 7 gaps. Each is dispositioned per the OQ10 transitivity argument applied during webhook-injector RBAC absorption (Section 16): **fleet-uniform values belong in helm-charts; per-cluster values belong in kube-secrets**.

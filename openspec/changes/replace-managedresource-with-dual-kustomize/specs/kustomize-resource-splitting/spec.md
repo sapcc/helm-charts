@@ -117,6 +117,47 @@ The `remote/upstream/metal-operator-crds-and-rbac/` kustomization SHALL apply up
 
 ---
 
+### Requirement: Upstream metal-operator RBAC bindings rebound to Gardener-prefixed ServiceAccount
+
+The `remote/upstream/metal-operator-crds-and-rbac/` kustomization SHALL override the `subjects` list on the three upstream metal-operator RBAC bindings (`manager-rolebinding` ClusterRoleBinding, `metrics-auth-rolebinding` ClusterRoleBinding, `leader-election-rolebinding` RoleBinding) to point at the Gardener-prefixed ServiceAccount `metal-operator-controller-manager` in `kube-system`, NOT the unprefixed upstream default `controller-manager`.
+
+**Why:** three distinct "controller-manager" ServiceAccount identities exist in this topology:
+
+| Where | SA name | Created by |
+|---|---|---|
+| Workerless cluster, `kube-system` | `controller-manager` (unprefixed) | Upstream `ironcore-dev/metal-operator//config/rbac/service_account.yaml`, consumed verbatim by this kustomization |
+| Workerless cluster, `kube-system` | `metal-operator-controller-manager` (prefixed) | Gardener token-injector — created in response to the `serviceaccount.resources.gardener.cloud/name: metal-operator-controller-manager` annotation on the host-side `metal-operator-remote-kubeconfig` Secret |
+| Seed cluster, shoot CP namespace | `metal-operator-webhook-injector` | The webhook-injector Component (out of scope here) |
+
+The remote-kubeconfig token mounted in the controller-manager Pod authenticates as the **Gardener-prefixed** SA (`metal-operator-controller-manager`), because that is what the Secret annotation requested. Without this rebinding, upstream's bindings reference the unprefixed `controller-manager` SA — a different identity — and the manager Pod gets `forbidden` errors on every list/watch (`failed to list *v1alpha1.Server: ... User "system:serviceaccount:kube-system:metal-operator-controller-manager" cannot list resource "servers" ... at the cluster scope`).
+
+The helm chart avoids this issue because its templates use fullname-templated SA + binding names that render consistent across SA and bindings (e.g., `{{ include "metal-operator-core.fullname" . }}-controller-manager` for both the SA itself and the binding subjects). The kustomize port consumes upstream verbatim and so loses this consistency without explicit subject patches.
+
+The same idiom is used by the sibling `remote/upstream/webhook-injector-rbac/` subtree, which rebinds `webhook-injector-target` ClusterRoleBinding to the same Gardener-prefixed SA. Both are necessary; this requirement governs only the metal-operator bindings.
+
+#### Scenario: Three bindings rebound in build output
+
+- **WHEN** `kustomize build remote/upstream/metal-operator-crds-and-rbac/` is executed
+- **THEN** the `ClusterRoleBinding` named `manager-rolebinding` SHALL have `subjects` containing exactly one entry `{kind: ServiceAccount, name: metal-operator-controller-manager, namespace: kube-system}`
+- **AND** the `ClusterRoleBinding` named `metrics-auth-rolebinding` SHALL have `subjects` containing exactly one entry `{kind: ServiceAccount, name: metal-operator-controller-manager, namespace: kube-system}`
+- **AND** the `RoleBinding` named `leader-election-rolebinding` (note: RoleBinding, not ClusterRoleBinding — leader-election is namespaced to `kube-system`) SHALL have `subjects` containing exactly one entry `{kind: ServiceAccount, name: metal-operator-controller-manager, namespace: kube-system}`
+- **AND** none of the three bindings' `subjects` SHALL contain a `name: controller-manager` entry (the upstream default)
+
+#### Scenario: Patch idiom matches the sibling webhook-injector-rbac subtree
+
+- **WHEN** examining the `patches:` block in `system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml`
+- **THEN** each rebinding patch SHALL use a JSON Patch `op: replace` on `path: /subjects` with a single-element array value (the `ServiceAccount` entry)
+- **AND** the patch style SHALL mirror the sibling `remote/upstream/webhook-injector-rbac/kustomization.yaml`'s `webhook-injector-target` rebinding patch (target selector form, indentation, comment style)
+
+#### Scenario: Out-of-scope — no namePrefix, no SA rename, no apply-order change
+
+- **WHEN** examining the kustomization file
+- **THEN** there SHALL NOT be a `namePrefix:` directive (which would also rename the CRDs and break the manager's CRD watches)
+- **AND** the upstream `controller-manager` ServiceAccount SHALL NOT be renamed (it remains in the build output, unused — the manager Pod authenticates as the Gardener-prefixed SA via remote-kubeconfig; a future hygiene commit MAY `$patch: delete` the unused upstream SA but that is not required for correctness)
+- **AND** the upstream `?ref=v0.4.0` pin SHALL NOT be modified
+
+---
+
 ### Requirement: Workerless webhooks consume only upstream's VWC manifest
 
 The `remote/upstream/metal-operator-webhooks/` kustomize tree SHALL consume **only** upstream metal-operator's `config/webhook/manifests.yaml` file (the `ValidatingWebhookConfiguration`), NOT the whole `config/webhook/` directory. Upstream's `service.yaml` (a regular ClusterIP Service in the `system` namespace) SHALL NOT be applied to the workerless cluster — it is endpointless on workerless (the manager Pod runs in the host cluster) and is never used for webhook callbacks in steady state, because the webhook-injector admission webhook rewrites `clientConfig.Service` → `clientConfig.URL` synchronously at admission time. The VWC's `clientConfig.service.namespace: system` field reference is harmless: K8s does not validate Service existence at VWC apply time; the namespace string is only resolved when the apiserver actually invokes the webhook, and that path is replaced by the URL form via admission rewrite before any callback fires.

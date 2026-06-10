@@ -1761,6 +1761,167 @@ The helm-vs-kustomize diff for `a-qa-de-200`/k3s-admin values surfaced 7 gaps. P
 
 ---
 
+## Task 16: Rebind upstream metal-operator RBAC subjects to Gardener-prefixed ServiceAccount (post-deploy fix)
+
+**Files:**
+
+- Modify: `system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml` (add `patches:` block with 3 subject-replace patches)
+- Update spec delta: `specs/kustomize-resource-splitting/spec.md` (already drafted alongside this task — new ADDED requirement "Upstream metal-operator RBAC bindings rebound to Gardener-prefixed ServiceAccount")
+- Update `design.md` with a new section "Three-namespaces-of-controller-manager problem"
+- Update `proposal.md` with a brief What-changes bullet
+- Cross-repo: a TEST-PHASE block in `cc/kube-secrets//values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/remote/kustomization.yaml` becomes redundant once this lands and must be removed in a follow-up cc/kube-secrets commit
+
+**Why this section (post-deploy fix from `a-qa-de-200`):**
+
+After `kubectl apply -k <overlay>/remote/` lands the upstream RBAC verbatim, the metal-operator-remote controller-manager Pod (running on the seed in the shoot CP namespace, talking to the workerless cluster via remote-kubeconfig) emits a forever-loop of:
+
+```
+ERROR controller-runtime.cache.UnhandledError Failed to watch
+{"type": "*v1alpha1.Server", "error": "failed to list *v1alpha1.Server:
+servers.metal.ironcore.dev is forbidden:
+User \"system:serviceaccount:kube-system:metal-operator-controller-manager\"
+cannot list resource \"servers\" in API group \"metal.ironcore.dev\"
+at the cluster scope"}
+```
+
+Pod stays `2/2 Running` but reconciles nothing. Three SA identities collide:
+
+| Where | SA name | Created by |
+|---|---|---|
+| Workerless, `kube-system` | `controller-manager` (unprefixed) | Upstream `ironcore-dev/metal-operator//config/rbac/service_account.yaml` (consumed verbatim) |
+| Workerless, `kube-system` | `metal-operator-controller-manager` (Gardener-prefixed) | Gardener token-injector — created in response to the `serviceaccount.resources.gardener.cloud/name` annotation on the host-side `metal-operator-remote-kubeconfig` Secret |
+| Seed, shoot CP namespace | `metal-operator-webhook-injector` | webhook-injector Component (irrelevant here) |
+
+The remote-kubeconfig token authenticates as the Gardener-prefixed SA, but upstream's three bindings (`manager-rolebinding`, `metrics-auth-rolebinding`, `leader-election-rolebinding`) point at the unprefixed `controller-manager`. The helm chart avoids this via fullname-templated SA + binding names that render consistent; the kustomize port loses this consistency without explicit subject patches.
+
+Fix idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree (which already overrides the `webhook-injector-target` ClusterRoleBinding subjects to the same Gardener-prefixed SA).
+
+### Steps
+
+- [ ] **Step 16.1: Edit the kustomization to add subject-replace patches**
+
+  Edit `system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml`. Add a `patches:` block AFTER the existing `resources:` list with three JSON Patch entries:
+
+  ```yaml
+  patches:
+    # Override upstream's three RoleBinding/ClusterRoleBinding subjects to point
+    # at the Gardener-prefixed ServiceAccount (kube-system/metal-operator-controller-manager)
+    # rather than the unprefixed upstream default. The Gardener token-injector
+    # creates the prefixed SA in response to the annotation on the host-side
+    # remote-kubeconfig Secret; the remote-kubeconfig token authenticates as
+    # that prefixed SA. Without this rebinding the manager Pod gets forbidden
+    # errors on every list/watch — the upstream bindings reference a different
+    # identity (the unprefixed `controller-manager`).
+    #
+    # Mirrors the idiom in remote/upstream/webhook-injector-rbac/kustomization.yaml
+    # which rebinds webhook-injector-target ClusterRoleBinding the same way.
+    - target:
+        kind: ClusterRoleBinding
+        name: manager-rolebinding
+      patch: |
+        - op: replace
+          path: /subjects
+          value:
+            - kind: ServiceAccount
+              name: metal-operator-controller-manager
+              namespace: kube-system
+    - target:
+        kind: ClusterRoleBinding
+        name: metrics-auth-rolebinding
+      patch: |
+        - op: replace
+          path: /subjects
+          value:
+            - kind: ServiceAccount
+              name: metal-operator-controller-manager
+              namespace: kube-system
+    - target:
+        # Note: RoleBinding (not ClusterRoleBinding) — leader-election is
+        # namespaced to kube-system in upstream config/rbac/.
+        kind: RoleBinding
+        name: leader-election-rolebinding
+      patch: |
+        - op: replace
+          path: /subjects
+          value:
+            - kind: ServiceAccount
+              name: metal-operator-controller-manager
+              namespace: kube-system
+  ```
+
+  Do NOT add `namePrefix:` to the kustomization (would also rename CRDs and break the manager's CRD watches). Do NOT rename or `$patch: delete` the upstream `controller-manager` SA in this commit (it sits unused in the build output; a hygiene commit later may delete it).
+
+- [ ] **Step 16.2: Verify the build renders the three bindings with the expected subject**
+
+  ```bash
+  kustomize build system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/ > /tmp/rendered.yaml
+  for binding in manager-rolebinding metrics-auth-rolebinding leader-election-rolebinding; do
+    echo "=== $binding ==="
+    yq -N "select((.kind == \"ClusterRoleBinding\" or .kind == \"RoleBinding\") and .metadata.name == \"$binding\") | .subjects" /tmp/rendered.yaml
+  done
+  ```
+
+  Expected: each binding shows exactly:
+  ```yaml
+  - kind: ServiceAccount
+    name: metal-operator-controller-manager
+    namespace: kube-system
+  ```
+
+- [ ] **Step 16.3: Verify the full `remote/` build still composes**
+
+  ```bash
+  kustomize build system/kustomize/metal-operator-remote/remote/ > /tmp/remote.yaml
+  ```
+
+  Spot-check resource count is unchanged from pre-fix (only subjects within 3 bindings should differ).
+
+- [ ] **Step 16.4: Update `proposal.md` "What changes"**
+
+  Add a brief From/To/Reason/Impact bullet documenting the subject-rebind fix.
+
+- [ ] **Step 16.5: Run openspec validation**
+
+  ```
+  openspec validate replace-managedresource-with-dual-kustomize --strict
+  ```
+  Expected: `Change 'replace-managedresource-with-dual-kustomize' is valid`.
+
+- [ ] **Step 16.6: Commit and push**
+
+  ```
+  git add system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml \
+          openspec/changes/replace-managedresource-with-dual-kustomize/
+
+  git commit -m "fix(metal-operator-remote): rebind upstream RBAC subjects to Gardener-prefixed SA
+
+  After kubectl apply -k <overlay>/remote/ lands upstream RBAC verbatim,
+  the controller-manager Pod gets forbidden on every list/watch:
+  upstream's three bindings (manager-rolebinding, metrics-auth-rolebinding,
+  leader-election-rolebinding) point at the unprefixed 'controller-manager'
+  SA, but the remote-kubeconfig token authenticates as the Gardener-prefixed
+  SA 'metal-operator-controller-manager' (created by the token-injector in
+  response to the host-side Secret annotation). Add three subject-replace
+  patches to override the bindings to point at the prefixed SA. Mirrors
+  the idiom already used in remote/upstream/webhook-injector-rbac/.
+
+  Tracking: post-deploy finding on a-qa-de-200 (2026-06-10).
+  Removes the need for a parallel TEST-PHASE block in cc/kube-secrets
+  (separate follow-up commit there)."
+
+  git push origin poc/kustomize-metal-operator-remote
+  ```
+
+- [ ] **Step 16.7: Update PR #11633 description**
+
+  Add a brief note under Scope 3 documenting the subject-rebind fix and its symptom (`forbidden`-loop on list/watch). Cross-link the cc/kube-secrets TEST-PHASE block that becomes redundant.
+
+- [ ] **Step 16.8: Coordinate with cc/kube-secrets companion PR**
+
+  After this lands, the TEST-PHASE `patches:` block in `cc/kube-secrets//values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/remote/kustomization.yaml` becomes redundant and must be removed in a follow-up commit there. helm-charts only owns the cross-link target.
+
+---
+
 ## Self-Review
 
 After writing the plan, sanity check against the spec.
