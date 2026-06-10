@@ -10,6 +10,7 @@
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
+{{- $serverFilters := default (dict "included" (list) "excluded" (list)) $entry.bmc.versionServerFilter }}
 
 {{/* Skip if we've already processed this model-version combination */}}
 {{- if not (hasKey $processedModels $modelKey) }}
@@ -25,21 +26,21 @@ spec:
   bmcSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
-{{- if or $.Values.bmcVersions.filters.servers.included $.Values.bmcVersions.filters.servers.excluded }}
+{{- if or $serverFilters.included $serverFilters.excluded }}
     matchExpressions:
-{{- if $.Values.bmcVersions.filters.servers.included }}
+{{- if $serverFilters.included }}
       - key: kubernetes.metal.cloud.sap/name
         operator: In
         values:
-{{- range $.Values.bmcVersions.filters.servers.included }}
+{{- range $serverFilters.included }}
           - {{ . | quote }}
 {{- end }}
 {{- end }}
-{{- if $.Values.bmcVersions.filters.servers.excluded }}
+{{- if $serverFilters.excluded }}
       - key: kubernetes.metal.cloud.sap/name
         operator: NotIn
         values:
-{{- range $.Values.bmcVersions.filters.servers.excluded }}
+{{- range $serverFilters.excluded }}
           - {{ . | quote }}
 {{- end }}
 {{- end }}

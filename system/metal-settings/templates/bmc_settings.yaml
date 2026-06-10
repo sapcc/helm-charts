@@ -8,6 +8,7 @@
 {{- if and $entry.clusterTypes $entry.bmc $entry.bmc.settingsFileName }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
+{{- $serverFilters := default (dict "included" (list) "excluded" (list)) $entry.bmc.settingsServerFilter }}
 
 {{/* Model and Version filtering */}}
 {{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcSettings.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcSettings.filters.versions)) }}
@@ -24,21 +25,21 @@ spec:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
       kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
-{{- if or $.Values.bmcSettings.filters.servers.included $.Values.bmcSettings.filters.servers.excluded }}
+{{- if or $serverFilters.included $serverFilters.excluded }}
     matchExpressions:
-{{- if $.Values.bmcSettings.filters.servers.included }}
+{{- if $serverFilters.included }}
       - key: kubernetes.metal.cloud.sap/name
         operator: In
         values:
-{{- range $.Values.bmcSettings.filters.servers.included }}
+{{- range $serverFilters.included }}
           - {{ . | quote }}
 {{- end }}
 {{- end }}
-{{- if $.Values.bmcSettings.filters.servers.excluded }}
+{{- if $serverFilters.excluded }}
       - key: kubernetes.metal.cloud.sap/name
         operator: NotIn
         values:
-{{- range $.Values.bmcSettings.filters.servers.excluded }}
+{{- range $serverFilters.excluded }}
           - {{ . | quote }}
 {{- end }}
 {{- end }}
