@@ -429,6 +429,6 @@ A TEST-PHASE block currently lives in `cc/kube-secrets//values/kustomize/admin-k
 
 - [x] 18.8 Commit on `poc/kustomize-metal-operator-remote`. Suggested message: `fix(metal-operator-remote): rebind upstream RBAC subjects to Gardener-prefixed SA`. Push to origin.
 
-- [ ] 18.9 Update PR #11633 description: add a brief note under Scope 3 documenting the subject-rebind fix and its symptom (`forbidden`-loop on list/watch). Cross-link the cc/kube-secrets TEST-PHASE block that becomes redundant.
+- [x] 18.9 Update PR #11633 description: add a brief note under Scope 3 documenting the subject-rebind fix and its symptom (`forbidden`-loop on list/watch). Cross-link the cc/kube-secrets TEST-PHASE block that becomes redundant.
 
 - [ ] 18.10 Cross-repo follow-up (in cc/kube-secrets, NOT this repo): once Section 18 merges to `poc/kustomize-metal-operator-remote`, the TEST-PHASE `patches:` block in `cc/kube-secrets//values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/remote/kustomization.yaml` becomes redundant. Remove it in a follow-up commit on the kube-secrets side. **This task lives in the cc/kube-secrets PR; helm-charts only owns the cross-link target.**

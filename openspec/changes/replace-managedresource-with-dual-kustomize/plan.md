@@ -1912,7 +1912,7 @@ Fix idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree (
   git push origin poc/kustomize-metal-operator-remote
   ```
 
-- [ ] **Step 16.7: Update PR #11633 description**
+- [x] **Step 16.7: Update PR #11633 description**
 
   Add a brief note under Scope 3 documenting the subject-rebind fix and its symptom (`forbidden`-loop on list/watch). Cross-link the cc/kube-secrets TEST-PHASE block that becomes redundant.
 
