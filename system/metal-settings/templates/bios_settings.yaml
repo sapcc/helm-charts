@@ -5,10 +5,11 @@
 {{/* Vendor filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosSettings.filters.vendors) }}
 {{- range $entry := $vendorConfig.models }}
-{{- if and $entry.clusterTypes $entry.bios $entry.bios.settingsFileName }}
+{{- if and $entry.clusterTypes $entry.bios $entry.bios.settingsFileName (include "metal-settings.biosSettingsRegionMatch" (dict "root" $ "entry" $entry)) }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
-{{- $serverFilters := default (dict "included" (list) "excluded" (list)) $entry.bios.settingsServerFilter }}
+{{- $settingsParams := (get $entry.bios "settingsParams") | default dict }}
+{{- $serverFilters := (get $settingsParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
 {{/* Model and Version filtering */}}
 {{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.biosSettings.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.biosSettings.filters.versions)) }}
@@ -17,7 +18,7 @@
 {{/* ClusterType filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.biosSettings.filters.clusterTypes) }}
 {{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
-{{- $resourceName := default $defaultName $entry.bios.settingsSetName }}
+{{- $resourceName := (get $settingsParams "setMetadataName") | default $defaultName }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSSettingsSet
 metadata:

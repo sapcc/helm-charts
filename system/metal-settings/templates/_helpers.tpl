@@ -111,3 +111,81 @@ matchExpressions:
 {{- end }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Region filter helpers per CRD purpose.
+
+Behavior:
+  - If .Values.global.region is empty/unset: include all entries (backward compatible)
+  - If .Values.global.region is set: evaluate params.regionFilter
+
+Supported per-purpose fields:
+  - bios.settingsParams.regionFilter
+  - bios.versionParams.regionFilter
+  - bmc.settingsParams.regionFilter
+  - bmc.versionParams.regionFilter
+
+regionFilter semantics (same as other filters):
+  - included: [] => include all regions
+  - included: [qa-de-1] => include only listed regions
+  - excluded: [qa-de-1] => exclude listed regions (takes precedence)
+  - wildcard "*" is supported in included/excluded
+*/}}
+{{- define "metal-settings.regionFilterMatch" -}}
+{{- $region := .region -}}
+{{- $filter := .filter | default dict -}}
+{{- $includedList := (get $filter "included") | default (list) -}}
+{{- $excludedList := (get $filter "excluded") | default (list) -}}
+{{- $included := or (eq (len $includedList) 0) (has $region $includedList) (has "*" $includedList) -}}
+{{- $excluded := or (has $region $excludedList) (has "*" $excludedList) -}}
+{{- if and $included (not $excluded) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generic purpose-based region matcher.
+Expected input:
+  dict "root" $ "entry" $entry "section" "bios|bmc" "paramsKey" "settingsParams|versionParams"
+*/}}
+{{- define "metal-settings.purposeRegionMatch" -}}
+{{- $globalValues := (get .root.Values "global") | default dict -}}
+{{- $deployRegion := (get $globalValues "region") | default "" -}}
+{{- if not $deployRegion -}}
+true
+{{- else -}}
+{{- $section := (get .entry .section) | default dict -}}
+{{- $params := (get $section .paramsKey) | default dict -}}
+{{- $regionFilter := (get $params "regionFilter") | default (dict "included" (list) "excluded" (list)) -}}
+{{- include "metal-settings.regionFilterMatch" (dict "region" $deployRegion "filter" $regionFilter) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "metal-settings.biosSettingsRegionMatch" -}}
+{{- include "metal-settings.purposeRegionMatch" (dict "root" .root "entry" .entry "section" "bios" "paramsKey" "settingsParams") -}}
+{{- end -}}
+
+{{- define "metal-settings.biosVersionRegionMatch" -}}
+{{- include "metal-settings.purposeRegionMatch" (dict "root" .root "entry" .entry "section" "bios" "paramsKey" "versionParams") -}}
+{{- end -}}
+
+{{- define "metal-settings.bmcSettingsRegionMatch" -}}
+{{- include "metal-settings.purposeRegionMatch" (dict "root" .root "entry" .entry "section" "bmc" "paramsKey" "settingsParams") -}}
+{{- end -}}
+
+{{- define "metal-settings.bmcVersionRegionMatch" -}}
+{{- include "metal-settings.purposeRegionMatch" (dict "root" .root "entry" .entry "section" "bmc" "paramsKey" "versionParams") -}}
+{{- end -}}
+
+{{/*
+Require global.region for every render.
+This chart relies on region-aware filtering and should not render without it.
+*/}}
+{{- define "metal-settings.requireGlobalRegion" -}}
+{{- $globalValues := (get .Values "global") | default dict -}}
+{{- $deployRegion := (get $globalValues "region") | default "" -}}
+{{- if not $deployRegion -}}
+{{- fail "global.region must be set (e.g. --set global.region=qa-de-1)" -}}
+{{- end -}}
+{{- end -}}
+
