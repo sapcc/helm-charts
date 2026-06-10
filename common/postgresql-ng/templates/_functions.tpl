@@ -31,7 +31,7 @@
     "latest": "latest-20260610034612"
   },
   "alpine-psql": {
-    "latest": "latest-20260610034611"
+    "latest": "latest-20260610054610"
   }
 }
 {{/* -----END TAGS_JSON PAYLOAD----- */}}
