@@ -486,6 +486,7 @@ security_analytics_full_access:
   - "cluster:admin/opensearch/securityanalytics/threatintel/*"
   - "cluster:monitor/tasks/lists"                        # SA detector async task status checks
   - "indices:admin/index_template/put"                   # Terraform creates/updates composable templates (cluster-level only)
+  - "indices:admin/index_template/delete"                # Terraform destroys composable templates (cluster-level only)
   - "indices:monitor/settings/get"                       # Terraform provider GET /<index>/_settings (cluster-level scope)
   index_permissions:
   - index_patterns:
@@ -526,8 +527,11 @@ security_analytics_full_access:
     - "indices:monitor/settings/get"
   - index_patterns:
     - "sci-cyber-security-alerts-*"
+    - "sci-cyber-defense-alerts-*"
+    - "sci-cyber-defense-findings-*"
     allowed_actions:
     - "indices:admin/create"
+    - "indices:admin/delete"
     - "indices:admin/aliases"
     - "indices:admin/mapping/put"
     - "indices:admin/mappings/get"
@@ -599,3 +603,12 @@ siem_terraform_operator:
   - "cluster:monitor/health"                            # GET /_cluster/health — Terraform and bootstrap scripts
   - "indices:admin/index_template/get"                  # Terraform reads composable templates (cluster-level only)
   - "cluster:monitor/remote/info"                       # Remote cluster info — retained for future CCS use
+  index_permissions:
+  - index_patterns:
+    - ".kibana*"
+    allowed_actions:
+    - "indices:data/write/index"
+    - "indices:data/write/delete"
+    - "indices:data/read/get"
+    - "indices:admin/exists"
+    - indices:admin/create
