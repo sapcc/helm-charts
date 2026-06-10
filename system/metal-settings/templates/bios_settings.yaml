@@ -37,6 +37,25 @@ spec:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
       kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
+{{- if or $.Values.biosSettings.filters.servers.included $.Values.biosSettings.filters.servers.excluded }}
+    matchExpressions:
+{{- if $.Values.biosSettings.filters.servers.included }}
+      - key: kubernetes.metal.cloud.sap/name
+        operator: In
+        values:
+{{- range $.Values.biosSettings.filters.servers.included }}
+          - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- if $.Values.biosSettings.filters.servers.excluded }}
+      - key: kubernetes.metal.cloud.sap/name
+        operator: NotIn
+        values:
+{{- range $.Values.biosSettings.filters.servers.excluded }}
+          - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
   biosSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
 {{ $.Files.Get (printf "bios_settings/%s" $entry.bios.settingsFileName) | trim | indent 4 }}

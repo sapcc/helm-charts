@@ -35,6 +35,25 @@ spec:
   serverSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
+{{- if or $.Values.biosVersions.filters.servers.included $.Values.biosVersions.filters.servers.excluded }}
+    matchExpressions:
+{{- if $.Values.biosVersions.filters.servers.included }}
+      - key: kubernetes.metal.cloud.sap/name
+        operator: In
+        values:
+{{- range $.Values.biosVersions.filters.servers.included }}
+          - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- if $.Values.biosVersions.filters.servers.excluded }}
+      - key: kubernetes.metal.cloud.sap/name
+        operator: NotIn
+        values:
+{{- range $.Values.biosVersions.filters.servers.excluded }}
+          - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
   biosVersionTemplate:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
