@@ -66,3 +66,4 @@
   value: {{ .Values.cerebro_custom_endpoint | quote }}
 - name: FEEDBACK_RECIPIENT_EMAIL
   value: {{ .Values.feedback_recipient_email | quote }}
+  
