@@ -8,6 +8,7 @@
 {{- if and $entry.clusterTypes $entry.bios $entry.bios.settingsFileName }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
+{{- $serverFilters := default (dict "included" (list) "excluded" (list)) $entry.bios.settingsServerFilter }}
 
 {{/* Model and Version filtering */}}
 {{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.biosSettings.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.biosSettings.filters.versions)) }}
@@ -24,24 +25,9 @@ spec:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
       kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
-{{- if or $.Values.biosSettings.filters.servers.included $.Values.biosSettings.filters.servers.excluded }}
-    matchExpressions:
-{{- if $.Values.biosSettings.filters.servers.included }}
-      - key: kubernetes.metal.cloud.sap/name
-        operator: In
-        values:
-{{- range $.Values.biosSettings.filters.servers.included }}
-          - {{ . | quote }}
-{{- end }}
-{{- end }}
-{{- if $.Values.biosSettings.filters.servers.excluded }}
-      - key: kubernetes.metal.cloud.sap/name
-        operator: NotIn
-        values:
-{{- range $.Values.biosSettings.filters.servers.excluded }}
-          - {{ . | quote }}
-{{- end }}
-{{- end }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   biosSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval

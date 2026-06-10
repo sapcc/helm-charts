@@ -42,10 +42,6 @@ biosSettings:
     clusterTypes:
       included: []
       excluded: []
-    # Filter by server name (kubernetes.metal.cloud.sap/name)
-    servers:
-      included: []
-      excluded: []
     # Filter by version
     versions:
       included: []
@@ -66,10 +62,6 @@ bmcSettings:
     clusterTypes:
       included: []
       excluded: []
-    # Filter by server name (kubernetes.metal.cloud.sap/name)
-    servers:
-      included: []
-      excluded: []
     # Filter by version
     versions:
       included: []
@@ -84,10 +76,6 @@ biosVersions:
     models:
       included: []
       excluded: []
-    # Filter by server name (kubernetes.metal.cloud.sap/name)
-    servers:
-      included: []
-      excluded: []
     versions:
       included: []
       excluded: []
@@ -99,10 +87,6 @@ bmcVersions:
       included: []
       excluded: []
     models:
-      included: []
-      excluded: []
-    # Filter by server name (kubernetes.metal.cloud.sap/name)
-    servers:
       included: []
       excluded: []
     versions:
@@ -144,6 +128,14 @@ clusterConfig:
 #
 # Multiple entries for same model: Some models appear twice with different clusterTypes
 # to support cluster-specific BIOS configurations (e.g., KVM vs SCI requirements).
+#
+# OPTIONAL PER-ENTRY SERVER SCOPING:
+# - BIOS uses:
+#   * machines.<vendor>.models[].bios.settingsServerFilter (BIOSSettingsSet)
+#   * machines.<vendor>.models[].bios.versionServerFilter  (BIOSVersionSet)
+# - BMC uses:
+#   * machines.<vendor>.models[].bmc.settingsServerFilter (BMCSettingsSet)
+#   * machines.<vendor>.models[].bmc.versionServerFilter  (BMCVersionSet)
 
 machines:
   dell:
@@ -154,6 +146,14 @@ machines:
           version: "2.22.2"
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/BIOS_F8GPH_WN64_2.22.2.EXE"
+          # Optional: apply only to BIOSSettingsSet for this entry
+          # settingsServerFilter:
+          #   included: [node001-bb001, node002-bb001]
+          #   excluded: []
+          # Optional: apply only to BIOSVersionSet for this entry
+          # versionServerFilter:
+          #   included: [node001-bb001, node002-bb001]
+          #   excluded: []
         bmc:
           version: "7.00.00.183"
           settingsFileName: dell-default.yaml
