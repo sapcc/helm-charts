@@ -34,6 +34,48 @@ patches:
   # replace-managedresource-with-dual-kustomize design.md "Helm-vs-kustomize
   # equivalence gap analysis" for the cutover decision rationale).
   - path: manager-patch.yaml
+  # Rename the upstream Deployment to match helm's
+  # `templates/controller-manager.yaml` literal name (see
+  # openspec/changes/replace-managedresource-with-dual-kustomize/design.md
+  # "Helm-vs-kustomize equivalence gap analysis" Item 4 + Section 19 /
+  # Task 17 for full rationale and verification against rt-eu-de-1's
+  # live `metal-operator-controller-manager-9d4b46c95` Pod, 2026-06-10).
+  #
+  # Why JSON-patch (not strategic-merge): kustomize uses metadata.name as
+  # the strategic-merge match key, so a strategic-merge patch can't
+  # change the name. JSON-patch op: replace on /metadata/name is the
+  # only kustomize-native way to rename.
+  #
+  # Why this MUST be the LAST entry in patches:
+  #   The two earlier strategic-merge patches above
+  #   (manager-patch.yaml and the webhook-injector Component's
+  #   sidecar.yaml, applied via the components: directive) identify the
+  #   Deployment by `name: controller-manager` to apply customizations.
+  #   Kustomize's transformer order is `resources:` -> `components:` ->
+  #   `patches:` (in order), so earlier patches run first against the
+  #   original name; only this final entry transforms the name.
+  #   Putting the rename earlier would break manager-patch.yaml and
+  #   sidecar.yaml matches.
+  #
+  # Why NOT namePrefix: a global prefix would also rename every other
+  # already-prefixed local resource (metal-operator-webhook-service ->
+  # metal-operator-metal-operator-webhook-service, etc.). Targeted
+  # JSON-patch rename is the only correct approach.
+  #
+  # Downstream consumers (per-cluster overlays in cc/kube-secrets) MUST
+  # switch all `patch.target.name` and `replacements.targets.select.name`
+  # references from `controller-manager` to
+  # `metal-operator-controller-manager` once this lands. Tracked:
+  # cc/kube-secrets a-qa-de-200 overlay update follows this PR (apply
+  # order: kubectl delete -k host/ -> bump helm-charts ref -> bump
+  # references -> kubectl apply -k host/).
+  - target:
+      kind: Deployment
+      name: controller-manager
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: metal-operator-controller-manager
 images:
   - name: controller
     newName: ghcr.io/ironcore-dev/metal-operator-controller-manager

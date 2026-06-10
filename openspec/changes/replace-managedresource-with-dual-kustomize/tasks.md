@@ -450,13 +450,13 @@ Both MUST continue matching the original `controller-manager` name after the ren
 
 ### Tasks
 
-- [ ] 19.1 Update spec delta in `specs/kustomize-resource-splitting/spec.md`: the existing scenario "Build host base overlay" already says `Deployment named controller-manager` — change to `Deployment named metal-operator-controller-manager` and add a brief note that this matches the helm chart's literal name. (Already drafted alongside this task.)
+- [x] 19.1 Update spec delta in `specs/kustomize-resource-splitting/spec.md`: the existing scenario "Build host base overlay" already says `Deployment named controller-manager` — change to `Deployment named metal-operator-controller-manager` and add a brief note that this matches the helm chart's literal name. (Already drafted alongside this task.)
 
-- [ ] 19.2 Update `design.md` "Helm-vs-kustomize equivalence gap analysis" Item 4 disposition from "decision required" to "fix in this repo (Section 19)". Add a note that the renamed Deployment removes the brief co-existence step from the Section 17 cutover runbook (since helm-deployed and kustomize-deployed clusters now use the same Deployment name, kubectl apply needs to manage the helm→kustomize handoff explicitly via helm uninstall first; Section 19 commits this update).
+- [x] 19.2 Update `design.md` "Helm-vs-kustomize equivalence gap analysis" Item 4 disposition from "decision required" to "fix in this repo (Section 19)". Add a note that the renamed Deployment removes the brief co-existence step from the Section 17 cutover runbook (since helm-deployed and kustomize-deployed clusters now use the same Deployment name, kubectl apply needs to manage the helm→kustomize handoff explicitly via helm uninstall first; Section 19 commits this update).
 
-- [ ] 19.3 Update `proposal.md` "What changes" with a brief From/To/Reason/Impact bullet documenting the Deployment rename (kustomize-mode parity with helm; post-deploy operational clarity).
+- [x] 19.3 Update `proposal.md` "What changes" with a brief From/To/Reason/Impact bullet documenting the Deployment rename (kustomize-mode parity with helm; post-deploy operational clarity).
 
-- [ ] 19.4 Edit `system/kustomize/metal-operator-remote/host/base/kustomization.yaml`. Append a new JSON-patch entry as the LAST item in `patches:`:
+- [x] 19.4 Edit `system/kustomize/metal-operator-remote/host/base/kustomization.yaml`. Append a new JSON-patch entry as the LAST item in `patches:`:
   ```yaml
   - target:
       kind: Deployment
@@ -470,7 +470,7 @@ Both MUST continue matching the original `controller-manager` name after the ren
 
   Do NOT edit `manager-patch.yaml` or `components/webhook-injector/sidecar.yaml` — their `name: controller-manager` references are correct and intentional (they run before the rename).
 
-- [ ] 19.5 Verify build:
+- [x] 19.5 Verify build:
   ```
   kustomize build system/kustomize/metal-operator-remote/host/base/ > /tmp/rendered.yaml
   ```
@@ -479,15 +479,15 @@ Both MUST continue matching the original `controller-manager` name after the ren
   - **Sidecar still merged:** `yq -N 'select(.kind == "Deployment") | .spec.template.spec.initContainers[].name' /tmp/rendered.yaml` → `webhook-injector`
   - **Manager-patch still merged:** `yq -N 'select(.kind == "Deployment") | .spec.template.spec.containers[] | select(.name == "manager") | .args[0]' /tmp/rendered.yaml` → `--mac-prefixes-file=/etc/macdb/macdb.yaml`
 
-- [ ] 19.6 Verify the full `remote/` build is unaffected:
+- [x] 19.6 Verify the full `remote/` build is unaffected:
   ```
   kustomize build system/kustomize/metal-operator-remote/remote/ > /tmp/remote.yaml
   ```
   No remote/ resource references the host-side Deployment by name; build should be byte-identical to pre-rename.
 
-- [ ] 19.7 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean.
+- [x] 19.7 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean.
 
-- [ ] 19.8 Commit on `poc/kustomize-metal-operator-remote`. Suggested message: `metal-operator-remote: rename kustomize Deployment to match helm fullname`. Push to origin.
+- [x] 19.8 Commit on `poc/kustomize-metal-operator-remote`. Suggested message: `metal-operator-remote: rename kustomize Deployment to match helm fullname`. Push to origin.
 
 - [ ] 19.9 Update PR #11633 description: add a brief note under Scope 3 documenting the Deployment rename and the kube-secrets follow-up (per-cluster overlays' `patch.target.name` and `replacements.targets.select.name` references must switch from `controller-manager` to `metal-operator-controller-manager`).
 

@@ -1950,7 +1950,7 @@ Both MUST continue matching `controller-manager` after the rename, otherwise the
 
 ### Steps
 
-- [ ] **Step 17.1: Append the rename JSON-patch as the last `patches:` entry**
+- [x] **Step 17.1: Append the rename JSON-patch as the last `patches:` entry**
 
   Edit `system/kustomize/metal-operator-remote/host/base/kustomization.yaml`. Append a new patch entry AFTER the existing `- path: manager-patch.yaml` entry:
 
@@ -1983,7 +1983,7 @@ Both MUST continue matching `controller-manager` after the rename, otherwise the
 
   Do NOT touch `manager-patch.yaml` or `components/webhook-injector/sidecar.yaml`. Their `name: controller-manager` references are correct (they run before the rename).
 
-- [ ] **Step 17.2: Verify build + invariants**
+- [x] **Step 17.2: Verify build + invariants**
 
   ```bash
   cd system/kustomize/metal-operator-remote
@@ -2007,25 +2007,25 @@ Both MUST continue matching `controller-manager` after the rename, otherwise the
     # Expected: --mac-prefixes-file=/etc/macdb/macdb.yaml
     ```
 
-- [ ] **Step 17.3: Verify `remote/` build is unaffected**
+- [x] **Step 17.3: Verify `remote/` build is unaffected**
 
   ```bash
   kustomize build remote/ > /tmp/remote.yaml
   ```
   No `remote/` resource references the host-side Deployment by name; build should be byte-identical to pre-rename.
 
-- [ ] **Step 17.4: Update `proposal.md` "What changes"**
+- [x] **Step 17.4: Update `proposal.md` "What changes"**
 
   Add a brief From/To/Reason/Impact bullet documenting the Deployment rename.
 
-- [ ] **Step 17.5: Run openspec validation**
+- [x] **Step 17.5: Run openspec validation**
 
   ```
   openspec validate replace-managedresource-with-dual-kustomize --strict
   ```
   Expected: `Change 'replace-managedresource-with-dual-kustomize' is valid`.
 
-- [ ] **Step 17.6: Commit and push**
+- [x] **Step 17.6: Commit and push**
 
   ```
   git add system/kustomize/metal-operator-remote/host/base/kustomization.yaml \
