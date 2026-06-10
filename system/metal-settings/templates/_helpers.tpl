@@ -81,3 +81,33 @@ Filter Logic:
 true
 {{- end -}}
 {{- end -}}
+
+{{/*
+Render server selector matchExpressions from a serverFilters object.
+Expected input:
+  dict "serverFilters" (dict "included" (list ...) "excluded" (list ...))
+
+Returns empty string if both lists are empty.
+*/}}
+{{- define "metal-settings.serverMatchExpressions" -}}
+{{- $serverFilters := .serverFilters -}}
+{{- if or $serverFilters.included $serverFilters.excluded -}}
+matchExpressions:
+{{- if $serverFilters.included }}
+  - key: kubernetes.metal.cloud.sap/name
+    operator: In
+    values:
+{{- range $serverFilters.included }}
+      - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- if $serverFilters.excluded }}
+  - key: kubernetes.metal.cloud.sap/name
+    operator: NotIn
+    values:
+{{- range $serverFilters.excluded }}
+      - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end -}}
+{{- end -}}

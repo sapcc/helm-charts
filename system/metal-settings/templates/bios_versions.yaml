@@ -26,24 +26,9 @@ spec:
   serverSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
-{{- if or $serverFilters.included $serverFilters.excluded }}
-    matchExpressions:
-{{- if $serverFilters.included }}
-      - key: kubernetes.metal.cloud.sap/name
-        operator: In
-        values:
-{{- range $serverFilters.included }}
-          - {{ . | quote }}
-{{- end }}
-{{- end }}
-{{- if $serverFilters.excluded }}
-      - key: kubernetes.metal.cloud.sap/name
-        operator: NotIn
-        values:
-{{- range $serverFilters.excluded }}
-          - {{ . | quote }}
-{{- end }}
-{{- end }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   biosVersionTemplate:
     serverMaintenancePolicy: OwnerApproval
