@@ -1798,7 +1798,7 @@ Fix idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree (
 
 ### Steps
 
-- [ ] **Step 16.1: Edit the kustomization to add subject-replace patches**
+- [x] **Step 16.1: Edit the kustomization to add subject-replace patches**
 
   Edit `system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml`. Add a `patches:` block AFTER the existing `resources:` list with three JSON Patch entries:
 
@@ -1851,7 +1851,7 @@ Fix idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree (
 
   Do NOT add `namePrefix:` to the kustomization (would also rename CRDs and break the manager's CRD watches). Do NOT rename or `$patch: delete` the upstream `controller-manager` SA in this commit (it sits unused in the build output; a hygiene commit later may delete it).
 
-- [ ] **Step 16.2: Verify the build renders the three bindings with the expected subject**
+- [x] **Step 16.2: Verify the build renders the three bindings with the expected subject**
 
   ```bash
   kustomize build system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/ > /tmp/rendered.yaml
@@ -1868,7 +1868,7 @@ Fix idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree (
     namespace: kube-system
   ```
 
-- [ ] **Step 16.3: Verify the full `remote/` build still composes**
+- [x] **Step 16.3: Verify the full `remote/` build still composes**
 
   ```bash
   kustomize build system/kustomize/metal-operator-remote/remote/ > /tmp/remote.yaml
@@ -1876,18 +1876,18 @@ Fix idiom mirrors the sibling `remote/upstream/webhook-injector-rbac/` subtree (
 
   Spot-check resource count is unchanged from pre-fix (only subjects within 3 bindings should differ).
 
-- [ ] **Step 16.4: Update `proposal.md` "What changes"**
+- [x] **Step 16.4: Update `proposal.md` "What changes"**
 
   Add a brief From/To/Reason/Impact bullet documenting the subject-rebind fix.
 
-- [ ] **Step 16.5: Run openspec validation**
+- [x] **Step 16.5: Run openspec validation**
 
   ```
   openspec validate replace-managedresource-with-dual-kustomize --strict
   ```
   Expected: `Change 'replace-managedresource-with-dual-kustomize' is valid`.
 
-- [ ] **Step 16.6: Commit and push**
+- [x] **Step 16.6: Commit and push**
 
   ```
   git add system/kustomize/metal-operator-remote/remote/upstream/metal-operator-crds-and-rbac/kustomization.yaml \
