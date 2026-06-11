@@ -2,10 +2,6 @@ suite: service account
 templates:
   - disco-manager-serviceaccount.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should not render ServiceAccount when serviceAccount.create is false
     set:
       serviceAccount.create: false
@@ -26,23 +22,19 @@ tests:
           path: metadata.name
           value: disco-controller-manager
 
-  - it: should use remote.serviceAccount.namespace when remote.enabled is true
+  - it: should always use Release.Namespace regardless of remote.enabled
     set:
       remote.enabled: true
-      remote.serviceAccount.namespace: kube-system
+      remote.apiServerHost: api.example.garden.cloud
     asserts:
       - equal:
           path: metadata.namespace
-          value: kube-system
+          value: NAMESPACE
 ---
 suite: manager cluster role
 templates:
   - disco-manager-role.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should render exactly one ClusterRole
     asserts:
       - hasDocuments:
@@ -87,15 +79,19 @@ tests:
               - patch
               - update
               - watch
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
 ---
 suite: manager cluster role binding
 templates:
   - disco-manager-rolebinding.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should render exactly one ClusterRoleBinding
     asserts:
       - hasDocuments:
@@ -118,32 +114,18 @@ tests:
           path: subjects[0].kind
           value: ServiceAccount
 
-  - it: should use remote.clusterRoleBindings.subjectName when remote.enabled is true
+  - it: should not render when remote.enabled is true
     set:
       remote.enabled: true
-      remote.clusterRoleBindings.subjectName: custom-sa
+      remote.apiServerHost: api.example.garden.cloud
     asserts:
-      - equal:
-          path: subjects[0].name
-          value: custom-sa
-
-  - it: should use remote.clusterRoleBindings.subjectNamespace when remote.enabled is true
-    set:
-      remote.enabled: true
-      remote.clusterRoleBindings.subjectNamespace: kube-system
-    asserts:
-      - equal:
-          path: subjects[0].namespace
-          value: kube-system
+      - hasDocuments:
+          count: 0
 ---
 suite: leader election role
 templates:
   - disco-leader-election-role.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should render exactly one Role
     asserts:
       - hasDocuments:
@@ -157,23 +139,18 @@ tests:
           path: metadata.name
           value: disco-leader-election-role
 
-  - it: should use remote.role.namespace when remote.enabled is true
+  - it: should not render when remote.enabled is true
     set:
       remote.enabled: true
-      remote.role.namespace: kube-system
+      remote.apiServerHost: api.example.garden.cloud
     asserts:
-      - equal:
-          path: metadata.namespace
-          value: kube-system
+      - hasDocuments:
+          count: 0
 ---
 suite: leader election role binding
 templates:
   - disco-leader-election-rolebinding.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should render exactly one RoleBinding
     asserts:
       - hasDocuments:
@@ -193,50 +170,18 @@ tests:
           path: subjects[0].name
           value: disco-controller-manager
 
-  - it: should use remote.role.namespace for metadata when remote.enabled is true
+  - it: should not render when remote.enabled is true
     set:
       remote.enabled: true
-      remote.role.namespace: kube-system
+      remote.apiServerHost: api.example.garden.cloud
     asserts:
-      - equal:
-          path: metadata.namespace
-          value: kube-system
-
-  - it: should use remote.role.subjectName when remote.enabled is true
-    set:
-      remote.enabled: true
-      remote.role.subjectName: custom-sa
-    asserts:
-      - equal:
-          path: subjects[0].name
-          value: custom-sa
-
-  - it: should use remote.role.subjectNamespace when remote.enabled is true
-    set:
-      remote.enabled: true
-      remote.role.subjectNamespace: kube-system
-    asserts:
-      - equal:
-          path: subjects[0].namespace
-          value: kube-system
-
-  - it: should fall back subjects namespace to role.namespace when subjectNamespace not set
-    set:
-      remote.enabled: true
-      remote.role.namespace: kube-system
-    asserts:
-      - equal:
-          path: subjects[0].namespace
-          value: kube-system
+      - hasDocuments:
+          count: 0
 ---
 suite: proxy cluster role
 templates:
   - disco-proxy-role.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should render exactly one ClusterRole
     asserts:
       - hasDocuments:
@@ -249,15 +194,19 @@ tests:
       - equal:
           path: metadata.name
           value: disco-proxy-role
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
 ---
 suite: proxy cluster role binding
 templates:
   - disco-proxy-rolebinding.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should render exactly one ClusterRoleBinding
     asserts:
       - hasDocuments:
@@ -277,32 +226,18 @@ tests:
           path: subjects[0].name
           value: disco-controller-manager
 
-  - it: should use remote.clusterRoleBindings.subjectName when remote.enabled is true
+  - it: should not render when remote.enabled is true
     set:
       remote.enabled: true
-      remote.clusterRoleBindings.subjectName: custom-sa
+      remote.apiServerHost: api.example.garden.cloud
     asserts:
-      - equal:
-          path: subjects[0].name
-          value: custom-sa
-
-  - it: should use remote.clusterRoleBindings.subjectNamespace when remote.enabled is true
-    set:
-      remote.enabled: true
-      remote.clusterRoleBindings.subjectNamespace: kube-system
-    asserts:
-      - equal:
-          path: subjects[0].namespace
-          value: kube-system
+      - hasDocuments:
+          count: 0
 ---
 suite: metrics reader cluster role
 templates:
   - disco-metrics-reader.yaml
 tests:
-  #############################################################################
-  # BASELINE TESTS - Verify current behavior
-  #############################################################################
-
   - it: should render exactly one ClusterRole
     asserts:
       - hasDocuments:
@@ -326,6 +261,13 @@ tests:
             verbs:
               - get
 
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
 ---
 suite: rbac disabled
 templates:

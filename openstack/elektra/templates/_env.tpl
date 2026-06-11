@@ -10,8 +10,6 @@
   value: {{ .Values.monsoon_dashboard_landscape | quote }}
 - name: LIMES_MAIL_SERVER_API_ENDPOINT
   value: {{ .Values.limes_mail_server_endpoint | quote }}
-- name: MONSOON_DASHBOARD_MAIL_SENDER
-  value: {{ .Values.monsoon_dashboard_mail_sender | quote }}
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
 - name: MONSOON_DASHBOARD_CAM_URL
@@ -68,3 +66,5 @@
   value: hcp03,monsoon3
 - name: CEREBRO_CUSTOM_ENDPOINT
   value: {{ .Values.cerebro_custom_endpoint | quote }}
+- name: FEEDBACK_RECIPIENT_EMAIL
+  value: {{ .Values.feedback_recipient_email | quote }}
