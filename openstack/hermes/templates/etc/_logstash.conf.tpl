@@ -597,6 +597,10 @@ output {
         codec => "json"
         security_protocol => "SSL"
         ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "https" }}"
+        {{- if .Values.logstash.kafka.ssl.cacert }}
+        ssl_truststore_type => "PEM"
+        ssl_truststore_location => "/hermes-etc/kafka-ca.pem"
+        {{- end }}
         compression_type => "{{ .Values.logstash.kafka.compression_type | default "zstd" }}"
         acks => "{{ .Values.logstash.kafka.acks | default "all" }}"
         retries => {{ .Values.logstash.kafka.retries | default 2147483647 | int }}

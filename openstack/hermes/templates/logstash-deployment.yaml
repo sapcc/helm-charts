@@ -39,6 +39,13 @@ spec:
                 name: logstash-secret
             - configMap:
                 name: logstash-etc
+            {{- if and .Values.logstash.kafka.enabled .Values.logstash.kafka.ssl.cacert }}
+            - secret:
+                name: logstash-secret
+                items:
+                  - key: KAFKA_CA_CERT
+                    path: kafka-ca.pem
+            {{- end }}
       {{- if .Values.global.gardener.enabled }}
         - name: ca-cert
           secret:
