@@ -10,6 +10,7 @@ groups:
       service: apic
       context: apic-health
       dashboard: apic-health
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/network-data/dashboards/apic-health"
       playbook: /docs/devops/alert/network/aci/#networkapichostnotresponding
     annotations:
       description: "All APICs hosts are not responding for more than 2 minutes"
@@ -24,10 +25,11 @@ groups:
       service: apic
       context: apic-health
       dashboard: apic-health
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/network-data/dashboards/apic-health"
       playbook: /docs/devops/alert/network/aci/#networkapichostnotresponding
     annotations:
-      description: "APIC host {{ $labels.apicHost }} is not responding for more than 2 minutes"
-      summary: "APIC host {{ $labels.apicHost }} is not responding for more than 2 minutes"
+      description: "APIC host {{`{{ $labels.apicHost }}`}} is not responding for more than 2 minutes"
+      summary: "APIC host {{`{{ $labels.apicHost }}`}} is not responding for more than 2 minutes"
 
   - alert: NetworkApicHostMissingMetric
     expr: absent(network_apic_accessible) == 1
@@ -38,6 +40,7 @@ groups:
       support_group: "observability"
       context: apic-health
       dashboard: apic-health
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/network-data/dashboards/apic-health"
       playbook: /docs/devops/alert/network/aci/#networkapichostmissingmetric
     annotations:
       description: "APICs host metric is missing"

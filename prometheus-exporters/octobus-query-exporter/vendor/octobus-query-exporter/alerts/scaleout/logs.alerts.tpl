@@ -1,4 +1,4 @@
- groups:
+groups:
   - name: events
     rules:  
       - alert: OctobusESXiHostLogShippingNotWorking
@@ -11,11 +11,11 @@
           severity: warning
           tier: vmware
           service: audit
-          meta: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+          meta: "ESXi logs missing in Octobus for host {{`{{ $labels.hostsystem }}`}}."
           playbook: docs/devops/alert/vcenter/#logs-missing-in-octobus
         annotations:
-          description: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
-          summary: "ESXi logs missing in Octobus for host {{ $labels.hostsystem }}."
+          description: "ESXi logs missing in Octobus for host {{`{{ $labels.hostsystem }}`}}."
+          summary: "ESXi logs missing in Octobus for host {{`{{ $labels.hostsystem }}`}}."
 
       - alert: OctobusVCSALogShippingNotWorking
         expr: |
@@ -27,11 +27,11 @@
           severity: warning
           tier: vmware
           service: audit
-          meta: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+          meta: "VCSA logs missing in Octobus for vCenter {{`{{ $labels.vcenter }}`}}."
           playbook: docs/devops/alert/vcenter/#logs-missing-in-octobus
         annotations:
-          description: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
-          summary: "VCSA logs missing in Octobus for vCenter {{ $labels.vcenter }}."
+          description: "VCSA logs missing in Octobus for vCenter {{`{{ $labels.vcenter }}`}}."
+          summary: "VCSA logs missing in Octobus for vCenter {{`{{ $labels.vcenter }}`}}."
 
       - alert: OctobusNSXLogShippingNotWorking
         expr: |
@@ -42,7 +42,7 @@
           severity: info
           tier: vmware
           service: audit
-          meta: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."
+          meta: "NSX-T logs missing in Octobus for {{`{{ $labels.nsxt_mgmt_node }}`}}."
         annotations:
-          description: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."
-          summary: "NSX-T logs missing in Octobus for {{ $labels.nsxt_mgmt_node }}."
+          description: "NSX-T logs missing in Octobus for {{`{{ $labels.nsxt_mgmt_node }}`}}."
+          summary: "NSX-T logs missing in Octobus for {{`{{ $labels.nsxt_mgmt_node }}`}}."

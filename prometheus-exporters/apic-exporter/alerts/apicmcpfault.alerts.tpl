@@ -10,7 +10,8 @@ groups:
         service: apic
         context: apic-health
         dashboard: apic-health
+        persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/network-data/dashboards/apic-health"
         playbook: /docs/devops/alert/network/aci/#Mcp_Fault_Alert
       annotations:
-        description: MCP fault has been raised for object {{ $labels.fault_summary }} for 30 minutes"
-        summary: "MCP fault has been raised for object {{ $labels.fault_summary }} for 30 minutes"
+        description: MCP fault has been raised for object {{`{{ $labels.fault_summary }}`}} for 30 minutes"
+        summary: "MCP fault has been raised for object {{`{{ $labels.fault_summary }}`}} for 30 minutes"

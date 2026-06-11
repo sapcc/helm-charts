@@ -11,6 +11,7 @@ groups:
           meta: "No keystone logs shipping to Octobus"
           playbook: 'docs/support/playbook/opensearch/octobus/keystone-api-logs-in-octobus-missing'
           dashboard: audit-log-shipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-log-shipping"
         annotations:
           description: "Keystone logs shipping to Octobus not working"
           summary: "KeystoneLogs2Octobus not working"
@@ -24,7 +25,8 @@ groups:
           support_group: "observability"
           meta: "Octobus no keystone logs grok parsing"
           playbook: 'docs/support/playbook/opensearch_issues#keystone-logs-grok-parsing-in-octobus'
-          dashboard: octobus-keystone-logs-shipping?orgId=1&var-region={{ $labels.region }}
+          dashboard: octobus-keystone-logs-shipping?orgId=1&var-region={{`{{ $labels.region }}`}}
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/octobus-log-shipping-regional"
         annotations:
           description: "Octobus: Keystone logs grok parsing not working"
           summary: "KeystoneLogsGrokParsing not working"
@@ -39,9 +41,10 @@ groups:
           meta: "Keystone to Octobus Endpoint in-https is down"
           playbook: 'docs/support/playbook/opensearch/octobus/data-in-not-reachable'
           dashboard: audit-log-shipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-log-shipping"
         annotations:
-          description: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
-          summary: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
+          description: "Octobus Keystone endpoint: `in-https` is down in region {{`{{ $labels.region }}`}}"
+          summary: "Octobus Keystone endpoint: `in-https` is down in region {{`{{ $labels.region }}`}}"
 
       - alert: OctobusJumpserverLogshipperEndpointDown
         expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0 and on  (region) {target=~"in-beats.*"} == 0
@@ -53,6 +56,7 @@ groups:
           meta: "Jumpserver to Octobus Endpoint in-beats is down"
           playbook: 'docs/support/playbook/opensearch/octobus/data-in-not-reachable'
           dashboard: audit-log-shipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-log-shipping"
         annotations:
-          description: "Octobus Jumpserver endpoint: `in-beats` is down in region `{{ $labels.region }}`"
-          summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region `{{ $labels.region }}`"
+          description: "Octobus Jumpserver endpoint: `in-beats` is down in region {{`{{ $labels.region }}`}}"
+          summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region {{`{{ $labels.region }}`}}"
