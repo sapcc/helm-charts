@@ -151,5 +151,5 @@ groups:
       playbook: "docs/support/playbook/manila/alerts/cc3test-alert-create-share/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      summary: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+      description: "OpenStack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+      summary: "OpenStack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
