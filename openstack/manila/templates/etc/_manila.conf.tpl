@@ -68,9 +68,8 @@ ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval |
 # Prevent shares from transitioning to 'ensuring' status (2025.1 default changed to True)
 update_shares_status_on_ensure = False
 
-# NetApp driver supports set_vlan and set_mtu as updatable subnet metadata keys.
-# Uncomment to allow overriding VLAN/MTU per share network subnet via metadata.
-# driver_updatable_subnet_metadata = set_vlan,set_mtu
+# Metadata applied on share server create when set on the subnet. Updating the metadata will not cause an update in driver.
+# driver_updatable_subnet_metadata = pnfs,showmount
 
 # manila by default would put "{project_id}_" as prefix, but since we anyhow don't have cross-project share servers, we can skip that.
 # obviously having shares with the same mount point name in the same share server is not possible,
