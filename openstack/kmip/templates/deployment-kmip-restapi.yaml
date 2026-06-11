@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kmip.fullname" . }}-barbican
+  name: {{ include "kmip.restapiname" . }}
   labels:
     {{- include "kmip.labels" . | nindent 4 }}
-    app: {{ include "kmip.fullname" . }}-barbican
+    app: {{ include "kmip.restapiname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -26,13 +26,13 @@ spec:
     {{- end }}
   selector:
     matchLabels:
-      {{- include "kmip.selectorLabels" . | nindent 6 }}
+      app: {{ include "kmip.restapiname" . }}
   template:
     metadata:
       labels:
         {{- include "kmip.labels" . | nindent 8 }}
-        app: {{ include "kmip.fullname" . }}-barbican
-        name: {{ include "kmip.fullname" . }}-barbican
+        app: {{ include "kmip.restapiname" . }}
+        name: {{ include "kmip.restapiname" . }}
         alert-tier: os
         alert-service: kmip
         {{- with .Values.podLabels }}
@@ -41,7 +41,7 @@ spec:
       annotations:
         secrets-etc-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "5006"
+        prometheus.io/port: "5005"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
@@ -49,7 +49,7 @@ spec:
         - name: kmip-restapi
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{ required "Values.kmip.restapi_image is missing" .Values.kmip.restapi_image }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{ required "Values.kmip.pykmipRestApiImageVersion is missing" .Values.kmip.pykmipRestApiImageVersion }}
           imagePullPolicy: {{ .Values.kmip.pullPolicy }}
           env:
             - name: KMIP_MARIADB_SERVICE_HOST
@@ -95,21 +95,21 @@ spec:
             {{- end }}
           ports:
             - name: restapi
-              containerPort: 5006
+              containerPort: 5005
               protocol: TCP
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 5006
-            initialDelaySeconds: 20
+              port: 5005
+            initialDelaySeconds: 10
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 3
             failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 5006
-            initialDelaySeconds: 20
+              port: 5005
+            initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3

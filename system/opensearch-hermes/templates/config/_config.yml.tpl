@@ -36,6 +36,6 @@ config:
             enable_ssl: true
             openid_connect_idp:
               enable_ssl: true
-              pemtrustedcas_filepath: {{.Values.auth.ca_path }}
+              pemtrustedcas_filepath: {{- if .Values.global.gardener.enabled }} certs/sap-ca/tls.crt{{- else }} {{.Values.auth.ca_path }}{{- end }}
         authentication_backend:
           type: noop

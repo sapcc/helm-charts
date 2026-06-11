@@ -1,3 +1,7 @@
+## 8.2.3
+
+* add alert relabeling config for playbook labels, enforces fully qualified domain names instead of paths
+
 ## 8.2.1
 
 * Fix PrometheusMultiplePodScrapes alert failing with many-to-many matching error when pods share the same name across namespaces
