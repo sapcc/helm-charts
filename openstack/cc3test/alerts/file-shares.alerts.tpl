@@ -136,7 +136,7 @@ groups:
       description: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
       summary: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
 
-  - alert: OpenstackFileShareCanaryCreateShareDown
+  - alert: OpenStackFileShareCanaryCreateShareDown
     expr: cc3test_status{service="manila",name=~"TestFileShare_create_share.+", phase="call"} == 0
     for: 2h
     labels:
