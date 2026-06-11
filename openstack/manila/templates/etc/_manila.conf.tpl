@@ -121,6 +121,7 @@ insecure = True
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
 # Set False to preserve old Keystone RBAC behavior (non-scoped); 2025.1 defaults changed to True
+# look out for "using the intended scope is required" warnings in log
 enforce_new_defaults = False
 enforce_scope = False
 
