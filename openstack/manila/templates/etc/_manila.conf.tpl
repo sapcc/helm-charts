@@ -65,6 +65,13 @@ server_migration_driver_continue_update_interval = {{ .Values.server_migration_d
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
 ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
+# Prevent shares from transitioning to 'ensuring' status (2025.1 default changed to True)
+update_shares_status_on_ensure = False
+
+# NetApp driver supports set_vlan and set_mtu as updatable subnet metadata keys.
+# Uncomment to allow overriding VLAN/MTU per share network subnet via metadata.
+# driver_updatable_subnet_metadata = set_vlan,set_mtu
+
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
@@ -109,6 +116,9 @@ insecure = True
 
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
+# Set False to preserve old Keystone RBAC behavior (non-scoped); 2025.1 defaults changed to True
+enforce_new_defaults = False
+enforce_scope = False
 
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
