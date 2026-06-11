@@ -610,5 +610,6 @@ siem_terraform_operator:
     - "indices:data/write/index"
     - "indices:data/write/delete"
     - "indices:data/read/get"
-    - "indices:admin/exists"
-    - indices:admin/create
+    - "indices:data/write/bulk"
+    - "indices:admin/get"
+    - "indices:admin/create"
