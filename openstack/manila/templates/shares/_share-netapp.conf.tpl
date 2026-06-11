@@ -98,7 +98,7 @@ netapp_volume_move_cutover_timeout = {{ $share.volume_move_cutover_timeout | def
 # state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
 netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 
-# SAP default: 6 years. Upstream default is 1 year
+# SAP default: 6 years (we refresh the hardware earlier than that). Upstream default is 1 year
 netapp_security_cert_expire_days = 2190
 
 # The percentage of backend capacity reserved. Default 0 (integer value)
