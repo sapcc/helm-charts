@@ -84,7 +84,8 @@ build-ipam-capi-remote:
 	@cp kustomize/ipam-capi-remote/templates/* ipam-capi-remote/templates
 	@mkdir ipam-capi-remote/managedresources
 	@kubectl kustomize kustomize/ipam-capi-remote/managedresources |\
-		yq eval '(select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration" or .kind == "CustomResourceDefinition") | .metadata.labels."ipam-capi-remote-webhook-injector") = "true"' - \
+		yq eval '(select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration" or .kind == "CustomResourceDefinition") | .metadata.labels."ipam-capi-remote-webhook-injector") = "true"' |\
+		yq eval '(select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration") | .webhooks[].clientConfig | select(.service)) |= ({"url": "https://ipam-capi-remote-webhook-service:443" + .service.path})' - \
 		> ipam-capi-remote/managedresources/crds-rbac-webhooks.yaml
 	@cp kustomize/ipam-capi-remote/managedresources/rbac.yaml ipam-capi-remote/managedresources
 	@cp kustomize/ipam-capi-remote/managedresources/globalinclusterippool.yaml ipam-capi-remote/managedresources
@@ -161,7 +162,7 @@ build-metal-operator-remote:
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 	  -n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml |\
-		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | .metadata.labels."metal-operator-remote-webhook-injector" = "true"' - \
+		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | .metadata.labels."metal-operator-remote-webhook-injector" = "true" | (.webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-remote-webhook-service:443" + .service.path})' - \
 		> metal-operator-remote/webhooks.yaml
 	# Bump patch version
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
