@@ -5,7 +5,7 @@
 {{/* Vendor filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosVersions.filters.vendors) }}
 {{- $processedModels := dict }}
-{{- range $entry := $vendorConfig.models }}
+{{- range $entryName, $entry := $vendorConfig.models }}
 {{- if $entry.bios }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
@@ -14,7 +14,7 @@
 {{- $serverFilters := (get $versionParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
 {{/* Skip if we've already processed this model-version combination */}}
-{{- if and (include "metal-settings.biosVersionRegionMatch" (dict "root" $ "entry" $entry)) (not (hasKey $processedModels $modelKey)) }}
+{{- if not (hasKey $processedModels $modelKey) }}
 {{- $_ := set $processedModels $modelKey true }}
 
 {{/* Model and Version filtering */}}
