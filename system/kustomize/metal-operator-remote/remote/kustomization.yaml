@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Top-level remote/ kustomize root: applied directly to the workerless cluster
+# via `kubectl apply -k remote/` (typically through a kube-secrets per-cluster
+# overlay's `remote/` subpath that references this tree as a base).
+#
+# Composes (each upstream subtree is named for the upstream project it pulls):
+#   - upstream/metal-operator-crds-and-rbac/  : metal-operator's CRDs + RBAC
+#                                               (un-converted Roles/RoleBindings preserved)
+#   - upstream/metal-operator-webhooks/       : metal-operator's ValidatingWebhookConfiguration
+#                                               (consumed verbatim from upstream + management
+#                                               label patch for webhook-injector selection)
+#   - upstream/webhook-injector-rbac/         : webhook-injector's target-cluster RBAC
+#                                               (ClusterRole + ClusterRoleBinding consumed
+#                                               verbatim from upstream, binding subject
+#                                               overridden to point at our remote-kubeconfig SA)
+#   - custom/base/                            : custom Namespace (metal-servers) + custom RBAC
+#                                               (OIDC ClusterRoleBindings + metal-token-rotate)
+#
+# NO ManagedResource. NO caBundle field anywhere. All upstream content consumed
+# live via Git URL ref (no committed pre-renders).
+resources:
+  - upstream/metal-operator-crds-and-rbac
+  - upstream/metal-operator-webhooks
+  - upstream/webhook-injector-rbac
+  - custom/base

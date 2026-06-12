@@ -1,0 +1,82 @@
+## Purpose
+
+Defines how the webhook-injector sidecar is injected into the metal-operator controller Deployment as a reusable kustomize Component, with the ability to override args per environment or remove the sidecar entirely when webhooks are disabled.
+
+## Requirements
+
+
+### Requirement: Webhook-injector sidecar injected via kustomize Component
+
+The webhook-injector sidecar SHALL be injected into the controller Deployment as a native sidecar (initContainer with `restartPolicy: Always`) using a kustomize Component.
+
+#### Scenario: Sidecar present in host base output
+
+- **WHEN** `kustomize build host/base/` is executed (with the webhook-injector component included)
+- **THEN** the Deployment output SHALL contain an initContainer named `webhook-injector`
+- **THEN** the initContainer SHALL have `restartPolicy: Always` (native sidecar)
+
+#### Scenario: Sidecar image is correct
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the webhook-injector initContainer image SHALL be `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector`
+
+#### Scenario: Sidecar args match current configuration
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the webhook-injector initContainer SHALL have args `--webhook-config-name=webhook-config` and `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig`
+
+#### Scenario: Sidecar args overridable per environment
+
+- **WHEN** an overlay patches the webhook-injector initContainer args
+- **THEN** the rendered output SHALL use the overridden args (e.g., `--webhook-config-name=metal-operator-remote-webhook-config`, `--leader-election-id=...`)
+
+#### Scenario: Sidecar volume mounts correct
+
+- **WHEN** `kustomize build host/` is executed
+- **THEN** the webhook-injector initContainer SHALL mount `webhook-certs` at `/tmp/webhook-certs`
+- **THEN** the webhook-injector initContainer SHALL mount `remote-serviceaccount` at `/var/run/secrets/kubernetes.io/remote-serviceaccount` (readOnly)
+- **THEN** the webhook-injector initContainer SHALL mount `remote-kubeconfig` at `/var/run/remote-kubeconfig` (readOnly)
+
+#### Scenario: Sidecar has health probes
+
+- **WHEN** `kustomize build host/` is executed
+- **THEN** the webhook-injector initContainer SHALL have a livenessProbe on port 8083 path `/healthz`
+- **THEN** the webhook-injector initContainer SHALL have a readinessProbe on port 8083 path `/readyz`
+
+#### Scenario: Sidecar has resource limits
+
+- **WHEN** `kustomize build host/` is executed
+- **THEN** the webhook-injector initContainer SHALL have resource requests (cpu: 50m, memory: 64Mi) and limits (cpu: 200m, memory: 256Mi)
+
+---
+
+### Requirement: Image tag overridable via kustomize images transformer
+
+The webhook-injector image tag SHALL be overridable without modifying the Component files directly.
+
+#### Scenario: Override image tag in overlay
+
+- **WHEN** an overlay includes the webhook-injector component and sets `images:` with a `newTag`
+- **THEN** the rendered output SHALL use the overridden tag instead of the default
+
+#### Scenario: Default tag used when no override
+
+- **WHEN** no image override is specified in the consuming overlay
+- **THEN** the rendered output SHALL use the tag defined in the Component's `kustomization.yaml`
+
+---
+
+### Requirement: Webhook-injector sidecar removable per environment
+
+The webhook-injector sidecar is included in the base (for clusters with webhooks enabled) but the Component SHALL be designed such that consuming overlays (located in any repository — see `cluster-overlay-layout` capability in `cc/kube-secrets`) can remove it via `$patch: delete` on the initContainers array entry. The Component MUST NOT have implicit dependencies (e.g., other base resources that assume the webhook-injector is always present) that would break when the sidecar is removed.
+
+#### Scenario: Component supports removal via $patch:delete
+
+- **WHEN** a consuming kustomization patches the initContainer array entry with `$patch: delete`
+- **THEN** the rendered Deployment output SHALL have no initContainers
+- **AND** the rendered Deployment SHALL still be valid (no dangling references to the removed initContainer in volumeMounts, env, args, etc.)
+
+#### Scenario: Base includes sidecar by default
+
+- **WHEN** `kustomize build host/base/` is executed without overlay modifications
+- **THEN** the Deployment SHALL include the webhook-injector initContainer (webhooks enabled is the default)

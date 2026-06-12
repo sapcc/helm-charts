@@ -1,0 +1,123 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Pulls webhook-injector's canonical target-cluster RBAC verbatim from upstream
+# and applies it to the workerless cluster. This is the RBAC the sidecar's
+# remote-kubeconfig identity uses to:
+#   - bootstrap and maintain the metal-operator-webhook-injector-mutator MWC
+#     (PR-10-v2 admission-webhook bootstrap),
+#   - periodically refresh caBundle and rewrite clientConfig.Service -> URL
+#     on labeled VWC/MWC resources,
+#   - update labeled CRDs (harmless for our use case where no CRDs carry the
+#     management label, but included via upstream's canonical ClusterRole).
+#
+# Consuming upstream verbatim avoids parallel hand-rolled verb lists in this
+# repo and in cc/kube-secrets, and auto-inherits any future RBAC widening
+# from upstream.
+#
+# Pinned to upstream's main branch via the kustomize Git-ref form. We pull
+# the whole config/ directory (which has its own kustomization.yaml listing
+# rbac.yaml, deployment.yaml, pdb.yaml) and prune everything except the
+# target-cluster RBAC. Single-file raw URLs hit kustomize's URL heuristic
+# that treats `host/org/repo/<ref>/<short-path>` as a Git repository
+# reference and fails with `URL is a git repository`.
+resources:
+  - https://github.com/SAP-cloud-infrastructure/webhook-injector//config?ref=optional-webhook-config-and-crd-patching
+
+# Adapt upstream's RBAC bundle to our workerless-cluster topology:
+#
+# 1. Drop everything from the upstream config/ tree EXCEPT the target-cluster
+#    ClusterRole and ClusterRoleBinding (`webhook-injector-target`).
+#    Specifically prune:
+#      - Stand-alone Deployment, Service, ConfigMap (deployment.yaml — for a
+#        non-sidecar deployment topology not used by us)
+#      - PodDisruptionBudget (pdb.yaml — only relevant to the stand-alone
+#        Deployment)
+#      - Host-side ServiceAccount, Role, RoleBinding (named `webhook-injector` —
+#        for the cluster running the binary; in our split topology that's the
+#        host cluster, not the workerless cluster, so these are irrelevant here)
+#
+# 2. Override the ClusterRoleBinding `webhook-injector-target` subjects to
+#    point at our remote-kubeconfig identity: the workerless cluster's
+#    `metal-operator-controller-manager` ServiceAccount in `kube-system`.
+#    This SA is created by upstream metal-operator (config/rbac/) and the
+#    remote-kubeconfig delivered by cc/kube-secrets authenticates as it
+#    via token rotation.
+patches:
+  - target:
+      kind: Deployment
+      name: webhook-server
+    patch: |
+      $patch: delete
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: webhook-server
+  - target:
+      kind: Service
+      name: webhook-service
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: webhook-service
+  - target:
+      kind: ConfigMap
+      name: webhook-config
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: webhook-config
+  - target:
+      kind: PodDisruptionBudget
+      name: webhook-server
+    patch: |
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: webhook-server
+  - target:
+      kind: ServiceAccount
+      name: webhook-injector
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: webhook-injector
+  - target:
+      kind: Role
+      name: webhook-injector
+    patch: |
+      $patch: delete
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: webhook-injector
+  - target:
+      kind: RoleBinding
+      name: webhook-injector
+    patch: |
+      $patch: delete
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: webhook-injector
+  - target:
+      kind: ClusterRoleBinding
+      name: webhook-injector-target
+    patch: |
+      - op: replace
+        path: /subjects
+        value:
+          - kind: ServiceAccount
+            name: metal-operator-controller-manager
+            namespace: kube-system
+
+# TODO: once webhook-injector publishes a tagged release that includes PR #10
+# (patch mode + admission-webhook bootstrap), pin this to the tag
+# (e.g. ?ref=v1.0.0) for reproducibility. Tracking:
+# SAP-cloud-infrastructure/webhook-injector#10.

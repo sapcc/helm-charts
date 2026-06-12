@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  strategy:
+    type: Recreate
+  # Override upstream's spec.selector.matchLabels (which carries
+  # app.kubernetes.io/name=metal-operator) to use the chart-fullname-prefixed
+  # value `metal-operator-remote`. This MUST agree with the Pod labels
+  # (template.metadata.labels below) and with the Service / NetworkPolicy
+  # selectors in this base. The chosen label scheme is documented in the
+  # openspec change replace-managedresource-with-dual-kustomize design.md
+  # "Helm-vs-kustomize equivalence gap analysis" (decision: option (a) —
+  # match the helm chart-fullname-prefixed labels for cutover compatibility).
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metal-operator-remote
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        # Override upstream's bare app.kubernetes.io/name=metal-operator with
+        # the chart-fullname-prefixed value (matches Service/NP selectors).
+        app.kubernetes.io/name: metal-operator-remote
+        control-plane: controller-manager
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    spec:
+      # Pod-level serviceAccountName is set by the webhook-injector Component
+      # (components/webhook-injector/sidecar.yaml). It lives there because the
+      # SA + Role + RoleBinding it references were introduced for the sidecar
+      # feature; encapsulating them together makes the Component the single
+      # source-of-truth for sidecar-related Pod customization.
+      hostNetwork: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+        runAsUser: 65532
+        runAsGroup: 65532
+      containers:
+        - name: manager
+          args:
+            # SAP-CC deployment-wide defaults — verified byte-identical
+            # across all 6 metal-operator-remote consumers in cc/kube-secrets
+            # (a-qa-de-200, rt-eu-de-1/2/3, rt-na-us-2, rt-qa-de-1).
+            - --mac-prefixes-file=/etc/macdb/macdb.yaml
+            - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.5.0
+            - --probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux:1770.0
+            - --manager-namespace=metal-servers
+            - --insecure=false
+            - --enforce-first-boot
+            - --enforce-power-off
+            # Per-cluster value: kube-secrets per-cluster overlay
+            # substitutes REGISTRY_URL_PLACEHOLDER with the cluster's
+            # https://metal-operator-remote.<clusterType>.<region>.<tld>
+            # (e.g., runtime: https://metal-operator-remote.runtime.eu-de-1.cloud.sap;
+            #  admin-k3s: https://metal-operator-remote.garden2.qa-de-1.cloud.sap).
+            - --registry-url=REGISTRY_URL_PLACEHOLDER
+          env:
+            - name: KUBERNETES_SERVICE_HOST
+              value: "APISERVER_URL_PLACEHOLDER"
+            - name: KUBERNETES_CLUSTER_DOMAIN
+              value: "cluster.local"
+            - name: KUBECONFIG
+              value: "/var/run/remote-kubeconfig/kubeconfig"
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "5"
+              memory: 5Gi
+            requests:
+              cpu: 300m
+              memory: 50Mi
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: macdb
+              mountPath: /etc/macdb
+            - name: remote-serviceaccount
+              mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+              readOnly: true
+            - name: remote-kubeconfig
+              mountPath: /var/run/remote-kubeconfig
+              readOnly: true
+      volumes:
+        - name: webhook-certs
+          emptyDir: {}
+        - name: macdb
+          secret:
+            secretName: macdb
+        - name: remote-serviceaccount
+          secret:
+            secretName: metal-operator-remote-kubeconfig
+            items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
+        - name: remote-kubeconfig
+          configMap:
+            name: remote-kubeconfig

@@ -1,0 +1,24 @@
+# Base ingress with placeholder domain — overlays patch the host/tls
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: metal-operator-metal-registry-ingress
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+spec:
+  tls:
+    - secretName: tls-metal-operator
+      hosts:
+        - metal-operator-remote.CLUSTER_TYPE.REGION.TLD
+  rules:
+    - host: metal-operator-remote.CLUSTER_TYPE.REGION.TLD
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: metal-operator-metal-registry-service
+                port:
+                  number: 10000

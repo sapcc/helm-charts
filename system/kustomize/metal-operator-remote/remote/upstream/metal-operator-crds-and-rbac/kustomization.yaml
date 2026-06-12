@@ -1,0 +1,93 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Direct apply to the workerless cluster (no ManagedResource wrapping).
+# Upstream RBAC applied verbatim: Roles stay Roles, RoleBindings stay
+# RoleBindings — the Role→ClusterRole conversion was a GRM-era workaround
+# that the helm chart's bundled managedresources/crds-and-rbac.yaml proves
+# un-converted Roles work in production.
+#
+# No Service-exclusion patch needed: upstream config/rbac/ ships only
+# ServiceAccount/Role/RoleBinding (verified at v0.4.0); the metrics Service
+# lives in upstream config/default/, which we do not reference. If a future
+# upstream release adds a Service to config/rbac/, add an exclusion patch
+# at that time with a specific resource name.
+namespace: kube-system
+resources:
+  - https://github.com/ironcore-dev/metal-operator//config/crd?ref=v0.4.0
+  - https://github.com/ironcore-dev/metal-operator//config/rbac?ref=v0.4.0
+
+# Override upstream's three RoleBinding/ClusterRoleBinding subjects to point
+# at the Gardener-prefixed ServiceAccount kube-system/metal-operator-controller-manager
+# rather than upstream's unprefixed `controller-manager` default.
+#
+# Why this is necessary: three distinct "controller-manager" SA identities
+# exist in this topology (full table in
+# openspec/changes/replace-managedresource-with-dual-kustomize/design.md
+# "Three-namespaces-of-controller-manager problem"):
+#
+#   - workerless kube-system/controller-manager (unprefixed) — created by
+#     upstream ironcore-dev/metal-operator//config/rbac/service_account.yaml
+#     consumed verbatim above. Sits unused in the build output.
+#   - workerless kube-system/metal-operator-controller-manager (prefixed) —
+#     created by the Gardener token-injector in response to the
+#     `serviceaccount.resources.gardener.cloud/name: metal-operator-controller-manager`
+#     annotation on the host-side `metal-operator-remote-kubeconfig` Secret
+#     (system/kustomize/metal-operator-remote/host/base/remote-serviceaccount-secret.yaml).
+#     The remote-kubeconfig token mounted in the controller-manager Pod
+#     authenticates as THIS SA.
+#   - seed shoot-CP/metal-operator-webhook-injector — host-side privileges
+#     for the sidecar; irrelevant here.
+#
+# Without the rebinding below, upstream's bindings reference the unprefixed
+# SA — a different identity from the one the manager actually authenticates
+# as — and the Pod gets `forbidden` on every list/watch (logged as
+# "User \"system:serviceaccount:kube-system:metal-operator-controller-manager\"
+# cannot list resource \"servers\" in API group \"metal.ironcore.dev\" at the
+# cluster scope"). The helm chart avoids this issue via fullname-templated
+# SA + binding names that render consistent across both sides; the kustomize
+# port loses this consistency without explicit subject patches.
+#
+# The same idiom is used by the sibling subtree
+# remote/upstream/webhook-injector-rbac/kustomization.yaml, which rebinds
+# webhook-injector-target ClusterRoleBinding to the same Gardener-prefixed
+# SA. Both rebindings are necessary; this file owns only the metal-operator
+# bindings.
+#
+# Out of scope (deliberately): NO `namePrefix:` directive (would rename the
+# CRDs and break the manager's CRD watches); NO upstream-SA rename or
+# `$patch: delete` (a future hygiene commit may delete the unused upstream
+# SA but it's not a correctness issue); NO change to the upstream `?ref=v0.4.0`
+# pin or apply order.
+patches:
+  - target:
+      kind: ClusterRoleBinding
+      name: manager-rolebinding
+    patch: |
+      - op: replace
+        path: /subjects
+        value:
+          - kind: ServiceAccount
+            name: metal-operator-controller-manager
+            namespace: kube-system
+  - target:
+      kind: ClusterRoleBinding
+      name: metrics-auth-rolebinding
+    patch: |
+      - op: replace
+        path: /subjects
+        value:
+          - kind: ServiceAccount
+            name: metal-operator-controller-manager
+            namespace: kube-system
+  - target:
+      # Note: RoleBinding (NOT ClusterRoleBinding) — upstream's
+      # leader-election-rolebinding is namespaced to kube-system.
+      kind: RoleBinding
+      name: leader-election-rolebinding
+    patch: |
+      - op: replace
+        path: /subjects
+        value:
+          - kind: ServiceAccount
+            name: metal-operator-controller-manager
+            namespace: kube-system
