@@ -78,13 +78,6 @@ spec:
         env:
         - name: PYTHONWARNINGS
           value: ignore:Unverified HTTPS request
-        {{- if .Values.logging.handlers.sentry }}
-        - name: SENTRY_DSN
-          valueFrom:
-            secretKeyRef:
-              name: sentry
-              key: {{ .Chart.Name }}.DSN.python
-        {{- end }}
         - name: PGAPPNAME
           valueFrom:
             fieldRef:
