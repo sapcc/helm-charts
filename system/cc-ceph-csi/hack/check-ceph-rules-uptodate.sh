@@ -1,22 +1,11 @@
 #!/usr/bin/env bash
-#
-# Checks that alerts/ceph.alerts is still in sync with the upstream rook
-# localrules.yaml for the rook version pinned in this chart.
-#
-# The vendored file is the upstream PrometheusRule's spec body, de-indented by
-# one level. support_group is NOT stored here -- it is injected at Helm render
-# time by templates/prometheusrule.yaml -- so this is a pure upstream-drift check.
-#
-# Usage:
-#   system/cc-ceph-csi/hack/check-ceph-rules-uptodate.sh [rook-version]
-# Exits non-zero and prints a diff if the vendored rules have drifted.
+
 set -euo pipefail
 
 chart_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 alerts_file="${chart_dir}/alerts/ceph.alerts"
 values_file="${chart_dir}/values.yaml"
 
-# rook version: explicit arg wins, else derive from operator.image in values.yaml
 if [[ $# -ge 1 ]]; then
   version="$1"
 else
@@ -30,8 +19,6 @@ echo "upstream: ${url}"
 
 upstream="$(mktemp)"; trap 'rm -f "${upstream}"' EXIT
 
-# upstream PrometheusRule -> our vendored form: keep everything after the
-# top-level 'spec:' line, then strip one (2-space) level of indentation.
 curl -fsSL "${url}" \
   | awk 'printing { print } /^spec:/ { printing = 1 }' \
   | sed 's/^  //' \
