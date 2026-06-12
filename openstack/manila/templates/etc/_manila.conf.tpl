@@ -74,7 +74,8 @@ update_shares_status_on_ensure = False
 # manila by default would put "{project_id}_" as prefix, but since we anyhow don't have cross-project share servers, we can skip that.
 # obviously having shares with the same mount point name in the same share server is not possible,
 # but this cannot be solved by a prefix (for that case we have the share instance uuid, if mount point name is not used)
-default_mount_point_prefix = {{ .Values.mount_point_prefix | default "" }}
+default_mount_point_prefix = {{ .Values.mount_point_prefix | default "''" }}
+
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
