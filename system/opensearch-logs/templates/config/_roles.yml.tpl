@@ -606,10 +606,19 @@ siem_terraform_operator:
   index_permissions:
   - index_patterns:
     - ".kibana*"
+    - ".opensearch_dashboards*"
     allowed_actions:
     - "indices:data/write/index"
     - "indices:data/write/delete"
     - "indices:data/read/get"
+    - "indices:data/read/search"          # Dashboards saved-objects GET checks for existing objects
     - "indices:data/write/bulk"
+    - "indices:data/write/update"         # Dashboards saved-objects PATCH/update path
     - "indices:admin/get"
     - "indices:admin/create"
+    - "indices:admin/mappings/get"        # Provider reads mappings before writing saved objects
+  tenant_permissions:
+  - tenant_patterns:
+    - "global_tenant"
+    allowed_actions:
+    - "kibana_all_write"                  # Required by Dashboards saved-objects API for index-pattern create/update
