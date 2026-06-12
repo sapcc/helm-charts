@@ -10,8 +10,9 @@ groups:
       support_group: observability
       no_alert_on_absence: "true"
       playbook: docs/devops/alert/vcenter/vrops/#revalidate-certificate
-      dashboard: vrops-exporter-status/vrops-exporter-status?target={{ $labels.target }}&var-target={{ $labels.target }}
-      meta: "`{{ $labels.target }}` no longer getting any vCenter or NSX-T adapters."
+      dashboard: "vrops-exporter-status/vrops-exporter-status?target={{`{{ $labels.target }}`}}&var-target={{`{{ $labels.target }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/vrops-exporter-status?var-target={{`{{ $labels.target }}`}}"
+      meta: "`{{`{{ $labels.target }}`}}` no longer getting any vCenter or NSX-T adapters."
     annotations:
       summary: "vrops-inventory no longer getting any vCenter or NSX-T adapters."
       description: |
@@ -27,10 +28,11 @@ groups:
       severity: warning
       service: exporter
       support_group: observability
-      meta: "`{{ $labels.inventory }}` is running on stale resources. Restart the pod"
-      dashboard:  vrops-exporter-status/vrops-exporter-status?target={{ $labels.target }}&var-target={{ $labels.target }}
+      meta: "`{{`{{ $labels.inventory }}`}}` is running on stale resources. Restart the pod"
+      dashboard: "vrops-exporter-status/vrops-exporter-status?target={{`{{ $labels.target }}`}}&var-target={{`{{ $labels.target }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/vrops-exporter-status?var-target={{`{{ $labels.target }}`}}"
     annotations:
       summary: "vrops-inventory is running on stale resources"
       description: |
-        `{{ $labels.inventory }}` is running on stale resources.
-        Restart the pod in namespace: `{{ $labels.namespace }}`.
+        `{{`{{ $labels.inventory }}`}}` is running on stale resources.
+        Restart the pod in namespace: `{{`{{ $labels.namespace }}`}}`.
