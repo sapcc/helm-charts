@@ -84,7 +84,8 @@ build-ipam-capi-remote:
 	@cp kustomize/ipam-capi-remote/templates/* ipam-capi-remote/templates
 	@mkdir ipam-capi-remote/managedresources
 	@kubectl kustomize kustomize/ipam-capi-remote/managedresources |\
-		yq eval '(select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration" or .kind == "CustomResourceDefinition") | .metadata.labels."webhook-injector") = "true"' - \
+		yq eval '(select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration" or .kind == "CustomResourceDefinition") | .metadata.labels."ipam-capi-remote-webhook-injector") = "true"' |\
+		yq eval '(select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration") | .webhooks[].clientConfig | select(.service)) |= ({"url": "https://ipam-capi-remote-webhook-service:443" + .service.path})' - \
 		> ipam-capi-remote/managedresources/crds-rbac-webhooks.yaml
 	@cp kustomize/ipam-capi-remote/managedresources/rbac.yaml ipam-capi-remote/managedresources
 	@cp kustomize/ipam-capi-remote/managedresources/globalinclusterippool.yaml ipam-capi-remote/managedresources
@@ -149,8 +150,8 @@ build-metal-operator-remote:
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - >\
-		metal-operator-remote/managedresources/crds-and-rbac.yaml
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - \
+		> metal-operator-remote/managedresources/crds-and-rbac.yaml
 	# Extract upstream Deployment template and inject webhook-injector as native sidecar (initContainer)
 	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml |\
 		$(SED) \
@@ -161,8 +162,7 @@ build-metal-operator-remote:
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 	  -n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml |\
-		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration")' - |\
-		yq eval '(. | .webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-webhook-service:443" + .service.path})' - \
+		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | .metadata.labels."metal-operator-remote-webhook-injector" = "true" | (.webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-remote-webhook-service:443" + .service.path})' - \
 		> metal-operator-remote/webhooks.yaml
 	# Bump patch version
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml

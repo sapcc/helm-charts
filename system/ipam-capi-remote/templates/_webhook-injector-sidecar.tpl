@@ -6,7 +6,7 @@
     - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
     - --leader-election-id=ipam-capi-remote-webhook-injector-leader
     - --cert-secret-name=ipam-capi-remote-cert-secret-name
-    - --webhook-label=webhook-injector=true
+    - --webhook-label=ipam-capi-remote-webhook-injector=true
     - --cert-sans=ipam-capi-remote-webhook-service
     - --admission-webhook-name=ipam-capi-webhook-injector-mutator
     - --external-host=ipam-capi-remote-webhook-service
