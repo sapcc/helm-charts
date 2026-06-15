@@ -39,6 +39,12 @@ spec:
                 name: logstash-secret
             - configMap:
                 name: logstash-etc
+      {{- if .Values.global.gardener.enabled }}
+        - name: ca-cert
+          secret:
+            defaultMode: 444
+            secretName: rest-cert
+      {{- end }}
       containers:
         - name: logstash
           image: {{.Values.global.registry}}/hermes-logstash:{{.Values.hermes_image_version_logstash}}
@@ -127,6 +133,11 @@ spec:
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
+            {{- if .Values.global.gardener.enabled }}
+            - name: ca-cert
+              mountPath: /etc/logstash/certs/ca.crt
+              subPath: ca.crt
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /
