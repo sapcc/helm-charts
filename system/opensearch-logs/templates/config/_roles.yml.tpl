@@ -608,6 +608,7 @@ siem_terraform_operator:
     - ".kibana*"
     - ".opensearch_dashboards*"
     allowed_actions:
+    - "system:admin/system_index"        # .kibana* is a system index; required when system_indices.enabled=true
     - "indices:data/write/index"
     - "indices:data/write/delete"
     - "indices:data/read/get"
