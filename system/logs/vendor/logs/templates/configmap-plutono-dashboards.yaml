@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+# SPDX-License-Identifier: Apache-2.0
+
+{{- range $path, $bytes := .Files.Glob "dashboards/*.json" }}
+---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name $path | replace "/" "-" | trunc 63 }}
+  labels:
+    plutono-dashboard: "true"
+
+data:
+{{ printf "%s: |-" $path | replace "/" "-" | indent 2 }}
+{{ printf "%s" $bytes | indent 4 }}
+
+{{- end }}

@@ -1,0 +1,20 @@
+{{/*
+SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+{{- if .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: logs-syslog-tls
+  labels:
+  {{- include "plugin.labels" . | nindent 4 }}
+spec:
+  secretName: logs-syslog-tls
+  dnsNames:
+    - {{ required "openTelemetry.logsCollector.syslogTLSConfig.dnsName is required when syslogTLSConfig.enabled=true" .Values.openTelemetry.logsCollector.syslogTLSConfig.dnsName }}
+  issuerRef:
+    name: {{ required "openTelemetry.logsCollector.syslogTLSConfig.issuerName is required when syslogTLSConfig.enabled=true" .Values.openTelemetry.logsCollector.syslogTLSConfig.issuerName }}
+    kind: ClusterIssuer
+    group: cert-manager.io
+{{- end }}
