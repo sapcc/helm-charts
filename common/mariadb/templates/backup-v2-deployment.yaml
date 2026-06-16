@@ -33,6 +33,17 @@ spec:
 {{- end }}
     spec:
       affinity:
+{{- if and .Values.persistence_claim.enabled (has "ReadWriteMany" .Values.persistence_claim.access_modes) }}
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ include "fullName" . }}
+            topologyKey: kubernetes.io/hostname
+{{- end }}
 {{- if .Values.nodeAffinity }}
       {{- with .Values.nodeAffinity }}
         nodeAffinity:
