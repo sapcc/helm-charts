@@ -1,0 +1,14 @@
+{{- if not .Values.linuxbridge_agent.configMap.name }}
+{{- include "neutron-linuxbridge-agent.configmap-etc" (dict "root" . "values" .Values.linuxbridge_agent) }}
+---
+{{- end }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-linuxbridge-agent
+spec:
+  hostNetwork: true
+  containers:
+    {{- include "neutron-linuxbridge-agent.container" (dict "root" . "values" .Values.linuxbridge_agent) | nindent 4 }}
+  volumes:
+    {{- include "neutron-linuxbridge-agent.volumes" (dict "root" . "values" .Values.linuxbridge_agent) | nindent 4 }}
