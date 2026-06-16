@@ -124,7 +124,7 @@ groups:
       severity: critical
       tier: os
       support_group: observability
-      meta: "Hermes is not available"
+      meta: "CCloud Hermes API is down"
       playbook: "docs/devops/alert/hermes"
     annotations:
       description: Hermes monitoring endpoint is down => Hermes is down
