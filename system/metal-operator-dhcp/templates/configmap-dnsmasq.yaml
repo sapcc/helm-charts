@@ -100,9 +100,6 @@ data:
 
     echo "Outgoing inteface is ${INTERFACE}"
 
-    # Load conntrack helper for TFTP so the kernel tracks ephemeral data ports
-    modprobe nf_conntrack_tftp
-
     echo "Adding rule for SNAT DHCP Reply to correct server IP address"
 
     if iptables-nft -t nat -C POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
@@ -112,12 +109,33 @@ data:
       iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}
     fi
 
-    # SNAT all TFTP-related traffic (initial + data transfer on ephemeral ports)
-    if iptables-nft -t nat -C POSTROUTING -p udp -m conntrack --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
+    # TFTP data transfers use a second UDP flow from an ephemeral server port back to the client,
+    # which conntrack sees as a new unrelated connection. The nf_conntrack_tftp helper inspects
+    # the initial TFTP request and marks subsequent data flows as RELATED to it, so NAT rules
+    # can match them. nf_nat_tftp rewrites the addresses inside those RELATED flows.
+    echo "Loading TFTP conntrack helper modules"
+    modprobe nf_conntrack_tftp
+    modprobe nf_nat_tftp
+
+    # Attach the tftp helper to incoming port-69 traffic before conntrack processes it.
+    # Without this, newer kernels ignore the helper even if the module is loaded.
+    echo "Adding CT helper rule for TFTP in raw table"
+    if iptables-nft -t raw -C PREROUTING -p udp --dport 69 -j CT --helper tftp 2>/dev/null; then
+      echo "CT helper rule for TFTP already present - skipping"
+    else
+      echo "CT helper rule for TFTP not present - creating rule"
+      iptables-nft -t raw -I PREROUTING 1 -p udp --dport 69 -j CT --helper tftp
+    fi
+
+    # SNAT the RELATED data flows so the client sees replies from the LB IP, not the node IP.
+    # --ctstate RELATED matches only the helper-tagged data flows, not the initial request.
+    # --ctorigdstport 69 narrows it to TFTP specifically (avoids catching other RELATED traffic).
+    echo "Adding rule for SNAT TFTP Reply to correct server IP address"
+    if iptables-nft -t nat -C POSTROUTING -p udp -m conntrack --ctstate RELATED --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
       echo "Rule for SNAT TFTP Reply already present - skipping"
     else
       echo "Rule for SNAT TFTP Reply not present - creating rule"
-      iptables-nft -t nat -I POSTROUTING 1 -p udp -m conntrack --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP}
+      iptables-nft -t nat -I POSTROUTING 1 -p udp -m conntrack --ctstate RELATED --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP}
     fi
   dhcp-stop.sh: |
     #!/usr/bin/env bash
@@ -129,3 +147,9 @@ data:
 
     echo "Deleting rule for SNAT TFTP Reply"
     iptables-nft -t nat -D POSTROUTING -p udp -m conntrack --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP}
+
+    echo "Removing CT helper rule for TFTP in raw table"
+    iptables-nft -t raw -D PREROUTING -p udp --dport 69 -j CT --helper tftp
+
+    echo "Removing SNAT TFTP rules"
+    iptables-nft -t nat -D POSTROUTING -p udp -m conntrack --ctstate RELATED --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP}

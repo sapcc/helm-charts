@@ -34,7 +34,11 @@ spec:
           - name: DATA_STREAM_ENABLED
             value: "{{ .Values.global.data_stream.enabled }}"
           - name: DATA_STREAMS
-            value: "{{ .Values.global.data_stream.names }}"
+            # Compose the datastream list from the static names plus any
+            # conditionally-enabled streams (e.g. opensearch-security-audit).
+            # Keeps regions from having to remember to update names when
+            # flipping audit toggles.
+            value: "{{ .Values.global.data_stream.names }}{{ if .Values.global.data_stream.opensearch_security_audit.enabled }} opensearch-security-audit{{ end }}"
           - name: FILE_RETENTION_SCHEMA_VERSION
             value: "{{ .Values.global.data_stream.schema_version }}"
           - name: ADMIN_USER

@@ -160,7 +160,9 @@ ronly2:
   reserved: true
   backend_roles:
   - "promuser"
+{{- end }}
 
+{{- if eq .Values.global.region "qa-de-1" }}
 securityanalytics:
   hash: "{{ .Values.users.securityanalytics.nohash }}"
   reserved: true

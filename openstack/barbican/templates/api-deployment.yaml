@@ -163,12 +163,16 @@ spec:
         {{- end }}
         - name: lunaclient
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: ChrystokiConfigurationPath
               value: "/thales/safenet/lunaclient/config"
-          command: [ "/bin/bash", "-c", "--" ]
-          args: [ "while true; do sleep 30; done;" ]
+          command: [ "bash", "-lc" ]
+          args:
+            - |
+              set -e
+              /scripts/barbican_lunaclient.sh
+              exec sleep infinity
           {{- if .Values.hsm.resources.enabled }}
           resources:
             limits:
@@ -178,10 +182,6 @@ spec:
               cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
               memory: {{ .Values.hsm.resources.requests.memory | quote }}
           {{- end }}
-          lifecycle:
-            postStart:
-              exec:
-                command: [ "/bin/bash", "/scripts/barbican_lunaclient.sh" ]
           volumeMounts:
             - name: hsm
               mountPath: /scripts/barbican_lunaclient.sh

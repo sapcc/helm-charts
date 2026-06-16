@@ -44,10 +44,7 @@ spec:
             - name: server
               containerPort: 3000
           env:
-            - name: PORT
-              value: "3000"
-            - name: IDENTITY_ENDPOINT
-              value: {{ .Values.identity_endpoint | default (printf "http://keystone.monsoon3.svc.kubernetes.%s.%s:5000/v3" .Values.global.region .Values.global.tld) | quote }}
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
           livenessProbe:
             httpGet:
               path: /
