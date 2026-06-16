@@ -11,6 +11,8 @@
     - --cert-sans=metal-operator-remote-webhook-service
     - --admission-webhook-name=metal-operator-webhook-injector-mutator
     - --admission-external-port=444
+    - --external-host=metal-operator-remote-webhook-service
+    - --extenral-port=443
   ports:
     - name: metrics
       containerPort: 8082
