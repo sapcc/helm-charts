@@ -4,9 +4,10 @@
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
     - --webhook-config-name=ipam-capi-remote-webhook-config
+    - --webhook-label=ipam-capi-remote-webhook-injector
     - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
     - --leader-election-id=ipam-capi-remote-webhook-injector-leader
-    - --cert-secret-name=ipam-capi-remote-cert-secret-name
+    - --cert-secret-name=ipam-capi-remote-cert-secret
     - --cert-sans=ipam-capi-remote-webhook-service
     - --admission-webhook-name=ipam-capi-webhook-injector-mutator
     - --admission-external-port=444
