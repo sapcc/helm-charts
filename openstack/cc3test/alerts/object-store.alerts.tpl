@@ -41,7 +41,7 @@ groups:
         cc3test_status{service="ceph", type="ceph_api", phase="call"} == 0
     for: 2m
     labels:
-      severity: warning
+      severity: critical
       support_group: storage
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
@@ -51,8 +51,8 @@ groups:
       playbook: "docs/operation/storage/ceph/ceph-alert/ceph-api-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "Openstack Ceph API is down"
-      summary: "Openstack Ceph API is down"
+      description: "Openstack Ceph API is down."
+      summary: "Openstack Ceph API is down."
 
   - alert: OpenstackCephApiFlapping
     expr: |

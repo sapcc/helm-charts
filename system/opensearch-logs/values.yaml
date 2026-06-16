@@ -51,6 +51,16 @@ global:
         enabled: false
         repository: "snapshots"
         retention: "31d"
+    traces:
+      min_index_age: "7d"
+      max_index_age: "14d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+      number_of_shards: 1
+      snapshots:
+        enabled: false
+        repository: "snapshots"
+        retention: "7d"
     audit:
       min_index_age: "7d"
       min_size: "20gb"
@@ -116,7 +126,7 @@ vpa:
   enabled: false
 
 auth:
-  ca_path: certs/admin/ca.crt
+  ca_path: /etc/ssl/certs/ca-certificates.crt
 
 retention:
   index: "31d"
@@ -128,6 +138,8 @@ opensearch_master:
   fullnameOverride: "opensearch-logs-master"
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "cert-manager,opensearch-logs-ca-secret"
   image:
     tag: 3.6.0
   roles:
@@ -172,6 +184,7 @@ opensearch_client:
   podAnnotations:
     # manual versioning, raise if secrets change
     versioning: "3"
+    secret.reloader.stakater.com/reload: "cert-manager,opensearch-logs-ca-secret"
   roles:
     - remote_cluster_client
   opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000"
@@ -216,6 +229,8 @@ opensearch_data:
   fullnameOverride: "opensearch-logs-data"
   nodeGroup: "data"
   masterService: "opensearch-logs-master"
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "cert-manager,opensearch-logs-ca-secret"
   roles:
     - ingest
     - data
@@ -255,6 +270,8 @@ opensearch_data_kvm:
   fullnameOverride: "opensearch-logs-data-kvm"
   nodeGroup: "data-kvm"
   masterService: "opensearch-logs-master"
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "cert-manager,opensearch-logs-ca-secret"
   roles:
     - ingest
     - data
@@ -298,6 +315,7 @@ opensearch_snapshots:
   podAnnotations:
     # manual versioning, raise if secrets change
     versioning: "3"
+    secret.reloader.stakater.com/reload: "cert-manager,opensearch-logs-ca-secret"
   roles:
     - warm
   opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
@@ -344,6 +362,7 @@ opensearch_ml:
   podAnnotations:
     # manual versioning, raise if secrets change
     versioning: "3"
+    secret.reloader.stakater.com/reload: "cert-manager,opensearch-logs-ca-secret"
   roles:
     - ml
   opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"

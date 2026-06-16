@@ -3,6 +3,9 @@ apiVersion: apps/v1
 
 metadata:
   name: aurora
+  annotations:
+    # redeploy on secret "aurora-feedback" change so all the aurora pods gets the same secrets
+    secret.reloader.stakater.com/reload: "aurora-feedback"
 
 spec:
   selector:
@@ -44,10 +47,10 @@ spec:
             - name: server
               containerPort: 3000
           env:
-            - name: PORT
-              value: "3000"
-            - name: IDENTITY_ENDPOINT
-              value: {{ .Values.identity_endpoint | default (printf "http://keystone.monsoon3.svc.kubernetes.%s.%s:5000/v3" .Values.global.region .Values.global.tld) | quote }}
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          envFrom:
+          - secretRef:
+              name: aurora-feedback
           livenessProbe:
             httpGet:
               path: /
