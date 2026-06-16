@@ -12,7 +12,7 @@
     - --admission-webhook-name=ipam-capi-webhook-injector-mutator
     - --admission-external-port=444
     - --external-host=ipam-capi-remote-webhook-service
-    - --extenral-port=443
+    - --external-port=443
   ports:
     - name: metrics
       containerPort: 8082
