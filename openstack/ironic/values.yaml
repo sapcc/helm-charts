@@ -217,8 +217,10 @@ conductor:
     conductor:
       conductor_always_validates_images: false # We only use the direct interface, so leave it to the agent
       permitted_image_formats: 'raw,qcow2,iso,vmdk'
-      # HDA has a parallelism of 50 nodes, but with deleting they ran into the limit of 60, so increasing to 100 for now
-      max_concurrent_clean: 100
+      # HDA has a parallelism of 50 nodes, but with deleting they ran into the limit of 60, so increasing to 90. The network in the biggest
+      # region only has a /25 (126) & /26 (62) so ~188 useable IPs but each node uses 2, so enough for ~94 nodes. But we need some for the router
+      # as well and want a small puffer so 90 it is.
+      max_concurrent_clean: 90
 
 agent:
   deploy_logs:

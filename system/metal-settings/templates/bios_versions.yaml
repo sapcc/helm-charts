@@ -3,38 +3,36 @@
 {{- if $vendorConfig }}
 
 {{/* Vendor filtering */}}
-{{- $vendorIncluded := or (not $.Values.biosVersions.filters.vendors.included) (has $vendor $.Values.biosVersions.filters.vendors.included) }}
-{{- $vendorExcluded := and $.Values.biosVersions.filters.vendors.excluded (has $vendor $.Values.biosVersions.filters.vendors.excluded) }}
-
-{{- if and $vendorIncluded (not $vendorExcluded) }}
+{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosVersions.filters.vendors) }}
 {{- $processedModels := dict }}
-{{- range $entry := $vendorConfig.models }}
+{{- range $entryName, $entry := $vendorConfig.models }}
 {{- if $entry.bios }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
+{{- $versionParams := (get $entry.bios "versionParams") | default dict }}
+{{- $serverFilters := (get $versionParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
 {{/* Skip if we've already processed this model-version combination */}}
 {{- if not (hasKey $processedModels $modelKey) }}
 {{- $_ := set $processedModels $modelKey true }}
 
-{{/* Model filtering */}}
-{{- $modelIncluded := or (not $.Values.biosVersions.filters.models.included) (has $model $.Values.biosVersions.filters.models.included) }}
-{{- $modelExcluded := and $.Values.biosVersions.filters.models.excluded (has $model $.Values.biosVersions.filters.models.excluded) }}
-
-{{/* Version filtering */}}
-{{- $versionIncluded := or (not $.Values.biosVersions.filters.versions.included) (has $version $.Values.biosVersions.filters.versions.included) }}
-{{- $versionExcluded := and $.Values.biosVersions.filters.versions.excluded (has $version $.Values.biosVersions.filters.versions.excluded) }}
-
-{{- if and $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
+{{/* Model and Version filtering */}}
+{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.biosVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.biosVersions.filters.versions)) }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSVersionSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}
+  {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
+  {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  name: {{ $resourceName }}
 spec:
   serverSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
+{{- end }}
   biosVersionTemplate:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
