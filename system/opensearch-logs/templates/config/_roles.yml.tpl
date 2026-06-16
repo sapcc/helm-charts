@@ -614,6 +614,7 @@ siem_terraform_operator:
     - "indices:data/read/get"
     - "indices:data/read/search"          # Dashboards saved-objects GET checks for existing objects
     - "indices:data/write/bulk"
+    - "indices:data/write/bulk*"          # covers shard-level dispatch bulk[s]
     - "indices:data/write/update"         # Dashboards saved-objects PATCH/update path
     - "indices:admin/get"
     - "indices:admin/create"
