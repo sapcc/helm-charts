@@ -44,13 +44,7 @@ spec:
             - name: server
               containerPort: 3000
           env:
-            - name: PORT
-              value: "3000"
-            - name: IDENTITY_ENDPOINT
-              # prettier-ignore
-              value: {{ .Values.identity_endpoint | default (printf "https://identity-3.%s.%s/v3" .Values.global.region .Values.global.tld) | quote }}
-            - name: CEPH_REGION
-              value: {{ .Values.ceph_region | quote }}
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
           livenessProbe:
             httpGet:
               path: /
