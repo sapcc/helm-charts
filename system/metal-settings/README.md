@@ -8,10 +8,10 @@ The chart generates four types of Kubernetes custom resources:
 
 | Resource Type | Description | Count |
 |---------------|-------------|-------|
-| `BIOSSettingsSet` | BIOS configuration settings per vendor/model/clusterType | 105 |
-| `BIOSVersionSet` | Target BIOS firmware versions per vendor/model | 26 |
-| `BMCVersionSet` | Target BMC firmware versions per vendor/model | 26 |
-| `BMCSettingsSet` | BMC manager settings per vendor/model (disabled by default) | 26 |
+| `BIOSSettingsSet` | BIOS configuration settings per vendor/model/clusterType/server | 162 |
+| `BIOSVersionSet` | Target BIOS firmware versions per vendor/model/server | 27 |
+| `BMCVersionSet` | Target BMC firmware versions per vendor/model/server | 27 |
+| `BMCSettingsSet` | BMC manager settings per vendor/model/server (disabled by default) | 162 |
 
 Additionally, when `bmcSettings.enabled` is true, the chart creates:
 - A `ConfigMap` (`clusterConfig.configMapName`) holding cluster-level values (e.g. syslog server).
@@ -24,7 +24,7 @@ All data (firmware versions, image URIs, model lists) is defined in `values.yaml
 The chart supports selective deployment of resources using include/exclude filters. This enables:
 
 - **Testing new settings** in specific regions before global rollout
-- **Gradual rollouts** by vendor, model, or cluster type
+- **Gradual rollouts** by vendor, model, cluster type, or server
 - **Region-specific configurations** with different hardware profiles
 
 ## Values
@@ -60,6 +60,9 @@ biosSettings:
     clusterTypes:
       included: []                 # E.g., [sci-k8s-controlplane, cc-kvm-compute]
       excluded: []
+    servers:
+      included: []                 # E.g., [server-a, server-b]
+      excluded: []
     versions:
       included: []
       excluded: []
@@ -79,6 +82,9 @@ biosVersions:
     models:
       included: []
       excluded: []
+    servers:
+      included: []                 # E.g., [server-a, server-b]
+      excluded: []
     versions:
       included: []
       excluded: []
@@ -96,38 +102,13 @@ bmcVersions:
     models:
       included: []
       excluded: []
+    servers:
+      included: []                 # E.g., [server-a, server-b]
+      excluded: []
     versions:
       included: []
       excluded: []
 ```
-
-### Machine Inventory (`machines`)
-
-All vendor/model data is defined under `machines:` in `values.yaml`. This single source drives all four resource types — BIOS settings, BIOS versions, BMC versions, and BMC settings. Each entry defines what to deploy for that model.
-
-```yaml
-machines:
-  <vendor>:                        # dell | hpe | lenovo
-    models:
-      - model: <model-name>        # Used as the label selector value and resource name suffix.
-        clusterTypes:              # List of cluster types this model applies to (BIOS only).
-          - cc-kvm-compute         # Use *defaultClusterTypes anchor for the standard set.
-          - sci-k8s-controlplane
-        bios:
-          version: "2.22.2"        # Target BIOS firmware version gate.
-          settingsFileName: dell-default.yaml  # File under bios_settings/ to use for BIOSSettingsSet.
-          imageURI: "https://..."  # Firmware image download URL for BIOSVersionSet.
-        bmc:
-          version: "7.00.00.183"   # Target BMC firmware version gate.
-          settingsFileName: dell-default.yaml  # File under bmc_settings/ to use for BMCSettingsSet.
-          imageURI: "https://..."  # Firmware image download URL for BMCVersionSet.
-```
-
-**Key rules:**
-- A model entry with both `bios:` and `bmc:` blocks generates resources for all four types (subject to `enabled` flags and filters).
-- `clusterTypes` only affects `BIOSSettingsSet` — one resource is generated per cluster type. BIOS/BMC version and BMC settings resources are model-scoped (no cluster type dimension).
-- `settingsFileName` references a file in `bios_settings/` or `bmc_settings/` respectively. Multiple models can share the same file.
-- The `*defaultClusterTypes` YAML anchor expands to the standard six cluster types defined at the top of `values.yaml`.
 
 ### BMCSettingsSet Configuration
 
@@ -142,6 +123,9 @@ bmcSettings:
       excluded: []
     models:
       included: []
+      excluded: []
+    servers:
+      included: []                 # E.g., [server-a, server-b]
       excluded: []
     versions:
       included: []
@@ -174,12 +158,47 @@ clusterConfig:
   hpeLicenseKey: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"  # or inject via Vault
 ```
 
+### Machine Inventory (`machines`)
+
+All vendor/model data is defined under `machines:` in `values.yaml`. This single source drives all four resource types — BIOS settings, BIOS versions, BMC versions, and BMC settings. Each entry defines what to deploy for that model.
+
+```yaml
+machines:
+  <vendor>:                        # dell | hpe | lenovo
+    models:
+      - model: <model-name>        # Used as the label selector value and resource name suffix.
+        clusterTypes:              # List of cluster types this model applies to (BIOS only).
+          - cc-kvm-compute         # Use *defaultClusterTypes anchor for the standard set.
+          - sci-k8s-controlplane
+        bios:
+          version: "2.22.2"        # Target BIOS firmware version gate.
+          settingsFileName: dell-default.yaml  # File under bios_settings/ to use for BIOSSettingsSet.
+          imageURI: "https://..."  # Firmware image download URL for BIOSVersionSet.
+        bmc:
+          version: "7.00.00.183"   # Target BMC firmware version gate.
+          settingsFileName: dell-default.yaml  # File under bmc_settings/ to use for BMCSettingsSet.
+          imageURI: "https://..."  # Firmware image download URL for BMCVersionSet.
+
+```
+
+**Key rules:**
+- A model entry with both `bios:` and `bmc:` blocks generates resources for all four types (subject to `enabled` flags and filters).
+- `clusterTypes` only affects `BIOSSettingsSet` — one resource is generated per cluster type. BIOS/BMC version and BMC settings resources are model-scoped (no cluster type dimension).
+- `settingsFileName` references a file in `bios_settings/` or `bmc_settings/` respectively. Multiple models can share the same file.
+- The `*defaultClusterTypes` YAML anchor expands to the standard six cluster types defined at the top of `values.yaml`.
+- `servers` filters are rendered as selector `matchExpressions` on `kubernetes.metal.cloud.sap/name`.
+- `included` uses `operator: In`, `excluded` uses `operator: NotIn`.
+- Unlike vendor/model/version/clusterType filters, `servers` narrows the generated resource selector rather than deciding whether Helm renders the resource at all.
+
 ## Filter Logic
 
 - **Empty `included` list** = include all (default behavior)
 - **Non-empty `included` list** = include only specified values
 - **`excluded` list** = exclude specified values (applied after include)
 - **Multiple filters** are combined with AND logic
+- **`servers` filters** are rendered as selector `matchExpressions` on `kubernetes.metal.cloud.sap/name`
+- `included` uses `operator: In`, `excluded` uses `operator: NotIn`
+- Unlike vendor/model/version/clusterType filters, `servers` narrows the generated resource selector rather than deciding whether Helm renders the resource at all
 
 ## Use Case Examples
 
@@ -292,7 +311,23 @@ biosSettings:
       excluded: [cc-kvm-compute]
 ```
 
-### UC9: Disable Resource Type Entirely
+### UC9: Deploy Specific Servers
+
+Target only two named servers:
+
+```yaml
+biosSettings:
+  filters:
+    servers:
+      included: [server-a, server-b]
+
+bmcVersions:
+  filters:
+    servers:
+      excluded: [server-c]
+```
+
+### UC10: Disable Resource Type Entirely
 
 Disable BIOS settings while keeping versions:
 
@@ -307,7 +342,7 @@ bmcVersions:
   enabled: true
 ```
 
-### UC10: Multi-Region Deployment Strategy
+### UC11: Multi-Region Deployment Strategy
 
 **Region A (Production)** - Full deployment:
 ```yaml

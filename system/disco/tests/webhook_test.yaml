@@ -1,0 +1,86 @@
+suite: webhook service
+templates:
+  - disco-webhook-service.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should render exactly one Service
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+
+  - it: should be named disco-webhook-service
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-webhook-service
+
+  - it: should expose port 443 targeting 9443
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 443
+            protocol: TCP
+            targetPort: 9443
+
+  - it: should select app=disco pods
+    asserts:
+      - equal:
+          path: spec.selector.app
+          value: disco
+---
+suite: mutating webhook configuration
+templates:
+  - disco-mutating-webhook-configuration.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should render exactly one MutatingWebhookConfiguration
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: MutatingWebhookConfiguration
+
+  - it: should be named disco-mutating-webhook-configuration
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-mutating-webhook-configuration
+
+  - it: should have cert-manager inject annotation
+    asserts:
+      - isNotEmpty:
+          path: metadata.annotations["cert-manager.io/inject-ca-from"]
+
+  - it: should target record resources in disco.stable.sap.cc
+    asserts:
+      - equal:
+          path: webhooks[0].rules[0].resources[0]
+          value: records
+      - equal:
+          path: webhooks[0].rules[0].apiGroups[0]
+          value: disco.stable.sap.cc
+---
+suite: webhooks disabled
+templates:
+  - disco-webhook-service.yaml
+  - disco-mutating-webhook-configuration.yaml
+tests:
+  - it: should not render webhook resources when webhooks.enabled is false
+    set:
+      webhooks.enabled: false
+    asserts:
+      - template: disco-webhook-service.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-mutating-webhook-configuration.yaml
+        hasDocuments:
+          count: 0

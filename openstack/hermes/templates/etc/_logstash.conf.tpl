@@ -70,6 +70,18 @@ filter {
     ]
   }
 
+  # Set @timestamp from the CADF eventTime so every output (OpenSearch,
+  # Octobus, S3, Kafka) reflects when the audited action happened, not
+  # when Logstash saw the event. Must run after f05's ISO8601 format fix.
+  # On parse failure we tag instead of failing closed: the event still
+  # ships with @timestamp = ingest time, surfaced for debugging.
+  date {
+    id => "f05a_eventtime_to_timestamp"
+    match => [ "eventTime", "ISO8601" ]
+    target => "@timestamp"
+    tag_on_failure => ["_eventtime_parse_failure"]
+  }
+
   # Keystone specific transformations to compensate for scope missing from initiator element
   # When scope is missing from initiator, get it from action-specific parameters
   if ![initiator][project_id] and ![initiator][domain_id] {
@@ -573,6 +585,24 @@ output {
         automatic_retries => 60
         retry_non_idempotent => true
       }
+      {{- if .Values.logstash.kafka.enabled }}
+      # Kafka output mirroring the Octobus audit filter above.
+      # Public CA, no client credentials at present (SSL server-auth only).
+      # Durability: acks=all + idempotence + unbounded retries — every
+      # audit event must reach the SIEM, no duplicates on retry.
+      kafka {
+        id => "output_kafka_audit"
+        bootstrap_servers => "{{ .Values.global.forwarding.kafka.bootstrap_servers }}"
+        topic_id => "{{ .Values.logstash.kafka.topic | default "hermes" }}"
+        codec => "json"
+        security_protocol => "SSL"
+        ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "" }}"
+        compression_type => "{{ .Values.logstash.kafka.compression_type | default "zstd" }}"
+        acks => "{{ .Values.logstash.kafka.acks | default "all" }}"
+        retries => {{ .Values.logstash.kafka.retries | default 2147483647 | int }}
+        client_id => "{{ .Values.logstash.kafka.client_id | default "hermes-logstash" }}"
+      }
+      {{- end }}
     }
   }
   {{- end}}

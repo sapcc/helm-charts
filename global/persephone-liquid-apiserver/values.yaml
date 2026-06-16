@@ -6,7 +6,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud/persephone-liquid-apiserver
@@ -93,9 +93,17 @@ service:
 
 ingress:
   enabled: false
-  className: ""
   annotations: {}
+  # hosts:
+  #   - host: persephone-liquid.eu-de-1.cloud.sap
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
   hosts: []
+  # tls:
+  #   - hosts:
+  #       - persephone-liquid.eu-de-1.cloud.sap
+  #     secretName: persephone-liquid-apiserver-tls
   tls: []
 
 resources:
@@ -130,7 +138,7 @@ affinity:
 # Liveness and readiness probes
 livenessProbe:
   httpGet:
-    path: /v1/info
+    path: /healthcheck
     port: http
   initialDelaySeconds: 30
   periodSeconds: 10
@@ -139,7 +147,7 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /v1/info
+    path: /healthcheck
     port: http
   initialDelaySeconds: 10
   periodSeconds: 5

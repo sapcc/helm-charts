@@ -2,12 +2,17 @@
 {{- $defaultInfraCredsName := printf "openstack-infra-creds-seed-%s" $key | trunc 63 | trimSuffix "-" }}
 {{- $infraCredsName := default $defaultInfraCredsName $cluster.infraCredentialsSecretName }}
 {{- $defaultAuthConfigName := printf "authentication-seed-%s" $key | trunc 63 | trimSuffix "-" }}
+{{- $seedShootName := printf "%s%s" $key ($cluster.landscapeName | substr 0 1) }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
   namespace: garden
+  labels:
+    cluster-type: {{ required "missing value for .Values.clusterType" $.Values.clusterType }}
+    metadata.greenhouse.sap/region: {{ required "missing value for $cluster.region" $cluster.region }}
+    greenhouse.sap/shoot-grafter-transport: {{ required "missing value for .Values.greenhouseShootGrafter" $.Values.greenhouseShootGrafter }}
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
@@ -26,6 +31,17 @@ spec:
   seedName: {{ $cluster.seedName }}
   purpose: {{ default "infrastructure" $cluster.purpose }}
 {{- end }}
+  dns:
+    domain: {{ $seedShootName }}.garden.external.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+    providers:
+    - type: openstack-designate
+      credentialsRef: 
+        apiVersion: v1
+        kind: Secret
+        name: {{ $infraCredsName }}
+      domains:
+        include:
+        - {{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
   provider:
     type: openstack
     infrastructureConfig:
