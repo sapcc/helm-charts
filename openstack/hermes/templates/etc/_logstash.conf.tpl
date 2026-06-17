@@ -596,11 +596,10 @@ output {
         topic_id => "{{ .Values.logstash.kafka.topic | default "hermes" }}"
         codec => "json"
         security_protocol => "SSL"
-        ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "https" }}"
+        ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "" }}"
         compression_type => "{{ .Values.logstash.kafka.compression_type | default "zstd" }}"
         acks => "{{ .Values.logstash.kafka.acks | default "all" }}"
-        retries => {{ .Values.logstash.kafka.retries | default 2147483647 }}
-        enable_idempotence => {{ .Values.logstash.kafka.enable_idempotence | default true }}
+        retries => {{ .Values.logstash.kafka.retries | default 2147483647 | int }}
         client_id => "{{ .Values.logstash.kafka.client_id | default "hermes-logstash" }}"
       }
       {{- end }}
