@@ -232,6 +232,7 @@ complex-role:
     - "deployments-datastream"
     - "cronus-datastream"
     - "alerts-sem-datastream"
+    - "awx-api"
     - "alerts-datastream"
     - "maillog-*"
     allowed_actions:
