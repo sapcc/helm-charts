@@ -1,0 +1,16 @@
+{{- if .Values.hermes.rabbitmq_enabled }}
+{{- $region := .Values.global.region | required "missing value for .Values.global.region" }}
+{{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld" }}
+{{- $ips    := .Values.rabbitmq_notifications.externalIPs }}
+{{- if $ips }}
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: hermes-rabbitmq.{{ $region }}.{{ $tld }}
+spec:
+  type: A
+  record: {{ index $ips 0 | quote }}
+  hosts:
+    - hermes-rabbitmq.{{ $region }}.{{ $tld }}
+{{- end }}
+{{- end }}
