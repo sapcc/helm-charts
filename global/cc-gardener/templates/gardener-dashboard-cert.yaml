@@ -1,0 +1,26 @@
+{{- if .Values.garden.dashboard }}
+{{- if .Values.garden.dashboard.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gardener-certificate
+spec:
+  secretName: gardener-certificate-secret
+  dnsNames:
+{{- if .Values.garden.domainOverride }}
+  - dashboard.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap
+{{- else }}
+{{- with .Values.global }}
+  - dashboard.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap
+{{- end }}
+{{- end }}
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: ClusterIssuer
+    name: digicert-issuer
+  secretTemplate:
+    labels:
+      # instruct blackbox-exporter module to not use Gardener CA
+      gardener.cloud/role: garden-cert
+{{- end }}
+{{- end }}

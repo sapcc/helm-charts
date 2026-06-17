@@ -45,15 +45,51 @@
                         }
                     }
                 ],
+{{- if and .Values.s3.enabled .Values.global.data_stream.cronus.snapshots.enabled  }}
                 "transitions": [
                     {
-                        "state_name": "delete",
+                        "state_name": "snapshot",
                         "conditions": {
-                            "min_index_age": "7d"
+                            "min_rollover_age": "{{ .Values.global.data_stream.cronus.min_index_age }}"
                         }
                     }
                 ]
             },
+            {
+            "name": "snapshot",
+            "actions": [
+                {
+                    "retry": {
+                        "count": 3,
+                        "backoff": "exponential",
+                        "delay": "1m"
+                    },
+                    "snapshot": {
+                        "repository": "{{ .Values.global.data_stream.cronus.snapshots.repository }}",
+                        "snapshot": "{_SNAPSHOT_NAME_}"
+                    }
+                }
+            ],
+                "transitions": [
+                    {
+                        "state_name": "delete",
+                        "conditions": {
+                            "min_doc_count": 5
+                        }
+                    }
+                ]
+            },
+{{- else }}
+                "transitions": [
+                    {
+                        "state_name": "delete",
+                        "conditions": {
+                            "min_rollover_age": "{{ .Values.global.data_stream.cronus.min_index_age }}"
+                        }
+                    }
+                ]
+            },
+{{- end }}
             {
                 "name": "delete",
                 "actions": [

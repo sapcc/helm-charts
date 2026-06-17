@@ -36,6 +36,7 @@ valid_interfaces = public
 {{- include "util.helpers.valuesToIni" $hypervisor.config_file }}
 {{- end }}
 
-{{- tuple . "cell1" $hypervisor.vnc | include "console-novnc.conf" }}
+{{- $cell := include "nova.helpers.cell_name" (tuple . (include "nova.helpers.get_active_cell" .)) }}
+{{- tuple . $cell $hypervisor.vnc | include "console-novnc.conf" }}
 
-{{- tuple . "cell1" $hypervisor.serial | include "console-serial.conf" }}
+{{- tuple . $cell $hypervisor.serial | include "console-serial.conf" }}

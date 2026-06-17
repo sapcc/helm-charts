@@ -135,7 +135,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
   fi
 
   # create a backup unless we are migrating from the old chart
-  if [[ ! -e /data/postgresql/$old_version/migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true ]]; then
+  if [[ ! -e /data/postgresql/$old_version/migrated_from_old_chart && ${PERSISTENCE_ENABLED:-false} == true && ${BACKUP_ON_UPDATE:-true} == true ]]; then
     # set envs to start old postgres version
     old_path=$PATH
     old_pgbin=$PGBIN

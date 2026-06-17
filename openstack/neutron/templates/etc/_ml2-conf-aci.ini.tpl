@@ -48,6 +48,9 @@ enable_az_aware_subnet_routes_sync = {{ .Values.aci.enable_az_aware_subnet_route
 {{- if .Values.aci.sync_allocations_done_file_path }}
 sync_allocations_done_file_path = {{ .Values.aci.sync_allocations_done_file_path }}
 {{- end }}
+{{- if .Values.aci.bgw_feature_enabled }}
+bgw_feature_enabled = true
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}

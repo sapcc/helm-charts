@@ -1,12 +1,12 @@
 - domain_name: tempest
-  password: {{ .Values.tempestAdminPassword | quote }}
+  password: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
   project_name: nova-tempest-admin1
   username: nova-tempestadmin1
   types:
   - admin
   - primary
 - domain_name: tempest
-  password: {{ .Values.tempestAdminPassword | quote }}
+  password: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
   project_name: nova-tempest-admin2
   username: nova-tempestadmin2
   types:

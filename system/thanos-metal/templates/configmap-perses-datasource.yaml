@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-regional-perses-datasource
+  labels:
+    "perses.dev/resource": "true"
+data:
+  metrics-regional-perses-datasource.json: |
+    {
+      "kind": "GlobalDatasource",
+      "metadata": {
+        "name": "metrics-regional-query"
+      },
+      "spec": {
+        "default": true,
+        "plugin": {
+          "kind": "PrometheusDatasource",
+          "spec": {
+            "proxy": {
+              "kind": "HTTPProxy",
+              "spec": {
+                "url": "http://thanos-regional-query.thanos.svc:10902"
+              }
+            }
+          }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-metal-perses-datasource
+  labels:
+    "perses.dev/resource": "true"
+data:
+  metrics-metal-perses-datasource.json: |
+    {
+      "kind": "GlobalDatasource",
+      "metadata": {
+        "name": "metrics-metal-query"
+      },
+      "spec": {
+        "default": false,
+        "plugin": {
+          "kind": "PrometheusDatasource",
+          "spec": {
+            "proxy": {
+              "kind": "HTTPProxy",
+              "spec": {
+                "url": "http://thanos-metal-query.thanos.svc:10902"
+              }
+            }
+          }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-scaleout-perses-datasource
+  labels:
+    "perses.dev/resource": "true"
+data:
+  metrics-scaleout-perses-datasource.json: |
+    {
+      "kind": "GlobalDatasource",
+      "metadata": {
+        "name": "metrics-scaleout-query"
+      },
+      "spec": {
+        "default": false,
+        "plugin": {
+          "kind": "PrometheusDatasource",
+          "spec": {
+            "proxy": {
+              "kind": "HTTPProxy",
+              "spec": {
+                "url": "https://metrics-internal.scaleout.{{ .Values.global.region }}.cloud.sap"
+              }
+            }
+          }
+        }
+      }
+    }

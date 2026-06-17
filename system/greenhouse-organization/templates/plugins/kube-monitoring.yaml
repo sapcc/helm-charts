@@ -164,15 +164,6 @@ data:
                 ready: [ status, conditions, "[type=Ready]", status ]
                 suspended: [ spec, suspend ]
                 observed_source_digest: [ status, observedSourceDigest ]
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kube-monitoring-ingress-ca
-  namespace: {{ .Release.Namespace }}
-data:
-  ca.crt: {{ required ".Values.monitoring.ingress.tlsClientAuth.cacrt missing" .Values.monitoring.ingress.tlsClientAuth.cacrt | b64enc | quote }}
 ---
 apiVersion: v1
 kind: Secret
@@ -190,7 +181,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     "greenhouse.sap/owned-by": {{ .Values.monitoring.supportGroup | default .Values.global.supportGroup }}
-    "greenhouse.sap/deployment-tool": "flux"
 spec:
   disabled: false
   pluginDefinitionRef:
@@ -225,18 +215,10 @@ spec:
   - name: alerts.alertmanagers.hosts
     value:
       {{- toYaml .Values.monitoring.alertmanager.hosts | nindent 8 }}
-{{- end }}
-{{- if .Values.monitoring.tlsSecretName }}
   - name: alerts.alertmanagers.tlsConfig.cert
-    valueFrom:
-      secret:
-        key: "tls.crt"
-        name: {{ .Values.monitoring.tlsSecretName }}
+    value: {{ .Values.monitoring.alertmanager.tls.cert }}
   - name: alerts.alertmanagers.tlsConfig.key
-    valueFrom:
-      secret:
-        key: "tls.key"
-        name: {{ .Values.monitoring.tlsSecretName }}
+    value: {{ .Values.monitoring.alertmanager.tls.key }}
 {{- end }}
   - name: kubeMonitoring.kube-state-metrics.customResourceState.enabled
     value: true

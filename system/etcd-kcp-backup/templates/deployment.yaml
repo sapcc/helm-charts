@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: etcd-kcp-backup
-  namespace: {{ .Values.namespace | default "kube-system" }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "chart.labels" . | nindent 4 }}
     etcd-kcp: backup
@@ -18,6 +18,12 @@ spec:
       labels:
         {{- include "chart.labels" . | nindent 8 }}
         etcd-kcp: backup
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: {{ required ".Values.deployment.container.metricsPort missing" .Values.deployment.container.metricsPort | quote }}
+        greenhouse/scrape: "true"
+        greenhouse/target: {{ required ".Values.greenhouseScrapeTarget missing" .Values.greenhouseScrapeTarget | quote }}
     spec:
       affinity:
         nodeAffinity:
@@ -94,9 +100,24 @@ spec:
             - '--snapstore-temp-directory=/tmp/etcd/snapstore'
             - '--storage-provider=S3'
           ports:
-          - name: server
-            containerPort: 8080
-            protocol: TCP
+          - name: metrics
+            containerPort: {{ required ".Values.deployment.container.metricsPort missing" .Values.deployment.container.metricsPort }}
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           env:
             - name: HOST_IP
               valueFrom:
@@ -113,7 +134,7 @@ spec:
               #     apiVersion: v1
               #     fieldPath: metadata.name
             - name: POD_NAMESPACE
-              value: kube-system
+              value: {{ .Release.Namespace }}
           resources:
             {{- toYaml .Values.deployment.container.resources | nindent 12 }}
           securityContext:

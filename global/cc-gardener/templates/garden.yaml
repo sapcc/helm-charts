@@ -46,16 +46,34 @@ spec:
       apiVersion: auditing.extensions.gardener.cloud/v1alpha1
       kind: AuditConfiguration
       backends:
-      - http:
+      - deliveryMode: Guaranteed
+        http:
           url: {{ .Values.extensions.auditing.url }}
           tls:
             secretReferenceName: auditing-mtls
+      {{- range .Values.extensions.auditing.backends }}
+      - http:
+          url: {{ .url }}
+          {{- if .tls }}
+          tls:
+            secretReferenceName: {{ required "backends[].tls.secretName is required" .tls.secretName }}
+          {{- end }}
+      {{- end }}
   resources:
   - name: auditing-mtls
     resourceRef:
       apiVersion: v1
       kind: Secret
       name: auditing-mtls
+  {{- range .Values.extensions.auditing.backends }}
+  {{- if .tls }}
+  - name: {{ required "backends[].tls.secretName is required" .tls.secretName }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: {{ .tls.secretName }}
+  {{- end }}
+  {{- end }}
   {{- end }}
   runtimeCluster:
     ingress:
@@ -147,7 +165,24 @@ spec:
             configMapRef:
               name: audit-policy-cp-garden
         {{- end }}
-      gardenerDashboard: {}
+{{- if .Values.garden.dashboard }}
+{{- if .Values.garden.dashboard.enabled }}
+      gardenerDashboard:
+        enableTokenLogin: {{ .Values.garden.dashboard.enableTokenLogin }}
+        logLevel: info
+{{- if .Values.garden.dashboard.oidc.enabled }}
+        oidcConfig:
+          additionalScopes:
+            - profile
+            - offline_access
+          clientIDPublic: {{ .Values.garden.dashboard.oidc.clientIDPublic }}
+          issuerURL: {{ .Values.garden.dashboard.oidc.issuerURL }}
+          secretRef:
+            name: gardener-dashboard-oidc
+          sessionLifetime: 12h0m0s
+{{- end }}
+{{- end }}
+{{- end }}
       gardenerDiscoveryServer: {}
 {{- if gt (len .Values.garden.virtualCluster.gardenerResourceManager.additionalTargetNamespaces) 0 }}
       gardenerResourceManager:

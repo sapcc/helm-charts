@@ -9,7 +9,8 @@ metadata:
   labels:
     system: openstack
     type: backend
-    component: manila
+    app.kubernetes.io/name: manila
+    app.kubernetes.io/component: share
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "600s"
@@ -34,6 +35,8 @@ spec:
         name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         alert-tier: os
         alert-service: manila
+        app.kubernetes.io/name: manila
+        app.kubernetes.io/component: share
       annotations:
         {{- if or .Values.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -45,6 +48,9 @@ spec:
         secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       priorityClassName: {{ .Values.pod.priority_class.default }}

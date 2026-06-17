@@ -8,8 +8,10 @@ global:
   keystoneNamespace: monsoon3
   # Set to true for global regions
   is_global_region: false
+  gardener:
+    enabled: false
   
-hermes_image_version_logstash: "20250717202634"
+hermes_image_version_logstash: "20260608182629"
       
 owner-info:
   support-group: observability
@@ -41,6 +43,23 @@ logstash:
   debug: false
   swift: true
   audit: true
+  # Kafka output mirroring the Octobus audit filter.
+  # Off by default; enable per-region. Public CA, no client credentials.
+  # global.forwarding.kafka.bootstrap_servers must be set in region secrets
+  # (comma-separated host:port list, e.g. "broker1:9093,broker2:9093").
+  kafka:
+    enabled: false
+    topic: hermes
+    client_id: hermes-logstash
+    # Durability-first defaults: every audit event must reach the SIEM.
+    # acks=all + idempotence + high retries survive single-broker loss
+    # without dropping or duplicating events. Requires broker-side
+    # min.insync.replicas >= 2 to actually deliver the durability acks=all
+    # promises.
+    acks: "all"
+    retries: 2147483647
+    compression_type: zstd
+    ssl_endpoint_identification_algorithm: ""
   jdbc:
     enabled: false
     schedule: "12 0 * * *"

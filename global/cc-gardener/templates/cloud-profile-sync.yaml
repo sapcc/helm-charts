@@ -26,10 +26,14 @@ spec:
         prometheus.io/targets: kubernetes
     spec:
       containers:
-      - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.cloudProfileSync.image.repository }}:{{required ".Values.cloudProfileSync.image.tag is missing" .Values.cloudProfileSync.image.tag }}"
+      - image: "{{ required ".Values.cloudProfileSync.image.repository is missing" .Values.cloudProfileSync.image.repository }}:{{ required ".Values.cloudProfileSync.image.tag is missing" .Values.cloudProfileSync.image.tag }}"
         imagePullPolicy: {{ .Values.cloudProfileSync.image.pullPolicy }}
         name: cloud-profile-sync
         command: ["/cloud-profile-sync"]
+        {{- if .Values.cloudProfileSync.enableCapabilities }}
+        args:
+        - --enable-machine-image-capabilities
+        {{- end }}
         env:
         - name: KUBERNETES_SERVICE_HOST
           value: virtual-garden-kube-apiserver.garden.svc.cluster.local

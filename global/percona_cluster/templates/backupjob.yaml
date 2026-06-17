@@ -13,7 +13,7 @@ spec:
   successfulJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 1200
+      activeDeadlineSeconds: 900
       template:
         metadata:
           annotations:
@@ -44,6 +44,8 @@ spec:
           - name: backup
             image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
             imagePullPolicy: IfNotPresent
+            resources:
+              {{- toYaml .Values.backup.resources | nindent 14 }}
             command:
             - /bin/bash
             - /startup-scripts/backup.sh

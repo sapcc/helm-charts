@@ -4,7 +4,13 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $key }}
+  labels:
+    cluster-type: sci-k8s-controlplane
+    greenhouse.sap/owned-by: containers
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ $key }}
 spec:
+  purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
@@ -39,13 +45,14 @@ spec:
       multus:
         enabled: {{ default true (($cluster.networking.multus).enabled) }}
         installCNIPlugins: {{ default true (($cluster.networking.multus).installCNIPlugins) }}
+      serviceLoopPrevention: Disabled
   kubernetes:
     version: {{ default $.Values.kubernetes.version $cluster.version }}
     kubeAPIServer:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
-        configMapName: authentication-config-cp
+        configMapName: {{ printf "sci-k8s-controlplane-auth-%s" $key }}
       {{- if $cluster.auditing.enabled }}
       auditConfig:
         auditPolicy:
@@ -151,6 +158,8 @@ spec:
             name: gardenlinux
             version: {{ default $.Values.imageVersion $cluster.imageVersion }}
           type: baremetal
+        labels:
+          cloud.sap/maintenance-profile: metal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
         maxSurge: 0

@@ -25,9 +25,25 @@ global:
 
 osprofiler: {}
 
+rbac:
+  enabled: true
+
 auto_assign_aggregates: 'dry_run'
 
 use_tls_acme: true
+
+cell1:
+  name: cell1
+  conductor:
+    config_file:
+      DEFAULT:
+        statsd_port: 9125
+        # enables collecting metrics for rpc calls
+        statsd_enabled: true
+      workarounds:
+        skip_hypervisor_version_check_on_lm: true
+      conductor:
+        workers: 8
 
 cell2:
   name: cell2
@@ -161,13 +177,6 @@ loci:
   nova: false
   # neutron images use loci by default
 
-#TODO we need to move to global or find another way to share image versions
-imageNameNeutron: loci-neutron
-
-imageNameOpenvswitch: loci-neutron
-imageVersionOpenvswitchVswitchd: null
-imageVersionOpenvswitchDbServer: null
-
 imageNameNova: loci-nova
 imageVersionNova: null
 imageVersionNovaApi: null
@@ -181,10 +190,10 @@ imageVersionNovaScheduler: null
 imageVersionNovaNanny: null
 imageVersionOpenResty: 1.25.3.2-5-bookworm
 
-imageVersionVspc: null
-
 vspc:
-  enabled: false
+  image:
+    tag: null
+  enabled: true
   telnet:
     portInternal: 1333
     portExternal: 1333
@@ -204,6 +213,9 @@ cross_az_attach: 'False'
 cinder_http_retries: 10
 neutron_http_retries: 10
 neutron_timeout: 600
+placement_timeout: 600
+rpc_response_timeout: 300
+rabbit_transient_queues_ttl: 190
 
 api:
   config_file:
@@ -347,11 +359,16 @@ compute:
       #   WHERE resource_class_id = 2 AND r.name like 'domain-%' ORDER BY a.used DESC LIMIT 2;
       # additionally, the sap-seeds chart contains the flavors we currently have
       resource_disk_gb_max_unit_limit: 700
+      serial_port_connected_default: false
+      min_disk_size_kb: 4000
+      mirror_instance_logs_to_syslog: true
+      special_spawning_vm_group: ''
   vmware:
     vnc:
       enabled: false
 
 conductor:
+  legacy: true
   config_file:
     DEFAULT:
       statsd_port: 9125
@@ -813,11 +830,17 @@ mysql_metrics:
         GROUP BY task_state;
       values:
         - "gauge"
+    - help: Nova oldest soft deleted instance in days
+      name: openstack_compute_oldest_soft_deleted_instance
+      query: |
+        SELECT COALESCE(DATEDIFF(NOW(), MIN(deleted_at)), 0) AS age_of_oldest_instance_in_days
+        FROM instances;
+      values:
+        - "age_of_oldest_instance_in_days"
 
 
-db_name: nova
-max_pool_size: 10
-max_overflow: 5
+max_pool_size: 50
+max_overflow: -1
 
 proxysql:
   native_sidecar: true
@@ -896,6 +919,34 @@ mariadb:
       - nova_cell0.instance_metadata
     oauth:
       client_id: "nova"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+mariadb_cell1:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  persistence_claim:
+    name: db-nova-cell1-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    oauth:
+      client_id: "nova-cell1"
   alerts:
     support_group: compute-storage-api
   job:
@@ -1081,6 +1132,7 @@ pxc_db_cell3:
       enabled: true
 
 rabbitmq:
+  enabled: true
   users:
     default:
       password: null
@@ -1102,6 +1154,38 @@ rabbitmq:
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
     support_group: compute-storage-api
+
+rabbitmq_api:
+  enabled: false
+  nameOverride: api-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+rabbitmq_cell1:
+  enabled: false
+  nameOverride: cell1-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 
 rabbitmq_cell2:
   nameOverride: cell2-rabbitmq
@@ -1205,7 +1289,7 @@ alerts:
 sentry:
   enabled: true
 
-nova_bigvm_enabled: true
+nova_bigvm_enabled: false
 
 cors:
   enabled: true
@@ -1255,7 +1339,6 @@ nanny:
   default:
     enabled: true
     add_cell0_conf: false
-    add_cell1_conf: false
     resources:
       requests:
         memory: "500Mi"
@@ -1295,7 +1378,7 @@ nanny:
     schedule: "45 * * * *"
     # Requires only a single cell config to derive the DB type in
     # _regex_instance_filter()
-    add_cell1_conf: true
+    add_cell0_conf: true
     max_rows: 250
     fetch_instances_max_retries: 100
 
@@ -1347,7 +1430,7 @@ rate_limit:
         - action: create
           limit: 100r/m
 
-manage_service_user_passwords: false
+manage_service_user_passwords: true
 
 api-ratelimit-redis:
   alerts:

@@ -1,0 +1,24 @@
+{{- if and .Values.nebula.enabled .Values.nebula.gateway.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: nebula-gateway
+  annotations:
+    {{- range $key, $value := .Values.nebula.gateway.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" .Values.global.alerts.prometheus | quote }}
+spec:
+  type: {{ .Values.nebula.gateway.type | default "LoadBalancer" }}
+{{- if .Values.nebula.gateway.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.nebula.gateway.loadBalancerIP }}
+{{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.nebula.http }}
+      protocol: TCP
+  selector:
+    name: nebula
+    instance: nebula
+{{- end }}

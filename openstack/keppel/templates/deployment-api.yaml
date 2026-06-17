@@ -4,7 +4,7 @@ apiVersion: apps/v1
 metadata:
   name: keppel-api
   annotations:
-    secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
+    secret.reloader.stakater.com/reload: keppel-issuer-key,keppel-keys,keppel-secret
 
 spec:
   revisionHistoryLimit: 5
@@ -49,6 +49,9 @@ spec:
         - name: keys
           secret:
             secretName: keppel-keys
+        - name: issuer-key
+          secret:
+            secretName: keppel-issuer-key
       containers:
         - name: api
           image: {{include "keppel_image" .}}
@@ -64,6 +67,8 @@ spec:
               name: config
             - mountPath: /etc/keppel-keys
               name: keys
+            - mountPath: /etc/keppel-issuer-key
+              name: issuer-key
           livenessProbe:
             httpGet:
               path: /healthcheck
@@ -77,13 +82,13 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # NOTE: observed resource usage in eu-de-1 (as of 2024-05)
-          # - CPU: 400m with 6 replicas was running into throttling, so give plenty headroom
-          # - RAM: levels off around 50 Mi
+          # NOTE: observed resource usage in eu-de-1 (as of 2026-04)
+          # - CPU: base load is around 20m-30m, but sometimes one pod gets all the traffic and throttles even at the previous limit of 500m
+          # - RAM: levels off around 30-70 Mi, can spike and cause OOM during CPU throttling
           resources:
             requests:
-              cpu: "500m"
+              cpu: "250m"
               memory: "128Mi"
             limits:
-              cpu: "500m"
+              cpu: "1"
               memory: "128Mi"

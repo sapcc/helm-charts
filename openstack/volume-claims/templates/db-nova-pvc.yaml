@@ -1,3 +1,8 @@
+{{- $region := .Values.global.region | required ".Values.global.region missing" }}
+{{- $ignoreRegions := list
+  "eu-de-3"
+}}
+{{- if not (has $region $ignoreRegions) }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -8,8 +13,9 @@ metadata:
     ccloud/service: nova
 spec:
   accessModes:
-  - ReadWriteMany
+  - {{ include "volume-claims.accessMode" . }}
   resources:
     requests:
       {{- $region := .Values.global.region | required ".Values.global.region missing" }}
       storage: {{ if $region | regexMatch "^(?:ap-au-1|eu-de-[12]|eu-nl-1|na-us-1)$" -}} 100Gi {{- else -}} 50Gi {{- end }}
+{{- end }}

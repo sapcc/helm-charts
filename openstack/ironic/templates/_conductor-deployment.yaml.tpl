@@ -50,6 +50,9 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
@@ -169,11 +172,9 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
-          - mountPath: /etc/nginx/conf.d
-            name: nginx-confd
           - mountPath: /etc/nginx/conf.d/default.conf
             name: ironic-console-nginxconf
-            subPath: nginx.conf
+            subPath: default.conf
           - mountPath: /etc/nginx/conf.d/dhparam.pem
             name: ironic-console-dhparam
             subPath: dhparam.pem
@@ -240,14 +241,12 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
-      - name: nginx-confd
-        emptyDir: {}
       - name: ironic-console-nginxconf
         secret:
           secretName: ironic-console-secret
           items:
-          - key: nginx.conf
-            path: nginx.conf
+          - key: default.conf
+            path: default.conf
       - name: ironic-console-dhparam
         secret:
           secretName: {{ .Release.Name }}-secrets

@@ -24,6 +24,8 @@ spec:
   template:
     metadata:
       labels:
+        alert-tier: os
+        alert-service: neutron
         name: neutron-server
 {{ tuple . "neutron" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
@@ -45,6 +47,9 @@ spec:
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
         config.linkerd.io/skip-outbound-ports: "6441,6442" # OVSDB ports
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:

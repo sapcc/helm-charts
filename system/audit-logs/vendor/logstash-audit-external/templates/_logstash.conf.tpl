@@ -117,14 +117,22 @@ filter {
   }
 
 # Change type of audit relevant HSM syslogs
-  if [syslog_hostname] and [syslog_hostname] == "hsm01" {
+  if [syslog_hostname] and [syslog_hostname] =~ /hsm/ {
+    mutate {
+        replace => { "type" => "audit" }
+        add_field => { "[sap][cc][audit][source]" => "hsm" }
+    }
+  }
+  if [hostname] and [hostname] =~ /hsm/ {
     mutate {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
   }
   if [type] == "syslog" {
-    drop{}
+    mutate {
+      add_tag => ["dropped_syslog"]
+    }
   }
  }
  {{- end }}
@@ -275,6 +283,12 @@ output {
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
       http_method => "post"
+    }
+  } else if "dropped_syslog" in [tags] {
+    file {
+      id => "output_dropped_syslog"
+      path => "/dev/stdout"
+      codec => json_lines
     }
   }
 }
