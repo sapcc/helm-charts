@@ -1,1 +1,20 @@
-{{ template "prometheus.alerts" . }}
+{{- $values := .Values.global.alerts }}
+{{- if $values.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" | trimSuffix ".tpl" }}
+  labels:
+    type: alerting-rules
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+
+spec:
+{{- with $ }}
+{{ tpl (printf "%s" $bytes) . | indent 2 }}
+{{- end }}
+
+{{- end }}
+{{- end }}
