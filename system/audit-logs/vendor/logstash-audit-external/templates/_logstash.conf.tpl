@@ -18,7 +18,7 @@ input {
     tags => ["audit"]
     user => '${AUDIT_HTTP_USER}'
     password => '${AUDIT_HTTP_PWD}'
-{{ if eq .Values.global.clusterType "metal" -}}
+{{ if ne .Values.global.clusterType "scaleout" -}}
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
