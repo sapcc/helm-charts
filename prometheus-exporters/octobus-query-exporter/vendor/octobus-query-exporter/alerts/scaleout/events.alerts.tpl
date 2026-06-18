@@ -101,20 +101,3 @@ groups:
           summary: "Error for FCD Object Storage Not Found "
           description: "vCenter {{ $labels.hostsystem }} reported FCD Ojbect Not found, please follow the playbook to fix it"
 
-      - alert: NFSFCDDatFileConnectionTimeout
-        expr: >
-                vrops_hostsystem_runtime_connectionstate{state="connected"}
-                and on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
-                and on(hostsystem) elasticsearch_octobus_nfsdatfile_connectiontimeout_issue_hostsystem_doc_count
-        labels:
-          severity: warning
-          service: compute
-          tier: vmware
-          support_group: compute
-          no_alert_on_absence: "true"
-          meta: "Alert for */catalog/shard/*.dat file got connection time out "
-          playbook: docs/compute/playbooks/vcenter/#FCDConnectionTimeout
-        annotations:
-          summary: "ESXi host detected connection timeout on file */catalog/shard/*.dat"
-          description: "ESXi host {{ $labels.hostsystem }} reported connection timeout on file */catalog/shard/*.dat"
-
