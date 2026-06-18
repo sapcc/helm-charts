@@ -1336,6 +1336,18 @@ spec:
       {{- end }}
 
       ##########################################################################
+      # Rules for vault
+
+      - matchNamespace: vault
+        matchRepository: ccloud-dockerhub-mirror/hashicorp/vault
+        justification: |
+          Vault 2.0.1's binary ships with the `cap_ipc_lock=ep` file capability
+          baked in at build time. The Linux kernel refuses to exec such a
+          binary inside a container unless IPC_LOCK is granted in the
+          container's securityContext.
+        mayUseCapabilities: [ IPC_LOCK ]
+
+      ##########################################################################
       # End of rules
 
 {{- end }}
