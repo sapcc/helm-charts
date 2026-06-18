@@ -40,11 +40,9 @@ spec:
               units:
 {{ tpl $.Values.worker.additionalConfig.units $ | indent 16 }}
       users:
-        - name: {{ $.Values.user.name }}
-          passwd: {{ $.Values.user.passwordhash }}
+        - name: {{ default $.Values.user.name $cluster.userName }}
+          passwd: {{ default $.Values.user.passwordhash $cluster.userPasswordhash }}
           groups: "sudo"
-          sshAuthorizedKeys:
-          - {{ $.Values.user.key | quote }}
       preKubeadmCommands:
         - hostnamectl set-hostname $${METAL_HOSTNAME}
         - IMAGE={{ $.Values.images.kubelet.repository }}:{{ $.Values.controlplane.version }}
