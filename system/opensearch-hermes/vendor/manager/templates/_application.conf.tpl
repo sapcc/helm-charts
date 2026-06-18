@@ -23,22 +23,34 @@ data.path = "./cerebro.db"
 
 # A list of known hosts
 hosts = [
-  {
-    host = "https://opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200"
-    name = "OpenSearch Hermes cluster"
-    auth = {
-      username = "{{.Values.global.users.admin2.username_resolve}}"
-      password = "{{.Values.global.users.admin2.password_resolve}}"
-    }
-  },
+{{- if .Values.global.gardener.enabled }}
   {
     host = "https://opensearch-hermes.hermes.svc.cluster.local:9200"
     name = "OpenSearch Hermes local cluster"
+    name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
     auth = {
+      username = "{{.Values.global.users.admin.username_resolve}}"
+      password = "{{.Values.global.users.admin.password_resolve}}"
+    }
+    auth2 = {
       username = "{{.Values.global.users.admin2.username_resolve}}"
       password = "{{.Values.global.users.admin2.password_resolve}}"
     }
   }
+{{- else }}
+  {
+    host = "https://opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200"
+    name = "OpenSearch Hermes cluster"
+    auth = {
+      username = "{{.Values.global.users.admin.username_resolve}}"
+      password = "{{.Values.global.users.admin.password_resolve}}"
+    }
+    auth2 = {
+      username = "{{.Values.global.users.admin2.username_resolve}}"
+      password = "{{.Values.global.users.admin2.password_resolve}}"
+    }
+  }
+{{- end }}
 ]
 
 # Authentication
