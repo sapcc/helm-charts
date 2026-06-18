@@ -3,9 +3,15 @@
 # make sure to update iptables-stop script to keep commands aligned
 
 nflog_group=( {{ .Values.iptables.nflogGroup }} )
-INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5; exit }')
 
-echo "Outgoing inteface is ${INTERFACE}"
+if [ -z "${INTERFACE}" ]; then
+  echo "ERROR: no default route found, cannot install pmtud iptables rule" >&2
+  exit 1
+fi
+
+echo "Outgoing interface is ${INTERFACE}"
+
 
 # disable rp_filter
 sysctl -w net.ipv4.conf.all.rp_filter=0
