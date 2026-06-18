@@ -55,7 +55,7 @@ groups:
       description: |
         Some blobs stored in Keppel have failed their routine validation.
         This could hint at the blob contents being corrupted.
-        The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM blobs`.
+        The detailed errors are in the Keppel DB under `SELECT * FROM blobs WHERE validation_error_message != ''`.
 
   - alert: OpenstackKeppelNotValidatingManifests
     expr: time() - max(keppel_manifests_min_next_validation_at) > 1800 # 30 minutes (in seconds)
@@ -92,7 +92,7 @@ groups:
       description: |
         Some manifests stored in Keppel have failed their routine validation.
         This could hint at the manifests or their metadata being corrupted.
-        The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM manifests`.
+        The detailed errors are in the Keppel DB under `SELECT * FROM manifests WHERE validation_error_message != ''`.
 
   # This alert is less sensitive than the other "janitor task is running behind
   # schedule" checks, since this task quite often gets stuck on Docker Hub's
@@ -168,7 +168,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelManagedAccountsNotEnforced
-    expr: max(keppel_repos_count) > 0 and time() - max(keppel_accounts_min_next_enforcement_at) > 600
+    expr: max(keppel_managed_accounts_count) > 0 and time() - max(keppel_accounts_min_next_enforcement_at) > 600
     for: 5m
     labels:
       context: janitor
@@ -249,7 +249,7 @@ groups:
       summary: 'Storages are not being sweeped'
       description: |
         In each account, the backing storage should be sweeped every 6 hours.
-        However, some accounts have not been sweeped on schedule, so it looks like blob sweeping is having issues.
+        However, some accounts have not been sweeped on schedule, so it looks like storage sweeping is having issues.
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingUnknownBlobs
@@ -333,7 +333,8 @@ groups:
     annotations:
       summary: 'Trivy check failed on some images'
       description: |
-        Keppel observed some errors while checking the vulnerability status for {{ $value }} images. Check the logs for more details.
+        Keppel observed some errors while checking the vulnerability status for {{ $value }} images.
+        Check the logs of keppel-janitor for more details.
 
   - alert: OpenstackKeppelManagedAccountsErrors
     expr: 'rate(keppel_managed_account_creations{task_outcome="failure"}[10m]) > 0'
@@ -347,7 +348,8 @@ groups:
     annotations:
       summary: 'Enforcing managed accounts is failing for some accounts'
       description: |
-        Keppel observed some errors while enforcing managed accounts. Check the logs for more details.
+        Keppel observed some errors while enforcing managed accounts.
+        Check the logs of keppel-janitor for more details.
 
   - alert: OpenstackKeppelTrivyIndexingFailsAtHighRate
     expr: 'max(increase(keppel_trivy_security_status_checks{task_outcome="success"}[5m])) < max(increase(keppel_trivy_security_status_checks{task_outcome="failure"}[5m]))'

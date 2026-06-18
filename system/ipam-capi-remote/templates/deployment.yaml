@@ -18,7 +18,12 @@ spec:
       labels:
         control-plane: controller-manager
         networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
         networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+        networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
       {{- include "ipam-capi-remote.selectorLabels" . | nindent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
@@ -30,6 +35,8 @@ spec:
         command:
         - /manager
         env:
+        - name: KUBECONFIG
+          value: {{ quote .Values.controllerManager.manager.env.kubeconfig }}
         - name: KUBERNETES_SERVICE_HOST
           value: {{ quote .Values.controllerManager.manager.env.kubernetesServiceHost }}
         - name: KUBERNETES_CLUSTER_DOMAIN
@@ -64,7 +71,9 @@ spec:
         - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
           name: remote-serviceaccount
           readOnly: true
-      hostNetwork: true
+        - mountPath: /var/run/remote-kubeconfig
+          name: remote-kubeconfig
+          readOnly: true
       nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}

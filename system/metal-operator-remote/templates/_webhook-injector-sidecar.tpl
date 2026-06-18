@@ -4,12 +4,23 @@
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
     - --webhook-config-name=metal-operator-remote-webhook-config
+    - --webhook-label=metal-operator-remote-webhook-injector=true
     - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+    - --leader-election-id=metal-operator-remote-webhook-injector-leader
+    - --cert-secret-name=metal-operator-remote-cert-secret
+    - --cert-sans=metal-operator-remote-webhook-service
+    - --admission-webhook-name=metal-operator-webhook-injector-mutator
+    - --admission-external-port=444
+    - --external-host=metal-operator-remote-webhook-service
+    - --external-port=443
   ports:
     - name: metrics
       containerPort: 8082
     - name: health
       containerPort: 8083
+    - name: admission
+      containerPort: 9444
+      protocol: TCP
   securityContext:
     {{- toYaml .Values.controllerManager.manager.podSecurityContext | nindent 4 }}
   resources:

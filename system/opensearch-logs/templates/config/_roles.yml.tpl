@@ -35,6 +35,7 @@ data:
     - "alerts-datastream"
     - "deployments-datastream"
     - "cronus-datastream"
+    - "traces-datastream"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -224,7 +225,16 @@ complex-role:
   - "cluster:admin/opensearch/ppl"
   index_permissions:
   - index_patterns:
-    - "*"
+    - "logs-datastream"
+    - "storage-datastream"
+    - "logs-swift-datastream"
+    - "jump-datastream"
+    - "deployments-datastream"
+    - "cronus-datastream"
+    - "alerts-sem-datastream"
+    - "awx-api"
+    - "alerts-datastream"
+    - "maillog-*"
     allowed_actions:
     - "search"
     - "read"
@@ -254,7 +264,16 @@ promrole:
   - "indices:data/read/msearch"
   index_permissions:
   - index_patterns:
-    - "*"
+    - "logs-datastream"
+    - "storage-datastream"
+    - "logs-swift-datastream"
+    - "jump-datastream"
+    - "deployments-datastream"
+    - "cronus-datastream"
+    - "alerts-sem-datastream"
+    - "alerts-datastream"
+    - "maillog-*"
+    - "remote_.ds-logs-datastream*"
     allowed_actions:
     - "indices:monitor/stats"
     - "indices:admin/mappings/get"
@@ -472,13 +491,39 @@ security_analytics_full_access:
   - "cluster:admin/opendistro/ism/managedindex/explain"
   - "cluster:monitor/tasks/lists"
   - "cluster:monitor/remote/info"
+  - "cluster:monitor/main" # Required for OpenSearch terraform provider health check
+  - "cluster:monitor/health" # Required for GET /_cluster/health called by terraform provider and bootstrap scripts
   - "cluster:admin/opendistro/ism/policy/search"
+  - "indices:admin/index_template/get"
+  - "indices:admin/index_template/put" # Required for opensearch_index_template resources (cluster-level only, cannot be index-scoped)
   index_permissions:
   - index_patterns:
     - "*"
     allowed_actions:
+    - "indices:admin/get"
+    - "indices:admin/aliases/get"
+    - "indices:admin/resolve/index"
     - "indices:admin/mapping/put"
     - "indices:admin/mappings/get"
     - "indices:admin/template/get"
     - "indices:admin/data_stream/get"
     - "indices:monitor/recovery"
+    - "indices:data/read/search"
+    - "indices:data/read/get"
+    - "indices:data/read/field_caps"
+  - index_patterns:
+    - "audit-ds*"
+    - ".opensearch-sap-*"
+    allowed_actions:
+    - "indices:admin/create"
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/mappings/get"
+    - "indices:data/read/search"
+    - "indices:data/read/get"
+    - "indices:data/write/index"
+    - "indices:data/write/bulk*"
+    - "indices:monitor/stats"
+    - "indices:monitor/settings/get"
+    - "indices:data/write/delete/byquery"

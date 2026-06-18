@@ -1,0 +1,48 @@
+{{- if .Values.bmcSettings.enabled }}
+{{- range $vendor, $vendorConfig := .Values.machines }}
+{{- if $vendorConfig }}
+
+{{/* Vendor filtering */}}
+{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcSettings.filters.vendors) }}
+{{- range $entryName, $entry := $vendorConfig.models }}
+{{- if and $entry.clusterTypes $entry.bmc $entry.bmc.settingsFileName }}
+{{- $model := $entry.model }}
+{{- $version := $entry.bmc.version }}
+{{- $settingsParams := (get $entry.bmc "settingsParams") | default dict }}
+{{- $serverFilters := (get $settingsParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
+
+{{/* Model and Version filtering */}}
+{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcSettings.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcSettings.filters.versions)) }}
+{{- range $clusterType := $entry.clusterTypes }}
+
+{{/* ClusterType filtering */}}
+{{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.bmcSettings.filters.clusterTypes) }}
+{{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
+{{- $resourceName := (get $settingsParams "setMetadataName") | default $defaultName }}
+apiVersion: metal.ironcore.dev/v1alpha1
+kind: BMCSettingsSet
+metadata:
+  name: {{ $resourceName }}
+spec:
+  bmcSelector:
+    matchLabels:
+      kubernetes.metal.cloud.sap/type: {{ $model }}
+      kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
+{{- end }}
+  bmcSettingsTemplate:
+    serverMaintenancePolicy: OwnerApproval
+    version: {{ $version | quote }}
+{{ tpl ($.Files.Get (printf "bmc_settings/%s" $entry.bmc.settingsFileName)) $ | trim | indent 4 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

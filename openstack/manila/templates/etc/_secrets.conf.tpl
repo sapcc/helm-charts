@@ -10,6 +10,12 @@
 username = {{ printf "%s/%s/manila/keystone-user/network/username" $vbase $region  | include "resolve_secret" | replace "$" "$$"}}
 password = {{ printf "%s/%s/manila/keystone-user/network/password" $vbase $region  | include "resolve_secret" | replace "$" "$$"}}
 
+{{- if .Values.designate.enabled }}
+[designate]
+username = {{ printf "%s/%s/manila/keystone-user/dns/username" $vbase $region | include "resolve_secret" | replace "$" "$$"}}
+password = {{ printf "%s/%s/manila/keystone-user/dns/password" $vbase $region | include "resolve_secret" | replace "$" "$$"}}
+{{- end }}
+
 [keystone_authtoken]
 username = {{ printf "%s/%s/manila/keystone-user/service/username" $vbase $region | include "resolve_secret" | replace "$" "$$"}}
 password = {{ printf "%s/%s/manila/keystone-user/service/password" $vbase $region | include "resolve_secret" | replace "$" "$$"}}

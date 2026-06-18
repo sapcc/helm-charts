@@ -232,24 +232,6 @@ pgmetrics:
                 usage: "GAUGE"
                 description: "Number of projects in the Limes DB"
 
-        limes_project_resources_by_type:
-          query: >
-            SELECT s.type AS service, r.name AS resource, COUNT(*) AS count
-            FROM project_resources pr
-            JOIN resources r ON r.id = pr.resource_id
-            JOIN services s ON s.id = r.service_id
-            GROUP BY s.type, r.name
-          metrics:
-            - service:
-                usage: "LABEL"
-                description: "Service type"
-            - resource:
-                usage: "LABEL"
-                description: "Resource name"
-            - count:
-                usage: "GAUGE"
-                description: "Number of projects that have a project_resources entry for this service and resource"
-
         # This metric is federated into prometheus-kubernetes for alerting in
         # Kubernikus. (Low free Swift quota means Kubernikus might become unable to
         # do etcd backups.)

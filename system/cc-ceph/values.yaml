@@ -1,5 +1,6 @@
 owner-info:
   support-group: containers
+  service: ceph
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/cc-ceph
 
 rook-ceph:
@@ -264,6 +265,20 @@ objectstore:
           TRACK_LATENCY_BY_USER: "true"
           TRACK_LATENCY_BY_BUCKET: "true"
           TRACK_LATENCY_BY_TENANT: "true"
+          # --- Audit trail (RabbitMQ) — OFF by default ---
+          # Non-sensitive settings only. To enable, set AUDIT_ENABLED "true",
+          # set the URL/queue below, and populate `secret:` further down.
+          AUDIT_ENABLED: "false"
+          # AUDIT_RABBITMQ_URL: "amqp://rabbitmq-host:5672/"    # host only, NO credentials
+          # AUDIT_QUEUE_NAME: "keystone.notifications.info"
+
+        # --- Audit credentials (Secret via *vault) — OFF by default ---
+        # Empty `secret` => no Secret rendered, no sidecar-env-secret annotation.
+        # To enable, set the two *vault refs (and AUDIT_ENABLED "true" above).
+        secretName: "prysm-sidecar-secret"
+        secret: {}
+        #   AUDIT_RABBITMQ_USERNAME: "*vault(secret/rabbitmq/audit, field: username)"
+        #   AUDIT_RABBITMQ_PASSWORD: "*vault(secret/rabbitmq/audit, field: password)"
 
   prysmDiskHealth:
     repository:

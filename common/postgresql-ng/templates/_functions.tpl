@@ -28,10 +28,10 @@
 {{/* -----BEGIN TAGS_JSON PAYLOAD----- */}}
 {
   "alpine-kubectl": {
-    "latest": "latest-20260415235401"
+    "latest": "latest-20260616102342"
   },
   "alpine-psql": {
-    "latest": "latest-20260415235402"
+    "latest": "latest-20260616102342"
   }
 }
 {{/* -----END TAGS_JSON PAYLOAD----- */}}
