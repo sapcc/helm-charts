@@ -1,0 +1,28 @@
+{{- if .Values.cluster.monitoring.enabled }}
+{{- /*
+  Base rules are vendored pristine from rook v1.17.1
+  deploy/examples/monitoring/localrules.yaml (alerts/ceph.alerts).
+  support_group: storage is injected here at render time so the base
+  stays byte-identical to upstream and is trivial to re-vendor on bumps.
+*/ -}}
+{{- $spec := .Files.Get "alerts/ceph.alerts" | fromYaml -}}
+{{- range $g := $spec.groups -}}
+{{- range $r := $g.rules -}}
+{{- if hasKey $r "alert" -}}
+{{- if not $r.labels }}{{- $_ := set $r "labels" dict }}{{- end -}}
+{{- $_ := set $r.labels "support_group" "storage" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: prometheus-ceph-rules
+  namespace: {{ .Release.Namespace }}
+  labels:
+    prometheus: rook-prometheus
+    role: alert-rules
+    plugin: kube-monitoring
+spec:
+{{ $spec | toYaml | indent 2 }}
+{{- end }}
