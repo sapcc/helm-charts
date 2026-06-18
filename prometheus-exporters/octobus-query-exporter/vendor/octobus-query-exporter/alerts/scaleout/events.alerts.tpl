@@ -99,5 +99,5 @@ groups:
           playbook: docs/compute/playbooks/vcenter/#FCDObjectNotFound
         annotations:
           summary: "Error for FCD Object Storage Not Found "
-          description: "vCenter {{ $labels.hostsystem }} reported FCD Ojbect Not found, please follow the playbook to fix it"
+          description: "vCenter{{`{{ $labels.hostsystem }}`}} reported FCD Ojbect Not found, please follow the playbook to fix it"
 
