@@ -6,13 +6,13 @@ SPDX-License-Identifier: Apache-2.0
 otlp/traces:
   protocols:
     grpc:
-      endpoint: "0.0.0.0:{{.Values.openTelemetry.logsCollector.tracesConfig.otlp_grpc_port}}"
+      endpoint: "0.0.0.0:{{.Values.openTelemetry.externalCollector.tracesConfig.otlp_grpc_port}}"
     http:
-      endpoint: "0.0.0.0:{{.Values.openTelemetry.logsCollector.tracesConfig.otlp_http_port}}"
+      endpoint: "0.0.0.0:{{.Values.openTelemetry.externalCollector.tracesConfig.otlp_http_port}}"
 {{- end }}
 
 {{- define "traces.exporter" }}
-{{- if not .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if not .Values.openTelemetry.kafka.enabled }}
 opensearch/failover_a_traces:
   http:
     auth:
@@ -41,7 +41,7 @@ opensearch/failover_b_traces:
 {{- end }}
 
 {{- define "traces.connectors" }}
-{{- if not .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if not .Values.openTelemetry.kafka.enabled }}
 failover/opensearch_traces:
   priority_levels:
     - [traces/failover_a]
@@ -60,7 +60,7 @@ failover/opensearch_traces:
 traces/ingest:
   receivers: [otlp/traces]
   processors: [memory_limiter, resource, batch, attributes/cluster]
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if .Values.openTelemetry.kafka.enabled }}
   exporters: [kafka/traces]
 {{- else }}
   exporters: [failover/opensearch_traces]

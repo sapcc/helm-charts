@@ -68,29 +68,25 @@ openTelemetry:
   cluster:
   # -- Region label for Logging
   region:
+  # -- Kafka exporter configuration shared by all collectors
+  kafka:
+    # -- Enable Kafka exporter (replaces OpenSearch failover with Kafka buffering)
+    enabled: false
+    # -- Kafka broker addresses (e.g., ["kafka-bootstrap.kafka.svc.cluster.local:9092"])
+    brokers: []
+    # -- Kafka protocol version (e.g., "3.9.0")
+    protocol_version: ""
+    # -- Message encoding format (otlp_json, otlp_proto, raw)
+    encoding: ""
+    # -- Compression type (none, gzip, snappy, lz4, zstd)
+    compression: ""
   logsCollector:
     # -- Activates the standard configuration for Logs.
     enabled: true
-    # -- Kafka exporter configuration for buffering logs
-    kafka:
-      # -- Enable Kafka exporter for logs buffering
-      enabled: false
-      # -- Kafka broker addresses (e.g., ["kafka-bootstrap.kafka.svc.cluster.local:9092"])
-      brokers: []
-      # -- Kafka topic name for general logs (e.g., "logs")
-      topic: ""
-      # -- Kafka topic name for storage logs — swift, ceph (e.g., "logs-storage")
-      storage_topic: ""
-      # -- Kafka topic name for syslog ingestion (e.g., "logs-syslog")
-      syslog_topic: ""
-      # -- Kafka topic name for traces (e.g., "traces")
-      traces_topic: ""
-      # -- Kafka protocol version (e.g., "3.9.0")
-      protocol_version: ""
-      # -- Message encoding format (otlp_json, otlp_proto, raw)
-      encoding: ""
-      # -- Compression type (none, gzip, snappy, lz4, zstd)
-      compression: ""
+    # -- Kafka topic name for general logs (e.g., "logs")
+    kafkaTopic: ""
+    # -- Kafka topic name for storage logs — swift, ceph (e.g., "logs-storage")
+    kafkaStorageTopic: ""
     # -- Activates the journald receiver (requires logsCollector to be enabled).
     journaldConfig:
       enabled: true
@@ -109,6 +105,20 @@ openTelemetry:
     # -- Activates the configuration for OpenStack logs (requires logsCollector to be enabled).
     openstackConfig:
       enabled: false
+  # -- Standalone external OTel Collector as StatefulSet.
+  externalCollector:
+    # -- Enables the standalone external OTel Collector StatefulSet and its PodMonitor.
+    enabled: false
+    # -- Number of replicas for the external collector StatefulSet
+    replicas: 2
+    # -- IP address to request from the cloud LoadBalancer (optional, omit for auto-assigned)
+    loadBalancerIP:
+    # -- Additional annotations on the external Service
+    serviceAnnotations: {}
+    # -- Kafka topic name for external logs — alerts, deployments, syslog (e.g., "logs-external")
+    kafkaTopic: ""
+    # -- Kafka topic name for traces (e.g., "traces")
+    kafkaTracesTopic: ""
     # -- Activates syslog TCP/UDP ingestion (rfc5424/rfc3164).
     syslogConfig:
       enabled: false
@@ -123,19 +133,15 @@ openTelemetry:
       tcp_port: 6514
       # -- cert-manager ClusterIssuer name for DigiCert
       issuerName:
-      # -- DNS name for the TLS certificate (e.g. logs-collector-syslog.eu-de-1.cloud.sap)
+      # -- DNS name for the TLS certificate
       dnsName:
     # -- Activates the external alertmanager webhook and deployment event receivers.
     externalConfig:
       enabled: false
-      # -- External IP exposed on the NodePort service
-      external_ip:
       # -- Port for alertmanager webhook events
       alertmanager_port: 1515
       # -- Port for deployment TCP log events
       deployments_port: 1516
-      # -- Additional annotations on the external Service
-      serviceAnnotations: {}
     # -- Activates OTLP traces ingestion (gRPC and HTTP).
     tracesConfig:
       enabled: false

@@ -19,7 +19,9 @@ spec:
   - operator: Exists
   podAnnotations:
     kubectl.kubernetes.io/default-container: "otc-container"
+{{- if not .Values.openTelemetry.kafka.enabled }}
     secret.reloader.stakater.com/reload: "otel-basic-auth"
+{{- end }}
     prometheus.io/scrape: "false"
   affinity:
     nodeAffinity:
@@ -53,59 +55,25 @@ spec:
       value: "{{ .Values.openTelemetry.cluster }}"
     - name: region
       value: "{{ .Values.openTelemetry.region }}"
+{{- if not .Values.openTelemetry.kafka.enabled }}
   envFrom:
     - secretRef:
          name: otel-basic-auth
-{{- if or .Values.openTelemetry.prometheus.podMonitor.enabled .Values.openTelemetry.logsCollector.externalConfig.enabled .Values.openTelemetry.logsCollector.syslogConfig.enabled .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
-  ports:
+{{- end }}
 {{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+  ports:
     - name: prometheus
       port: 8888
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogConfig.enabled }}
-    - name: syslogtcp
-      port: {{ .Values.openTelemetry.logsCollector.syslogConfig.tcp_port }}
-      protocol: TCP
-      hostPort: {{ .Values.openTelemetry.logsCollector.syslogConfig.tcp_port }}
-    - name: syslogudp
-      port: {{ .Values.openTelemetry.logsCollector.syslogConfig.udp_port }}
-      protocol: UDP
-      hostPort: {{ .Values.openTelemetry.logsCollector.syslogConfig.udp_port }}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
-    - name: syslogtcptls
-      port: {{ .Values.openTelemetry.logsCollector.syslogTLSConfig.tcp_port }}
-      protocol: TCP
-      hostPort: {{ .Values.openTelemetry.logsCollector.syslogTLSConfig.tcp_port }}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
-    - name: otlp-grpc
-      port: {{ .Values.openTelemetry.logsCollector.tracesConfig.otlp_grpc_port }}
-      protocol: TCP
-    - name: otlp-http
-      port: {{ .Values.openTelemetry.logsCollector.tracesConfig.otlp_http_port }}
-      protocol: TCP
-{{- end }}
 {{- end }}
   image: {{ index .Values "openTelemetry" "collectorImage" "repository" }}:{{ index .Values "openTelemetry" "collectorImage" "tag" }}
   volumeMounts:
   - mountPath: /var/log
     name: varlog
     readOnly: true
-{{- if .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
-  - mountPath: /etc/ssl/syslog-tls
-    name: syslog-tls
-    readOnly: true
-{{- end }}
   volumes:
   - name: varlog
     hostPath:
       path: /var/log
-{{- if .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
-  - name: syslog-tls
-    secret:
-      secretName: logs-syslog-tls
-{{- end }}
   config:
     receivers:
 {{- if .Values.openTelemetry.logsCollector.journaldConfig.enabled }}
@@ -123,52 +91,6 @@ spec:
 {{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.receiver" . | nindent 6 -}}
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.externalConfig.enabled }}
-    {{- include "external.receiver" . | nindent 6 -}}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogConfig.enabled }}
-      syslog/tcp:
-        operators:
-        - field: attributes.log.type
-          id: syslogtcp
-          type: add
-          value: syslogtcp
-        protocol: rfc5424
-        tcp:
-          listen_address: 0.0.0.0:{{ .Values.openTelemetry.logsCollector.syslogConfig.tcp_port }}
-          add_attributes: true
-      syslog/udp:
-        location: UTC
-        operators:
-        - field: attributes.log.type
-          id: syslogudp
-          type: add
-          value: syslogudp
-        protocol: rfc3164
-        udp:
-          listen_address: 0.0.0.0:{{ .Values.openTelemetry.logsCollector.syslogConfig.udp_port }}
-          add_attributes: true
-          async: {}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
-      syslog/tcp-tls:
-        operators:
-        - field: attributes.log.type
-          id: syslogtcptls
-          type: add
-          value: syslogtcptls
-        protocol: rfc5424
-        tcp:
-          listen_address: 0.0.0.0:{{ .Values.openTelemetry.logsCollector.syslogTLSConfig.tcp_port }}
-          add_attributes: true
-          tls:
-            cert_file: /etc/ssl/syslog-tls/tls.crt
-            key_file: /etc/ssl/syslog-tls/tls.key
-            ca_file: /etc/ssl/syslog-tls/ca.crt
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
-    {{- include "traces.receiver" . | nindent 6 -}}
-{{- end }}
     processors:
       batch:
         send_batch_max_size: 5000
@@ -185,6 +107,7 @@ spec:
           - action: insert
             key: k8s.node.name
             value: ${KUBE_NODE_NAME}
+{{- if not .Values.openTelemetry.kafka.enabled }}
       attributes/failover_username_a:
         actions:
           - action: insert
@@ -195,6 +118,7 @@ spec:
           - action: insert
             key: failover_username_opensearch
             value: ${failover_username_b}
+{{- end }}
 {{- if .Values.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.transform" . | nindent 6 -}}
 {{- end }}
@@ -211,9 +135,6 @@ spec:
 {{- end }}
 {{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.transform" . | nindent 6 -}}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.externalConfig.enabled }}
-    {{- include "external.transform" . | nindent 6 -}}
 {{- end }}
       k8s_attributes:
         auth_type: "serviceAccount"
@@ -311,55 +232,29 @@ spec:
     exporters:
       debug:
         verbosity: basic
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if .Values.openTelemetry.kafka.enabled }}
       kafka:
         brokers:
-{{- range .Values.openTelemetry.logsCollector.kafka.brokers }}
+{{- range .Values.openTelemetry.kafka.brokers }}
           - {{ . }}
 {{- end }}
-        protocol_version: {{ .Values.openTelemetry.logsCollector.kafka.protocol_version }}
+        protocol_version: {{ .Values.openTelemetry.kafka.protocol_version }}
         logs:
-          topic: {{ .Values.openTelemetry.logsCollector.kafka.topic }}
-          encoding: {{ .Values.openTelemetry.logsCollector.kafka.encoding }}
+          topic: {{ .Values.openTelemetry.logsCollector.kafkaTopic }}
+          encoding: {{ .Values.openTelemetry.kafka.encoding }}
         producer:
-          compression: {{ .Values.openTelemetry.logsCollector.kafka.compression }}
+          compression: {{ .Values.openTelemetry.kafka.compression }}
       kafka/storage:
         brokers:
-{{- range .Values.openTelemetry.logsCollector.kafka.brokers }}
+{{- range .Values.openTelemetry.kafka.brokers }}
           - {{ . }}
 {{- end }}
-        protocol_version: {{ .Values.openTelemetry.logsCollector.kafka.protocol_version }}
+        protocol_version: {{ .Values.openTelemetry.kafka.protocol_version }}
         logs:
-          topic: {{ .Values.openTelemetry.logsCollector.kafka.storage_topic }}
-          encoding: {{ .Values.openTelemetry.logsCollector.kafka.encoding }}
+          topic: {{ .Values.openTelemetry.logsCollector.kafkaStorageTopic }}
+          encoding: {{ .Values.openTelemetry.kafka.encoding }}
         producer:
-          compression: {{ .Values.openTelemetry.logsCollector.kafka.compression }}
-{{- if or .Values.openTelemetry.logsCollector.syslogConfig.enabled .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
-      kafka/syslog:
-        brokers:
-{{- range .Values.openTelemetry.logsCollector.kafka.brokers }}
-          - {{ . }}
-{{- end }}
-        protocol_version: {{ .Values.openTelemetry.logsCollector.kafka.protocol_version }}
-        logs:
-          topic: {{ .Values.openTelemetry.logsCollector.kafka.syslog_topic }}
-          encoding: {{ .Values.openTelemetry.logsCollector.kafka.encoding }}
-        producer:
-          compression: {{ .Values.openTelemetry.logsCollector.kafka.compression }}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
-      kafka/traces:
-        brokers:
-{{- range .Values.openTelemetry.logsCollector.kafka.brokers }}
-          - {{ . }}
-{{- end }}
-        protocol_version: {{ .Values.openTelemetry.logsCollector.kafka.protocol_version }}
-        traces:
-          topic: {{ .Values.openTelemetry.logsCollector.kafka.traces_topic }}
-          encoding: {{ .Values.openTelemetry.logsCollector.kafka.encoding }}
-        producer:
-          compression: {{ .Values.openTelemetry.logsCollector.kafka.compression }}
-{{- end }}
+          compression: {{ .Values.openTelemetry.kafka.compression }}
 {{- else }}
       opensearch/failover_a:
         http:
@@ -413,16 +308,10 @@ spec:
     {{- include "openstack.exporter" . | nindent 6 -}}
 {{- end }}
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.externalConfig.enabled }}
-    {{- include "external.exporter" . | nindent 6 -}}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
-    {{- include "traces.exporter" . | nindent 6 -}}
-{{- end }}
     extensions:
       file_storage/journald:
         directory: .
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if .Values.openTelemetry.kafka.enabled }}
       opensearch_log_encoding: {}
 {{- else }}
       basicauth/failover_a:
@@ -452,7 +341,7 @@ spec:
           - pipelines:
               - logs/route_storage
             statement: route() where resource.attributes["k8s.namespace.name"] == "ceph"
-{{- end }}{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- end }}{{- if .Values.openTelemetry.kafka.enabled }}
 {{- else }}
       failover/opensearch:
         priority_levels:
@@ -490,16 +379,10 @@ spec:
           sizer: requests
 {{- end }}
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.externalConfig.enabled }}
-    {{- include "external.connectors" . | nindent 6 -}}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
-    {{- include "traces.connectors" . | nindent 6 -}}
-{{- end }}
     service:
       extensions:
         - file_storage/journald
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if .Values.openTelemetry.kafka.enabled }}
         - opensearch_log_encoding
 {{- else }}
         - basicauth/failover_a
@@ -530,7 +413,7 @@ spec:
         logs/route_default:
           receivers: [routing]
           processors: [batch]
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if .Values.openTelemetry.kafka.enabled }}
           exporters: [kafka]
 {{- else }}
           exporters: [failover/opensearch]
@@ -546,7 +429,7 @@ spec:
         logs/route_cronus:
           receivers: [routing]
           processors: [batch]
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if .Values.openTelemetry.kafka.enabled }}
           exporters: [kafka]
 {{- else }}
           exporters: [failover/opensearch_cronus]
@@ -580,7 +463,7 @@ spec:
         logs/route_storage:
           receivers: [routing]
           processors: [batch]
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
+{{- if .Values.openTelemetry.kafka.enabled }}
           exporters: [kafka/storage]
 {{- else }}
           exporters: [failover/opensearch_storage]
@@ -593,36 +476,5 @@ spec:
           processors: [attributes/failover_username_b]
           exporters: [opensearch/storage_failover_b]
 {{- end }}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.externalConfig.enabled }}
-    {{- include "external.pipeline" . | nindent 8 -}}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogConfig.enabled }}
-        logs/syslog_tcp:
-          receivers: [syslog/tcp]
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
-          exporters: [kafka/syslog]
-{{- else }}
-          exporters: [routing]
-{{- end }}
-        logs/syslog_udp:
-          receivers: [syslog/udp]
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
-          exporters: [kafka/syslog]
-{{- else }}
-          exporters: [routing]
-{{- end }}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
-        logs/syslog_tcp_tls:
-          receivers: [syslog/tcp-tls]
-{{- if .Values.openTelemetry.logsCollector.kafka.enabled }}
-          exporters: [kafka/syslog]
-{{- else }}
-          exporters: [routing]
-{{- end }}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
-    {{- include "traces.pipeline" . | nindent 8 -}}
 {{- end }}
 {{- end }}

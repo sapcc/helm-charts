@@ -36,10 +36,14 @@ openTelemetry:
     failover_password_b: test
   cluster: test
   region: test
+  kafka:
+    enabled: true
+    brokers:
+      - kafka-bootstrap.kafka.svc.cluster.local:9092
   logsCollector:
     enabled: true
-    kafka:
-      enabled: false
+    kafkaTopic: "logs"
+    kafkaStorageTopic: "storage"
     journaldConfig:
       enabled: true
     k8seventsConfig:
@@ -52,15 +56,25 @@ openTelemetry:
       enabled: true
     openstackConfig:
       enabled: true
+  externalCollector:
+    enabled: true
+    replicas: 2
+    loadBalancerIP: 10.0.0.1
+    kafkaTopic: "logs"
+    kafkaTracesTopic: "traces"
     externalConfig:
       enabled: true
-      external_ip: 0.0.0.0
       alertmanager_port: 1515
       deployments_port: 1516
     syslogConfig:
       enabled: true
       tcp_port: 514
       udp_port: 514
+    syslogTLSConfig:
+      enabled: true
+      tcp_port: 6514
+      dnsName: logs-collector-syslog.test.cloud.sap
+      issuerName: digicert-issuer
     tracesConfig:
       enabled: true
       otlp_grpc_port: 4317

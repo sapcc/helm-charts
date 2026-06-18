@@ -1,59 +1,58 @@
-{{- if or .Values.openTelemetry.logsCollector.externalConfig.enabled .Values.openTelemetry.logsCollector.syslogConfig.enabled .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
+{{- if and .Values.openTelemetry.externalCollector.enabled (or .Values.openTelemetry.externalCollector.externalConfig.enabled .Values.openTelemetry.externalCollector.syslogConfig.enabled .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled .Values.openTelemetry.externalCollector.tracesConfig.enabled) }}
 apiVersion: v1
 kind: Service
 
 metadata:
   name: logs-collector-external
-{{- with .Values.openTelemetry.logsCollector.externalConfig.serviceAnnotations }}
+{{- with .Values.openTelemetry.externalCollector.serviceAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
 {{- end }}
 spec:
   selector:
     app.kubernetes.io/component: opentelemetry-collector
-    app.kubernetes.io/instance: {{ .Release.Namespace }}.logs
+    app.kubernetes.io/instance: {{ .Release.Namespace }}.external
     app.kubernetes.io/managed-by: opentelemetry-operator
-    app.kubernetes.io/part-of: opentelemetry
-  type: NodePort
+  type: LoadBalancer
   externalTrafficPolicy: Local
-{{- if .Values.openTelemetry.logsCollector.externalConfig.external_ip }}
-  externalIPs: ["{{ .Values.openTelemetry.logsCollector.externalConfig.external_ip }}"]
+{{- if .Values.openTelemetry.externalCollector.loadBalancerIP }}
+  loadBalancerIP: "{{ .Values.openTelemetry.externalCollector.loadBalancerIP }}"
 {{- end }}
   ports:
-{{- if .Values.openTelemetry.logsCollector.externalConfig.enabled }}
+{{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}
     - name: alertmanagerwebhook
       protocol: TCP
-      port: {{ .Values.openTelemetry.logsCollector.externalConfig.alertmanager_port }}
-      targetPort: {{ .Values.openTelemetry.logsCollector.externalConfig.alertmanager_port }}
+      port: {{ .Values.openTelemetry.externalCollector.externalConfig.alertmanager_port }}
+      targetPort: {{ .Values.openTelemetry.externalCollector.externalConfig.alertmanager_port }}
     - name: deploymentstcp
       protocol: TCP
-      port: {{ .Values.openTelemetry.logsCollector.externalConfig.deployments_port }}
-      targetPort: {{ .Values.openTelemetry.logsCollector.externalConfig.deployments_port }}
+      port: {{ .Values.openTelemetry.externalCollector.externalConfig.deployments_port }}
+      targetPort: {{ .Values.openTelemetry.externalCollector.externalConfig.deployments_port }}
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogConfig.enabled }}
+{{- if .Values.openTelemetry.externalCollector.syslogConfig.enabled }}
     - name: syslogtcp
       protocol: TCP
-      port: {{ .Values.openTelemetry.logsCollector.syslogConfig.tcp_port }}
-      targetPort: {{ .Values.openTelemetry.logsCollector.syslogConfig.tcp_port }}
+      port: {{ .Values.openTelemetry.externalCollector.syslogConfig.tcp_port }}
+      targetPort: {{ .Values.openTelemetry.externalCollector.syslogConfig.tcp_port }}
     - name: syslogudp
       protocol: UDP
-      port: {{ .Values.openTelemetry.logsCollector.syslogConfig.udp_port }}
-      targetPort: {{ .Values.openTelemetry.logsCollector.syslogConfig.udp_port }}
+      port: {{ .Values.openTelemetry.externalCollector.syslogConfig.udp_port }}
+      targetPort: {{ .Values.openTelemetry.externalCollector.syslogConfig.udp_port }}
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.syslogTLSConfig.enabled }}
+{{- if .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled }}
     - name: syslogtcptls
       protocol: TCP
-      port: {{ .Values.openTelemetry.logsCollector.syslogTLSConfig.tcp_port }}
-      targetPort: {{ .Values.openTelemetry.logsCollector.syslogTLSConfig.tcp_port }}
+      port: {{ .Values.openTelemetry.externalCollector.syslogTLSConfig.tcp_port }}
+      targetPort: {{ .Values.openTelemetry.externalCollector.syslogTLSConfig.tcp_port }}
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.tracesConfig.enabled }}
+{{- if .Values.openTelemetry.externalCollector.tracesConfig.enabled }}
     - name: otlp-grpc
       protocol: TCP
-      port: {{ .Values.openTelemetry.logsCollector.tracesConfig.otlp_grpc_port }}
-      targetPort: {{ .Values.openTelemetry.logsCollector.tracesConfig.otlp_grpc_port }}
+      port: {{ .Values.openTelemetry.externalCollector.tracesConfig.otlp_grpc_port }}
+      targetPort: {{ .Values.openTelemetry.externalCollector.tracesConfig.otlp_grpc_port }}
     - name: otlp-http
       protocol: TCP
-      port: {{ .Values.openTelemetry.logsCollector.tracesConfig.otlp_http_port }}
-      targetPort: {{ .Values.openTelemetry.logsCollector.tracesConfig.otlp_http_port }}
+      port: {{ .Values.openTelemetry.externalCollector.tracesConfig.otlp_http_port }}
+      targetPort: {{ .Values.openTelemetry.externalCollector.tracesConfig.otlp_http_port }}
 {{- end }}
 {{- end }}
