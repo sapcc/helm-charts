@@ -154,5 +154,6 @@ octavia = True
 
 [dns]
 nameservers = 10.114.1.233,147.204.35.140,147.204.35.141
+build_timeout = 720
 
 {{ end }}
