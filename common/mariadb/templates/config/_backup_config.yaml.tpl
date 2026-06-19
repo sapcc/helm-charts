@@ -44,8 +44,8 @@ storages:
     {{- end }}
     {{- if .Values.backup_v2.ceph_s3.enabled }}
     - name: ceph-{{ default .Values.global.region .Values.global.mariadb.backup_v2.ceph_s3.region }}
-      aws_access_key_id: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.ceph_s3_access_key_id }}
-      aws_secret_access_key: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.ceph_s3_secret_access_key }}
+      aws_access_key_id: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.ceph_s3.aws_access_key_id }}
+      aws_secret_access_key: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.ceph_s3.aws_secret_access_key }}
       aws_endpoint: {{ .Values.global.mariadb.backup_v2.ceph_s3.endpoint | required "global.mariadb.backup_v2.ceph_s3.endpoint is required when ceph_s3 is enabled" | quote }}
       s3_force_path_style: {{ .Values.backup_v2.ceph_s3.force_path_style }}
       region: {{ default .Values.global.region .Values.global.mariadb.backup_v2.ceph_s3.region }}

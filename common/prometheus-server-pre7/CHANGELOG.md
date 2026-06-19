@@ -1,3 +1,7 @@
+## 6.8.1
+
+* adapt Thanos flag to endpoint
+
 ## 6.8.0
 
 * Prometheus to v3.12.0
