@@ -1,6 +1,10 @@
 # Changelog
 
-## v0.38.1 - 2026/06/21
+## v0.38.2 - 2026/06/16
+* use global.mariadb.backup_v2 for ceph s3 access and secret key
+* chart version bumped
+
+## v0.38.1 - 2026/06/11
 * `maria-back-me-up` updated to `10.11-20260611113653`
   * fixes aws s3 upload
 * chart version bumped
