@@ -1,11 +1,14 @@
+{{- range $cluster := .Values.clusters }}
+---
 apiVersion: addons.cluster.x-k8s.io/v1alpha1
 kind: HelmChartProxy
 metadata:
   name: metallb
+  namespace: {{ $cluster.namespace }}
 spec:
   clusterSelector:
     matchLabels:
-      cluster.x-k8s.io/cluster-name: rt-{{ .Values.global.region }}
+      cluster.x-k8s.io/cluster-name: {{ $cluster.name }}
   repoURL: https://metallb.github.io/metallb
   chartName: metallb
   releaseName: cc-metallb
@@ -29,3 +32,4 @@ spec:
       ignoreExcludeLB: true
       frr:
         enabled: false
+{{- end }}
