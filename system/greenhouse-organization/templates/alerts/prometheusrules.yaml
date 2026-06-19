@@ -1,0 +1,13 @@
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: operator
+    role: alert-rules
+    plugin: kube-monitoring
+  name: {{ printf "%s-%s" ($.Release.Name) (trimPrefix "alerts/" $path) | replace "." "-"}}
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+{{- end }}
