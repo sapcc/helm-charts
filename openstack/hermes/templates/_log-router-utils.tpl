@@ -110,5 +110,5 @@
       name: '{{ $.Release.Name }}-pguser-log-router'
       key: postgres-password
 - name: LOG_ROUTER_DB_URL
-  value: "postgres://log-router:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/log-router?sslmode=disable"
+  value: "postgres://{{$.Values.logRouter.db.user}}:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/log-router?sslmode=disable"
 {{- end -}}
