@@ -142,10 +142,29 @@ falco:
       - enable:
           tag: pci
 
-x509-certificate-exporter:
-  enabled: false
-  secretsExporter:
-    podAnnotations:
+  customRules:
+    barbican-exec-alert.yaml: |-
+      - rule: Terminal Shell or Port-Forward in Barbican Container
+        desc: >
+          A shell was spawned or a port-forward session was opened inside a
+          Barbican API container. Barbican is a key-management service; interactive
+          access to its containers is unexpected and must be investigated
+          immediately. Satisfies SCIBPL-219.
+        condition: >
+          (evt.type in (execve, execveat) and container.name = "barbican-api"
+           and k8s.ns.name = "monsoon3"
+           and proc.name in (sh, bash, dash, ash, zsh, ksh, fish, python, python3))
+          or
+          (evt.type = connect and container.name = "barbican-api"
+           and k8s.ns.name = "monsoon3"
+           and fd.sport in (10250))
+        output: >
+          Interactive access detected in Barbican container
+          (user=%user.name cmd=%proc.cmdline pod=%k8s.pod.name ns=%k8s.ns.name
+          image=%container.image.repository)
+        priority: CRITICAL
+        tags: [barbican, security, pci, scibpl-219]
+        source: syscall
       prometheus.io/port: "9793"
       prometheus.io/scrape: "true"
       prometheus.io/targets: kubernetes
