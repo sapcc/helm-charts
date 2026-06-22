@@ -1,0 +1,31 @@
+{{- if .Values.networkPolicy.enabled }}
+# SCIBPL-218: restrict inbound traffic to the API port only.
+# kubectl exec / kubectl port-forward both require the API server to open a
+# SPDY/WebSocket connection to the pod on an arbitrary port.  By allowing
+# ingress only on the declared API port, this NetworkPolicy prevents the
+# control-plane from establishing those tunnels, effectively disabling exec
+# and port-forward without requiring a cluster-level admission webhook.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-restrict-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: barbican-api
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow traffic on the Barbican API port from anywhere within the cluster.
+    - ports:
+        - protocol: TCP
+          port: {{ .Values.api_port_internal }}
+    {{- if .Values.networkPolicy.additionalIngressPorts }}
+    - ports:
+        {{- range .Values.networkPolicy.additionalIngressPorts }}
+        - protocol: TCP
+          port: {{ . }}
+        {{- end }}
+    {{- end }}
+{{- end }}
