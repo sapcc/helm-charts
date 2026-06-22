@@ -3,18 +3,22 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: logs-collector-external
-{{- with .Values.openTelemetry.externalCollector.serviceAnnotations }}
+  name: external-collector
   annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+{{- with .Values.openTelemetry.externalCollector.serviceAnnotations }}
     {{- toYaml . | nindent 4 }}
 {{- end }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
 spec:
   selector:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: {{ .Release.Namespace }}.external
     app.kubernetes.io/managed-by: opentelemetry-operator
   type: LoadBalancer
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
 {{- if .Values.openTelemetry.externalCollector.loadBalancerIP }}
   loadBalancerIP: "{{ .Values.openTelemetry.externalCollector.loadBalancerIP }}"
 {{- end }}
