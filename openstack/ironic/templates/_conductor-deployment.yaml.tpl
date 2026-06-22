@@ -78,6 +78,7 @@ spec:
         env:
         - name: PYTHONWARNINGS
           value: ignore:Unverified HTTPS request
+        {{- include "utils.sentry_config" . | indent 8 }}
         - name: PGAPPNAME
           valueFrom:
             fieldRef:
