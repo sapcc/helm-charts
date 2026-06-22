@@ -22,15 +22,9 @@ rabbitmq {
 
 filter {
   # Drop events with action "read/list"
-  # Barbican records reads, but has multiple events per read. 
-  # This will keep it to one event per action 
+  # Barbican records reads, but has multiple events per read.
+  # This will keep it to one event per action
   if ([action] == "read/list" or [action] == "read/get") {
-    drop { }
-  }
-
-  # Drop liveliness check events that serve no value
-  # Everything in audit-default adds no value, internal communication
-  if [initiator][domain_id] == "default" {
     drop { }
   }
 
@@ -74,6 +68,18 @@ filter {
        # fix the eventTime format to be ISO8601
        "eventTime", '([+\-]\d\d)(\d\d)$', '\1:\2'
     ]
+  }
+
+  # Set @timestamp from the CADF eventTime so every output (OpenSearch,
+  # Octobus, S3, Kafka) reflects when the audited action happened, not
+  # when Logstash saw the event. Must run after f05's ISO8601 format fix.
+  # On parse failure we tag instead of failing closed: the event still
+  # ships with @timestamp = ingest time, surfaced for debugging.
+  date {
+    id => "f05a_eventtime_to_timestamp"
+    match => [ "eventTime", "ISO8601" ]
+    target => "@timestamp"
+    tag_on_failure => ["_eventtime_parse_failure"]
   }
 
   # Keystone specific transformations to compensate for scope missing from initiator element
@@ -524,7 +530,11 @@ output {
       index => "hermes"
       action => "create"
       manage_template => false
+      {{- if .Values.global.gardener.enabled }}
+      hosts => ["https://opensearch-hermes.hermes.svc.cluster.local:{{.Values.hermes_elasticsearch_port}}"]
+      {{- else}}
       hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
+      {{- end}}
       auth_type => {
         type => 'basic'
         user => "${OPENSEARCH_USER}"
@@ -533,6 +543,9 @@ output {
       retry_max_interval => 10
       validate_after_inactivity => 1000
       ssl => true
+      {{- if .Values.global.gardener.enabled }}
+      cacert => ["/etc/logstash/certs/ca.crt"]
+      {{- end}}
       ssl_certificate_verification => true
     }
   }
@@ -572,6 +585,24 @@ output {
         automatic_retries => 60
         retry_non_idempotent => true
       }
+      {{- if .Values.logstash.kafka.enabled }}
+      # Kafka output mirroring the Octobus audit filter above.
+      # Public CA, no client credentials at present (SSL server-auth only).
+      # Durability: acks=all + idempotence + unbounded retries — every
+      # audit event must reach the SIEM, no duplicates on retry.
+      kafka {
+        id => "output_kafka_audit"
+        bootstrap_servers => "{{ .Values.global.forwarding.kafka.bootstrap_servers }}"
+        topic_id => "{{ .Values.logstash.kafka.topic | default "hermes" }}"
+        codec => "json"
+        security_protocol => "SSL"
+        ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "" }}"
+        compression_type => "{{ .Values.logstash.kafka.compression_type | default "zstd" }}"
+        acks => "{{ .Values.logstash.kafka.acks | default "all" }}"
+        retries => {{ .Values.logstash.kafka.retries | default 2147483647 | int }}
+        client_id => "{{ .Values.logstash.kafka.client_id | default "hermes-logstash" }}"
+      }
+      {{- end }}
     }
   }
   {{- end}}

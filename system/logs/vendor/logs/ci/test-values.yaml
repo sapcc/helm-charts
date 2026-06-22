@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+# SPDX-License-Identifier: Apache-2.0
+
+opentelemetry-operator:
+  enabled: true
+  crds:
+    create: false
+  admissionWebhooks:
+    create: true
+    failurePolicy: 'Ignore'
+    certManager:
+      enabled: false
+    autoGenerateCert:
+      enabled: true
+      recreate: false
+  manager:
+    # image:  # Commented out to use the defaults from values.yaml
+    #   repository: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    #   tag: v0.152.0
+    prometheusRule:
+      enabled: false
+      defaultRules:
+        enabled: false
+    serviceMonitor:
+      enabled: false
+
+customCRDs:
+  enabled: true
+
+openTelemetry:
+  collectorImage:
+    repository: ghcr.io/cloudoperators/opentelemetry-collector-contrib
+    tag: main
+  openSearchLogs:
+    endpoint: test
+    failover_username_a: test
+    failover_password_a: test
+    failover_username_b: test
+    failover_password_b: test
+  cluster: test
+  region: test
+  kafka:
+    enabled: false
+  logsCollector:
+    enabled: true
+    journaldConfig:
+      enabled: true
+    k8seventsConfig:
+      enabled: true
+    containerdConfig:
+      enabled: true
+    cephConfig:
+      enabled: true
+    kvmConfig:
+      enabled: false
+    openstackConfig:
+      enabled: true
+  externalCollector:
+    enabled: true
+    replicas: 2
+    loadBalancerIP: 10.0.0.1
+    externalConfig:
+      enabled: false
+      alertmanager_port: 1515
+      deployments_port: 1516
+    syslogConfig:
+      enabled: true
+      tcp_port: 514
+      udp_port: 514
+    tracesConfig:
+      enabled: true
+  metricsCollector:
+    enabled: true
+  prometheus:
+    additionalLabels:
+      key1: value1
+      key2: value2
+    rules:
+      enabled:
+        - FilelogRefusedLogs
+        - ReconcileErrors
+        - FilelogRefusedLogs
+        - LogsOTelLogsMissing
+        - LogsExportingFailed
+
+testFramework:
+  enabled: true
+  image:
+    registry: ghcr.io
+    repository: cloudoperators/greenhouse-extensions-integration-test
+    tag: main
+  imagePullPolicy: IfNotPresent

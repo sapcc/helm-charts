@@ -1,0 +1,57 @@
+{{/* 
+SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.openTelemetry.metricsCollector.enabled }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: metrics
+  labels:
+  {{- include "plugin.labels" . | nindent 4 }} 
+  {{- if .Values.openTelemetry.customLabels }}
+  {{ toYaml .Values.openTelemetry.customLabels | nindent 4 }}
+  {{- end }}
+spec:
+  mode: deployment
+  podAnnotations:
+    prometheus.io/scrape: "false"
+  image: {{ index .Values "openTelemetry" "collectorImage" "repository" }}:{{ index .Values "openTelemetry" "collectorImage" "tag" }}
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        send_batch_max_size: 10000
+        timeout: 10s
+        send_batch_size : 400
+    exporters:
+      debug:
+        verbosity: detailed
+      prometheus:
+        endpoint: "0.0.0.0:9000"
+        send_timestamps: true
+
+    service:
+      pipelines:
+        #traces:
+          #receivers: [otlp]
+          #exporters: [debug]
+        #metrics:
+          #receivers: [otlp]
+          #exporters: [prometheus]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+      telemetry:
+        metrics:
+          level: detailed
+          readers:
+{{- end }}

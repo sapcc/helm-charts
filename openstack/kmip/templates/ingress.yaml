@@ -16,9 +16,8 @@ metadata:
   {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
     disco: "true"
-    disco/record: "{{ .Values.service.externalIPs }}"
+    disco/record: "ingress.{{ .Values.global.region }}.{{ .Values.global.tld }}"
     disco/zone-name: "cc.{{ .Values.global.region }}.{{ .Values.global.tld }}."
-    disco/record-type: "A"
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
@@ -36,18 +35,18 @@ spec:
               service:
                 name: kmip-barbican
                 port:
-                  number: 5006
+                  number: 5005
           - path: /kmip
             pathType: Prefix
             backend:
               service:
                 name: kmip-barbican
                 port:
-                  number: 5006
+                  number: 5005
           - path: /healthz
             pathType: Exact
             backend:
               service:
                 name: kmip-barbican
                 port:
-                  number: 5006
+                  number: 5005

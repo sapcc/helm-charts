@@ -1,0 +1,237 @@
+{{/*
+SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if and .Values.openTelemetry.externalCollector.enabled (or .Values.openTelemetry.externalCollector.externalConfig.enabled .Values.openTelemetry.externalCollector.syslogConfig.enabled .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled .Values.openTelemetry.externalCollector.tracesConfig.enabled) }}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: external
+  labels:
+  {{- include "plugin.labels" . | nindent 4 }}
+  {{- if .Values.openTelemetry.customLabels }}
+  {{ toYaml .Values.openTelemetry.customLabels | nindent 4 }}
+  {{- end }}
+spec:
+  mode: statefulset
+  replicas: {{ .Values.openTelemetry.externalCollector.replicas }}
+  podAnnotations:
+    kubectl.kubernetes.io/default-container: "otc-container"
+{{- if not .Values.openTelemetry.kafka.enabled }}
+    secret.reloader.stakater.com/reload: "otel-basic-auth"
+{{- end }}
+  terminationGracePeriodSeconds: 10
+  env:
+    - name: cluster
+      value: "{{ .Values.openTelemetry.cluster }}"
+    - name: region
+      value: "{{ .Values.openTelemetry.region }}"
+{{- if not .Values.openTelemetry.kafka.enabled }}
+  envFrom:
+    - secretRef:
+         name: otel-basic-auth
+{{- end }}
+  ports:
+{{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}
+    - name: am-webhook
+      port: {{ .Values.openTelemetry.externalCollector.externalConfig.alertmanager_port }}
+      protocol: TCP
+    - name: deploymentstcp
+      port: {{ .Values.openTelemetry.externalCollector.externalConfig.deployments_port }}
+      protocol: TCP
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.syslogConfig.enabled }}
+    - name: syslogtcp
+      port: {{ .Values.openTelemetry.externalCollector.syslogConfig.tcp_port }}
+      protocol: TCP
+    - name: syslogudp
+      port: {{ .Values.openTelemetry.externalCollector.syslogConfig.udp_port }}
+      protocol: UDP
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled }}
+    - name: syslogtcptls
+      port: {{ .Values.openTelemetry.externalCollector.syslogTLSConfig.tcp_port }}
+      protocol: TCP
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.tracesConfig.enabled }}
+    - name: otlp-grpc
+      port: {{ .Values.openTelemetry.externalCollector.tracesConfig.otlp_grpc_port }}
+      protocol: TCP
+    - name: otlp-http
+      port: {{ .Values.openTelemetry.externalCollector.tracesConfig.otlp_http_port }}
+      protocol: TCP
+{{- end }}
+{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+    - name: prometheus
+      port: 8888
+{{- end }}
+  image: {{ index .Values "openTelemetry" "collectorImage" "repository" }}:{{ index .Values "openTelemetry" "collectorImage" "tag" }}
+{{- if .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled }}
+  volumeMounts:
+  - mountPath: /etc/ssl/syslog-tls
+    name: syslog-tls
+    readOnly: true
+  volumes:
+  - name: syslog-tls
+    secret:
+      secretName: logs-syslog-tls
+{{- end }}
+  config:
+    receivers:
+{{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}
+    {{- include "external.receiver" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.syslogConfig.enabled }}
+    {{- include "syslog.receiver" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled }}
+    {{- include "syslog_tls.receiver" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.tracesConfig.enabled }}
+    {{- include "traces.receiver" . | nindent 6 -}}
+{{- end }}
+    processors:
+      batch:
+        send_batch_max_size: 5000
+        timeout: 30s
+        send_batch_size: 100
+      attributes/cluster:
+        actions:
+          - action: insert
+            key: k8s.cluster.name
+            value: ${cluster}
+          - action: insert
+            key: region
+            value: ${region}
+{{- if not .Values.openTelemetry.kafka.enabled }}
+      attributes/failover_username_a:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_a}
+      attributes/failover_username_b:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_b}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}
+    {{- include "external.transform" . | nindent 6 -}}
+{{- end }}
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 30
+      resource:
+        attributes:
+        - action: insert
+          key: k8s.cluster.name
+          value: ${cluster}
+        - action: insert
+          key: region
+          value: ${region}
+    exporters:
+      debug:
+        verbosity: basic
+{{- if .Values.openTelemetry.kafka.enabled }}
+      kafka:
+        brokers:
+{{- range .Values.openTelemetry.kafka.brokers }}
+          - {{ . }}
+{{- end }}
+        protocol_version: {{ .Values.openTelemetry.kafka.protocol_version }}
+        logs:
+          topic: {{ .Values.openTelemetry.externalCollector.kafkaTopic }}
+          encoding: {{ .Values.openTelemetry.kafka.encoding }}
+        producer:
+          compression: {{ .Values.openTelemetry.kafka.compression }}
+{{- if .Values.openTelemetry.externalCollector.tracesConfig.enabled }}
+      kafka/traces:
+        brokers:
+{{- range .Values.openTelemetry.kafka.brokers }}
+          - {{ . }}
+{{- end }}
+        protocol_version: {{ .Values.openTelemetry.kafka.protocol_version }}
+        traces:
+          topic: {{ .Values.openTelemetry.externalCollector.kafkaTracesTopic }}
+          encoding: {{ .Values.openTelemetry.kafka.encoding }}
+        producer:
+          compression: {{ .Values.openTelemetry.kafka.compression }}
+{{- end }}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}
+    {{- include "external.exporter" . | nindent 6 -}}
+{{- end }}
+{{- if or .Values.openTelemetry.externalCollector.syslogConfig.enabled .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled }}
+    {{- include "syslog.exporter" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.tracesConfig.enabled }}
+    {{- include "traces.exporter" . | nindent 6 -}}
+{{- end }}
+    extensions:
+{{- if .Values.openTelemetry.kafka.enabled }}
+      opensearch_log_encoding: {}
+{{- else }}
+      basicauth/failover_a:
+        client_auth:
+          username: ${failover_username_a}
+          password: ${failover_password_a}
+      basicauth/failover_b:
+        client_auth:
+          username: ${failover_username_b}
+          password: ${failover_password_b}
+{{- end }}
+{{- if not .Values.openTelemetry.kafka.enabled }}
+    connectors:
+{{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}
+    {{- include "external.connectors" . | nindent 6 -}}
+{{- end }}
+{{- if or .Values.openTelemetry.externalCollector.syslogConfig.enabled .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled }}
+    {{- include "syslog.connectors" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.tracesConfig.enabled }}
+    {{- include "traces.connectors" . | nindent 6 -}}
+{{- end }}
+{{- end }}
+    service:
+      extensions:
+{{- if .Values.openTelemetry.kafka.enabled }}
+        - opensearch_log_encoding
+{{- else }}
+        - basicauth/failover_a
+        - basicauth/failover_b
+{{- end }}
+{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+      telemetry:
+        metrics:
+          level: detailed
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 8888
+                  without_type_suffix: false
+                  with_resource_constant_labels:
+                    included:
+                    - k8s_cluster_name
+                    - region
+        resource:
+          k8s_cluster_name: ${cluster}
+          region: ${region}
+{{- end }}
+      pipelines:
+{{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}
+    {{- include "external.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.syslogConfig.enabled }}
+    {{- include "syslog.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.syslogTLSConfig.enabled }}
+    {{- include "syslog_tls.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetry.externalCollector.tracesConfig.enabled }}
+    {{- include "traces.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- end }}

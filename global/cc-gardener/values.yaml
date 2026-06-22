@@ -9,7 +9,7 @@ operator:
     images:
       - name: alertmanager
         repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus/alertmanager
-        tag: v0.32.0
+        tag: v0.32.1
       - name: alpine-conntrack
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/alpine-conntrack
         tag: "3.23.3"
@@ -34,16 +34,12 @@ operator:
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/autoscaler/cluster-autoscaler
         tag: "v1.32.3"
         targetVersion: "1.32.x"
-      - name: cluster-autoscaler
-        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/autoscaler/cluster-autoscaler
-        tag: "v1.31.1"
-        targetVersion: "1.31.x"
       - name: cluster-proportional-autoscaler
         repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/cpa/cluster-proportional-autoscaler
         tag: "v1.10.3"
       - name: configmap-reloader
         repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-config-reloader
-        tag: v0.89.0
+        tag: v0.90.1
       - name: coredns
         repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/coredns/coredns
         tag: "v1.14.2"
@@ -52,13 +48,13 @@ operator:
         tag: "v0.6.0"
       - name: cortex
         repository: keppel.global.cloud.sap/ccloud-quay-mirror/cortexproject/cortex
-        tag: v1.20.1
+        tag: v1.21.0
       - name: dependency-watchdog
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/dependency-watchdog
         tag: "v1.7.0"
       - name: envoy-proxy
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/3rd/envoyproxy/envoy
-        tag: "distroless-v1.37.2"
+        tag: "distroless-v1.38.0"
       - name: etcd
         repository: keppel.global.cloud.sap/ccloud-gcr-mirror/etcd-development/etcd
         tag: "v3.5.27"
@@ -90,7 +86,7 @@ operator:
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/controller-manager
       - name: gardener-dashboard
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/dashboard
-        tag: "1.83.11"
+        tag: "1.84.1"
       - name: gardener-discovery-server
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/gardener-discovery-server
         tag: "v0.10.0"
@@ -127,7 +123,7 @@ operator:
         repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-proxy
       - name: kube-rbac-proxy
         repository: keppel.global.cloud.sap/ccloud-quay-mirror/brancz/kube-rbac-proxy
-        tag: v0.21.2
+        tag: v0.22.0
       - name: kube-scheduler
         repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-scheduler
       - name: kube-state-metrics
@@ -153,7 +149,7 @@ operator:
         tag: v1.11.1
       - name: node-local-dns
         repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/dns/k8s-dns-node-cache
-        tag: "1.26.7"
+        tag: "1.26.8"
       - name: node-problem-detector
         repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/node-problem-detector/node-problem-detector
         tag: "v1.35.2"
@@ -186,13 +182,13 @@ operator:
         tag: "v7.5.47"
       - name: plutono-data-refresher
         repository: keppel.global.cloud.sap/ccloud-quay-mirror/kiwigrid/k8s-sidecar
-        tag: "2.6.0"
+        tag: "2.7.1"
       - name: prometheus
         repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus/prometheus
-        tag: v3.10.0
+        tag: v3.11.3
       - name: prometheus-operator
         repository: keppel.global.cloud.sap/ccloud-quay-mirror/prometheus-operator/prometheus-operator
-        tag: v0.89.0
+        tag: v0.90.1
       - name: telegraf
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/telegraf-iptables
         tag: "v0.71.0"
@@ -228,10 +224,10 @@ operator:
         tag: "1.6.0"
       - name: vpn-client
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/vpn-client
-        tag: "0.48.0"
+        tag: "0.49.0"
       - name: vpn-server
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/vpn-server
-        tag: "0.48.0"
+        tag: "0.49.0"
   componentImageVectorOverwrites: |
     components:
       - name: etcd-druid
@@ -295,7 +291,6 @@ garden:
   dashboard:
     enabled: false
     enableTokenLogin: false
-    customIngress: false
     oidc:
       enabled: false
       clientIDPublic: ""
@@ -488,7 +483,7 @@ extensions:
           tag: v4.2.4
   gardenlinux:
     enabled: false
-    version: v0.40.0
+    version: v0.41.0
     values:
       image:
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/extensions/os-gardenlinux
@@ -660,6 +655,216 @@ extensions:
     enabled: false
     url: ""
     additionalNamespaces: []
+    # Additional audit backends beyond the primary url-based one.
+    # Each entry produces an additional HTTP backend in the AuditConfiguration.
+    # Example:
+    #   backends:
+    #   - url: "https://persephone.example.com"
+    #     tls:
+    #       secretName: persephone-mtls
+    backends: []
+    # Audit policy for the virtual cluster kube-apiserver (audit-policy-cp-virtual ConfigMap).
+    # This is a raw YAML string that gets placed directly into the ConfigMap data.
+    # Override completely to customize — no merging occurs.
+    virtualPolicy: |
+      apiVersion: audit.k8s.io/v1
+      kind: Policy
+      metadata:
+        name: audit-policy-cp-virtual
+      omitStages:
+        - "RequestReceived"
+      rules:
+        - level: Metadata
+          verbs: ["create"]
+          resources:
+            - group: "authentication.k8s.io"
+              resources: ["tokenreviews"]
+            - group: "authorization.k8s.io"
+              resources: ["subjectaccessreviews"]
+        - level: Request
+          verbs: ["get", "list", "watch"]
+          resources:
+            - group: ""
+              resources: ["secrets"]
+        - level: Metadata
+          verbs: ["get", "list", "watch"]
+          resources:
+            - group: ""
+              resources: ["configmaps"]
+        - level: Metadata
+          resources:
+            - group: "apps"
+              resources: ["deployments", "daemonsets", "statefulsets"]
+            - group: ""
+              resources: ["pods"]
+        - level: Metadata
+          resources:
+            - group: "rbac.authorization.k8s.io"
+              resources:
+                - "roles"
+                - "rolebindings"
+                - "clusterroles"
+                - "clusterrolebindings"
+        - level: Metadata
+          resources:
+            - group: ""
+              resources: ["nodes", "secrets"]
+        - level: Metadata
+          verbs: ["create", "update", "patch", "delete"]
+        - level: None
+          users:
+          - cloud-config-downloader
+          - etcd-client
+          - gardener
+          - garden.sapcloud.io:system:cert-broker
+          - kubelet
+          - system:apiserver
+          - system:cloud-controller-manager
+          - system:cluster-autoscaler
+          - system:kube-addon-manager
+          - system:kube-aggregator
+          - system:kube-apiserver:kubelet
+          - system:kube-controller-manager
+          - system:kube-proxy
+          - system:kube-scheduler
+          - system:machine-controller-manager
+          - system:serviceaccount:default:app-hub-controller
+          - system:serviceaccount:kube-system:gardener-apiserver
+          - system:serviceaccount:kube-system:gardener-controller-manager
+          - system:serviceaccount:kube-system:gardener-dashboard
+          - system:serviceaccount:garden:gardener-extension-admission-gcp
+          - system:serviceaccount:garden:gardener-extension-validator-alicloud
+          - system:serviceaccount:garden:gardener-extension-validator-aws
+          - system:serviceaccount:garden:gardener-extension-validator-azure
+          - system:serviceaccount:garden:gardener-extension-validator-openstack
+          - system:serviceaccount:kube-system:gardener-scheduler
+          - system:serviceaccount:garden:secret-binding-distributor
+          - system:serviceaccount:kube-system:terminal-controller-manager
+          - system:serviceaccount:kube-system:landscape-setup-user
+          - virtual-garden:client:admin
+          - vpn-seed
+        - level: None
+          userGroups:
+          - gardener.cloud:system:seeds
+          - garden.sapcloud.io:monitoring
+          - system:nodes
+          - system:serviceaccounts:kube-system
+        - level: None
+          resources:
+          - group: ""
+            resources:
+            - configmaps
+            - events
+            - tokenreviews
+        - level: None
+          verbs:
+          - get
+          - list
+          - watch
+        - level: None
+          nonResourceURLs:
+          - /*
+        - level: None
+          resources:
+          - group: authorization.k8s.io
+            resources:
+            - localsubjectaccessreviews
+            - selfsubjectaccessreviews
+            - selfsubjectrulesreviews
+            - subjectaccessreviews
+    # Audit policy for the Gardener API server (audit-policy-cp-garden ConfigMap).
+    # This is a raw YAML string that gets placed directly into the ConfigMap data.
+    # Override completely to customize — no merging occurs.
+    gardenPolicy: |
+      apiVersion: audit.k8s.io/v1
+      kind: Policy
+      metadata:
+        name: audit-policy-cp-garden
+      omitStages:
+      - RequestReceived
+      rules:
+      - level: Request
+        namespaces:
+        - garden
+        verbs:
+        - create
+        - delete
+        - deletecollection
+        - patch
+        - update
+        resources:
+        - group: core.gardener.cloud
+          resources:
+          - shoots
+      - level: Request
+        verbs:
+        - create
+        - delete
+        - deletecollection
+        - patch
+        - update
+        resources:
+        - group: core.gardener.cloud
+          resources:
+          - cloudprofiles
+          - seeds
+      - level: None
+        userGroups:
+        - gardener.cloud:system:seeds
+        - system:nodes
+      - level: None
+        users:
+        - gardener
+        - gardener.cloud:monitoring
+        - gardener.cloud:monitoring:kube-state-metrics
+        - gardener.cloud:monitoring:prometheus
+        - garden.sapcloud.io:monitoring
+        - garden.sapcloud.io:monitoring:kube-state-metrics
+        - garden.sapcloud.io:monitoring:prometheus
+        - kubelet
+        - system:apiserver
+        - system:kube-addon-manager
+        - system:kube-aggregator
+        - system:kube-controller-manager
+        - system:kube-proxy
+        - system:kube-scheduler
+        - system:serviceaccount:default:app-hub-controller
+        - system:serviceaccount:kube-system:gardener-controller-manager
+        - system:serviceaccount:kube-system:gardener-dashboard
+        - system:serviceaccount:garden:gardener-extension-admission-gcp
+        - system:serviceaccount:garden:gardener-extension-validator-alicloud
+        - system:serviceaccount:garden:gardener-extension-validator-aws
+        - system:serviceaccount:garden:gardener-extension-validator-azure
+        - system:serviceaccount:garden:gardener-extension-validator-openstack
+        - system:serviceaccount:kube-system:gardener-metrics-exporter
+        - system:serviceaccount:kube-system:gardener-scheduler
+        - system:serviceaccount:kube-system:gardener-scheduler
+        - system:serviceaccount:garden:secret-binding-distributor
+        - system:serviceaccount:kube-system:terminal-controller-manager
+        - system:serviceaccount:kube-system:generic-garbage-collector
+        - system:serviceaccount:kube-system:namespace-controller
+        - system:serviceaccount:kube-system:landscape-setup-user
+        - virtual-garden:client:admin
+      - level: None
+        nonResourceURLs:
+        - /healthz*
+        - /version
+        - /openapi/*
+      - level: None
+        resources:
+        - group: ""
+          resources:
+          - events
+      - level: None
+        verbs:
+        - get
+        - list
+        - watch
+      - level: Metadata
+        resources:
+        - group: core.gardener.cloud
+          resources:
+          - controllerdeployments
     version: v0.3.0
     admission:
       values:
@@ -709,6 +914,7 @@ cloudProfileSync:
   enabled: true
   replicaCount: 1
   topologyKey: ""
+  enableCapabilities: false
   image:
     repository: cobaltcore-dev/cloud-profile-sync
     tag: v0.1.0

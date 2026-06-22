@@ -1,0 +1,24 @@
+{{/*
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company
+
+SPDX-License-Identifier: Apache-2.0
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "persephone-liquid-apiserver.fullname" . }}
+  labels:
+    {{- include "persephone-liquid-apiserver.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "persephone-liquid-apiserver.selectorLabels" . | nindent 4 }}

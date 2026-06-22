@@ -1,0 +1,40 @@
+{{/*
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company
+
+SPDX-License-Identifier: Apache-2.0
+*/}}
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "persephone-liquid-apiserver.fullname" . }}
+  labels:
+    {{- include "persephone-liquid-apiserver.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: nginx
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "persephone-liquid-apiserver.fullname" $ }}
+                port:
+                  name: http
+          {{- end }}
+    {{- end }}
+{{- end }}

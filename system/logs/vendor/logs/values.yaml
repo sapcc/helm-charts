@@ -1,0 +1,206 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# -- common labels to apply to all resources.
+commonLabels: {}
+
+# opentelemetry-operator is an upstream dependency, it is required that it is a separate block. This is customised configuration of the dependency.
+opentelemetry-operator:
+  # -- Set to true to enable the installation of the OpenTelemetry Operator.
+  enabled: true
+  crds:
+    # This is required because there is no other Plugin that would install them, and because automatic CRD installs are not supported due to a limitation with helm, see [HIP0011](https://github.com/helm/community/blob/main/hips/hip-0011.md).
+    # --  If you want to use the upstream CRDs, set this variable to `true``.
+    create: false
+  admissionWebhooks:
+    # -- Defines if the admission webhooks should `Ignore` errors or `Fail` on errors when communicating with the API server.
+    failurePolicy: 'Ignore'
+
+    # If cert-manager should be used, the CRDs for cert-manager needs to exists before OpenTelemetry installs cert-manager.
+    # -- Activate to use the CertManager for generating self-signed certificates.
+    certManager:
+      enabled: false
+    # -- Activate to use Helm to create self-signed certificates.
+    autoGenerateCert:
+    # -- Activate to recreate the cert after a defined period (certPeriodDays default is 365).
+      recreate: false
+  manager:
+    image:
+    # -- overrides the default image repository for the OpenTelemetry Operator image.
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    # @ignored renovate does not support generating new README.md
+    # -- overrides the default tag repository for the OpenTelemetry Operator image.
+      tag: v0.152.0
+    serviceMonitor:
+    # -- Enable serviceMonitor for Prometheus metrics scrape
+      enabled: true
+    # -- Additional labels on the ServiceMonitor
+      extraLabels: {}
+
+customCRDs:
+  # -- The required CRDs used by this dependency are version-controlled in this repository under ./charts/crds.
+  enabled: true
+
+# Empty variables will fail during rollout
+openTelemetry:
+  # -- OpenTelemetry Collector image configuration
+  collectorImage:
+    # -- Image repository for OpenTelemetry Collector
+    repository: ghcr.io/cloudoperators/opentelemetry-collector-contrib
+    # -- Image tag for OpenTelemetry Collector
+    tag: "a8981ba"
+
+  # -- custom Labels applied to servicemonitor, secrets and collectors
+  customLabels: {}
+
+  openSearchLogs:
+    # -- Endpoint URL for OpenSearch
+    endpoint:
+    # -- Username for OpenSearch endpoint
+    failover_username_a:
+    # -- Password for OpenSearch endpoint
+    failover_password_a:
+    # -- Second Username (as a failover) for OpenSearch endpoint
+    failover_username_b:
+    # -- Second Password (as a failover) for OpenSearch endpoint
+    failover_password_b:
+  # -- Cluster label for Logging
+  cluster:
+  # -- Region label for Logging
+  region:
+  # -- Kafka exporter configuration shared by all collectors
+  kafka:
+    # -- Enable Kafka exporter (replaces OpenSearch failover with Kafka buffering)
+    enabled: false
+    # -- Kafka broker addresses (e.g., ["kafka-bootstrap.kafka.svc.cluster.local:9092"])
+    brokers: []
+    # -- Kafka protocol version (e.g., "3.9.0")
+    protocol_version: ""
+    # -- Message encoding format (otlp_json, otlp_proto, raw)
+    encoding: ""
+    # -- Compression type (none, gzip, snappy, lz4, zstd)
+    compression: ""
+  logsCollector:
+    # -- Activates the standard configuration for Logs.
+    enabled: true
+    # -- Kafka topic name for general logs (e.g., "logs")
+    kafkaTopic: ""
+    # -- Kafka topic name for storage logs — swift, ceph (e.g., "logs-storage")
+    kafkaStorageTopic: ""
+    # -- Activates the journald receiver (requires logsCollector to be enabled).
+    journaldConfig:
+      enabled: true
+    # -- Activates the k8s events receiver (requires logsCollector to be enabled).
+    k8seventsConfig:
+      enabled: true
+    # -- Activates the containerd file log receiver (requires logsCollector to be enabled).
+    containerdConfig:
+      enabled: true
+    # -- Activates the configuration for KVM logs (requires logsCollector to be enabled).
+    kvmConfig:
+      enabled: false
+    # -- Activates the configuration for Ceph logs (requires logsCollector to be enabled).
+    cephConfig:
+      enabled: false
+    # -- Activates the configuration for OpenStack logs (requires logsCollector to be enabled).
+    openstackConfig:
+      enabled: false
+  # -- Standalone external OTel Collector as StatefulSet.
+  externalCollector:
+    # -- Enables the standalone external OTel Collector StatefulSet and its PodMonitor.
+    enabled: false
+    # -- Number of replicas for the external collector StatefulSet
+    replicas: 2
+    # -- IP address to request from the cloud LoadBalancer (optional, omit for auto-assigned)
+    loadBalancerIP:
+    # -- Additional annotations on the external Service
+    serviceAnnotations: {}
+    # -- Kafka topic name for external logs — alerts, deployments, syslog (e.g., "logs-external")
+    kafkaTopic: ""
+    # -- Kafka topic name for traces (e.g., "traces")
+    kafkaTracesTopic: ""
+    # -- Activates syslog TCP/UDP ingestion (rfc5424/rfc3164).
+    syslogConfig:
+      enabled: false
+      # -- TCP port for syslog (rfc5424)
+      tcp_port: 514
+      # -- UDP port for syslog (rfc3164)
+      udp_port: 514
+    # -- Activates syslog TCP with TLS ingestion (rfc5424).
+    syslogTLSConfig:
+      enabled: false
+      # -- TCP port for TLS syslog (rfc5424)
+      tcp_port: 6514
+      # -- cert-manager ClusterIssuer name for DigiCert
+      issuerName:
+      # -- DNS name for the TLS certificate
+      dnsName:
+    # -- Activates the external alertmanager webhook and deployment event receivers.
+    externalConfig:
+      enabled: false
+      # -- Port for alertmanager webhook events
+      alertmanager_port: 1515
+      # -- Port for deployment TCP log events
+      deployments_port: 1516
+    # -- Activates OTLP traces ingestion (gRPC and HTTP).
+    tracesConfig:
+      enabled: false
+      # -- gRPC port for OTLP traces
+      otlp_grpc_port: 4317
+      # -- HTTP port for OTLP traces
+      otlp_http_port: 4318
+  # -- Activates the standard configuration for metrics.
+  metricsCollector:
+    enabled: false
+  prometheus:
+    # -- Activates the service-monitoring for the Logs Collector.
+    serviceMonitor:
+      enabled: true
+    # -- Activates the pod-monitoring for the Logs Collector.
+    podMonitor:
+      enabled: true
+    # -- Label selectors for the Prometheus resources to be picked up by prometheus-operator.
+    additionalLabels: {}
+    # plugin: kube-monitoring
+    # prometheus: infra
+
+    # -- Default rules for monitoring the opentelemetry components.
+    rules:
+      # -- Enables PrometheusRule resources to be created.
+      create: true
+
+      # -- PrometheusRules to enable.
+      enabled:
+        - FilelogRefusedLogs
+        - ReconcileErrors
+        - ReceiverRefusedMetric
+        - WorkqueueDepth
+        - OTelLogsMissing
+        - OTelLogsIncreasing
+        - OTelLogsDecreasing
+        - OTelLogsExportingFailed
+
+      # -- Labels for PrometheusRules.
+      labels: {}
+
+      # -- Annotations for PrometheusRules.
+      annotations: {}
+
+      ## This is useful for adding additional labels such as "support_group" or "service" for the routing of alerts to each rule
+      # -- Additional labels for PrometheusRule alerts.
+      additionalRuleLabels:
+        # support_group: support
+        # service: my-service
+
+testFramework:
+  # -- Activates the Helm chart testing framework.
+  enabled: true
+  image:
+    # -- Defines the image registry for the test framework.
+    registry: ghcr.io
+    # -- Defines the image repository for the test framework.
+    repository: cloudoperators/greenhouse-extensions-integration-test
+    # -- Defines the image tag for the test framework.
+    tag: main
+  # -- Defines the image pull policy for the test framework.
+  imagePullPolicy: IfNotPresent
