@@ -16,11 +16,13 @@ rbac:
   enabled: true
 
 # SCIBPL-218: NetworkPolicy restricting ingress to the API port only.
-# This prevents kubectl exec / kubectl port-forward by denying the
-# control-plane from opening arbitrary-port tunnels into barbican pods.
+# Reduces the pod-network attack surface. Whether this blocks kubectl exec /
+# port-forward depends on the CNI enforcement mode; it is not a substitute
+# for cluster-level admission controls.
 networkPolicy:
   enabled: true
-  # Additional TCP ports to allow inbound (e.g. metrics scrapers).
+  # Additional TCP ports to allow inbound (e.g. Prometheus metrics scrapers
+  # on a non-standard port). Example: [9102]
   additionalIngressPorts: []
 
 owner-info:
