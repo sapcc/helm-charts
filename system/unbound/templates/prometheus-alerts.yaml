@@ -61,7 +61,7 @@ spec:
         description: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting {{ "{{" }} $value | humanizePercentage {{ "}}" }} of the usual traffic.'
         summary: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting {{ "{{" }} $value | humanizePercentage {{ "}}" }} of the usual traffic compared to the 24h avegrage.'
 
-{{- if (.Values.unbound.balancedTrafficExpected | default true) }}
+{{- if .Values.unbound.balancedTrafficExpected }}
     - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfTraffic
       expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))/sum(rate(unbound_queries_total{namespace="{{ $.Release.Namespace }}"}[5m]))
         > {{ add 50 (.Values.unbound.tolerable_traffic_distribution_deviation | default 10) }}/100
