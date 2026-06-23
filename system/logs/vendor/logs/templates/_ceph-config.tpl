@@ -66,7 +66,7 @@ transform/ceph_rgw:
       conditions:
         - resource.attributes["app.label.component"] == "cephobjectstores.ceph.rook.io"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{WORD:log.level} %{TIMESTAMP_ISO8601:log.timestamp}(%{SPACE})?%{NOTSPACE}(%{SPACE})?%{NOTSPACE}(%{SPACE})?%{WORD}\\:(%{SPACE})?%{WORD}\\:(%{SPACE})?%{IP:client.address}(%{SPACE})?%{NOTSPACE}(%{SPACE})%{PROJECT_ID:project.id}(\\$%{NOTSPACE})?(%{SPACE})?\\[%{HTTPDATE:request.timestamp}\\] \"%{WORD:request.method} \\/(?<bucket>[a-zA-Z0-9._+-]+)?(\\/)?(%{NOTSPACE:request.path})? %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content.length:int} %{NOTSPACE} \"%{GREEDYDATA:user_agent}\" %{NOTSPACE} latency=%{NUMBER:latency:float}", true, ["PROJECT_ID=([A-Za-z0-9-]+)"]),"upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{WORD:log.level} %{TIMESTAMP_ISO8601:log.timestamp}(%{SPACE})?%{NOTSPACE}(%{SPACE})?%{NOTSPACE}(%{SPACE})?%{WORD}\\:(%{SPACE})?%{WORD}\\:(%{SPACE})?%{IP:client.address}(%{SPACE})?%{NOTSPACE}(%{SPACE})%{PROJECT_ID:project.id}(\\$%{NOTSPACE})?(%{SPACE})?\\[%{HTTPDATE:request.timestamp}\\] \"%{WORD:request.method} \\/(?<bucket>[a-zA-Z0-9._+-]+)?(\\/)?(%{NOTSPACE:request.path})? %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content.length:int} %{NOTSPACE} \"%{GREEDYDATA:user_agent.name}\" %{NOTSPACE} latency=%{NUMBER:latency:float}", true, ["PROJECT_ID=([A-Za-z0-9-]+)"]),"upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{WORD:log_level}", true),"upsert")
         - set(log.attributes["network.protocol.name"], ConvertCase(log.attributes["network.protocol.name"], "lower")) where cache["network.protocol.name"] != nil
         - set(log.attributes["config.parsed"], "ceph_rgw") where log.attributes["project.id"] != nil
@@ -109,8 +109,8 @@ transform/ceph_prysm_sidecar:
         - set(log.attributes["temp_url"], log.cache["temp_url"])
         - set(log.attributes["total_time"], log.cache["total_time"])
         - set(log.attributes["uri"], log.cache["uri"])
-        - set(log.attributes["user"], log.cache["user"])
-        - set(log.attributes["user_agent"], log.cache["user_agent"])
+        - set(log.attributes["user.id"], log.cache["user"])
+        - set(log.attributes["user_agent.name"], log.cache["user_agent"])
         - set(log.attributes["keystone_scope.project.id"], log.cache["keystone_scope"]["project"]["id"])
         - set(log.attributes["keystone_scope.project.name"], log.cache["keystone_scope"]["project"]["name"])
         - set(log.attributes["keystone_scope.project.domain.id"], log.cache["keystone_scope"]["project"]["domain"]["id"])

@@ -4,23 +4,19 @@ kind: Service
 
 metadata:
   name: external-collector
-  annotations:
-    meta.helm.sh/release-name: {{ .Release.Name }}
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 {{- with .Values.openTelemetry.externalCollector.serviceAnnotations }}
+  annotations:
     {{- toYaml . | nindent 4 }}
 {{- end }}
-  labels:
-    app.kubernetes.io/managed-by: Helm
 spec:
   selector:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: {{ .Release.Namespace }}.external
     app.kubernetes.io/managed-by: opentelemetry-operator
   type: ClusterIP
-  externalTrafficPolicy: Cluster
-{{- if .Values.openTelemetry.externalCollector.loadBalancerIP }}
-  externalIPs: ["{{ .Values.openTelemetry.externalCollector.loadBalancerIP }}"]
+  externalTrafficPolicy: Local
+{{- if .Values.openTelemetry.externalCollector.externalIP }}
+  externalIPs: ["{{ .Values.openTelemetry.externalCollector.externalIP }}"]
 {{- end }}
   ports:
 {{- if .Values.openTelemetry.externalCollector.externalConfig.enabled }}

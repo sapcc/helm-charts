@@ -267,7 +267,7 @@ spec:
           initial_interval: 1s
           max_interval: 5s
           max_elapsed_time: 30s
-        timeout: 10s
+        timeout: 30s
       opensearch/failover_b:
         http:
           auth:
@@ -279,7 +279,7 @@ spec:
           initial_interval: 1s
           max_interval: 5s
           max_elapsed_time: 30s
-        timeout: 10s
+        timeout: 30s
       opensearch/cronus_failover_a:
         http:
           auth:
@@ -291,7 +291,7 @@ spec:
           initial_interval: 1s
           max_interval: 5s
           max_elapsed_time: 30s
-        timeout: 10s
+        timeout: 30s
       opensearch/cronus_failover_b:
         http:
           auth:
@@ -303,7 +303,7 @@ spec:
           initial_interval: 1s
           max_interval: 5s
           max_elapsed_time: 30s
-        timeout: 10s
+        timeout: 30s
 {{- if or .Values.openTelemetry.logsCollector.openstackConfig.enabled .Values.openTelemetry.logsCollector.cephConfig.enabled }}
     {{- include "openstack.exporter" . | nindent 6 -}}
 {{- end }}
@@ -326,7 +326,11 @@ spec:
     connectors:
       routing:
         default_pipelines:
+{{- if .Values.openTelemetry.logsCollector.cephConfig.enabled }}
+          - logs/route_storage
+{{- else }}
           - logs/route_default
+{{- end }}
         error_mode: ignore
         table:
           - pipelines:
@@ -337,12 +341,7 @@ spec:
               - logs/route_storage
             statement: route() where resource.attributes["k8s.namespace.name"] == "swift"
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.cephConfig.enabled }}
-          - pipelines:
-              - logs/route_storage
-            statement: route() where resource.attributes["k8s.namespace.name"] == "ceph"
-{{- end }}{{- if .Values.openTelemetry.kafka.enabled }}
-{{- else }}
+{{- if not .Values.openTelemetry.kafka.enabled }}
       failover/opensearch:
         priority_levels:
           - [logs/failover_a]
@@ -351,7 +350,7 @@ spec:
         sending_queue:
           block_on_overflow: true
           enabled: true
-          num_consumers: 10
+          num_consumers: 2
           queue_size: 10000
           sizer: requests
       failover/opensearch_cronus:
@@ -374,7 +373,7 @@ spec:
         sending_queue:
           block_on_overflow: true
           enabled: true
-          num_consumers: 10
+          num_consumers: 2
           queue_size: 10000
           sizer: requests
 {{- end }}

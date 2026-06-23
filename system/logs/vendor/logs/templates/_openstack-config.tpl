@@ -75,7 +75,7 @@ transform/non_openstack:
         - resource.attributes["k8s.container.name"] == "sentry"
         - resource.attributes["k8s.deployment.name"] == "arc-api"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{IP:ip.target} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HAPROXYDATE:proxy_date}\\] \"%{WORD:http.request.method} %{NOTSPACE:url.path} %{NOTSPACE:httpversion}\" %{NUMBER:http.response.status_code} %{NUMBER:http.response.body.size:int} %{QUOTEDSTRING:url} \"%{GREEDYDATA:user_agent.original}\"?( )?(%{BASE10NUM:request.time:float})", true, ["HAPROXYDATE=%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HAPROXYTIME}.%{INT}", "HAPROXYTIME=%{HOUR}:%{MINUTE}(?::%{SECOND})"]),"upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{IP:ip.target} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HAPROXYDATE:proxy_date}\\] \"%{WORD:http.request.method} %{NOTSPACE:url.path} %{NOTSPACE:httpversion}\" %{NUMBER:http.response.status_code} %{NUMBER:http.response.body.size:int} %{QUOTEDSTRING:url.original} \"%{GREEDYDATA:user_agent.original}\"?( )?(%{BASE10NUM:request.time:float})", true, ["HAPROXYDATE=%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HAPROXYTIME}.%{INT}", "HAPROXYTIME=%{HOUR}:%{MINUTE}(?::%{SECOND})"]),"upsert")
 
 transform/network_generic_ssh_exporter:
   error_mode: ignore
@@ -147,7 +147,7 @@ transform/elektra:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "elektra"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request.id}\\] %{WORD} %{WORD:http.request.method} \"%{NOTSPACE:url} %{WORD} %{IP:ip.client} %{WORD} %{TIMESTAMP_ISO8601}", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request.id}\\] %{WORD} %{WORD:http.request.method} \"%{NOTSPACE:url.path} %{WORD} %{IP:ip.client} %{WORD} %{TIMESTAMP_ISO8601}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request.id}\\] %{WORD} %{NUMBER:http.response.status_code}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request.id}\\]", true), "upsert")
 
@@ -196,7 +196,7 @@ opensearch/storage_failover_a:
     initial_interval: 1s
     max_interval: 5s
     max_elapsed_time: 30s
-  timeout: 10s
+  timeout: 30s
 opensearch/storage_failover_b:
   http:
     auth:
@@ -208,7 +208,7 @@ opensearch/storage_failover_b:
     initial_interval: 1s
     max_interval: 5s
     max_elapsed_time: 30s
-  timeout: 10s
+  timeout: 30s
 {{- end }}
 
 {{- define "openstack.pipeline" }}
