@@ -96,8 +96,8 @@ groups:
           support_group: compute
           no_alert_on_absence: "true"
           meta: "Alert for FCD Object Not Found issue on vCenter "
-          playbook: docs/compute/playbooks/vcenter/#FCDObjectNotFound
+          playbook: docs/compute/playbooks/vcenter/#fcdobjectnotfound
         annotations:
           summary: "Error for FCD Object Storage Not Found "
-          description: "vCenter{{`{{ $labels.hostsystem }}`}} reported FCD Ojbect Not found, please follow the playbook to fix it"
+          description: "vCenter {{`{{ $labels.hostsystem }}`}} reported FCD Ojbect Not found, please follow the playbook to fix it"
 
