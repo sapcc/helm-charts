@@ -173,9 +173,9 @@ transform/keystone_api_json:
         - set(log.attributes["msg"], log.cache["message"])
         - set(log.severity_text, log.cache["levelname"])
         - set(log.attributes["infra.container.component"], log.cache["name"])
-        - set(log.attributes["infra.request_id"], log.cache["context"]["request_id"])
-        - set(log.attributes["infra.request_id"], log.cache["request_id"]) where log.cache["request_id"] != nil and log.attributes["infra.request_id"] == nil
-        - set(log.attributes["infra.global.request_id"], log.cache["context"]["global_request_id"])
+        - set(log.attributes["infra.request.id"], log.cache["context"]["request_id"])
+        - set(log.attributes["infra.request.id"], log.cache["request_id"]) where log.cache["request_id"] != nil and log.attributes["infra.request.id"] == nil
+        - set(log.attributes["infra.global.request.id"], log.cache["context"]["global_request_id"])
         - set(log.attributes["user.id"], log.cache["context"]["user"])
         - set(log.attributes["user.id"], log.cache["user_id"]) where log.cache["user_id"] != nil and log.attributes["user.id"] == nil
         - set(log.attributes["user.name"], log.cache["context"]["user_name"])
