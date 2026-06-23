@@ -1,19 +1,24 @@
+{{- range $cluster := .Values.clusters }}
+---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: IroncoreMetalMachineTemplate
 metadata:
-  name: worker-rt-{{ .Values.global.region }}
+  name: worker-{{ $cluster.name }}
+  namespace: {{ $cluster.namespace }}
 spec:
   template:
     spec:
       serverSelector:
         matchLabels:
-{{ toYaml .Values.worker.machineTemplate.matchLabels | indent 10 }}
-      image: {{ .Values.machineTemplate.image }}
+          kubernetes.metal.cloud.sap/cluster: {{ $cluster.name }}
+          kubernetes.metal.cloud.sap/role: runtime-worker
+      image: {{ $.Values.machineTemplate.image }}
       metadata:
-{{ toYaml .Values.machineTemplate.metadata | indent 8 }}
+{{ toYaml $.Values.machineTemplate.metadata | indent 8 }}
       ipamConfig:
       - metadataKey: bond
         ipamRef:
           apiGroup: ipam.cluster.x-k8s.io
           kind: GlobalInClusterIPPool
-          name: globalinclusterippool-rt-{{ .Values.global.region }}
+          name: globalinclusterippool-{{ $cluster.name }}
+{{- end }}
