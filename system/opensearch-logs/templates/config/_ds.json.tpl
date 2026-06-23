@@ -10,40 +10,28 @@
       "index.refresh_interval": "60s"
     },
     "mappings": {
-      "properties": {
-        "resource": {
-          "type": "object",
-          "properties": {
-            "k8s": {
-              "type": "object",
-              "properties": {
-                "pod": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "keyword",
-                      "fields": {
-                        "text": { "type": "text" }
-                      }
-                    }
-                  }
-                },
-                "container": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "keyword",
-                      "fields": {
-                        "text": { "type": "text" }
-                      }
-                    }
-                  }
-                }
-              }
+      "dynamic_templates": [
+        {
+          "resource_strings_as_keyword": {
+            "path_match": "resource.*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        {
+          "attributes_strings_as_keyword": {
+            "path_match": "attributes.*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword",
+              "ignore_above": 256
             }
           }
         }
-      }
+      ]
     },
     "aliases": {
       "_DS_NAME_-ds": {}
