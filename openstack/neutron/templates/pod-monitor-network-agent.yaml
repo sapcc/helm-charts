@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Release.Name }}-agent
+  labels:
+    release_name: "{{ .Release.Name }}"
+    type: podmonitor
+    component: {{ .Release.Name }}
+    system: openstack
+    prometheus: openstack
+  namespace: monsoon3
+spec:
+  podMetricsEndpoints:
+    - honorLabels: true
+      port: metrics-export
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+        - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      application: neutron
+      component: agent

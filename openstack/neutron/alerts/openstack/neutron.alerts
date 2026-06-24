@@ -51,3 +51,24 @@ groups:
     annotations:
       description: Asr1k driver for agent {{ $labels.host }} cannot reach device `{{ $labels.device }}` via netconf-yang.
       summary: Asr1k driver cannot reach device
+
+  - alert: OpenstackNeutronNetworkCountAsync
+    # Either unsynced bridges or unsynced netns
+    # Bridge and netns must exists on at least two agents
+    expr: |
+      sum by (network_id, network_name)
+         (openstack_subnets_with_dhcp_ip_allocation unless on (network_id) (sum(openstack_neutron_agent_check_netns_present) by (network_id) >= 2))
+      or on (network_id)
+         (openstack_subnets_with_dhcp_ip_allocation unless on (bridge) (sum(openstack_neutron_agent_check_linux_bridge_present) by (bridge) >= 2))
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.network_host }}'
+      meta: 'Not all networks have been synced by agent: {{ $labels.network_host }}'
+      playbook: docs/support/playbook/neutron/dhcp_down
+    annotations:
+      description: 'Network {{ $labels.network_id }} ({{ $labels.network_name }}) has not been synced for 5 min: {{ $labels.network_host }}'
+      summary: Openstack Neutron Linuxbridge/DHCP Agent lost private networks
