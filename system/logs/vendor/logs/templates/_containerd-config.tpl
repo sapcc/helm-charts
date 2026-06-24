@@ -26,6 +26,9 @@ file_log/containerd:
       type: add
       field: attributes["log.type"]
       value: "containerd"
+    - id: netbox-json-parser
+      type: json_parser
+      parse_from: body
 {{end}}
 
 {{- define "containerd.transform" }}
