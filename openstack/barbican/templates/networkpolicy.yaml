@@ -1,0 +1,36 @@
+{{- if .Values.networkPolicy.enabled }}
+# SCIBPL-218: restrict inbound traffic to the API port only.
+# This reduces the pod-network attack surface by limiting ingress to the
+# declared API port. Whether this also prevents kubectl exec / port-forward
+# depends on the CNI plugin and its enforcement mode (e.g. Calico/Cilium in
+# strict policy mode will block those control-plane tunnels; other CNIs may
+# not). It does not replace cluster-level admission controls for exec/pf.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-restrict-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: barbican-api
+  policyTypes:
+    - Ingress
+  ingress:
+    # No `from:` selector — allows traffic from any source within the cluster
+    # on the API port. Barbican is a public-facing API; source restriction
+    # would break legitimate callers. Add a `from:` block here if you need
+    # to restrict to specific namespaces or pods.
+    - ports:
+        - protocol: TCP
+          port: {{ .Values.api_port_internal }}
+    {{- if .Values.networkPolicy.additionalIngressPorts }}
+    # Additional ports (e.g. Prometheus metrics scraper). Configure via
+    # networkPolicy.additionalIngressPorts in values.yaml.
+    - ports:
+        {{- range .Values.networkPolicy.additionalIngressPorts }}
+        - protocol: TCP
+          port: {{ . }}
+        {{- end }}
+    {{- end }}
+{{- end }}
