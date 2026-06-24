@@ -42,7 +42,7 @@ spec:
         - name: audit-etc
           configMap:
             name: logstash-audit-external-etc
-      {{- if .Values.syslog.enabled }}
+      {{- if or .Values.http.enabled .Values.mtls.enabled }}
         - name: tls-secret
           secret:
             secretName: tls-logstash-audit-external
@@ -91,7 +91,7 @@ spec:
           volumeMounts:
             - name: audit-etc
               mountPath: /audit-etc
-      {{- if .Values.syslog.enabled }}
+      {{- if or .Values.http.enabled .Values.mtls.enabled }}
             - mountPath: /tls-secret
               name: tls-secret
       {{- end }}
