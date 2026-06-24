@@ -172,6 +172,35 @@ resources:
   linuxbridge_agent: {}
   socat: {}
 
+# Config for the neutron-linuxbridge-agent library subchart. The library
+# renders a minimal neutron.conf as a ConfigMap (Mode B); archer renders the
+# Secret with OS_*__* env keys (templates/neutron-secret.yaml). The dynamic
+# OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS env is appended at the include
+# site in statefulset-network-agent.yaml.
+linuxbridge_agent:
+  # Required at deploy time. The library's image cascade picks this up.
+  # No default — set imageVersion (or imageVersionNetworkAgentLinuxBridge,
+  # imageVersionNetworkAgent, imageVersion at the top level) explicitly.
+  secretName: archer-neutron-secret
+  # RabbitMQ connection for the linuxbridge agent. Renders the transport URL
+  # via utils.rabbitmq_url (same helper the umbrella neutron chart uses).
+  # User/password Vault URIs follow the umbrella neutron chart's convention:
+  #   secrets/<region>/neutron/rabbitmq-user/<defaultUser>/{username,password}
+  # The region is templated in templates/neutron-secret.yaml from
+  # .Values.global.region. Override host (and defaultUser if not "neutron_1").
+  rabbitmq:
+    host: ""                  # default: neutron-rabbitmq.<region>.<tld> (disco-resolved)
+    port: 5672
+    virtual_host: ""
+    defaultUser: neutron_1
+  # Per-StatefulSet additions (PHYSICAL_INTERFACE_MAPPINGS) are appended at
+  # the include site in statefulset-network-agent.yaml.
+  extraEnv:
+    - name: OS_GLOBAL__HOST
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+
 autoscaling:
   enabled: false
   minReplicas: 1

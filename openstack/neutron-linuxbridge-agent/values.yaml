@@ -1,0 +1,47 @@
+# Consumer contract for the neutron-linuxbridge-agent library chart.
+# The library ships no top-level values — this file documents the subtree
+# the consumer feeds in via:
+#   include "neutron-linuxbridge-agent.container" (dict "root" . "values" .Values.linuxbridge_agent)
+
+# Required. Secret with OS_<SECTION>__<KEY> keys (e.g. OS_DEFAULT__TRANSPORT_URL).
+secretName: ""
+
+# Optional. Image version override; otherwise cascades through
+# imageVersionNetworkAgentLinuxBridge → imageVersionNetworkAgent → imageVersion
+# from the consumer's top-level Values. Image is always {global.registry}/loci-neutron.
+imageVersion: ""
+
+# Mode A: bring your own ConfigMap (set name).
+# Mode B: let the library render one (leave name empty, call configmap-etc).
+configMap:
+  name: ""
+  key: neutron.conf         # subPath inside the ConfigMap for neutron.conf
+  loggingKey: logging.conf  # subPath inside the ConfigMap for logging.conf
+
+# Mode B inputs. Ignored in Mode A.
+host: ""                  # [DEFAULT] host; empty → node hostname
+debug: false              # [DEFAULT] debug — sets oslo log level to DEBUG
+agent:
+  polling_interval: 2
+vxlan:
+  enable: false
+securitygroup:
+  firewall_driver: iptables
+privsep:
+  thread_pool_size: 3
+
+# Python logging.config schema for the agent. Rendered via the loggerIni
+# helper (utils chart), same shape the umbrella neutron chart uses for
+# .Values.logging. Default: stdout handler with oslo_log ContextFormatter,
+# root level INFO. Override to add Sentry, raise log levels, etc.
+logging: {}
+
+# Optional --config-file / --config-dir flags appended to the command.
+extraConfigs: []          # e.g. ["/etc/neutron/plugins/ml2/ml2_conf.ini"]
+extraConfigDirs: []       # e.g. ["/etc/neutron/secrets"]
+
+# Optional pass-through into the container spec.
+extraEnv: []
+extraVolumeMounts: []
+extraVolumes: []          # spliced into spec.volumes by the volumes template
+resources: {}
