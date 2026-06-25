@@ -4,8 +4,11 @@ kind: Service
 
 metadata:
   name: external-collector
-{{- with .Values.openTelemetry.externalCollector.serviceAnnotations }}
   annotations:
+{{- if and .Values.openTelemetry.externalCollector.externalIP .Values.openTelemetry.externalCollector.calicoLoadBalancerIP }}
+    projectcalico.org/loadBalancerIPs: '["{{ .Values.openTelemetry.externalCollector.externalIP }}"]'
+{{- end }}
+{{- with .Values.openTelemetry.externalCollector.serviceAnnotations }}
     {{- toYaml . | nindent 4 }}
 {{- end }}
 spec:
@@ -13,8 +16,8 @@ spec:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: {{ .Release.Namespace }}.external
     app.kubernetes.io/managed-by: opentelemetry-operator
-  type: ClusterIP
-  externalTrafficPolicy: Local
+  type: {{ .Values.openTelemetry.externalCollector.serviceType | default "LoadBalancer" }}
+  externalTrafficPolicy: {{ .Values.openTelemetry.externalCollector.externalTrafficPolicy | default "Local" }}
 {{- if .Values.openTelemetry.externalCollector.externalIP }}
   externalIPs: ["{{ .Values.openTelemetry.externalCollector.externalIP }}"]
 {{- end }}
