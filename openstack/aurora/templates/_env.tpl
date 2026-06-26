@@ -7,8 +7,6 @@
   value: {{ .Values.ceph_region | quote }}
 - name: APP_TITLE
   value: {{ .Values.app_title | quote }}
-- name: ELEKTRA_URL
-  value: {{ printf "https://dashboard.%s.%s" .Values.global.region .Values.global.tld | quote }}
 - name: DISABLE_DEFAULT_LOGIN
   value: {{ .Values.disable_default_login | quote }}
 - name: ENABLED_SERVICES
