@@ -136,6 +136,10 @@ build-metal-operator:
 	@helm dep up metal-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator/Chart.yaml
 
+build-metal-maintenance-operator:
+	@helm dep up metal-maintenance-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator/Chart.yaml
+
 build-metal-operator-remote:
 	@helm dep up metal-operator-remote
 	# Merge upstream controllerManager defaults with our overrides into values.yaml
