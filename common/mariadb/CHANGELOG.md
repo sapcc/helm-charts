@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.39.0 - 2026/06/22
+* support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
+* drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys
+* chart version bumped
+
 ## v0.38.2 - 2026/06/16
 * use global.mariadb.backup_v2 for ceph s3 access and secret key
 * chart version bumped
