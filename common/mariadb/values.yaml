@@ -1,10 +1,15 @@
+---
 # Default values for mariadb.
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
 # name: value
+global:
+  mariadb:
+    native_sidecar:
+      enabled: true
 
 name: null
-image: library/mariadb:10.11.13
+image: library/mariadb:10.11.18
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -41,16 +46,37 @@ users:
   backup:
     name: backup
     password: null
+    replace_grants: true
     limits:
       max_user_connections: 4
     grants:
-      - ALL PRIVILEGES ON *.*
+      - ALTER ON *.*                    # restore
+      - BINLOG ADMIN ON *.*             # backup; PURGE BINARY LOGS
+      - BINLOG MONITOR ON *.*           # backup; --master-data=1 (SHOW MASTER STATUS)
+      - BINLOG REPLAY ON *.*            # restore; replaying binary logs
+      - CREATE ON *.*                   # restore
+      - CREATE VIEW ON *.*              # restore
+      - DROP ON *.*                     # restore
+      - INDEX ON *.*                    # restore
+      - INSERT ON *.*                   # restore
+      - LOCK TABLES ON *.*              # backup & restore
+      - PROCESS ON *.*                  # backup
+      - REFERENCES ON *.*               # restore
+      - RELOAD ON *.*                   # backup
+      - REPLICATION SLAVE ADMIN ON *.*  # restore; CHANGE MASTER TO, RESET SLAVE
+      - REPLICATION SLAVE ON *.*        # backup; BinlogSyncer streams binlogs as a replica
+      - SELECT ON *.*                   # backup & restore
+      - SET USER ON *.*                 # restore; DEFINER= clauses (mysql.user view)
+      - SHOW VIEW ON *.*                # backup & restore
+      - SHUTDOWN ON *.*                 # restore
+      - TRIGGER ON *.*                  # backup & restore
 #  example:
 #    name: example1 # This looks repetitive, but the point is that they key is the name
 #                   # you refer to in your charts, while the field 'name' is the actual name
 #                   # used as credentials. It should be possible to change the latter,
 #                   # without having to change the first.
 #    password: null # Causes users not be be created, and even maybe to get locked
+#    replace_grants: false  # default; set to true to REVOKE ALL before re-granting
 #    grants:
 #    - ALL ON example.*
 
@@ -132,25 +158,21 @@ job:
         # @default -- 0.5
         cpu:
 
-pre_change_hook:
-  image:
-    name: "shared-app-images/alpine-kubectl"
-    tag: "3.21-20250214202620"
-
 # name of priorityClass to influence scheduling priority
 priority_class: "critical-infrastructure"
 priority_class_backup: "critical-infrastructure"
+priority_class_sync: "critical-infrastructure"
 
 persistence_claim:
   enabled: true
-  #name:
+  # name:
   size: "10Gi"
   access_modes:
     - ReadWriteOnce
     - ReadWriteMany
     - ReadOnlyMany
   autoprovision: false
-  #storage_class: default
+  # storage_class: default
 
 livenessProbe:
   enabled: true
@@ -188,20 +210,20 @@ use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: "20250225131500"
+  image_version: "20260521132613"
   # set to true if backup_v2 is not enabled, but readiness sidecar is required
   useSidecar: false
 
 credentialUpdater:
   image: 'shared-app-images/alpine-mariadb'
-  imageTag: 'python3.13-alpine3.21-20250305175417'
+  imageTag: 'python3.13-alpine3.23-20260506191108'
   checkInterval: '10'
 
 backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20240708140352"
+  image_version: "10.11-20260611113653"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -211,6 +233,20 @@ backup_v2:
     run_after_inc_backups: 12
   aws:
     enabled: true
+  ceph_s3:
+    enabled: false
+    force_path_style: true
+    verify: false
+    # Ceph S3 targets:
+    # NOTE: this configuration lives under global.mariadb.backup_v2.ceph_s3.targets
+    #   - name: ceph-eu-de-1-cold               # optional, defaults to ceph-<region>
+    #     endpoint: "https://..."               # required
+    #     aws_access_key_id: vault+kvv2:...     # required
+    #     aws_secret_access_key: vault+kvv2:... # required
+    #     region: eu-de-1                       # optional, defaults to global.region
+    #     bucket_name: mariadb-backup-eu-de-2   # optional, defaults to mariadb-backup-<global.region>
+    #     force_path_style: true                # optional, inherits chart-local default
+    #     verify: false                         # optional, inherits chart-local default
   swift:
     enabled: true
     user_name: db_backup
@@ -227,13 +263,15 @@ backup_v2:
 metrics:
   enabled: true
   image: prom/mysqld-exporter
-  image_version: v0.17.2
+  image_version: v0.19.0
   port: "9104"
   flags:
     - collect.binlog_size
     - collect.info_schema.processlist
     - collect.info_schema.query_response_time
     - collect.info_schema.innodb_tablespaces
+    - collect.info_schema.userstats
+    - collect.mysql.user
   resources:
     enabled: true
     limits:
@@ -242,6 +280,30 @@ metrics:
     requests:
       cpu: 5m
       memory: 32Mi
+
+sync:
+  enabled: false
+  replicas: 1
+  init:
+    enabled: false
+    image: 'shared-app-images/alpine-mariadb'
+    imageTag: 'python3.13-alpine3.23-20260207085008'
+  image:
+    name: "go-maria-sync"
+    tag: "20260205163034"
+  backup:
+    service: null
+    swift:
+      password: null
+    s3: {}
+  source:
+    password: null
+  target:
+    password: null
+  databases: []
+  loglevel: info
+  serverID: 899
+  binlogMaxReconnectAttempts: 10
 
 # Default Prometheus alerts and rules.
 alerts:
@@ -256,10 +318,17 @@ alerts:
   tier: os
 
   # The support group label of the alerts. Must be given in values.yaml of parent chart.
-  #support_group:
+  # support_group:
 
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   # service:
+
+  # InnoDB buffer pool alerts. Set buffer_pool_alerts_enabled to false to disable both alerts.
+  buffer_pool_alerts_enabled: true
+  # Ratio of free pages below which MariaDBBufferPoolNearlyFull (warning) fires.
+  buffer_pool_warning_threshold: 0.10
+  # Ratio of free pages below which MariaDBBufferPoolExhausted (critical) fires.
+  buffer_pool_critical_threshold: 0.025
 
 vpa:
   # https://github.com/sapcc/vpa_butler
@@ -268,12 +337,17 @@ vpa:
   set_main_container: false
 linkerd:
   mariadb:
-    #linkerd annotation for the MariaDB pod (true/false)
+    # linkerd annotation for the MariaDB pod (true/false)
     enabled: true
   backup:
-    #linkerd annotation for the backup pod (true/false)
+    # linkerd annotation for the backup pod (true/false)
     enabled: true
-global: {}
+  cronjob:
+    # linkerd annotation for the cronjob pods (true/false)
+    enabled: true
+  sync:
+    # linkerd annotation for the go-maria-sync pod (true/false)
+    enabled: true
 
 tcp_keepalive:
   # Timeout, in seconds, with no activity until the first TCP keep-alive packet is sent. If set to 0, a system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_time
@@ -285,3 +359,7 @@ tcp_keepalive:
   # Time between retries of unacknowledged keepalive packets. If set to 0, the system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_interval
   # default is 0
   interval:
+
+# -- Enable owner_info injector chart dependency to allow installation as stand-alone chart
+owner_info:
+  enabled: false

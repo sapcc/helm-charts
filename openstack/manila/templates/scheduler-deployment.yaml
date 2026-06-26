@@ -6,7 +6,8 @@ metadata:
   labels:
     system: openstack
     type: backend
-    component: manila
+    app.kubernetes.io/name: manila
+    app.kubernetes.io/component: scheduler
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
@@ -30,6 +31,8 @@ spec:
         name: {{ .Release.Name }}-scheduler
         alert-tier: os
         alert-service: manila
+        app.kubernetes.io/name: manila
+        app.kubernetes.io/component: scheduler
       annotations:
         {{- if or .Values.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -41,6 +44,9 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
 
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       priorityClassName: {{ .Values.pod.priority_class.default }}
       affinity:
@@ -64,6 +70,9 @@ spec:
           volumeMounts:
             - name: etcmanila
               mountPath: /shared
+        {{- end }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
         {{- end }}
       containers:
         - name: manila-scheduler
@@ -129,7 +138,7 @@ spec:
           {{- end }}
         {{- if .Values.rpc_statsd_enabled }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml ]
           ports:
@@ -145,7 +154,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}

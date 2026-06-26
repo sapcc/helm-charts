@@ -48,6 +48,9 @@ enable_az_aware_subnet_routes_sync = {{ .Values.aci.enable_az_aware_subnet_route
 {{- if .Values.aci.sync_allocations_done_file_path }}
 sync_allocations_done_file_path = {{ .Values.aci.sync_allocations_done_file_path }}
 {{- end }}
+{{- if .Values.aci.bgw_feature_enabled }}
+bgw_feature_enabled = true
+{{- end }}
 
 {{- if .Values.aci.pc_policy_groups }}
 {{ range $i, $pc_policy_group := .Values.aci.pc_policy_groups }}
@@ -69,8 +72,8 @@ l2_policy = {{ $pc_policy_group.l2_policy }}
 
 {{- range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.hostgroups }}
 [aci-hostgroup:{{ $aci_hostgroup.name }}]
-hosts = {{ $aci_hostgroup.hosts | join "," }}
-bindings = {{ $aci_hostgroup.bindings | join "," }}
+hosts ={{ if $aci_hostgroup.hosts }} {{ $aci_hostgroup.hosts | join "," }}{{ end }}
+bindings ={{ if $aci_hostgroup.bindings }} {{ $aci_hostgroup.bindings | join "," }}{{ end }}
 physical_domain = {{ default $.Values.aci.aci_hostgroups.physical_domains $aci_hostgroup.physical_domains | join "," }}
 physical_network = {{ default $aci_hostgroup.name $aci_hostgroup.physical_network }}
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}

@@ -67,6 +67,9 @@ resources:
         custom_id: tag
         custom_attributes:
           server_uuid: compute/server
+    # Deprecated, but still being called. Needs to be mapped.
+    os-security-groups:
+       type_uri: compute/security-group
     # os-security-group-rules is deprecated, but it's still being called, must be mapped.
     os-security-group-rules:
         type_uri: compute/security-group-rules

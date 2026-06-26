@@ -18,15 +18,15 @@ groups:
   # Additionally: this alert is not only scoped on the main cluster_types, since we can look at all clusters independently.
   - alert: ThanosGlobalNotFetchingAllStores
     expr: |
-      group by (thanos, cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"} offset 10d)
+      group by (thanos, cluster,cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions|st1)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"} offset 10d)
       unless 
-      on (thanos, cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"})
+      on (thanos, cluster, cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions|st1)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"})
     for: 10m
     labels:
       severity: warning
       service: metrics 
       support_group: observability
-      meta: Thanos global can't reach {{ $labels.region }}/{{ $labels.cluster_type }}/{{ $labels.namespace }}/{{ $labels.thanos }}.
+      meta: Thanos global can't reach {{ $labels.region }}/{{ $labels.cluster_type }}/{{ $labels.namespace }}/{{ $labels.thanos }} in {{ $labels.cluster }}.
       playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-all-stores
     annotations:
       description: Investigate logs and check if respective Thanos is reachable.
@@ -94,3 +94,18 @@ groups:
     annotations:
       description: There is a connection problem to all Greenhouse Thanos stores. Most likely some configuration change messed this up.
       summary: Thanos global can't reach any of the onboarded Greenhouse stores.
+
+  - alert: CC3TestPrometheusRegionDown
+    expr: |
+      count by (region) (cc3test_status{name=~"TestPrometheus_datapath.*",region!="qa-de-1"} offset 2d) unless on (region) (count by (region) (cc3test_status{name=~"TestPrometheus_datapath.*",region!="qa-de-1"}))
+    for: 10m
+    labels:
+      severity: critical
+      support_group: observability
+      service: metrics
+      meta: Prometheus in region {{ $labels.region }} is not reporting datapath test metrics
+      playbook: docs/support/playbook/prometheus/alerts/cc3test-complete-absence
+    annotations:
+      description: Region {{ $labels.region }} was reporting Prometheus datapath tests 2 days ago but is not sending metrics currently. This indicates the region is down or the monitoring is broken.
+      summary: Region {{ $labels.region }} Prometheus datapath tests are absent
+

@@ -1,5 +1,5 @@
 [server]
-database_path=mysql://kmip:{{ .Values.kmip.database.password | include "resolve_secret" }}@{{include "kmip.db_host" . }}:3306/kmip
+database_path=mysql://{{ .Values.mariadb.users.kmip.user | include "resolve_secret" }}:{{ .Values.mariadb.users.kmip.password | include "resolve_secret" }}@{{include "kmip.db_host" . }}:3306/kmip
 hostname=0.0.0.0
 port=5696
 certificate_path=/etc/pykmip/certs/server.crt

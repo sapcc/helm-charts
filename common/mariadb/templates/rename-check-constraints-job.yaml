@@ -21,15 +21,15 @@ spec:
       labels:
 {{- include "mariadb.labels" (list $ "version" "mariadb" "job" "rename-check-constraints") | indent 8 }}
       annotations:
-{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
-        linkerd.io/inject: enabled
-        config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+        kubectl.kubernetes.io/default-container: rename-check-constraints
+{{- if $.Values.linkerd.mariadb.enabled }}
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
 {{- end }}
     spec:
       restartPolicy: {{ .Values.job.renameCheckConstraints.jobRestartPolicy | default "Never" | quote }}
       priorityClassName: {{ .Values.job.renameCheckConstraints.priority_class | default "common-payload" | quote }}
       containers:
-      - name: rename-check-constraints-job
+      - name: rename-check-constraints
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
         securityContext:
           allowPrivilegeEscalation: false

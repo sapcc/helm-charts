@@ -1,0 +1,51 @@
+{{/*
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company
+
+SPDX-License-Identifier: Apache-2.0
+*/}}
+{{/*
+These RBAC resources need to be created in the Virtual Garden cluster,
+not in the regional OpenStack cluster where the liquid-apiserver runs.
+
+These should be applied as part of the persephone-runtime Helm chart deployment.
+*/}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: persephone-liquid-apiserver-{{ .Values.landscape }}
+  labels:
+    app: persephone
+    role: liquid-apiserver
+    landscape: {{ .Values.landscape }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - resourcequotas
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: persephone-liquid-apiserver-{{ .Values.landscape }}
+  labels:
+    app: persephone
+    role: liquid-apiserver
+    landscape: {{ .Values.landscape }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: persephone-liquid-apiserver-{{ .Values.landscape }}
+subjects:
+{{- range $region := list "ap-ae-1" "ap-au-1" "ap-cn-1" "ap-jp-1" "ap-jp-2" "ap-sa-1" "eu-de-1" "eu-de-2" "eu-nl-1" "la-br-1" "na-ca-1" "na-us-1" "na-us-2" "na-us-3" "qa-de-1" }}
+- kind: User
+  name: liquid-apiserver:system:serviceaccount:persephone:{{ $region }}-{{ $.Values.landscape }}-persephone-liquid-apiserver
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

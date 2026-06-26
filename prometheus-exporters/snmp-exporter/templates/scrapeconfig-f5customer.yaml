@@ -9,8 +9,8 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-f5customer
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5customer;__param_auth=f5_v3&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-lbaas&target_in_name=False
-      refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
+    - url: {{ .Values.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5customer;__param_auth=f5_v3&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-lbaas&target_in_name=False
+      refreshInterval: {{ .Values.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
   scrapeTimeout: 50s
@@ -32,14 +32,31 @@ spec:
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$1'
       targetLabel: availability_zone
-    - sourceLabels: [devicename]
-      regex: '(\w*-\w*-\w*)-(\S*)'
-      replacement: '$2'
-      targetLabel: device
     - sourceLabels: [__name__, snmp_f5_sysProductVersion]
       regex: 'snmp_f5_sysProductVersion;(.*)'
       replacement: '$1'
       targetLabel: image_version
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      targetLabel: availability_zone
+    - sourceLabels: [ltmVirtualServStatName]
+      regex: /Common.*
+      action: drop
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: network_id
+      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
+      replacement: $1-$2-$3-$4-$5
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: loadbalancer_id
+      regex: /net_.*/lb_(.*)/listener_.*
+    - action: replace
+      sourceLabels: [snmp_f5_ltmVirtualServStatName]
+      targetLabel: listener_id
+      regex: /net_.*/lb_.*/listener_(.*)
+      replacement: '$1'
     - sourceLabels: [__name__]
       regex: 'snmp_f5_ltmVirtualServStatClientBytesIn'
       targetLabel: __name__

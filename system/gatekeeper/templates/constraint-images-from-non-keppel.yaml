@@ -1,0 +1,20 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "images-from-non-keppel" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkImagesFromNonKeppel
+metadata:
+  name: images-from-non-keppel
+  annotations:
+    {{- include "sources" (tuple "images-from-non-keppel" "images-from-non-keppel") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkImagesFromNonKeppel") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: {{ if and (ne .Values.cluster_layer "labs") (eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "gh-actions" "internet" "scaleout") -}} deny {{- else -}} dryrun {{- end }}
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+
+{{- end -}}

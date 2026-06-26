@@ -136,10 +136,30 @@ Example for Galera cluster:
 
 mysql_users =
 (
+{{- $addedUsers := dict }}
+{{- $addedUsernames := dict }}
 {{- range $index, $dbKey := $.dbKeys }}
   {{- $db := get $.dbs $dbKey }}
   {{- range $userKey, $user := $db.users }}
-    {{- if ne $userKey "proxysql_monitor"  }}
+    {{- $ignoreUsers := $.global.Values.proxysql.ignore_users | default list }}
+    {{- $userName := include "resolve_secret" $user.name }}
+    {{- if hasKey $addedUsernames $userName }}
+        {{- fail (printf "Duplicate username '%s' found in database '%s' (already defined in another database)" $userName $dbKey) }}
+    {{- end }}
+    {{- if hasKey $addedUsers $userKey }}
+        {{- fail (printf "Duplicate user key '%s' found in database '%s' (already defined in another database)" $userKey $dbKey) }}
+    {{- end }}
+    {{- if or
+        (not $user.password)
+        (eq $userKey "proxysql_monitor")
+        (and (hasKey $user "enabled") (eq (typeOf $user.enabled) "bool") (eq $user.enabled false))
+        (has $userKey $ignoreUsers)
+        (has $userName $ignoreUsers)
+    }}
+    {{- /* skip user */}}
+    {{- else }}
+    {{- $_ := set $addedUsers $userKey true }}
+    {{- $_ := set $addedUsernames $userName true }}
     {
         username = "{{ include "resolve_secret" $user.name | required (print "user name needs to be set for " $dbKey " and user " $userKey) }}"
         password = "{{ include "resolve_secret" $user.password | required (print "password needs to be set for " $dbKey " and user " $userKey)  }}"
@@ -159,5 +179,14 @@ mysql_query_rules =
         cache_ttl = 3600000,
         match_pattern = "^SELECT 1$",
     },
+{{- range $i, $rule := .global.Values.proxysql.query_rules | default list }}
+    {
+        rule_id = {{ add 1 $i }},
+        active = 1,
+        apply = 1,
+        cache_ttl = {{ printf "%.0f" (float64 $rule.cache_ttl) }},
+        match_digest = "{{ $rule.match_pattern }}",
+    },
+{{- end }}
 )
 {{- end }}

@@ -1,0 +1,39 @@
+{{- if .Values.sysctl.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: sysctl
+  labels:
+    app: sysctl
+spec:
+  selector:
+    matchLabels:
+      app: sysctl
+  template:
+    metadata:
+      labels:
+        app: sysctl
+    spec:
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      hostNetwork: true
+      hostPID: true
+      initContainers:
+      - name: sysctl-init
+        image: keppel.global.cloud.sap/ccloud/shared-app-images/alpine-busybox:latest-latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          sysctl -w net.netfilter.nf_conntrack_tcp_timeout_close_wait=3600
+        securityContext:
+          privileged: true
+      containers:
+      - name: sleep-container
+        image: keppel.global.cloud.sap/ccloud/shared-app-images/alpine-busybox:latest-latest
+        command:
+        - /bin/sh
+        - -c
+        - sleep infinity
+{{- end }}

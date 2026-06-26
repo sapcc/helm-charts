@@ -1,0 +1,93 @@
+name: Check Helm Chart Version Bump (ControlPlane Team)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'system/**'
+      - 'global/cc-gardener/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.2.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.8.0
+
+      - name: Check chart version increment
+        run: |
+          set -e
+
+          echo "🔍 Checking for modified charts owned by ControlPlane team"
+
+          # Extract ControlPlane team charts from CODEOWNERS
+          CONTROLPLANE_CHARTS=$(grep "@sapcc/PlusOne-CE-API-Services-ControlPlane" .github/CODEOWNERS | awk '{print $1}' | grep -E "^/(system|global)/" | sed 's|^/||')
+
+          # Get all changed charts
+          ALL_CHANGED=$(ct list-changed --config ci/config.yaml --target-branch ${{ github.base_ref }} --chart-dirs system --chart-dirs global)
+
+          if [ -z "$ALL_CHANGED" ]; then
+            echo "✅ No charts modified"
+            exit 0
+          fi
+
+          echo "All changed charts:"
+          echo "$ALL_CHANGED"
+          echo ""
+
+          # Filter to only ControlPlane team charts
+          CHARTS_TO_CHECK=""
+          for chart in $ALL_CHANGED; do
+            if echo "$CONTROLPLANE_CHARTS" | grep -q "^${chart}$"; then
+              CHARTS_TO_CHECK="$CHARTS_TO_CHECK $chart"
+            fi
+          done
+
+          if [ -z "$CHARTS_TO_CHECK" ]; then
+            echo "✅ No ControlPlane team charts were modified"
+            exit 0
+          fi
+
+          echo "ControlPlane team charts to check:"
+          for chart in $CHARTS_TO_CHECK; do
+            echo "  - $chart"
+          done
+          echo ""
+
+          # Check version increment for each chart
+          FAILED=0
+          for chart in $CHARTS_TO_CHECK; do
+            echo "Checking version increment for: $chart"
+            if ! ct lint --lint-conf ci/lintconf.yaml --config ci/config.yaml --target-branch ${{ github.base_ref }} --check-version-increment --skip-helm-dependencies 2>&1; then
+              echo "❌ Version check failed for: $chart"
+              FAILED=1
+            fi
+          done
+
+          if [ $FAILED -eq 1 ]; then
+            echo ""
+            echo "❌ Some charts failed version increment check"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ All ControlPlane team chart versions were properly incremented"

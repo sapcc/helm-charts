@@ -6,6 +6,12 @@ prefix: '/v[0-9\.]*/(?P<project_id>[0-9a-f\-]+)'
 
 resources:
   attachments:
+    custom_actions:
+      details: read/list/details
+      os-complete: update/complete
+  availability-zones:
+    api_name: os-availability-zone
+    singleton: true
   backups:
     custom_actions:
       # model details listing a action
@@ -17,6 +23,12 @@ resources:
       restore: restore
   capabilities:
     singleton: true
+  clusters:
+    custom_actions:
+      details: read/list/details
+      # path-encoded actions: PUT /clusters/enable or /clusters/disable
+      enable: enable
+      disable: disable
   consistency-groups:
     api_name: consistencygroups
     custom_actions:
@@ -30,6 +42,8 @@ resources:
     custom_actions:
       # model details listing a action
       details: read/list/details
+  default-types:
+    api_name: default-types
   extensions:
   groups:
     custom_actions:
@@ -87,6 +101,15 @@ resources:
     children:
       defaults:
         singleton: true
+  sap-contrib:
+    api_name: os-sap-contrib
+    singleton: true
+    custom_actions:
+      # path-encoded actions: PUT /os-sap-contrib/{action}
+      recount_host_stats: update/recount-host-stats
+      set_pool_state: update/set/pool-state
+      set_aggregate_id: update/set/aggregate-id
+      get_aggregate_id: read/aggregate-id
   scheduler-stats:
     singleton: true
     children:
@@ -110,6 +133,8 @@ resources:
       # model details listing a action
       details: read/list/details
       os-reset_status: update/set/status
+      os-unmanage: undeploy
+      os-update_snapshot_status: update/set/status
     children:
       metadata:
         singleton: true
@@ -122,6 +147,8 @@ resources:
     api_name: os-volume-transfer
     # the JSON name is fine again
     type_name: transfers
+    custom_actions:
+      accept: update/accept
   types:
     custom_actions:
       addProjectAccess: allow/project-access
@@ -141,19 +168,41 @@ resources:
         singleton: true
         api_name: os-volume-type-access
         type_uri: storage/volume/type/project-acl
+  volume-transfers:
+    # v3 microversion path (coexists with os-volume-transfer)
+    api_name: volume-transfers
+    type_uri: storage/volume/transfers
+    type_name: transfers
+    payloads:
+      exclude:
+        - auth_key
+    custom_actions:
+      accept: update/accept
+      details: read/list/details
   volumes:
     custom_actions:
       # model details listing a action
       details: read/list/details
       os-attach: update/attach
+      os-begin_detaching: update/begin-detach
       os-detach: update/detach
       os-extend: update/extend
+      os-extend_volume_completion: update/extend/complete
       os-force_delete: delete/forced
       os-force_detach: update/detach/forced
+      os-initialize_connection: update/initialize-connection
+      os-migrate_volume: update/migrate
+      os-migrate_volume_completion: update/migrate/complete
+      os-migrate_volume_by_connector: update/migrate/by-connector
+      os-reimage: update/reimage
+      os-reserve: update/reserve
       os-reset_status: update/set/status
       os-retype: update/retype
+      os-roll_detaching: update/roll-detach
       os-set_bootable: update/set/bootable
       os-terminate_connection: update/terminate-connection
+      os-unreserve: update/unreserve
+      os-update_readonly_flag: update/set/readonly
       os-volume_upload_image: capture/image
       # warning: odd API design
       os-set_image_metadata: update/set/metadata

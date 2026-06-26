@@ -5,7 +5,7 @@ metadata:
   name: keppel-janitor
   annotations:
     configmap.reloader.stakater.com/reload: keppel-auto-managed-accounts
-    secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
+    secret.reloader.stakater.com/reload: keppel-issuer-key,keppel-keys,keppel-secret
 
 spec:
   revisionHistoryLimit: 5
@@ -37,6 +37,9 @@ spec:
         - name: keys
           secret:
             secretName: keppel-keys
+        - name: issuer-key
+          secret:
+            secretName: keppel-issuer-key
       containers:
         - name: janitor
           image: {{include "keppel_image" .}}
@@ -44,11 +47,7 @@ spec:
           args: [ server, janitor ]
           env: {{ include "keppel_environment" $ | indent 12 }}
             - name: KEPPEL_DRIVER_ACCOUNT_MANAGEMENT
-              value: 'basic'
-            - name: KEPPEL_ACCOUNT_MANAGEMENT_CONFIG_PATH
-              value: /etc/keppel-auto-managed-accounts/config.json
-            - name: KEPPEL_ACCOUNT_MANAGEMENT_PROTECTED_ACCOUNTS
-              value: ccloud ccloud-dockerhub-mirror ccloud-gcr-mirror ccloud-ghcr-io-mirror ccloud-quay-mirror ccloud-registry-k8s-io-mirror
+              value: {{ include "driver_config_account_management" $ | fromYaml | toJson | quote }}
           securityContext:
             runAsNonRoot: true
           volumeMounts:
@@ -58,6 +57,8 @@ spec:
               name: config-auto-managed-accounts
             - mountPath: /etc/keppel-keys
               name: keys
+            - mountPath: /etc/keppel-issuer-key
+              name: issuer-key
           ports:
             - name: metrics
               containerPort: 80

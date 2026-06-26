@@ -38,10 +38,16 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "ironic.service_dependencies" . | quote)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-api
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -54,13 +60,7 @@ spec:
         env:
         - name: PYTHONWARNINGS
           value: 'ignore:Unverified HTTPS request'
-        {{- if .Values.logging.handlers.sentry }}
-        - name: SENTRY_DSN
-          valueFrom:
-            secretKeyRef:
-              name: sentry
-              key: {{ .Chart.Name }}.DSN.python
-        {{- end }}
+        {{- include "utils.sentry_config" . | indent 8 }}
         lifecycle:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
@@ -114,9 +114,11 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       - name: statsd
-        image:  "{{.Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         imagePullPolicy: IfNotPresent
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         resources:

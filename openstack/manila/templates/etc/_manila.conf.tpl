@@ -4,7 +4,6 @@ debug = {{.Values.debug }}
 log_config_append = /etc/manila/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-use_forwarded_for = true
 # rate limiting is handled outside
 api_rate_limit = {{ .Values.api_rate_limit.enabled | default false }}
 
@@ -46,6 +45,7 @@ is_deferred_deletion_enabled = {{ .Values.is_deferred_deletion_enabled | default
 periodic_deferred_delete_interval = {{ .Values.periodic_deferred_delete_interval | default 300 }}
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter,AffinityFilter,AntiAffinityFilter,OnlyHostFilter" }}
+scheduler_default_extend_filters = CapacityFilter
 scheduler_default_weighers = CapacityWeigher,GoodnessWeigher,HostAffinityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
@@ -65,6 +65,16 @@ server_migration_driver_continue_update_interval = {{ .Values.server_migration_d
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
 ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
+driver_updatable_metadata = snapshot_policy,cross_dedup_disabled
+driver_updatable_subnet_metadata = showmount,pnfs
+# Prevent shares from transitioning to 'ensuring' status (2025.1 default changed to True)
+update_shares_status_on_ensure = False
+
+# manila by default would put "{project_id}_" as prefix, but since we anyhow don't have cross-project share servers, we can skip that.
+# obviously having shares with the same mount point name in the same share server is not possible,
+# but this cannot be solved by a prefix (for that case we have the share instance uuid, if mount point name is not used)
+default_mount_point_prefix = {{ .Values.mount_point_prefix | default "''" }}
+
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
@@ -82,7 +92,6 @@ share_replicas = {{ .Values.quota.share_replicas }}
 replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
 
 [neutron]
-auth_strategy = keystone
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
@@ -93,14 +102,36 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 endpoint_type = internalURL
 insecure = True
 
+{{- if .Values.designate.enabled }}
+[designate]
+enabled = true
+ttl = {{ .Values.designate.ttl | default 300 }}
+endpoint_type = {{ .Values.designate.endpoint_type | default "publicURL" }}
+region_name = {{ .Values.designate.region_name | default .Values.global.region }}
+auth_type = v3password
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+insecure = True
+{{- end }}
+
+
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
+# Set False to preserve old Keystone RBAC behavior (non-scoped); 2025.1 defaults changed to True
+# look out for "using the intended scope is required" warnings in log
+enforce_new_defaults = False
+enforce_scope = False
 
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
+
+[oslo_middleware]
+enable_proxy_headers_parsing = True
 
 {{ include "ini_sections.coordination" . }}
 

@@ -39,7 +39,7 @@ groups:
       severity: info
       tier: os
       support_group: identity
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-api'
     annotations:
       description: "A keystone-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A keystone server is DOWN"
@@ -54,7 +54,7 @@ groups:
       tier: os
       dashboard: mariadb-overview?var-host=keystone-mariadb
       support_group: identity
-      playbook: 'docs/devops/alert/keystone/#openstackkeystonedatabasedown'
+      playbook: 'docs/support/playbook/database'
     annotations:
       description: "Keystone database on {{ $labels.instance }} is DOWN."
       summary: "Keystone Database is DOWN"
@@ -70,26 +70,11 @@ groups:
       tier: os
       dashboard: keystone
       support_group: identity
-      playbook: 'docs/devops/alert/keystone/#openstackkeystonealldown'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-api'
     annotations:
       description: All keystone-api server pods are down.
       summary: Keystone is unavailable.
 
-  - alert: OpenstackKeystoneDatabaseSize
-    expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
-    for: 5m
-    labels:
-      tier: k8s
-      service: keystone
-      severity: warning
-      context: availability
-      dashboard: postgres?var-database=keystone
-      meta: "The keystone database is predicted to run out of space in the next 24h"
-      support_group: identity
-      playbook: 'docs/devops/alert/keystone/#openstackkeystonedatabasesize'
-    annotations:
-      description: "The keystone database is predicted to exceed the PV size in the next 24h"
-      summary: Keystone database is running out of PV space
 
   - alert: OpenstackKeystoneApiRequestsExceeded
     expr: sum(irate(openstack_watcher_api_requests_total{service="identity"} [1m])) by (status) > 300

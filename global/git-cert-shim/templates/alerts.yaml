@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: kubernetes
+    app: git-cert-shim
+  name: git-cert-shim-alerts
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+  - name: git-cert-shim.alerts
+    rules:
+    - alert: GitCertShimPullErrorsHigh
+      annotations:
+        description: git-cert-shim has trouble pulling the git repo. Check the logs in the git-cert-shim namespace.
+        summary: git-cert-shim fails to syncronize the git repo.
+      expr: rate(git_cert_shim_git_synchronization_errors_total{operation="pull"}[30m]) > 0
+      for: 15m
+      labels:
+        context: git-cert-shim
+        service: git-cert-shim
+        severity: warning
+        support_group: containers
+    - alert: GitCertShimPullErrorsHigh
+      annotations:
+        description: git-cert-shim has trouble pushing the git repo. Check the logs in the git-cert-shim namespace.
+        summary: git-cert-shim fails to syncronize the git repo.
+      expr: rate(git_cert_shim_git_synchronization_errors_total{operation="push"}[30m]) > 0
+      for: 15m
+      labels:
+        context: git-cert-shim
+        service: git-cert-shim
+        severity: warning
+        support_group: containers
+

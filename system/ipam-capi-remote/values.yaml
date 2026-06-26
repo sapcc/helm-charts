@@ -1,7 +1,8 @@
 controllerManager:
   manager:
     args:
-      - --leader-elect
+      - --leader-elect=false
+      - --webhook-port=9443
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -10,10 +11,11 @@ controllerManager:
       runAsGroup: 65532
       runAsUser: 65532
     env:
+      kubeconfig: /var/run/remote-kubeconfig/kubeconfig
       kubernetesServiceHost: apiserver-url
     image:
       repository: controller
-      tag: v0.1.1
+      tag: v1.0.3
     resources:
       limits:
         cpu: 500m
@@ -21,13 +23,19 @@ controllerManager:
       requests:
         cpu: 10m
         memory: 64Mi
+  nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
+    runAsUser: 65532 # ensure sidecar and main controller run as same user, so they can share generated tls certs via emptyDir volume 
+    runAsGroup: 65532
   replicas: 1
   strategy:
     type: Recreate
+  tolerations: []
+  topologySpreadConstraints: []
+  serviceAccountName: ipam-capi-remote-webhook-injector
 kubernetesClusterDomain: cluster.local
 managerConfig:
   controllerManagerConfigYaml: |-
@@ -43,3 +51,8 @@ managerConfig:
       leaderElect: true
       resourceName: 7bb7acb4.ipam.cluster.x-k8s.io
 fullnameOverride: ipam-capi
+webhook:
+  enable: true
+webhookInjector:
+  repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector
+  tag: latest

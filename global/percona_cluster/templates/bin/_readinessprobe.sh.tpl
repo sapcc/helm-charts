@@ -4,7 +4,7 @@ set -e
 primary_or_bootstrap () {
     # A Primary/Bootstraping Node:
     # The readiness check should always work:
-    mysql -h 127.0.0.1 -e "SELECT 1" || exit 1
+    mysql -h localhost -e "SELECT 1" || exit 1
 }
 
 {{- if eq .Values.service.primary true }}
@@ -32,6 +32,6 @@ if [[ ! -f /var/lib/mysql/grastate.dat ]] ; then
 fi
 
 # if no SST is running and the node has not just started, do a regular check:
-mysql -h 127.0.0.1 -e "SELECT 1" || exit 1
+mysql -h localhost -e "SELECT 1" || exit 1
 
 {{- end }}

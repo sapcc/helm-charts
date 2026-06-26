@@ -1,0 +1,23 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "images-from-correct-registry" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkImagesFromCorrectRegistry
+metadata:
+  name: images-from-correct-registry
+  annotations:
+    {{- include "sources" (tuple "images-from-correct-registry" "images-from-correct-registry") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkImagesFromCorrectRegistry") | indent 4 }}
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+  parameters:
+    registry: {{.Values.global.registry | required ".Values.global.registry not found"}}
+    registryAlternateRegion: {{.Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion not found"}}
+
+{{- end -}}

@@ -1,9 +1,10 @@
 {
   "index_patterns" : [
-    "audit-*"
+    "hermes"
   ],
-  "settings" : {
-    "index" : {
+  "data_stream": {},
+  "template": {
+    "settings" : {
       "number_of_shards": 1,
       "number_of_replicas": 1,
       "codec": "best_compression",
@@ -209,6 +210,9 @@
             "type": "keyword"
           }
         }
+      },
+      "tenant_ids" : {
+        "type" : "keyword"
       },
       "target" : {
         "properties" : {

@@ -1,13 +1,17 @@
 #!/bin/bash
-set -ex
+set -e
+
+log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [lunaclient] $*"; }
 
 lunaclient ()
     {
+    log "starting init"
     mv /usr/safenet /thales
     NOW="$(date +%Y%m%d)"
     cd /thales/safenet/lunaclient/libs/64/
     rm -f libCryptoki2_64.so
     ln -s libCryptoki2.so libCryptoki2_64.so
+    log "configuring HSM client"
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX -v /thales/safenet/lunaclient/libs/64/libCryptoki2.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX64 -v /thales/safenet/lunaclient/libs/64/libCryptoki2_64.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Misc -e ToolsDir -v /thales/safenet/lunaclient/bin/64/
@@ -22,75 +26,50 @@ lunaclient ()
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "Secure Trusted Channel" -e PartitionIdentitiesDir -v /thales/safenet/lunaclient/config/stc/partition_identities
 
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Label -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Label | include "resolve_secret" }}
-
-    {{- if .Values.hsm.utimaco_hsm.enabled }}
-    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01Label -v {{ .Values.lunaclient.utimaco_hsm.VirtualToken.VirtualToken01Label | include "resolve_secret" }}
-    {{- end }}
-
     {{- if .Values.hsm.ha.enabled }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00SN -v 1{{ .Values.lunaclient.VirtualToken.VirtualToken00SN | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Members -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Members | include "resolve_secret" }},{{ .Values.lunaclient.VirtualToken.VirtualToken00Members02 | include "resolve_secret" }}
-
-    {{- if .Values.hsm.utimaco_hsm.enabled }}
-    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01SN -v 1{{ .Values.lunaclient.utimaco_hsm.VirtualToken.VirtualToken01SN | include "resolve_secret" }}
-    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01Members -v {{ .Values.lunaclient.utimaco_hsm.VirtualToken.VirtualToken01Members | include "resolve_secret" }},{{ .Values.lunaclient.VirtualToken.VirtualToken01Members02 | include "resolve_secret" }}
-    {{- end }}
-    {{- else }}
+    {{- else}}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00SN -v {{ .Values.lunaclient.VirtualToken.VirtualToken00SN | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Members -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Members | include "resolve_secret" }}
-
-    {{- if .Values.hsm.utimaco_hsm.enabled }}
-    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01SN -v {{ .Values.lunaclient.utimaco_hsm.VirtualToken.VirtualToken01SN | include "resolve_secret" }}
-    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01Members -v {{ .Values.lunaclient.utimaco_hsm.VirtualToken.VirtualToken01Members | include "resolve_secret" }}
-    {{- end }}
-    {{- end }}
+    {{- end}}
 
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualTokenActiveRecovery -v {{ .Values.lunaclient.VirtualToken.VirtualTokenActiveRecovery | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HASynchronize" -e {{ .Values.lunaclient.VirtualToken.VirtualToken00Label | include "resolve_secret" }} -v {{ .Values.lunaclient.HASynchronize.sync }}
-
-    {{- if .Values.hsm.utimaco_hsm.enabled }}
-    /thales/safenet/lunaclient/bin/64/configurator setValue -s "HASynchronize" -e {{ .Values.lunaclient.utimaco_hsm.VirtualToken.VirtualToken01Label  | include "resolve_secret" }} -v {{ .Values.lunaclient.HASynchronize.sync }}
-    {{- end }}
-
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e haLogStatus -v {{ .Values.lunaclient.HAConfiguration.haLogStatus | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e reconnAtt -v {{ .Values.lunaclient.HAConfiguration.reconnAtt }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e HAOnly -v {{ .Values.lunaclient.HAConfiguration.HAOnly }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e haLogPath -v {{ .Values.lunaclient.HAConfiguration.haLogPath | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e logLen -v {{ .Values.lunaclient.HAConfiguration.logLen }}
+    log "creating client certificate"
     /thales/safenet/lunaclient/bin/64/vtl createCert -n $HOSTNAME-$NOW
 
     #REGISTER HSM1
-    echo "Registering HSM01"
+    log "registering HSM01"
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip | include "resolve_secret" }}:.
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip | include "resolve_secret" }}:server.pem /thales/safenet/lunaclient/config/certs/
     /thales/safenet/lunaclient/bin/64/vtl addserver -n {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -c  /thales/safenet/lunaclient/config/certs/server.pem
     echo "client register -c $HOSTNAME-$NOW" -h $HOSTNAME-$NOW > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.conn.par | include "resolve_secret"  }}" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
-    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
+    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
+    log "HSM01 registered"
     
     {{- if .Values.hsm.ha.enabled }}
     #REGISTER HSM2
-    echo "Registering HSM02"
+    log "registering HSM02"
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }}:.
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }}:server.pem /thales/safenet/lunaclient/config/certs/
     /thales/safenet/lunaclient/bin/64/vtl addserver -n {{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }} -c  /thales/safenet/lunaclient/config/certs/server.pem
     echo "client register -c $HOSTNAME-$NOW" -h $HOSTNAME-$NOW > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.conn.par02 | include "resolve_secret" }}" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
-    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
-    {{- end}}
-    
-    {{- if .Values.hsm.utimaco_hsm.enabled }}
-    #REGISTER utimaco_multi_conn
-    echo "Registering utimaco_multi_conn"
-    echo "client register -c $HOSTNAME-$NOW" -h $HOSTNAME-$NOW > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
-    echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.utimaco_hsm.par | include "resolve_secret"  }}" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
-    echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
-    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
+    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
+    log "HSM02 registered"
     {{- end}}
 
     cp /thales/safenet/lunaclient/config/Chrystoki.conf /etc/Chrystoki.conf
+    log "init complete"
     }
 
 {{- if .Values.hsm.enabled }}

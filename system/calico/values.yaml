@@ -1,16 +1,15 @@
 global:
   clusterCIDR: ""
-  registryAlternateRegion: test
-  dockerHubMirrorAlternateRegion: test
 config:
   veth_mtu: 8950
   backend: bird
   monitoring:
     enabled: true
-    felixMetricsPort: 30991
-    typhaMetricsPort: 30993
-    kubeControllersMetricsPort: 30994
-    birdMetricsPort: 30995
+    felixMetricsPort: 9091
+    typhaMetricsPort: 9093
+    kubeControllersMetricsPort: 9094
+    # https://github.com/czerwonk/bird_exporter/blob/main/README.md#default-port
+    birdMetricsPort: 9324
     prometheus: kubernetes
     extraLabels: {}
   ipam:
@@ -74,23 +73,18 @@ kubeControllers:
 
 images:
   calicoNode:
-    image:
-    tag:
+    image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/calico/node
   calicoCni:
-    image:
-    tag:
+    image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/calico/cni
   calicoTypha:
-    image:
-    tag:
+    image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/calico/typha
   calicoKubeControllers:
-    image:
-    tag:
+    image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/calico/kube-controllers
   exporter:
-    image:
-    tag:
+    image: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/czerwonk/bird_exporter
+    tag: "v1.4.4"
   kubelet:
-    image:
-    tag:
+    image: keppel.global.cloud.sap/ccloud/kubelet
 
 waitforpodcidr:
   enabled: false

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: host-path-volumes-allow-r
+  namespace: foo
+spec:
+  containers:
+  # foo-container is allowed mount hostfs
+  # bar-container is unpriviliged but does not mount the volume and thus should be allowed
+  - name: foo-container
+    image: foo.image-registry.com/test-app/highly-privileged:20250519150208
+    volumeMounts:
+    - mountPath: /hostfs
+      name: hostfs
+      readOnly: true
+  - name: bar-container
+    image: foo.image-registry.com/other-app/unprivileged:20250519150208
+  volumes:
+  - name: hostfs
+    hostPath:
+      path: /

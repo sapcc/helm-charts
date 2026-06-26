@@ -1,5 +1,5 @@
 {
-  "cloud_admin": "project_domain_name:ccadmin and project_name:cloud_admin",
+  "cloud_admin": "role:service or (project_domain_name:ccadmin and project_name:cloud_admin)",
   "member": "role:member",
   "viewer": "role:network_viewer",
   "admin": "role:network_admin",
@@ -16,11 +16,12 @@
   "service:create:provider": "rule:cloud_admin",
   "service:update-global": "rule:cloud_admin",
   "service:delete-global": "rule:cloud_admin",
+  "service:migrate": "rule:cloud_admin",
 
   "service-endpoint:read": "rule:context_is_viewer",
   "service-endpoint:accept": "rule:context_is_editor",
   "service-endpoint:reject": "rule:context_is_editor",
-  "service-endpoint:read-global": "rule:context_is_viewer",
+  "service-endpoint:read-global": "rule:cloud_admin",
   "service-endpoint:accept-global": "rule:cloud_admin",
   "service-endpoint:reject-global": "rule:cloud_admin",
 
@@ -46,5 +47,7 @@
   "quota:read-global": "rule:cloud_admin",
   "quota:read-defaults": "rule:context_is_viewer",
   "quota:update": "rule:context_is_admin",
-  "quota:delete": "rule:context_is_admin"
+  "quota:delete": "rule:context_is_admin",
+
+  "agent:read": "rule:cloud_admin"
 }

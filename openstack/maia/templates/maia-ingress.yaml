@@ -1,3 +1,4 @@
+{{- if not .Values.global.is_global_region }}
 {{- if .Values.maia.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -8,6 +9,7 @@ metadata:
   annotations:
     {{- if .Values.maia.tls }}
     kubernetes.io/tls-acme: "true"
+    disco: "true"
     {{- end}}
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     ingress.kubernetes.io/service-upstream: "true"
@@ -32,4 +34,5 @@ spec:
 # uncomment to expose Prometheus UI instead of Maia
 #            serviceName: prometheus-maia
 #            servicePort: 9090 
+{{- end }}
 {{- end }}

@@ -5,21 +5,21 @@
         "endpoint_type": "public",
         "admin": {
             "username": "neutron-tempestadmin1",
-            "password": {{ .Values.tempestAdminPassword | quote }},
+            "password": "{{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}",
             "user_domain_name": "tempest",
             "domain_name": "tempest"
     },
     "users": [
         {
             "username": "neutron-tempestuser1",
-            "password": {{ .Values.tempestAdminPassword | quote }},
+            "password": "{{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}",
             "user_domain_name": "tempest",
             "project_name": "neutron-tempest1",
             "project_domain_name": "tempest"
         },
         {
             "username": "neutron-tempestuser2",
-            "password": {{ .Values.tempestAdminPassword | quote }},
+            "password": "{{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}",
             "user_domain_name": "tempest",
             "project_name": "neutron-tempest2",
             "project_domain_name": "tempest"

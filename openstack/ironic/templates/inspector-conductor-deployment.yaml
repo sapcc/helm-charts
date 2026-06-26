@@ -36,10 +36,16 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-inspector-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -48,13 +54,7 @@ spec:
         - dumb-init
         - ironic-inspector-conductor
         env:
-        {{- if .Values.logging.handlers.sentry }}
-        - name: SENTRY_DSN
-          valueFrom:
-            secretKeyRef:
-              name: sentry
-              key: {{ .Chart.Name }}.DSN.python
-        {{- end }}
+          {{- include "utils.sentry_config" . | indent 10 }}
         resources:
 {{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:
@@ -82,7 +82,9 @@ spec:
           readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 10 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       volumes:
       - name: etcironic
         emptyDir: {}

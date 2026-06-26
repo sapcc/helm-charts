@@ -9,10 +9,12 @@ metadata:
   labels:
     system: openstack
     type: backend
-    component: manila
+    app.kubernetes.io/name: manila
+    app.kubernetes.io/component: share
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-share-netapp-{{$share.name}}-secret"
-    deployment.reloader.stakater.com/pause-period: "60s"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "600s"
+    reloader.stakater.com/search: "true"
   {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: manila-share-netapp-{{$share.name}}
   {{- end }}
@@ -33,6 +35,8 @@ spec:
         name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         alert-tier: os
         alert-service: manila
+        app.kubernetes.io/name: manila
+        app.kubernetes.io/component: share
       annotations:
         {{- if or .Values.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -44,19 +48,39 @@ spec:
         secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
-        {{- if not .Values.api_backdoor }}
+      {{- if not .Values.api_backdoor }}
         - name: create-guru-file
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/bin/sh", "-c", "touch /shared/guru"]
           volumeMounts:
             - name: etcmanila
               mountPath: /shared
-        {{- end }}
+      {{- end }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
+        - name: generate-backend-secret-conf
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command:
+          - /bin/sh
+          - -c
+          - |
+            cat <<EOF > /shared/backend-secret.conf
+            {{- include "backendCredentialConf" .Values.global.netapp | indent 12 }}
+            EOF
+          env:
+            {{- include "backendCredentialEnvs" .Values.global.netapp | indent 12 }}
+          volumeMounts:
+            - name: etcmanila
+              mountPath: /shared
       containers:
         - name: manila-share-netapp-{{$share.name}}
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -106,10 +130,6 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
-            - name: backend-secret
-              mountPath: /etc/manila/backend-secret.conf
-              subPath: backend-secret.conf
-              readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share }}
@@ -135,7 +155,7 @@ spec:
             failureThreshold: 1
         {{- if .Values.rpc_statsd_enabled }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml ]
           ports:
@@ -151,7 +171,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
@@ -169,9 +191,6 @@ spec:
         - name: backend-config
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
-        - name: backend-secret
-          secret:
-            secretName: {{ .Release.Name }}-share-netapp-{{$share.name}}-secret
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}

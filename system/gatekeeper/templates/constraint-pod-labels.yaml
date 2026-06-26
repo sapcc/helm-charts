@@ -1,0 +1,22 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "pod-labels" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPodLabels
+metadata:
+  name: pod-labels
+  annotations:
+    {{- include "sources" (tuple "pod-labels" "pod-labels") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkPodLabels") | indent 4 }}
+  labels:
+    severity: 'warning'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+  parameters:
+    known_support_groups: {{ toJson .Values.known_support_groups }}
+
+{{- end -}}

@@ -11,6 +11,9 @@ global:
   osprofiler: {}
   imagePullPolicy: IfNotPresent
 
+rbac:
+  enabled: true
+
 osprofiler:
   enabled: false
 
@@ -26,6 +29,9 @@ pod:
         rollingUpdate:
           maxUnavailable: 0
           maxSurge: 1
+  terminationGracePeriodSeconds:
+    volume: 30
+    backup: 30
   resources:
     api:
       requests:
@@ -47,7 +53,10 @@ sentry:
 
 port_metrics: 9102
 
-vmware_host_username: m3cinderapiuser@vsphere.local
+# Time in seconds between requests for usage statistics from the backend.
+# This is a [DEFAULT] section option, not a backend-specific option.
+backend_stats_polling_interval: 60
+
 backend_defaults:
   reserved_percentage: 20
   suppress_requests_ssl_warnings: True
@@ -63,8 +72,16 @@ backends:
   enabled: vmware,standard_hdd
   vmware:
     vmware_storage_profile: cinder-vvol
+    enable_image_cache: False
+  vmware_fcd:
+    enable_image_cache: False
   standard_hdd:
     vmware_storage_profile: cinder-standard-hdd
+    enable_image_cache: False
+  standard_hdd_fcd:
+    vmware_storage_profile: cinder-fcd-std
+    enable_image_cache: False
+
 
 cinderApiPortPublic: 443
 cinderApiPortInternal: 8776
@@ -118,9 +135,47 @@ nanny:
     verbose: false
     batch_size: 10000
     dry_run: true
+  db_purge:
+    enabled: false
+    # daily at 22:10' 
+    crontab_schedule: '10 22 * * *' 
+    age_in_days: 14
+  quota_sync:
+    enabled: false
+    # hourly at 30 minutes past the hour
+    crontab_schedule: '30 * * * *' 
+    dry_run: false
+    silent: false
+  consistency:
+    enabled: false
+    # weekly at sunday 22:20'
+    crontab_schedule: '20 22 * * 0' 
+    # Inconsistencies to fix. Be careful, all options except
+    # error_deleting_snapshots/volumes will manipulate the database
+    # without using the cinder API - which may causes harm.
+    fix: 'error_deleting_snapshots,error_deleting_volumes' 
+    # Number of orphaned volumes to fix in one run. Orphaned volumes not fixed
+    # by default. Thus set to null by default.
+    fix_limit: null
 
 proxysql:
-  mode: null # Disabled by default
+  mode: null  # Disabled by default
+  native_sidecar: true
+  volume:
+    scale: 2  # volume pods get max_connections = base * scale = 20 * 2 = 40
+  backup:
+    max_connections_per_proc: 10  # backup pods get their own proxysql secret with max_connections = 10
+  query_rules:
+    # Cache attachment_specs lookups (table is empty, 0 rows ever, queried 1249/sec)
+    # 1h TTL — table has never had data in any region, feature is unused
+    - cache_ttl: 3600000
+      match_pattern: "^SELECT.*FROM attachment_specs WHERE"
+    # Cache volume_types full list (3 rows, static admin config, rarely changes)
+    - cache_ttl: 300000
+      match_pattern: "^SELECT.*FROM volume_types.*ORDER BY"
+    # Cache volume_types by ID or name lookup
+    - cache_ttl: 300000
+      match_pattern: "^SELECT.*FROM.*volume_types WHERE"
 
 mariadb:
   enabled: true
@@ -417,13 +472,26 @@ logging:
 
 # openstack-rate-limit-middleware
 api_rate_limit:
-  enabled: true
+  enabled: false
+  backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
   rate_limit_by: "target_project_id"
   max_sleep_time_seconds: 15
   log_sleep_time_seconds: 10
   backend_timeout_seconds: 15
   project_whitelist: []
 
+# Configuration for custom resource CinderNetappConfig used by
+# kvm-cinder-netapp-operator. Should be enabled only if operator is
+# deployed. The operator deploys the cinder-volume services for NetApp
+# backends and should use a cinder image identical to the one used by this 
+# helm chart.
+cindernetappconfig:
+  enabled: false
+  # template for matching volumes from netapp filer
+  volumeregextemplate: "(^cinder_|^nfs_{{FilerName}}_).*"
+  cinderbackendconfig:
+    reserved_percentage: 20
+  
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -431,7 +499,8 @@ watcher:
 # Deploy Cinder Prometheus alerts.
 alerts:
   enabled: true
-  # Name of the Prometheus to which the alerts should be assigned to.
+  # Used for annotation (prometheus.io/targets) value to route metric
+  # scraping to the correct prometheus instance
   prometheus: openstack
 
 cors:
@@ -456,3 +525,9 @@ coordinationBackend: "file"
 api-ratelimit-redis:
   alerts:
     support_group: compute-storage-api
+
+manage_service_user_passwords: false
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'

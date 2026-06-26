@@ -13,6 +13,10 @@ cronus:
       - {{ $v | quote }}
     {{- end }}
 {{- end }}
+{{- if .Values.cronus.configuration }}
+  configuration:
+{{ toYaml .Values.cronus.configuration | indent 4 }}
+{{- end }}
 {{- if .Values.cronus.allowedNdrs }}
   allowedNdrs:
   {{- range $v := .Values.cronus.allowedNdrs }}
@@ -48,6 +52,10 @@ cronus:
 {{- if .Values.cronus.maillog }}
   maillog:
     uri: {{ .Values.cronus.maillog.uri | quote }}
+{{- end }}
+{{- if .Values.cronus.postfixUsage }}
+  postfixUsage:
+    uri: {{ .Values.cronus.postfixUsage.uri | quote }}
 {{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}

@@ -22,7 +22,7 @@ groups:
   rules:
   {{- if and $root.Values.alerts.multiplePodScrapes.enabled $root.Values.alerts.thanos.enabled }}
   - alert: PrometheusMultiplePodScrapes
-    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*{{ include "prometheus.name" . }}.*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
+    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*{{ include "prometheus.name" . }}.*pod-sd"}) > 1)* on(pod, namespace) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
     labels:
       service: {{ include "alertServiceLabelOrDefault" "metrics" }}
@@ -47,7 +47,7 @@ groups:
       meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more memory.
     annotations:
       description: |
-        `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.cluster }}/{{ $labels.namespace }}`}}` needs more `{{`{{ $labels.resource }}`}}`. It is overutilized by `{{`{{ $value }}`}}` GiB.
+        `{{`{{ $labels.verticalpodautoscaler }}`}}` container `{{`{{ $labels.container }}`}}` in `{{`{{ $labels.cluster }}/{{ $labels.namespace }}`}}` needs more `{{`{{ $labels.resource }}`}}`. It is overutilized by `{{`{{ $value }}`}}` GiB.
         It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
         memory value if the host memory size permits.
       summary: Prometheus needs more memory.
@@ -63,7 +63,7 @@ groups:
       meta: Prometheus VPA for `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.namespace }}`}}` is recommending more CPUs.
     annotations:
       description: |
-        `{{`{{ $labels.verticalpodautoscaler }}`}}` in `{{`{{ $labels.cluster }}/{{ $labels.namespace }}`}}` needs more `{{`{{ $labels.resource }}`}}`. It is overutilized by `{{`{{ $value }}`}}` cores.
+        `{{`{{ $labels.verticalpodautoscaler }}`}}` container `{{`{{ $labels.container }}`}}` in `{{`{{ $labels.cluster }}/{{ $labels.namespace }}`}}` needs more `{{`{{ $labels.resource }}`}}`. It is overutilized by `{{`{{ $value }}`}}` cores.
         It is hitting the VPA maxAllowed boundary and is not ensured to run properly at its current place. Consider upgrading the VPA maxAllowed
         CPU core value if the host has enough CPU cores.
       summary: Prometheus needs more CPU.

@@ -8,20 +8,8 @@
   value: {{ .Values.monsoon_dashboard_region | quote }}
 - name: MONSOON_DASHBOARD_LANDSCAPE
   value: {{ .Values.monsoon_dashboard_landscape | quote }}
-- name: MONSOON_DASHBOARD_MAIL_SERVER
-  value: {{ .Values.monsoon_dashboard_mail_server | quote }}
-- name: MONSOON_DASHBOARD_MAIL_SERVER_PORT
-  value: {{ .Values.monsoon_dashboard_mail_server_port | quote }}
-- name: MONSOON_DASHBOARD_MAIL_DOMAIN
-  value: {{ .Values.monsoon_dashboard_mail_domain | quote }}
-- name: MONSOON_DASHBOARD_MAIL_SENDER
-  value: {{ .Values.monsoon_dashboard_mail_sender | quote }}
-- name: MONSOON_DASHBOARD_MAIL_AUTHENTICATION
-  value: {{ .Values.monsoon_dashboard_mail_authentication | quote }}
-- name: MONSOON_DASHBOARD_MAIL_USER
-  valueFrom: { secretKeyRef: { name: elektra-secrets, key: monsoon.dashboard.mail.user } }
-- name: MONSOON_DASHBOARD_MAIL_PASSWORD
-  valueFrom: { secretKeyRef: { name: elektra-secrets, key: monsoon.dashboard.mail.password } }
+- name: LIMES_MAIL_SERVER_API_ENDPOINT
+  value: {{ .Values.limes_mail_server_endpoint | quote }}
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
 - name: MONSOON_DASHBOARD_CAM_URL
@@ -43,6 +31,10 @@
   valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_secret, optional: true } }
 - name: MONSOON_OPENSTACK_AUTH_API_DOMAIN
   value: {{ .Values.monsoon_openstack_auth_api_domain | quote }}
+- name: MONSOON_OPENSTACK_SSO_STRICT_MODE
+  value: {{ .Values.monsoon_openstack_sso_strict_mode | quote }}
+- name: MONSOON_OPENSTACK_PASSWORD_SYNC_ONLY
+  value: {{ .Values.monsoon_openstack_password_sync_only | quote }}
 - name: TWO_FACTOR_AUTHENTICATION
   value: {{ .Values.two_factor_authentication | quote }}
 - name: TWO_FACTOR_RADIUS_SERVERS
@@ -51,6 +43,8 @@
   valueFrom: { secretKeyRef:    { name: elektra-secrets, key: two-factor-radius-secret } }
 - name: TWO_FACTOR_AUTH_DOMAINS
   value: {{ .Values.two_factor_auth_domains | quote }}
+- name: MONSOON_DB_NAME
+  value: {{ .Values.postgresql.database_name | default "monsoon-dashboard_production" | quote }}
 - name: MONSOON_DB_USER
   value: {{ .Values.postgresql.user | quote }}
 - name: MONSOON_DB_PASSWORD
@@ -72,3 +66,5 @@
   value: hcp03,monsoon3
 - name: CEREBRO_CUSTOM_ENDPOINT
   value: {{ .Values.cerebro_custom_endpoint | quote }}
+- name: FEEDBACK_RECIPIENT_EMAIL
+  value: {{ .Values.feedback_recipient_email | quote }}

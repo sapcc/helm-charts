@@ -14,7 +14,7 @@ spec:
   services:
     - name:        limes
       type:        resources
-      description: 'Hierarchical quota/usage tracking'
+      description: 'Hierarchical quota/usage/commitment tracking (v1 only)'
       enabled:     true
       endpoints:
         - region:    '{{ $region }}'
@@ -28,8 +28,24 @@ spec:
           url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc'
         {{- end }}
 
-    - name:        limes-rates
-      type:        sapcc-rates
+    - name:        limitas-resources
+      type:        limitas-resources
+      description: 'Hierarchical quota/usage/commitment tracking (v2+)'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $region }}'
+          interface: public
+          enabled:   true
+          url:       '{{ $limes_url }}/resources'
+        {{- if not .Values.global.is_global_region }}
+        - region:    '{{ $region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc/resources'
+        {{- end }}
+
+    - name:        limitas-rates
+      type:        limitas-rates
       description: 'Hierarchical rate limit/usage tracking'
       enabled:     true
       endpoints:

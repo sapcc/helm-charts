@@ -25,3 +25,22 @@ groups:
                 "reason", "snapmirror = 1", ".*", ".*")
           ) by (project_id, share_id, reason)
 
+      # Castellum needs to be able to distinguish two different cases:
+      #
+      # 1. If there are no metrics in this family because scraping is broken or Prometheus is down or such,
+      #    Castellum needs to stop and wait until the metrics are back up, in order to avoid touching shares
+      #    that should be excluded.
+      #
+      # 2. However, if there are legitimately no shares that need to be excluded, then Castellum shall
+      #    proceed as normal.
+      #
+      # To distinguish these two cases, the rule below adds a dummy metric if there are any shares at all.
+      # Castellum recognizes case 1 (the error case) because this dummy metric will be missing.
+
+      - record: manila_share_exclusion_reasons_for_castellum
+        expr: |
+          label_replace(label_replace(label_replace(
+            group by (region) (openstack_manila_shares_size_gauge),
+              "project_id", "dummy", ".*", ".*"),
+              "share_id", "dummy", ".*", ".*"),
+              "reason", "dummy", ".*", ".*")

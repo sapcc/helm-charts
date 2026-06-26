@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.8.1 - 2026/04/28
+- Updated CHANGELOG.md
+
+## v0.8.0 - 2026/04/28
+- Use `clusterDNSSearchDomain` to generate the service cluster FQDN
+  - Used to be the hardcoded `<fullname>.<namespace>.svc.kubernetes.<region>.<tld>`
+  - Now it's `<fullname>.<namespace>.svc.<clusterDNSSearchDomain>`
+
+## v0.6.1 - 2026/01/19
+* Update sql-exporter version to 0.9.0 (2026-01-19)
+
+## v0.6.0 - 2025/11/10
+* Add new `db_instance_name_literal` option to override target DB host
+* Add new `db_namespace` option to override target DB namespace
+
+## v0.5.2 - 2025/07/18
+* Update sql-exporter version to 0.8.0 (2025-07-07)
+
+## v0.5.1 - 2025/07/11
+* Remove `queryCell2` option, `connections` are now used for multiple database targets
+* Bump linkerd-support chart dependency to `1.1.0`
+
 ## v0.5.0 - 2025/06/10
 
 * Update sql-exporter version to 0.6.0 (2025-06-10)

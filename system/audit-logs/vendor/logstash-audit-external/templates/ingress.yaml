@@ -11,8 +11,20 @@ metadata:
 spec:
   tls:
      - secretName: tls-logstash-audit-external
-       hosts: [logstash-audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}]
+       hosts:
+         - audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}
+         - logstash-audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}
   rules:
+    - host: audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: logstash-audit-external
+              port:
+                number: {{.Values.input_http_port}}
     - host: logstash-audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}
       http:
         paths:

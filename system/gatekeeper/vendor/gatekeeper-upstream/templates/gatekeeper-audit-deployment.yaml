@@ -3,6 +3,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    {{- include "gatekeeper.commonAnnotations" . | nindent 4 }}
   labels:
     {{- include "gatekeeper.commonLabels" . | nindent 4 }}
     app: '{{ template "gatekeeper.name" . }}'
@@ -35,7 +37,6 @@ spec:
         {{- if .Values.auditPodAnnotations }}
         {{- toYaml .Values.auditPodAnnotations | trim | nindent 8 }}
         {{- end }}
-        linkerd.io/inject: enabled
       labels:
         {{- include "gatekeeper.podLabels" . | nindent 8 }}
         {{- include "audit.podLabels" . | nindent 8 }}
@@ -50,7 +51,7 @@ spec:
     spec:
       affinity:
         {{- toYaml .Values.audit.affinity | nindent 8 }}
-      automountServiceAccountToken: true
+      automountServiceAccountToken: {{ .Values.audit.serviceAccount.automountServiceAccountToken }}
       containers:
       - {{- if .Values.image.release }}
         image: {{ .Values.image.repository }}:{{ .Values.image.release }}
@@ -69,9 +70,16 @@ spec:
         {{ if hasKey .Values "emitAuditEvents" }}- --emit-audit-events={{ .Values.emitAuditEvents }}{{- end }}
         {{ if hasKey .Values "logStatsAudit" }}- --log-stats-audit={{ .Values.logStatsAudit }}{{- end }}
         - --audit-events-involved-namespace={{ .Values.auditEventsInvolvedNamespace }}
-        - --operation=audit
-        - --operation=status
+        
+        {{- if not .Values.audit.disableGenerateOperation }}
         - --operation=generate
+        {{- end }}
+        {{- if not .Values.audit.disableAuditOperation }}
+        - --operation=audit
+        {{- end }}
+        {{- if not .Values.audit.disableStatusOperation }}
+        - --operation=status
+        {{- end }}
         {{ if hasKey .Values "enableViolationExport" }}
         - --enable-violation-export={{ .Values.enableViolationExport }}
         {{- end }}
@@ -81,6 +89,7 @@ spec:
         {{ if hasKey .Values.audit "channel" }}
         - --audit-channel={{ .Values.audit.channel }}
         {{- end }}
+        {{ if hasKey .Values "syncVAPEnforcementScope" }}- --sync-vap-enforcement-scope={{ .Values.syncVAPEnforcementScope }}{{- end }}
         {{ if not .Values.disableMutation}}- --operation=mutation-status{{- end }}
         - --logtostderr
         - --health-addr=:{{ .Values.audit.healthPort }}
@@ -91,6 +100,19 @@ spec:
         {{- range .Values.metricsBackends}}
         - --metrics-backend={{ . }}
         {{- end }}
+        {{- if and (has "opentelemetry" .Values.metricsBackends) (hasKey .Values "otlpEndpoint") }}
+        - --otlp-endpoint={{ .Values.otlpEndpoint }}
+        {{- end }}
+        {{- if and (has "opentelemetry" .Values.metricsBackends) (hasKey .Values "otlpMetricInterval") }}
+        - --otlp-metric-interval={{ .Values.otlpMetricInterval }}
+        {{- end }}
+        {{- if and (has "stackdriver" .Values.metricsBackends) (hasKey .Values "stackdriverOnlyWhenAvailable") }}
+        - --stackdriver-only-when-available={{ .Values.stackdriverOnlyWhenAvailable }}
+        {{- end }}
+        {{- if and (has "stackdriver" .Values.metricsBackends) (hasKey .Values "stackdriverMetricInterval") }}
+        - --stackdriver-metric-interval={{ .Values.stackdriverMetricInterval }}
+        {{- end }}
+        {{ if hasKey .Values "metricsAddr" }}- --metrics-addr={{ .Values.metricsAddr }}{{- end }}
         
         {{- if .Values.audit.logFile}}
         - --log-file={{ .Values.audit.logFile }}
@@ -106,12 +128,37 @@ spec:
         {{- if hasKey .Values "defaultCreateVAPBindingForConstraints"}}
         - --default-create-vap-binding-for-constraints={{ .Values.defaultCreateVAPBindingForConstraints }}
         {{- end }}
-        {{ if hasKey .Values "defaultWaitForVAPBGeneration"}}
+        
+        {{- range .Values.controllerManager.exemptNamespaces}}
+        - --exempt-namespace={{ . }}
+        {{- end }}
+        
+        {{- range .Values.controllerManager.exemptNamespacePrefixes}}
+        - --exempt-namespace-prefix={{ . }}
+        {{- end }}
+        
+        {{- range .Values.controllerManager.exemptNamespaceSuffixes}}
+        - --exempt-namespace-suffix={{ . }}
+        {{- end }}
+        
+        {{- if hasKey .Values "defaultWaitForVAPBGeneration"}}
         - --default-wait-for-vapb-generation={{ .Values.defaultWaitForVAPBGeneration }}
         {{- end }}
+        {{ if hasKey .Values "logLevelKey" }}- --log-level-key={{ .Values.logLevelKey }}{{- end }}
+        {{ if hasKey .Values "logLevelEncoder" }}- --log-level-encoder={{ .Values.logLevelEncoder }}{{- end }}
+        {{ if hasKey .Values "readinessRetries" }}- --readiness-retries={{ .Values.readinessRetries }}{{- end }}
+        {{ if hasKey .Values "enablePprof" }}- --enable-pprof={{ .Values.enablePprof }}{{- end }}
+        {{ if hasKey .Values "pprofPort" }}- --pprof-port={{ .Values.pprofPort }}{{- end }}
+        {{ if hasKey .Values.audit "apiCacheDir" }}- --api-cache-dir={{ .Values.audit.apiCacheDir }}{{- end }}
+        {{ if hasKey .Values "enableReferentialRules" }}- --enable-referential-rules={{ .Values.enableReferentialRules }}{{- end }}
+        {{ if hasKey .Values "shutdownDelay" }}- --shutdown-delay={{ .Values.shutdownDelay }}{{- end }}
+        {{ if hasKey .Values "enableRemoteCluster" }}- --enable-remote-cluster={{ .Values.enableRemoteCluster }}{{- end }}
+        {{ if hasKey .Values "kubeconfig" }}- --kubeconfig={{ .Values.kubeconfig }}{{- end }}
         command:
         - /manager
         env:
+        {{- include "gatekeeper.extraEnvs" . | nindent 8 }}
+        {{- include "audit.extraEnvs" . | nindent 8 }}
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
@@ -158,11 +205,19 @@ spec:
           {{- end }}
           {{- toYaml .Values.audit.securityContext | nindent 10}}
         volumeMounts:
+        {{- include "gatekeeper.extraVolumeMounts" . | nindent 8 }}
         - mountPath: /certs
           name: cert
           readOnly: true
         - mountPath: /tmp/audit
           name: tmp-volume
+        {{- if and (.Values.enableViolationExport) (eq (.Values.exportBackend | default "" | lower) "disk") }}
+        - mountPath: {{ .Values.audit.exportVolumeMount.path }}
+          name: {{ .Values.audit.exportVolume.name }}
+        {{- end }}
+      {{ if and (.Values.enableViolationExport) (eq (.Values.exportBackend | default "" | lower) "disk") (not .Values.audit.disableAuditSidecar) }}
+      - {{ toYaml .Values.audit.exportSidecar | nindent 8 }}
+      {{- end }}
       dnsPolicy: {{ .Values.audit.dnsPolicy }}
       hostNetwork: {{ .Values.audit.hostNetwork }}
       imagePullSecrets:
@@ -179,10 +234,14 @@ spec:
       tolerations:
         {{- toYaml .Values.audit.tolerations | nindent 8 }}
       volumes:
+      {{- include "gatekeeper.extraVolumes" . | nindent 6 }}
       - name: cert
         secret:
           defaultMode: 420
           secretName: gatekeeper-webhook-server-cert
+      {{- if and (.Values.enableViolationExport) (eq (.Values.exportBackend | default "" | lower) "disk") }}
+      - {{- toYaml .Values.audit.exportVolume | nindent 8 }}
+      {{- end }}
       {{- if .Values.audit.writeToRAMDisk }}
       - emptyDir:
           medium: Memory

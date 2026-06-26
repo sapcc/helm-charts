@@ -42,7 +42,7 @@ spec:
         - name: audit-etc
           configMap:
             name: logstash-audit-external-etc
-      {{- if .Values.syslog.enabled }}
+      {{- if or .Values.http.enabled .Values.mtls.enabled }}
         - name: tls-secret
           secret:
             secretName: tls-logstash-audit-external
@@ -53,9 +53,6 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
           {{- if .Values.syslog.enabled }}
-            - name: netflow
-              containerPort: {{ .Values.input_netflow_port }}
-              protocol: UDP
             - name: syslogudp
               containerPort: {{ .Values.input_syslog_port }}
               protocol: UDP
@@ -94,7 +91,7 @@ spec:
           volumeMounts:
             - name: audit-etc
               mountPath: /audit-etc
-      {{- if .Values.syslog.enabled }}
+      {{- if or .Values.http.enabled .Values.mtls.enabled }}
             - mountPath: /tls-secret
               name: tls-secret
       {{- end }}

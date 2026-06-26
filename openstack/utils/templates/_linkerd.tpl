@@ -1,6 +1,9 @@
 {{- define "utils.linkerd.pod_and_service_annotation" }}
 {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
 linkerd.io/inject: enabled
+{{- if $.Values.global.linkerd_use_native_sidecar }}
+config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+{{- end }}
 {{- end }}
 {{- end }}
 

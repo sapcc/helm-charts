@@ -1,0 +1,121 @@
+suite: remote kubeconfig
+templates:
+  - remote-kubeconfig.yaml
+tests:
+  - it: should not render remote kubeconfig Secret by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render remote kubeconfig Secret when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: disco-remote-kubeconfig
+      - equal:
+          path: metadata.labels["resources.gardener.cloud/purpose"]
+          value: token-requestor
+      - equal:
+          path: metadata.labels["resources.gardener.cloud/class"]
+          value: shoot
+
+  - it: should always annotate token-requestor with kube-system namespace by default
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - equal:
+          path: metadata.annotations["serviceaccount.resources.gardener.cloud/namespace"]
+          value: kube-system
+
+  - it: should use remote.shootNamespace when set
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+      remote.shootNamespace: custom-namespace
+    asserts:
+      - equal:
+          path: metadata.annotations["serviceaccount.resources.gardener.cloud/namespace"]
+          value: custom-namespace
+---
+suite: managed resources
+templates:
+  - managedresource.yaml
+tests:
+  - it: should not render any ManagedResources by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render four documents when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: should render ManagedResource for CRD
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ManagedResource
+      - equal:
+          path: metadata.name
+          value: disco-crd
+      - equal:
+          path: spec.secretRefs[0].name
+          value: disco-crd
+
+  - it: should render Secret containing CRD
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: disco-crd
+      - isNotNull:
+          path: data["objects.yaml"]
+
+  - it: should render ManagedResource for RBAC
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    documentIndex: 2
+    asserts:
+      - isKind:
+          of: ManagedResource
+      - equal:
+          path: metadata.name
+          value: disco-rbac
+      - equal:
+          path: spec.secretRefs[0].name
+          value: disco-rbac
+
+  - it: should render Secret containing RBAC
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    documentIndex: 3
+    asserts:
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: disco-rbac
+      - isNotNull:
+          path: data["objects.yaml"]

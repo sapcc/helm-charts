@@ -123,11 +123,12 @@ config_file = /etc/cinder/watcher.yaml
 use = egg:rate-limit-middleware#rate-limit
 config_file = /etc/cinder/ratelimit.yaml
 service_type = volume
-rate_limit_by: {{ .Values.api_rate_limit.rate_limit_by }}
-max_sleep_time_seconds: {{ .Values.api_rate_limit.max_sleep_time_seconds }}
-clock_accuracy: 1ns
-log_sleep_time_seconds: {{ .Values.api_rate_limit.log_sleep_time_seconds }}
+rate_limit_by = {{ .Values.api_rate_limit.rate_limit_by }}
+max_sleep_time_seconds = {{ .Values.api_rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds = {{ .Values.api_rate_limit.log_sleep_time_seconds }}
 backend_host = {{ .Release.Name }}-api-ratelimit-redis
-backend_port: 6379
-backend_timeout_seconds: {{ .Values.api_rate_limit.backend_timeout_seconds }}
+backend_port = 6379
+backend_secret_file = {{ .Values.api_rate_limit.backend_secret_file }}
+backend_timeout_seconds = {{ .Values.api_rate_limit.backend_timeout_seconds }}
 {{- end }}

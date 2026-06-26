@@ -1,0 +1,80 @@
+{{- range $key, $cluster := .Values.persephoneShoots }}
+{{- $defaultInfraCredsName := printf "openstack-infra-creds-seed-%s" $key | trunc 63 | trimSuffix "-" }}
+{{- $infraCredsName := default $defaultInfraCredsName $cluster.infraCredentialsSecretName }}
+{{- $appset := get $.Values "appset" | default dict }}
+{{- $gardenRegion := default $cluster.region (get $appset "region") }}
+{{- $seedShootName := printf "%s%s" $key ($cluster.landscapeName | substr 0 1) }}
+{{- $seedIngressDomain := printf "ingress.%s.garden.external.%s.persephone.%s.cloud.sap" $seedShootName $cluster.landscapeName $cluster.region }}
+---
+apiVersion: seedmanagement.gardener.cloud/v1alpha1
+kind: ManagedSeed
+metadata:
+  name: {{ $seedShootName }}
+  namespace: garden
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  shoot:
+    name: {{ $seedShootName }}
+  gardenlet:
+    config:
+      apiVersion: gardenlet.config.gardener.cloud/v1alpha1
+      kind: GardenletConfiguration
+      gardenClientConnection:
+        gardenClusterAddress: https://api.virtual.{{ $cluster.landscapeName }}.persephone.{{ $gardenRegion }}.cloud.sap
+      logging:
+        enabled: true
+      seedConfig:
+        metadata:
+          labels:
+            environment: {{ $cluster.landscapeName }}
+        spec:
+{{- if $cluster.backup }}
+          backup:
+{{ toYaml $cluster.backup | indent 12 }}
+{{- end }}
+          ingress:
+            domain: {{ $seedIngressDomain }}
+            controller:
+              kind: nginx
+          dns:
+            defaults:
+            - credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: {{ $infraCredsName }}
+                namespace: garden
+              type: openstack-designate
+              domain: external.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+            internal:
+              credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: {{ $infraCredsName }}
+                namespace: garden
+              type: openstack-designate
+              domain: internal.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+            provider:
+              credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: {{ $infraCredsName }}
+                namespace: garden
+              type: openstack-designate
+          settings:
+            excessCapacityReservation:
+              enabled: false
+            dependencyWatchdog:
+              prober:
+                enabled: false
+            loadBalancerServices:
+              externalTrafficPolicy: Local
+              zonalIngress:
+                enabled: false
+{{- if $cluster.loadBalancerServices }}
+{{- if $cluster.loadBalancerServices.annotations }}
+              annotations:
+{{ toYaml $cluster.loadBalancerServices.annotations | indent 16 }}
+{{- end }}
+{{- end }}
+{{- end }}

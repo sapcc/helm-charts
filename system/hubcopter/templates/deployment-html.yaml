@@ -41,8 +41,8 @@ spec:
             name: hubcopter-html
       containers:
         - name: html
-          image: {{ .Values.global.registry | required ".Values.global.registry not found" }}/shared-app-images/alpine-nginx:mainline-slim-latest
-          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a rebuild and restart should suffice to get it back to Clean
+          image: {{ include "shared-app-images.ref" (tuple $ "alpine-nginx" "mainline-slim") }}
+          imagePullPolicy: IfNotPresent
           args: [ ]
           # TODO: securityContext: { runAsNonRoot: true }
           volumeMounts:

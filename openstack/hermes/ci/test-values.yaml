@@ -16,7 +16,6 @@ global:
 hermes_image_version_elasticsearch: latest
 hermes_image_version_elasticsearch_manager: latest
 hermes_image_version_logstash: latest
-hermes_image_version_wall_e: latest
 
 hermes_elasticsearch_cluster_name: my-es-cluster
 hermes_elasticsearch_data_retention: data-retention-time
@@ -90,3 +89,51 @@ rabbitmq_notifications:
 
   metrics:
     enabled: false
+
+logRouter:
+  enabled: true
+  image_tag: "latest"
+  replicas: 1
+  init_image: "keppel.eu-de-1.cloud.sap/ccloud/shared-app-images/alpine-busybox:latest"
+
+  rabbitmq:
+    port: 5672
+    queue: "dataplane.audit"
+    exchange: ""
+    routing_key: "#"
+    prefetch: "10"
+    user: test
+    password: test
+
+  s3:
+    endpoint: "https://ceph.qa.example.com"
+    region: "qa"
+    bucket: "audit-qa"
+    prefix: "dataplane/"
+    access_key: test
+    secret_key: test
+
+  wal:
+    storage: 1Gi
+
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+log-router-postgresql:
+  postgresVersion: 17
+  databases:
+    log-router: {}
+  users:
+    log-router: {}
+  config:
+    max_connections: 16
+  persistence:
+    enabled: false
+    size: 1Gi
+  alerts:
+    support_group: observability

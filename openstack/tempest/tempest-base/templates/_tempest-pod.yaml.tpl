@@ -79,7 +79,20 @@ spec:
         - name: OS_ENDPOINT_TYPE
           value: "public"
         - name: OS_PASSWORD
-          value: {{ .Values.tempestAdminPassword | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: OS_PASSWORD
+        - name: SLACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: SLACK_URL
+        - name: CC_SLACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: CC_SLACK_URL
         - name: OS_IDENTITY_API_VERSION
           value: "3"
         - name: OS_AUTH_URL
@@ -94,6 +107,8 @@ spec:
       volumeMounts:
         - mountPath: /{{ .Chart.Name }}-etc
           name: {{ .Chart.Name }}-etc
+        - mountPath: /{{ .Chart.Name }}-etc-secret
+          name: {{ .Chart.Name }}-etc-secret
         - mountPath: /container.init
           name: container-init
   volumes:
@@ -104,4 +119,14 @@ spec:
       configMap:
         name: {{ .Chart.Name }}-bin
         defaultMode: 0755
+    - name: {{ .Chart.Name }}-etc-secret
+      secret:
+        secretName: {{ .Chart.Name }}-etc-secret
+        items:
+        - key: tempest_accounts.yaml
+          path: tempest_accounts.yaml
+        - key: tempest_deployment_config.json
+          path: tempest_deployment_config.json
+        - key: tempest_extra_options
+          path: tempest_extra_options
 {{ end }}

@@ -1,0 +1,80 @@
+{{- range $key, $cluster := .Values.persephoneShoots }}
+{{- $defaultInfraCredsName := printf "openstack-infra-creds-seed-%s" $key | trunc 63 | trimSuffix "-" }}
+{{- $infraCredsName := default $defaultInfraCredsName $cluster.infraCredentialsSecretName }}
+{{- $defaultAuthConfigName := printf "authentication-seed-%s" $key | trunc 63 | trimSuffix "-" }}
+{{- $seedShootName := printf "%s%s" $key ($cluster.landscapeName | substr 0 1) }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+  namespace: garden
+  labels:
+    {{- if $.Values.clusterType }}
+    cluster-type: {{ $.Values.clusterType }}
+    {{- end }}
+    metadata.greenhouse.sap/region: {{ required "missing value for $cluster.region" $cluster.region }}
+    {{- if $.Values.greenhouseShootGrafter }}
+    greenhouse.sap/shoot-grafter-transport: {{ $.Values.greenhouseShootGrafter }}
+    {{- end }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
+  region: {{ required "missing value for $cluster.region" $cluster.region }}
+  credentialsBindingName: {{ $infraCredsName }}
+{{- if $cluster.highAvailability.enabled }}
+  controlPlane:
+    highAvailability:
+      failureTolerance:
+        type: zone
+{{- end }}
+{{- if $cluster.seedName }}
+  seedName: {{ $cluster.seedName }}
+  purpose: {{ default "infrastructure" $cluster.purpose }}
+{{- end }}
+  dns:
+    domain: {{ $seedShootName }}.garden.external.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+    providers:
+    - type: openstack-designate
+      credentialsRef: 
+        apiVersion: v1
+        kind: Secret
+        name: {{ $infraCredsName }}
+      domains:
+        include:
+        - {{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+  provider:
+    type: openstack
+    infrastructureConfig:
+      apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
+      kind: InfrastructureConfig
+      floatingPoolName: {{ $cluster.floatingPoolName }}
+      networks:
+        workers: 10.180.25.0/24 # should match CNI CIDR
+    controlPlaneConfig:
+      apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
+      kind: ControlPlaneConfig
+      loadBalancerProvider: f5
+    workers: {{ toYaml $cluster.workers | nindent 6 }}
+  networking:
+    pods: 10.44.0.0/16
+    services: 10.45.0.0/16
+    nodes: 10.180.25.0/24 # should match infrastructure CIDR
+    type: calico
+  kubernetes:
+    version: {{ required "missing value for $cluster.kubernetes.version" $cluster.kubernetes.version }}
+{{- if $cluster.oidcConfig.enabled }}
+    kubeAPIServer:
+      structuredAuthentication:
+        configMapName: {{ $defaultAuthConfigName }}
+{{- end }}
+    verticalPodAutoscaler:
+      enabled: {{ $cluster.kubernetes.verticalPodAutoscaler.enabled }}
+  maintenance:
+    autoUpdate:
+      kubernetesVersion: false
+      machineImageVersion: false
+{{- end }}

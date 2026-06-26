@@ -10,6 +10,9 @@ backdoor_socket = /var/lib/octavia/backdoor.socket
 {{- if $loadbalancer.physical_interface_mapping }}
 physical_interface_mapping = {{ $loadbalancer.physical_interface_mapping }}
 {{- end }}
+{{- if eq $loadbalancer.model "r5900" }}
+vcmp_rseries = true
+{{- end }}
 
 [f5_agent]
 bigip_verify = false

@@ -1,3 +1,4 @@
+{{- if .Values.hermes.logstash_enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,9 +27,10 @@ spec:
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
+        configmap.reloader.stakater.com/reload: "logstash-etc"
+        secret.reloader.stakater.com/reload: "logstash-secret"
+        deployment.reloader.stakater.com/pause-period: "60s"
     spec:
-      nodeSelector:
-        zone: farm
       volumes:
         - name: hermes-etc
           projected:
@@ -37,6 +39,12 @@ spec:
                 name: logstash-secret
             - configMap:
                 name: logstash-etc
+      {{- if .Values.global.gardener.enabled }}
+        - name: ca-cert
+          secret:
+            defaultMode: 444
+            secretName: rest-cert
+      {{- end }}
       containers:
         - name: logstash
           image: {{.Values.global.registry}}/hermes-logstash:{{.Values.hermes_image_version_logstash}}
@@ -82,7 +90,7 @@ spec:
                   name: logstash-secret
                   key: "RABBITMQ_{{ upper $key }}_PASSWORD"
             {{- end }}
-
+            {{- if .Values.logstash.audit }}
             # Metis / DB
             - name: METIS_USER
               valueFrom:
@@ -95,7 +103,8 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: METIS_PASSWORD
-
+            {{- end }}
+            {{- if .Values.logstash.swift }}
             # Swift / S3
             - name: SWIFT_ACCESS_KEY
               valueFrom:
@@ -108,7 +117,7 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: SWIFT_SECRET_KEY
-
+            {{- end }}
             # OpenSearch
             - name: OPENSEARCH_USER
               valueFrom:
@@ -124,6 +133,11 @@ spec:
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
+            {{- if .Values.global.gardener.enabled }}
+            - name: ca-cert
+              mountPath: /etc/logstash/certs/ca.crt
+              subPath: ca.crt
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /
@@ -162,3 +176,4 @@ spec:
             - name: ls-exporter
               containerPort: 9198
               protocol: TCP
+{{- end }}

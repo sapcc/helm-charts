@@ -5,23 +5,23 @@
         "endpoint_type": "public",
         "admin": {
             "username": "admin",
-            "password": {{ .Values.tempestAdminPassword | quote }},
+            "password": "{{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}",
             "user_domain_name": "tempest",
             "domain_name": "tempest"
     },
     "users": [
         {
-            "username": "tempestuser1",
-            "password": {{ .Values.tempestAdminPassword | quote }},
+            "username": "tempestuser3",
+            "password": {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }},
             "user_domain_name": "tempest",
-            "project_name": "tempest1",
+            "project_name": "tempest3",
             "project_domain_name": "tempest"
         },
         {
-            "username": "tempestuser2",
-            "password": {{ .Values.tempestAdminPassword | quote }},
+            "username": "tempestuser4",
+            "password": {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }},
             "user_domain_name": "tempest",
-            "project_name": "tempest2",
+            "project_name": "tempest4",
             "project_domain_name": "tempest"
         }
     ],

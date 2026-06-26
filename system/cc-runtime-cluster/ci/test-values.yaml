@@ -1,46 +1,70 @@
 global:
   region: test-1
 
-ipPool:
-  addresses: 
-    - 1.2.3.0/24
-  excludedAddresses:
-    - 1.2.3.0/30
-  prefix: 24
-  gateway: 1.2.3.4
-
-machineTemplate:
-  metadata:
-    node-role.kubernetes.io/cp: ""
-
 controlplane:
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+  address: 192.168.1.100
+  port: 6443
+  version: v1.31.5
+  uplinkInterface: bond0
   machineTemplate:
     matchLabels:
-      node-role.kubernetes.io/cp: "" 
+      node-role.kubernetes.io/cp: ""
 
 worker:
   machineTemplate:
     matchLabels:
       node-role.kubernetes.io/worker: ""
 
-secret:
-  metalKubeConfig: |
-    apiVersion: v1
-    clusters:
-    - cluster:
-        certificate-authority-data: "REDACTED"
-        server: https://api.test-1.metal.example.com:6443
-      name: metal-test-1
-    contexts:
-    - context:
-        cluster: metal-test-1
-        user: metal-user
-      name: metal-test-1-context
-    current-context: metal-test-1-context
-    kind: Config
-    preferences: {}
-    users:
-    - name: metal-user
-      user:
-        client-certificate-data: "REDACTED"
-        client-key-data: "REDACTED"
+machineTemplate:
+  image: flatcar-stable-3975.2.2
+  metadata:
+    node-role.kubernetes.io/cp: ""
+
+additionalConfig:
+  authenticationConfig: |
+    - path: /etc/kubernetes/authentication.yaml
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          apiVersion: apiserver.config.k8s.io/v1beta1
+          kind: AuthenticationConfiguration
+          jwt:
+            - issuer:
+                url: https://example.com
+                audiences:
+                - test-audience
+              claimMappings:
+                username:
+                  claim: 'name'
+                  prefix: ''
+  secrets: |
+    - path: /etc/kubernetes/enc/enc.yaml
+      filesystem: root
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          Foo Bar
+
+clusters:
+  - name: rt-test-1
+    namespace: capi-runtime
+    metallb:
+      subnet: "10.20.30.0/26"
+  - name: rt-test-7
+    namespace: capi-runtime-7
+    metallb:
+      subnet: "10.20.30.64/26"
+    user:
+      name: foo
+      passwordhash: bar
+  - name: rt-test-8
+    namespace: capi-runtime-8
+
+user:
+  name: admin
+  passwordhash: "$6$randomsalt$hashedpassword"
+  key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEArandomkey"

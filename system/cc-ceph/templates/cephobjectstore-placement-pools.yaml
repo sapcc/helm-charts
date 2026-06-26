@@ -162,3 +162,81 @@ spec:
     nosizechange: {{ $.Values.pool.nosizechange | quote }}
 {{- end }}
 {{- end }}
+{{- if .Values.rgwTargetPlacements.standardPlacements }}
+{{- range $target := .Values.rgwTargetPlacements.standardPlacements }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: {{ $target.name }}.rgw.buckets.data
+spec:
+  {{- if $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
+  {{- end }}
+  erasureCoded:
+    dataChunks: {{ $target.dataChunks | default 4 }}
+    codingChunks: {{ $target.codingChunks | default 2 }}
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }}
+  {{- end }}
+  deviceClass: nvme-standard
+  application: rgw
+  parameters:
+    pg_num: {{ $target.pg_num | default 1024 | quote }}
+    pgp_num: {{ $target.pgp_num | default 1024 | quote }}
+    nodelete: {{ $.Values.pool.nodelete | quote }}
+    nosizechange: {{ $.Values.pool.nosizechange | quote }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: {{ $target.name }}.rgw.buckets.index
+spec:
+  {{- if $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
+  {{- end }}
+  replicated:
+    size: {{ $target.size | default 3 }}
+    {{- if $target.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end }}
+    {{- if $target.subFailureDomain }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end }}
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }}
+  {{- end }}
+  deviceClass: nvme-standard
+  application: rgw
+  parameters:
+    pg_num: "1024"
+    pgp_num: "1024"
+    nodelete: {{ $.Values.pool.nodelete | quote }}
+    nosizechange: {{ $.Values.pool.nosizechange | quote }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: {{ $target.name }}.rgw.buckets.non-ec
+spec:
+  failureDomain: {{ $target.failureDomain | default "host"  }}
+  replicated:
+    size: {{ $target.size | default 3 }}
+    {{- if $target.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
+    {{- end }}
+    {{- if $target.subFailureDomain }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
+    {{- end }}
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }}
+  {{- end }}
+  deviceClass: nvme-standard
+  application: rgw
+  parameters:
+    pg_num: "512"
+    pgp_num: "512"
+    nodelete: {{ $.Values.pool.nodelete | quote }}
+    nosizechange: {{ $.Values.pool.nosizechange | quote }}
+{{- end }}
+{{- end }}

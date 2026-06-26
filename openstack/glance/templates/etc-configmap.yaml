@@ -14,12 +14,6 @@ data:
 {{ include (print .Template.BasePath "/etc/_glance-api.conf.tpl") . | indent 4 }}
   glance-api-paste.ini: |
 {{ include (print .Template.BasePath "/etc/_glance-api-paste.ini.tpl") . | indent 4 }}
-{{- if (or .Values.imageVersionGlanceRegistry .Values.imageVersion .Values.image_version) }}
-  glance-registry.conf: |
-{{ include (print .Template.BasePath "/etc/_glance-registry.conf.tpl") . | indent 4 }}
-  glance-registry-paste.ini: |
-{{ include (print .Template.BasePath "/etc/_glance-registry-paste.ini.tpl") . | indent 4 }}
-{{- end }}
   policy.yaml: |
 {{ include (print .Template.BasePath "/etc/_glance-policy.yaml.tpl") . | indent 4 }}
   logging.ini: |
@@ -48,4 +42,10 @@ data:
 {{- if .Values.sapcc_rate_limit.enabled }}
   ratelimit.yaml: |
 {{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
+{{- end }}
+{{- if .Values.ceph.enabled }}
+  ceph.conf: |
+{{ include (print .Template.BasePath "/etc/_ceph.conf.tpl") . | indent 4 }}
+  ceph.client.glance.keyring: |
+{{ include (print .Template.BasePath "/etc/_ceph.client.glance.keyring.tpl") . | indent 4 }}
 {{- end }}

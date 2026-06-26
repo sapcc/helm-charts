@@ -16,3 +16,9 @@
   source_labels: [alertname]
   target_label: incident_group_key
   replacement: {{ printf "%s_%s_$1" $root.Values.global.region ($root.Values.global.cluster | default $root.Values.global.region) }}
+
+- action: replace
+  source_labels: [playbook]
+  target_label: playbook
+  regex: '^/?(docs/.+)$'
+  replacement: {{ printf "%s/$1" ($root.Values.global.playbookDomain | default "https://operations.global.cloud.sap") }}

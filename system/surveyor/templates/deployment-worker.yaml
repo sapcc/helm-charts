@@ -1,3 +1,5 @@
+{{- $dhMirror := .Values.surveyor.primary_dockerhub_mirror | required "missing value for .Values.surveyor.primary_dockerhub_mirror" -}}
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -31,8 +33,8 @@ spec:
             claimName: surveyor-cache
       initContainers:
         - name: init-fs-ownership
-          image: {{ .Values.global.registry }}/shared-app-images/alpine-busybox:3.22-latest
-          imagePullPolicy: Always
+          image: {{ include "shared-app-images.ref" (tuple $ "alpine-busybox" "3.22") }}
+          imagePullPolicy: IfNotPresent
           command: [ /bin/sh ]
           args: [ -c, 'chown -R 4200:4200 /var/cache/surveyor' ]
           volumeMounts:
@@ -54,6 +56,12 @@ spec:
               value: /etc/surveyor/config.json
             - name: SURVEYOR_GIT_CACHE_DIR
               value: /var/cache/surveyor
+            - name: SURVEYOR_IMAGE_PULL_REWRITE_RULES
+              # Docker Hub has tight ratelimits, so pull from our Keppel mirror instead
+              value: '[{ "key": "(?:index\\.)?docker\\.io/(.*)", "value": "{{ $dhMirror }}/$1"}]'
+            - name: SURVEYOR_IMAGE_PULL_PLATFORM_FILTERS
+              # most of our Keppel mirrors only hold linux/amd64 images
+              value: '[{ "key": "keppel\\..*", "value": [{ "architecture": "amd64", "os": "linux" }]}]'
             {{- range (keys .Values.surveyor.secrets | sortAlpha) }}
             - name: {{ quote . }}
               valueFrom:

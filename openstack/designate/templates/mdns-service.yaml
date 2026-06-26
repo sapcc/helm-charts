@@ -10,6 +10,9 @@ metadata:
     type: backend
     component: mdns
   annotations:
+{{- if .Values.calicoLoadBalancer }}
+    projectcalico.org/loadBalancerIPs: '["{{or .Values.global.designate_mdns_service_ip .Values.global.designate_mdns_external_ip}}"]'
+{{- end }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   type: LoadBalancer
@@ -23,5 +26,7 @@ spec:
     - name: designate-mdns-udp
       protocol: UDP
       port: {{.Values.global.designate_mdns_port_public}}
+{{- if not .Values.calicoLoadBalancer }}
   externalIPs:
     - {{ or .Values.global.designate_mdns_service_ip .Values.global.designate_mdns_external_ip}}
+{{- end }}

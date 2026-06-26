@@ -3,6 +3,7 @@ owner-info:
   service: trust-manager
   maintainers:
   - Fabian Wiesel
+  - Jan-Eike Golenia
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/trust-manager
 
 trust-manager:
@@ -18,9 +19,18 @@ trust-manager:
       memory: 128Mi
 
 namespaces:
-  matchLabels:
-    kubernetes.io/metadata.name: monsoon3
+  matchExpressions:
+    - key: kubernetes.io/metadata.name
+      operator: In
+      values:
+        - monsoon3
+        - netapp-credential-rotator
+        - kvm-cinder-netapp-operator
 
 cert_exporter:
   namespaces:
     - monsoon3
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+    repository: joeelliott/cert-exporter
+    tag: v2.13.0

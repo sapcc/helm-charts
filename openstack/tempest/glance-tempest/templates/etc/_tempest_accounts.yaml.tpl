@@ -1,13 +1,13 @@
-- username: 'tempestuser1'
-  password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest1'
-  project_name: 'tempest1'
-- username: 'tempestuser2'
-  password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest2'
-  project_name: 'tempest2'
+- username: 'tempestuser3'
+  password: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
+  tenant_name: 'tempest3'
+  project_name: 'tempest3'
+- username: 'tempestuser4'
+  password: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
+  tenant_name: 'tempest4'
+  project_name: 'tempest4'
 - username: 'admin'
-  password: {{ .Values.tempestAdminPassword | quote }}
+  password: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
   tenant_name: 'admin'
   project_name: 'admin'
   types:

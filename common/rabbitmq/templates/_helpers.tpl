@@ -17,17 +17,48 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "rabbitmq._validate_users" -}}
     {{- $users := . -}}
-    {{- range $path, $v := $users }}
-      {{- if not $v.user }}
-          {{- fail (printf "%v.user missing" $path) }}
-      {{- else if hasPrefix "-" $v.user }}
-          {{- fail (printf "%v.user starts with hypen" $path) }}
-      {{- else if not $v.password }}
-          {{- fail (printf "%v.password missing" $path) }}
-      {{- else if hasPrefix "-" $v.password }}
-          {{- fail (printf "%v.password starts with hypen" $path) }}
+    {{- range $key, $user := $users }}
+      {{- if not
+        (and (hasKey $user "enabled") (eq (typeOf $user.enabled) "bool") (eq $user.enabled false))
+      }}
+        {{- if not $user.user }}
+            {{- fail (printf "%v.user missing" $key) }}
+        {{- else if hasPrefix "-" $user.user }}
+            {{- fail (printf "%v.user starts with hypen" $key) }}
+        {{- else if not $user.password }}
+            {{- fail (printf "%v.password missing" $key) }}
+        {{- else if hasPrefix "-" $user.password }}
+            {{- fail (printf "%v.password starts with hypen" $key) }}
+        {{- end }}
       {{- end }}
     {{- end }}
+{{- end }}
+
+{{- define "rabbitmq.svc_dns_domain" -}}
+{{ $.Release.Namespace }}.svc.{{ $.Values.global.clusterDNSSearchDomain | required "missing value for .Values.global.clusterDNSSearchDomain" }}
+{{- end -}}
+
+{{- define "rabbitmq.serviceName" -}}
+"{{ template "fullname" . }}.{{ include "rabbitmq.svc_dns_domain" . }}"
+{{- end }}
+
+{{/*
+A lame attempt at making the service name shorter, which is needed for TLS common names.
+Will strip "svc." if clusterDNSSearchDomain is something like "cluster.local"
+Will strip "svc.kubernetes." if clusterDNSSearchDomain is something like "kubernetes.region.tld"
+*/}}
+{{- define "rabbitmq.shortServiceName" -}}
+{{ include "rabbitmq.serviceName" . | replace "svc." "" | replace "kubernetes." "" }}
+{{- end }}
+
+{{/* By default, the name is the dns name, but that may be too long, so we might to have to shorten it.
+     If the actual value matters to you, set it directly. */}}
+{{- define "rabbitmq.defaultCommonName" -}}
+{{- $serviceName := include "rabbitmq.serviceName" . }}
+  {{- if gt (len $serviceName) 64 }}
+     {{- $serviceName = include "rabbitmq.shortServiceName" . }}
+  {{- end }}
+  {{- $serviceName }}
 {{- end }}
 
 {{/* Generate the service label for the templated Prometheus alerts. */}}

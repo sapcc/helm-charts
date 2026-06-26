@@ -53,3 +53,56 @@
     annotations:
       description: {{ include "fullName" . }} has more than 20 running threads.
       summary: {{ include "fullName" . }} running threads high.
+
+{{- if .Values.alerts.buffer_pool_alerts_enabled }}
+  - alert: {{ include "alerts.service" . | title }}MariaDBBufferPoolNearlyFull
+    expr: >-
+      (
+        mysql_global_status_buffer_pool_pages{state="free", app_kubernetes_io_instance=~"{{ include "fullName" . }}"}
+        / ignoring(state)
+        sum without(state) (
+          mysql_global_status_buffer_pool_pages{state=~"data|free|misc", app_kubernetes_io_instance=~"{{ include "fullName" . }}"}
+        )
+        < {{ .Values.alerts.buffer_pool_warning_threshold }}
+      )
+    for: 30m
+    labels:
+      context: database
+      service: {{ include "alerts.service" . }}
+      severity: warning
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+      playbook: 'docs/support/playbook/database/mariadbbufferpool/'
+    annotations:
+      description: >-
+        {{ include "fullName" . }} InnoDB buffer pool has less than {{ mulf .Values.alerts.buffer_pool_warning_threshold 100 }}% free pages.
+        The buffer pool is filling up and performance will degrade soon.
+        Consider increasing innodb_buffer_pool_size.
+      summary: {{ include "fullName" . }} InnoDB buffer pool is nearly full.
+
+  - alert: {{ include "alerts.service" . | title }}MariaDBBufferPoolExhausted
+    expr: >-
+      (
+        mysql_global_status_buffer_pool_pages{state="free", app_kubernetes_io_instance=~"{{ include "fullName" . }}"}
+        / ignoring(state)
+        sum without(state) (
+          mysql_global_status_buffer_pool_pages{state=~"data|free|misc", app_kubernetes_io_instance=~"{{ include "fullName" . }}"}
+        )
+        < {{ .Values.alerts.buffer_pool_critical_threshold }}
+      )
+    for: 15m
+    labels:
+      context: database
+      service: {{ include "alerts.service" . }}
+      severity: critical
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+      playbook: 'docs/support/playbook/database/mariadbbufferpool/'
+    annotations:
+      description: >-
+        {{ include "fullName" . }} InnoDB buffer pool has less than {{ mulf .Values.alerts.buffer_pool_critical_threshold 100 }}% free pages and is effectively exhausted.
+        InnoDB must evict pages on every read, causing heavy disk I/O and severe query performance degradation.
+        Increase innodb_buffer_pool_size immediately and restart the MariaDB pod.
+      summary: {{ include "fullName" . }} InnoDB buffer pool is exhausted.
+
+{{- end }}

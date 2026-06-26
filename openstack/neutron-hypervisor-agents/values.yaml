@@ -1,0 +1,119 @@
+defaults:
+  network:
+    ovs:
+      pod:
+        nodeSelector:
+          neutron.openstack.cloud.sap/ml2-mechanism-driver: ovs
+    ovn:
+      pod:
+        nodeSelector:
+          neutron.openstack.cloud.sap/ml2-mechanism-driver: ovn
+    linuxbridge:
+      pod:
+        nodeSelector:
+          neutron.openstack.cloud.sap/ml2-mechanism-driver: linuxbridge
+    common:
+      pod:
+        tolerations:
+          critical-components-not-ready:
+            effect: NoSchedule
+            key: node.gardener.cloud/critical-components-not-ready
+          network-unavailable:
+            effect: NoSchedule
+            key: node.kubernetes.io/network-unavailable
+          uninitialized:
+            effect: NoSchedule
+            key: node.cloudprovider.kubernetes.io/uninitialized
+            value: "true"
+        nodeSelector: {}
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                  # Do not schedule without that label, we need it in the pod
+                  - key: kubernetes.metal.cloud.sap/bb
+                    operator: Exists
+
+rabbitmq_ssl_client: true
+rabbitmq:
+  host: "neutron-rabbitmq"
+  externalIPs: []
+  users:
+    default:
+      user: rabbitmq
+securitygroup:
+  enable_anti_spoofing_rules: False
+
+ovsOnHost: true
+agent:
+  rootwrap_daemon: false
+osprofiler: {}
+ovn:
+  external_ids: {}
+vpods: {}
+
+cc_fabric: {}
+
+vpods_conf:
+  ovs:
+    # bridge_mappings: "{{ segment }}:br-ex" Set dynamically script
+    enable_tunneling: False
+    ovsdb_connection: "unix:/var/run/openvswitch/db.sock"
+
+pod:
+  lifecycle:
+    upgrades:
+      daemonsets:
+        revisionHistory: 5
+        updateStrategy:
+          rollingUpdate:
+            maxUnavailable: "10%"
+  tolerations: {}
+
+memcached:
+  memcached: {}
+
+logging_sapccsentry:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry_events:
+      class: "sapcc_sentrylogger.handler.EventHandler"
+      level: ERROR
+      args: "()"
+    sentry_breadcrumbs:
+      class: "sapcc_sentrylogger.handler.BreadcrumbHandler"
+      level: INFO
+      args: "()"
+  loggers:
+    root:
+      formatter: context
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: ERROR
+    neutron:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    suds:
+      handlers: "null"
+      level: ERROR
+
+owner-info:
+  support-group: network-api
+  maintainers:
+    - Sebastian Lohff
+    - Andrew Karpow
+    - Fabian Wiesel
+    - mchristianl
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/neutron-hypervisor-agent

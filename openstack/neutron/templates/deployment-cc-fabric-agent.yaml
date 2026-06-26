@@ -3,17 +3,14 @@
 ---
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: neutron-cc-fabric-{{ $platform }}-agent
   labels:
     system: openstack
     type: backend
     component: neutron
-  {{- if $.Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-cc-fabric-{{ $platform }}-agent
-  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -28,6 +25,8 @@ spec:
   template:
     metadata:
       labels:
+        alert-tier: os
+        alert-service: neutron
         name: neutron-cc-fabric-{{ $platform }}-agent
 {{ tuple $ "neutron" (printf "cc-fabric-%s-agent" $platform) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
@@ -56,12 +55,14 @@ spec:
             - /etc/neutron/plugins/ml2/ml2-conf.ini
             - --config-file
             - /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
+          {{- if $.Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "CC fabric agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+          {{- end }}
           resources:
 {{ toYaml $.Values.pod.resources.cc_fabric_agent | indent 12 }}
           env:

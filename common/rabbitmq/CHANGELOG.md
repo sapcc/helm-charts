@@ -2,6 +2,154 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.2 - 2026/06/03
+
+- `rabbitmq-user-credential-updater` updated to `20260521084806` version
+- Chart version bumped
+
+## 0.25.1 - 2026/05/26
+
+- RabbitMQ [4.3.1 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.1)
+- Chart version bumped
+
+## 0.25.0 - 2026/05/12
+
+- Allow not adding `rabbitmq.serviceName` to the certificate's dnsNames
+  - If enabled, `externalNames` is a required setting
+  - Makes most sense together with also setting `certificate.commonName`
+
+## 0.24.1 - 2026/04/30
+- Enable transient_nonexcl_queues option, as it's in use by some services
+- Chart version bumped
+
+## 0.24.0 - 2026/04/28
+
+- Use `clusterDNSSearchDomain` to generate the certificate default common name and SAN
+  - Used to be the hardcoded `<fullname>.<namespace>.svc.kubernetes.<region>.<tld>`
+  - Now it's `<fullname>.<namespace>.svc.<clusterDNSSearchDomain>`
+- Chart version bumped
+
+## 0.23.0 - 2026/04/27
+
+- RabbitMQ [4.3.0 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.0)
+- Chart version bumped
+
+## 0.22.2 - 2026/04/08
+
+- Fix erlang cookie file permissions in StatefulSet init container
+  - Remove short-circuit check in `volume-permissions` init container that skipped `chown` when uid was already 999
+  - Always run `chown -R 999:999 /var/lib/rabbitmq` and `chmod 400 .erlang.cookie` to ensure correct permissions
+  - RabbitMQ 3.11+ requires `.erlang.cookie` to be exactly `0400`; Kubernetes `fsGroup` can set it to `0440`, causing crashloops
+- Add `fsGroupChangePolicy: "OnRootMismatch"` to StatefulSet pod securityContext (already present in Deployment template)
+- Chart version bumped
+
+## 0.22.1 - 2026/03/17
+
+- RabbitMQ [4.2.5 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.5)
+- Chart version bumped
+
+## 0.22.0 - 2026/03/05
+
+- Enable SSL by default
+
+## 0.21.2 - 2026/02/23
+
+- RabbitMQ [4.2.4 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.4)
+- `rabbitmq-user-credential-updater` updated to `20260223091825` version
+- Chart version bumped
+
+## 0.21.1 - 2026/01/26
+
+- RabbitMQ [4.2.3 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.3)
+- `rabbitmq-user-credential-updater` updated to `20260126125551` version
+- Chart version bumped
+
+## 0.21.0 - 2025/12/19
+
+- RabbitMQ [4.2.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.2)
+  - Python has been removed from the container image
+- `rabbitmq-setup-users` init script adapted to the absence of python interpreter
+- `rabbitmq-user-credential-updater` updated to `20251219114304` version
+- Chart version bumped
+
+## 0.20.1 - 2025/11/24
+
+- RabbitMQ [4.2.1 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.1)
+- `rabbitmq-user-credential-updater` updated to `20251124094011` version
+- Chart version bumped
+
+## 0.20.0 - 2025/11/03
+
+- RabbitMQ [4.2.0 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.0)
+- `rabbitmq-user-credential-updater` updated to `20251103132104` version
+- Chart version bumped
+
+## 0.19.2 - 2025/09/04
+
+- RabbitMQ [4.1.4 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.4)
+- `rabbitmq-user-credential-updater` updated to `20250904100127` version
+- Chart version bumped
+
+## 0.19.1 - 2025/08/06
+
+- RabbitMQ [4.1.3 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.3)
+- several bugfixes for queues
+- Chart version bumped
+
+## 0.19.0 - 2025/08/01
+
+- Added an option to disable a user
+
+Usage example:
+```yaml
+rabbitmq:
+  users:
+    default:
+      enabled: false
+    user1:
+      user: user1
+      password: secret
+    user2:
+      user: user2
+      password: secret
+```
+This will result in the `default` user being removed from the RabbitMQ users secret.
+
+## 0.18.8 - 2025/08/01
+
+- Remove version label from RabbitMQ deployment pod template, related configmaps and secrets to avoid unnecessary  restarts on simple chart version update
+
+## 0.18.7 - 2025/07/31
+
+- Limit default commonName in certificate to 64 characters as that is the limit.
+
+
+## 0.18.6 - 2025/07/30
+
+- Update [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container to `20250730094138` version with bugfixes.
+- Chart version bumped
+
+## 0.18.5 - 2025/07/07
+
+- RabbitMQ [4.1.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.2)
+- Chart version bumped
+
+## 0.18.4 - 2025/07/01
+
+- Drop `externalIps` from certificate, as they are unsupported by our certificate provider.
+  They still can be added with `certificate.ipAddresses`
+
+
+## 0.18.3 - 2025/07/01
+
+- Default to ClusterIssuer with the name "digicert-issuer"
+
+
+## 0.18.2 - 2025/06/30
+
+- Removed the default for CN (common name) from the certificate, as it is too long
+- Switched ClusterIssuer group from `cert-manager.io` to `certmanager.cloud.sap`
+
 ## 0.18.1 - 2025/06/12
 
 - RabbitMQ [4.1.1 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.1)

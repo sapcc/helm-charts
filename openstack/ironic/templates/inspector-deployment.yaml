@@ -39,10 +39,16 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-inspector
         {{- if .Values.oslo_metrics.enabled }}
@@ -59,13 +65,7 @@ spec:
             add:
               - NET_ADMIN
         env:
-        {{- if .Values.logging.handlers.sentry }}
-        - name: SENTRY_DSN
-          valueFrom:
-            secretKeyRef:
-              name: sentry
-              key: {{ .Chart.Name }}.DSN.python
-        {{- end }}
+          {{- include "utils.sentry_config" . | indent 10 }}
         lifecycle:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
@@ -102,7 +102,9 @@ spec:
           readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp
         image: {{ .Values.global.registry }}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
@@ -130,7 +132,7 @@ spec:
       {{- end }}
       {{- if .Values.inspector.rpc_statsd_enabled }}
       - name: oslo-exporter
-        image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         args:
         - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:

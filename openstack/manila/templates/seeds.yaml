@@ -1,3 +1,5 @@
+{{- $vbase   := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region  := .Values.global.region       | required "missing value for .Values.global.region"       -}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
 {{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
@@ -21,9 +23,12 @@ spec:
   - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
   {{- end }}
   {{- end }}
+  {{- if .Values.seeds.requires_swift }}
   - swift/swift-seed
+  {{- end }}
 
   services:
+  {{- if .Values.api_v1_enabled }}
   - name: {{ .Release.Name }}
     type: {{.Values.seeds.service_type}}
     description: OpenStack Shared Filesystems
@@ -37,6 +42,7 @@ spec:
     - interface: public
       region: '{{.Values.global.region}}'
       url: 'https://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" .}}/v1/%(tenant_id)s'
+  {{- end }}
   - name: {{ .Release.Name }}v2
     type: {{.Values.seeds.service_type}}v2
     description: OpenStack Shared Filesystems
@@ -79,9 +85,9 @@ spec:
         role: cloud_sharedfilesystem_admin
       - project: admin
         role: cloud_sharedfilesystem_admin
-    - name: '{{.Values.global.manila_service_username | include "resolve_secret"}}'
+    - name: {{ printf "%s/%s/manila/keystone-user/service/username" $vbase $region | quote }} # service user for the manila API
       description: Manila Service
-      password: '{{.Values.global.manila_service_password | include "resolve_secret"}}'
+      password: {{ printf "%s/%s/manila/keystone-user/service/password" $vbase $region | quote }}
       role_assignments:
       - project: service
         role: service
@@ -89,14 +95,24 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_sharedfilesystem_admin
-    - name: '{{.Values.global.manila_network_username | include "resolve_secret"}}'
+    - name: {{ printf "%s/%s/manila/keystone-user/network/username" $vbase $region | quote }} # service user for manila network operations
       description: Manila Network
-      password: '{{.Values.global.manila_network_password | include "resolve_secret"}}'
+      password: {{ printf "%s/%s/manila/keystone-user/network/password" $vbase $region | quote }}
       role_assignments:
       - project: service
         role: service
       - project: service
         role: cloud_network_admin
+    {{- if .Values.designate.enabled }}
+    - name: '{{.Values.global.manila_dns_username | include "resolve_secret"}}'
+      description: Manila DNS
+      password: '{{.Values.global.manila_dns_password | include "resolve_secret"}}'
+      role_assignments:
+        - project: service
+          role: service
+        - project: service
+          role: cloud_dns_admin
+    {{- end }}
     {{- if .Values.seeds.backup_user.enabled }}
     - name: {{ .Values.seeds.backup_user.username }}
       description: Manila Backup Service
@@ -115,12 +131,26 @@ spec:
       role_assignments:
       - user: admin@Default
         role: cloud_sharedfilesystem_admin
+      {{- if $.Values.seeds.integration_test_user.enabled }}
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: cloud_sharedfilesystem_admin
+      {{- end }}
       {{- if $.Values.seeds.backup_user.enabled }}
       - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_objectstore_admin
       - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_sharedfilesystem_admin
       {{- end }}
+    {{- if $.Values.seeds.integration_test_user.enabled }}
+    - name: manila
+      role_assignments:
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: cloud_sharedfilesystem_admin
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: member
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: monitoring_viewer
+    {{- end }}
     {{- end }}
     groups:
     {{- if eq . "ccadmin" }}

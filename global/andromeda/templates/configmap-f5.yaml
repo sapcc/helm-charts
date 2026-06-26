@@ -1,0 +1,14 @@
+{{- if .Values.f5.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: andromeda-etc-f5
+  labels:
+    app.kubernetes.io/name: {{ include "andromeda.name" . }}-f5
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  f5.yaml: |
+{{ include (print .Template.BasePath "/etc/_f5.yaml.tpl") . | indent 4 }}
+{{- end }}

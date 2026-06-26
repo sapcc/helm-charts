@@ -117,9 +117,8 @@ prometheus_infra_collector:
         - .*snmp-exporter-pxdlrouteriosxr
         - .*snmp-exporter-n9kpx
         - .*snmp-exporter-acileaf-cc
-        # job `snmp-exporter-aas` and arista `asw-eapi` scrape targets multipe times for different metrics
-        - asw-eapi
-        - .*snmp-exporter-aas
+        - .*snmp-exporter-f5physical
+        - .*snmp-exporter-f5physicalrseries
         # job `generic-network-ssh-exporter` scrapes some instances that snmp already does for different metrics
         - .*network-generic-ssh-exporter-aci-leaf
         - .*network-generic-ssh-exporter-cisco-ios-xr-core-router
@@ -128,13 +127,12 @@ prometheus_infra_collector:
         - vmware-esxi
         # jobs `cp/netbox` scrape the same instances for different metrics
         - cp/netbox
-        # jobs `ipmi/ironic` and `redfish-*` scrape the same nodes for different metrics
-        - ipmi/ironic
+        # jobs `ipmi-exporter-ironic` and `redfish-*` scrape the same nodes for different metrics
+        - .*ipmi-exporter-ironic
         - redfish-bb
-        - redfish-cp
-        - redfish-bm
         - redfish-fw
         - redfish-perf
+        - redfish-bios
         # opentelemetry collector scrapes its own metrics and annotates them
         - logs/opentelemetry-collector-logs
  
@@ -194,16 +192,22 @@ netbox_exporters:
 ask1k_tests:
   enabled: false
 
-ucs_exporter:
-  enabled: false
-  scrapeInterval: 10m
-  scrapeTimeout: 5m
-
 windows_exporter:
-  enabled: true
+  basic_auth:
+    enabled: false
+    username: 
+    password: 
+
   scrapeInterval: 4m
   scrapeTimeout: 120s
   listen_port: 9200
+  scheme: HTTP
+
+  alerts:
+    enabled: false
+    # Keys = directory names in alerts/
+    prometheus:
+      - name: infra-collector
 
 prober_exporter:
   enabled: false
@@ -219,3 +223,16 @@ http_sd_configs:
   netbox_staging_url: https://netbox-test.global.cloud.sap/api/plugins/atlas
   netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
   refresh_interval: 60m
+
+  basicAuth:
+    jumpserver:
+      username:
+      password:
+
+  tls:
+    jump01:
+      crt:
+      key:
+    jump02:
+      crt:
+      key:

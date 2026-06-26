@@ -85,9 +85,9 @@ groups:
     - alert: ThanosQueryHighDNSFailures
       expr: |
         (
-          sum by (thanos) (rate(thanos_query_store_apis_dns_failures_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_query_endpoints_dns_failures_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (thanos) (rate(thanos_query_store_apis_dns_lookups_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_query_endpoints_dns_lookups_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         ) * 100 > 1
       for: 15m
       labels:

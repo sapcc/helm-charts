@@ -102,7 +102,7 @@ spec:
       [sst]
       xbstream-opts=--decompress
       [xtrabackup]
-      compress=lz4
+      compress
     {{- end }}
     {{- if $pxc.imagePullPolicy }}
     imagePullPolicy: {{ $pxc.imagePullPolicy }}
@@ -311,6 +311,8 @@ spec:
         {{- if $backup.priority_class }}
         priorityClassName: {{ $backup.priority_class | default "critical-infrastructure" | quote }}
         {{- end }}
+        containerOptions:
+{{ tpl ($backup.containerOptions | toYaml) $ | indent 10 }}
         s3:
 {{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" (get $backup.s3.storages $storage).bucket) | toYaml) $ | indent 10 }}
   {{- end }}

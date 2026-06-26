@@ -94,11 +94,21 @@ function cleanup_tempest_leftovers() {
     done
   }
 
+function cleanup_host_aggregates() {
+  openstack aggregate list -f value -c Name | while read -r aggregate; do
+    if [[ "$aggregate" =~ ^tempest-test_aggregate- ]]; then
+      echo "Host aggregate $aggregate will be deleted"
+      openstack aggregate delete "$aggregate"
+    fi
+  done
+}
+
   # Delete types sequentially so that the deletion of servers in project 1 is
   # eventually completed by the time script gets to deleting ports in project 1
   delete_tempest_os_items "server"
   delete_tempest_os_items "port"
   delete_tempest_os_items "server group"
+  cleanup_host_aggregates
   cleanup_nova
   cleanup_fips_user
   cleanup_fips_admin

@@ -1,0 +1,23 @@
+{{- if .Values.digicertIssuer.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: digicert-issuer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.digicertIssuer.supportGroup | default .Values.global.supportGroup }}
+spec:
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: digicert-issuer
+  disabled: false
+  optionValues:
+    - name: provisioner.apiToken
+      value: {{ required ".Values.digicertIssuer.apiToken missing" .Values.digicertIssuer.apiToken | quote }}
+    - name: provisioner.organizationID
+      value: {{ required ".Values.digicertIssuer.organizationID missing" .Values.digicertIssuer.organizationID | quote }}
+    - name: provisioner.organizationUnits
+      value: "[ {{- required ".Values.digicertIssuer.organizationUnits missing" .Values.digicertIssuer.organizationUnits -}} ]"
+    - name: certManager.serviceAccount.namespace
+      value: {{ .Release.Namespace }}
+{{- end }}

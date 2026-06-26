@@ -21,3 +21,15 @@
     {{- end }}
     {{- $counter -}}
 {{- end }}
+
+{{- define "neutron.service_dependencies" }}
+  {{- template "neutron.db_service" . }},{{ template "neutron.rabbitmq_service" . }}
+{{- end }}
+
+{{- define "neutron.db_service" }}
+  {{- include "utils.db_host" . }}
+{{- end }}
+
+{{- define "neutron.rabbitmq_service" }}
+  {{- .Release.Name }}-rabbitmq
+{{- end }}

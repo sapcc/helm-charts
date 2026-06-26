@@ -9,8 +9,9 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     system: openstack
-    component: manila
     type: api
+    app.kubernetes.io/name: manila
+    app.kubernetes.io/component: api
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
@@ -36,6 +37,8 @@ spec:
         name: {{ .Release.Name }}-api
         alert-tier: os
         alert-service: manila
+        app.kubernetes.io/name: manila
+        app.kubernetes.io/component: api
         {{- tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
@@ -49,6 +52,9 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
         {{- end }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- tuple . (dict "name" (print .Release.Name "-api")) | include "utils.topology.constraints" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
@@ -69,6 +75,9 @@ spec:
         command: ["sh", "-c", "chown -R 42424:42424 /var/lib/manila/coordination"]
         volumeMounts:
         {{- include "utils.coordination.volume_mount" . | indent 10 }}
+      {{- end }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
       containers:
         - name: manila-api
@@ -196,7 +205,7 @@ spec:
             {{ toYaml .Values.pod.resources.api | nindent 13 }}
           {{- end }}
         - name: statsd
-          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
@@ -214,7 +223,9 @@ spec:
           resources:
             {{- toYaml .Values.pod.resources.api_statsd | trim | nindent 12 }}
           {{- end }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
  {{- if .Values.osprofiler.enabled }}
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
  {{- end }}

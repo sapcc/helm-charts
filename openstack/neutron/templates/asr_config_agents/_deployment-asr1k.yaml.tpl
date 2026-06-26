@@ -11,10 +11,8 @@ metadata:
     system: openstack
     type: backend
     component: neutron
-  {{- if $context.Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-asr1k
-  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -47,12 +45,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-start
+          {{- if $context.Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+          {{- end }}
           env:
             - name: DEBUG_CONTAINER
             {{ if $context.Values.pod.debug.asr1k_agent }}
@@ -92,12 +92,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-ml2-start
+          {{ if $context.Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+          {{ end }}
           env:
             - name: DEBUG_CONTAINER
             {{ if $context.Values.pod.debug.asr1k_ml2_agent }}
@@ -105,11 +107,7 @@ spec:
             {{else}}
               value: "false"
             {{ end }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $context | nindent 12 }}
             - name: METRICS_PORT
               value: "{{$context.Values.port_l2_metrics |  default 9102}}"
           volumeMounts:

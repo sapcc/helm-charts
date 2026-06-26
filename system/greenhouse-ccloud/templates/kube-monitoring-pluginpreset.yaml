@@ -13,6 +13,16 @@ kind: PluginPreset
 metadata:
   name: kube-monitoring
   namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterOptionOverrides:
   {{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services}}
@@ -67,7 +77,9 @@ spec:
       operator: In
       values:
       - "compute"
+      - "sci-k8s-customer"
       - "sci-k8s-runtime"
+      - "sci-k8s-management"
       - "storage"
       - "observability"
   plugin:
@@ -90,14 +102,12 @@ spec:
       value: true
     {{- if .Values.global.dockerHubMirror }}
     - name: kubeMonitoring.crds.upgradeJob.image.busybox.registry
-      value: {{ .Values.global.dockerHubMirror }}
+      value: {{ .Values.global.dockerHubMirror }}/library
     {{- end }}
     {{- if .Values.global.registryK8sIoMirror }}
     - name: kubeMonitoring.prometheusOperator.admissionWebhooks.patch.image.registry
       value: {{ .Values.global.registryK8sIoMirror }}
     - name: kubeMonitoring.crds.upgradeJob.image.kubectl.registry
-      value: {{ .Values.global.registryK8sIoMirror }}
-    - name: kubeMonitoring.prometheusOperator.admissionWebhooks.patch.image.registry
       value: {{ .Values.global.registryK8sIoMirror }}
     - name: kubeMonitoring.kube-state-metrics.image.registry
       value: {{ .Values.global.registryK8sIoMirror }}
@@ -120,6 +130,8 @@ spec:
     {{- end }}
     {{- if .Values.global.ghcrIoMirror }}
     - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+    - name: kubeMonitoring.prometheusOperator.admissionWebhooks.patch.image.registry
       value: {{ .Values.global.ghcrIoMirror }}
     {{- end }}
     - name: kubeMonitoring.defaultRules.create
@@ -146,6 +158,9 @@ spec:
       value: 100Gi
     - name: absentMetricsOperator.enabled
       value: true
-    pluginDefinition: kube-monitoring
+    pluginDefinitionRef:
+      kind: PluginDefinition
+      name:  kube-monitoring
     releaseNamespace: kube-monitoring
+    deletionPolicy: Retain
 {{- end -}}

@@ -1,5 +1,6 @@
+---
 global:
-  dbUser: admin
+  dbUser: test
   dbPassword: secret!
   registry: my.docker.registry
   registryAlternateRegion: other.docker.registry
@@ -15,6 +16,12 @@ global:
       aws:
         region: local
         sse_customer_key: superSecret
+      ceph_s3:
+        targets:
+          - endpoint: "https://ceph-s3.local.example.com"
+            region: local
+            aws_access_key_id: superSecret
+            aws_secret_access_key: superSecret
 
 test_db_host: testRelease-mariadb.svc
 root_password: secret123
@@ -28,10 +35,35 @@ backup_v2:
   enabled: true
   swift:
     password: superSecret
+  ceph_s3:
+    enabled: true
 
 users:
+  test:
+    name: test
+    password: superSecret
+  skipme:
+    name: skipme
+    password: null
+  deleteme:
+    enabled: false
   backup:
     password: superSecret
 
 alerts:
   support_group: test
+
+sync:
+  enabled: true
+  replicas: 1
+  backup:
+    service: test
+    swift:
+      password: openstackTopSecret
+  source:
+    host: source-mariadb
+    password: sourceTopSecret
+  target:
+    password: targetTopSecret
+  databases:
+    - test

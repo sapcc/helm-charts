@@ -1,3 +1,50 @@
+## 8.2.3
+
+* add alert relabeling config for playbook labels, enforces fully qualified domain names instead of paths
+
+## 8.2.1
+
+* Fix PrometheusMultiplePodScrapes alert failing with many-to-many matching error when pods share the same name across namespaces
+
+## 8.2.0
+
+* bump Thanos sidecar to v0.41.0
+* bump Prometheus to v3.11.2
+
+## 8.1.3
+
+* Include version tag in `thanos.spec.image` since the Prometheus Operator's `BuildImagePath` returns the `image` field as-is, ignoring `version` for image construction
+
+## 8.1.2
+
+* fix helper referring to `thanos.baseImage` which is causes the image tag version to be missing 
+
+## 8.1.1
+
+* `thanos.baseImage` is deprecated updating to `thanos.image`
+
+## 8.1.0
+
+* Enable native histogram support: add `convertClassicHistogramsToNHCB`, `scrapeClassicHistograms`, and `scrapeNativeHistograms` to the Prometheus CR spec (all enabled by default)
+
+## 8.0.10
+
+* use global repository instead of hardcoded single region
+
+## 8.0.9
+
+* VPA container name was not always shown
+
+## 8.0.8
+
+* Upgrade Prometheus to v3.6.0
+* add default priorityClass for better scheduling 
+
+## 8.0.7
+
+* Upgrade Prometheus to v3.5.0
+* Improved VPA alerting with blaming respective container
+
 ## 8.0.0
 
 * Upgrade Prometheus to v3.2.1

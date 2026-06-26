@@ -1,0 +1,54 @@
+{{- range $cluster := .Values.clusters }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metallb-manifests
+  namespace: {{ $cluster.namespace }}
+data:
+  data: |-
+    apiVersion: metallb.io/v1beta1
+    kind: L2Advertisement
+    metadata:
+      name: l2adv
+      namespace: metallb-system
+{{- if $cluster.metallb }}
+{{- /* MetalLB pool IPs come from the CC Kubernetes Runtime Transit role (/26 prefixes).
+       The first /27 of each prefix is reserved for LB purposes.
+       Layout within the LB /27 (32 IPs):
+         - .0-.9:   reserved (network, gateway, infra)
+         - .10-.14: metallb-pool-manual (5 IPs, manual assignment)
+         - .15-.30: metallb-pool (16 IPs, auto assignment)
+         - .31:     broadcast
+
+       Set per cluster in values with the subnet from the Transit role:
+         clusters:
+           - name: rt-eu-de-1
+             metallb:
+               subnet: "10.20.30.0/26"
+*/ -}}
+{{- $cidr := $cluster.metallb.subnet }}
+{{- $parts := splitList "." (splitList "/" $cidr | first) }}
+{{- $prefix := printf "%s.%s.%s" (index $parts 0) (index $parts 1) (index $parts 2) }}
+{{- $network := index $parts 3 | atoi }}
+    ---
+    apiVersion: metallb.io/v1beta1
+    kind: IPAddressPool
+    metadata:
+      name: metallb-pool
+      namespace: metallb-system
+    spec:
+      addresses:
+      - {{ $prefix }}.{{ add $network 15 }}-{{ $prefix }}.{{ add $network 30 }}
+    ---
+    apiVersion: metallb.io/v1beta1
+    kind: IPAddressPool
+    metadata:
+      name: metallb-pool-manual
+      namespace: metallb-system
+    spec:
+      addresses:
+      - {{ $prefix }}.{{ add $network 10 }}-{{ $prefix }}.{{ add $network 14 }}
+      autoAssign: false
+{{- end }}
+{{- end }}

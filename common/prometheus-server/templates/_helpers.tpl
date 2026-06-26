@@ -101,10 +101,10 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 
 {{/* Image for Thanos components. Do not use for Thanos sidecar! */}}
 {{- define "thanos.image" -}}
-{{- if and .Values.thanos.components.baseImage .Values.thanos.components.version -}}
-{{- .Values.thanos.components.baseImage -}}:{{- .Values.thanos.components.version -}}
+{{- if and .Values.thanos.components.image .Values.thanos.components.version -}}
+{{- .Values.thanos.components.image -}}:{{- .Values.thanos.components.version -}}
 {{- else -}}
-{{- required ".Values.thanos.spec.baseImage missing" .Values.thanos.spec.baseImage -}}:{{- required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
+{{- required ".Values.thanos.spec.image missing" .Values.thanos.spec.image -}}:{{- required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
 {{- end -}}
 {{- end -}}
 

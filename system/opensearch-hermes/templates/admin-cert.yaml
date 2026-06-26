@@ -4,16 +4,17 @@ metadata:
   name: admin-cert
   namespace: hermes
 spec:
-  dnsNames:
-  - 'opensearchhermesadmin.{{ .Values.global.region }}.cloud.sap'
+  commonName: 'opensearchhermesadmin.{{ .Values.global.region }}'
+  duration: 8760h
+  renewBefore: 720h
   issuerRef:
-    group: certmanager.cloud.sap
-    kind: DigicertIssuer
-    name: digicert-issuer
+    name: opensearch-hermes-ca-issuer
+    kind: Issuer
   privateKey:
     algorithm: RSA
     encoding: PKCS8
     size: 2048
   usages:
     - client auth
+    - server auth
   secretName: admin-cert

@@ -10,7 +10,9 @@ notification_level = {{ .Values.notification_level }}
 versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
-
+# Name of the project where the service users are located. This is inside the default domain
+# this is the default value, but this makes this transparent
+rbac_service_project_name = service
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
 executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}
@@ -114,6 +116,30 @@ port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
+[oslo_policy]
+# This option controls whether or not to enforce scope when
+# evaluating policies. If ``True``, the scope of the token
+# used in the request is compared to the ``scope_types`` of
+# the policy being enforced. If the scopes do not match, an
+# ``InvalidScope`` exception will be raised. If ``False``, a
+# message will be logged informing operators that policies are
+# being invoked with mismatching scope. (boolean value)
+enforce_scope = false
+
+# This option controls whether or not to use old deprecated
+# defaults when evaluating policies. If ``True``, the old
+# deprecated defaults are not going to be evaluated. This
+# means if any existing token is allowed for old defaults but
+# is disallowed for new defaults, it will be disallowed. It is
+# encouraged to enable this flag along with the
+# ``enforce_scope`` flag so that you can get the benefits of
+# new defaults and ``scope_type`` together. If ``False``, the
+# deprecated policy check string is logically OR'd with the
+# new policy check string, allowing for a graceful upgrade
+# experience between releases with new policies, which is the
+# default behavior. (boolean value)
+enforce_new_defaults = false
+
 {{ if .Values.audit.enabled -}}
 [audit]
 enabled = True
@@ -127,9 +153,8 @@ metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{
 {{- include "ini_sections.cache" . }}
 
 
-{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
-
 [conductor]
+{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
   {{- if .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
 disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
   {{- end }}
@@ -137,3 +162,5 @@ disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_
 permitted_image_formats = {{ .Values.conductor.defaults.conductor.permitted_image_formats }}
   {{- end }}
 {{- end }}
+# Make sure to set it in api and conductor
+max_concurrent_clean = {{ .Values.conductor.defaults.conductor.max_concurrent_clean }}

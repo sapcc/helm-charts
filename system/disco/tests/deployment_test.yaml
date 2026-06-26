@@ -1,0 +1,246 @@
+# disco-config.yaml must be listed here because disco-controller-manager.yaml
+# uses `include` to compute a checksum of its rendered content at template time.
+# Assertions are scoped with `template:` to run only against the Deployment.
+suite: deployment
+values:
+  - ../ci/test-values.yaml
+templates:
+  - disco-controller-manager.yaml
+  - disco-config.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should render a Deployment
+    asserts:
+      - template: disco-controller-manager.yaml
+        isKind:
+          of: Deployment
+
+  - it: should have app=disco label on Deployment metadata
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: metadata.labels.app
+          value: disco
+
+  - it: should have app=disco label on pod template
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.metadata.labels.app
+          value: disco
+
+  - it: should set controllerLabels on the Deployment when provided
+    set:
+      controllerLabels:
+        team: platform
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: metadata.labels.team
+          value: platform
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.metadata.labels.team
+          value: platform
+
+  - it: should use disco-controller-manager as service account
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.spec.serviceAccountName
+          value: disco-controller-manager
+
+  - it: should expose webhook-server port 9443
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            containerPort: 9443
+            name: webhook-server
+            protocol: TCP
+
+  - it: should expose https port 8080
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            containerPort: 8080
+            name: https
+            protocol: TCP
+
+  - it: should mount webhook cert volume
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: cert
+            readOnly: true
+
+  - it: should define webhook cert volume from secret
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.volumes
+          content:
+            name: cert
+            secret:
+              defaultMode: 420
+              secretName: tls-disco-webhook-service
+
+  - it: should set checksum/config annotation on pod template
+    asserts:
+      - template: disco-controller-manager.yaml
+        isNotEmpty:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: should have reloader annotation on Deployment metadata
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: metadata.annotations["secret.reloader.stakater.com/reload"]
+          value: "disco-config"
+
+  - it: should get NAMESPACE from field reference
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+
+  - it: should mount envFrom disco-config secret
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: disco-config
+
+  - it: should have liveness probe on /healthz
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /healthz
+
+  - it: should have readiness probe on /readyz
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /readyz
+
+  - it: should set allowPrivilegeEscalation false
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+
+  - it: should run as non-root
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+
+  #############################################################################
+  # NEW FEATURE TESTS
+  #############################################################################
+
+  - it: should support custom deploymentAnnotations
+    set:
+      deploymentAnnotations:
+        custom.annotation/key: "my-value"
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: metadata.annotations["custom.annotation/key"]
+          value: "my-value"
+
+  - it: should not have webhook-server port when webhooks.enabled is false
+    set:
+      webhooks.enabled: false
+    asserts:
+      - template: disco-controller-manager.yaml
+        notContains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            containerPort: 9443
+            name: webhook-server
+            protocol: TCP
+
+  - it: should not mount webhook cert volume when webhooks.enabled is false
+    set:
+      webhooks.enabled: false
+    asserts:
+      - template: disco-controller-manager.yaml
+        notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: cert
+            readOnly: true
+
+  - it: should add Gardener network labels when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.metadata.labels["networking.gardener.cloud/to-shoot-apiserver"]
+          value: allowed
+      - template: disco-controller-manager.yaml
+        equal:
+          path: spec.template.metadata.labels["networking.resources.gardener.cloud/to-kube-apiserver-tcp-443"]
+          value: allowed
+
+  - it: should set KUBERNETES_SERVICE_HOST env when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KUBERNETES_SERVICE_HOST
+            value: "api.example.garden.cloud"
+
+  - it: should set NAMESPACE from remote.shootNamespace when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+      remote.shootNamespace: kube-system
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NAMESPACE
+            value: "kube-system"
+
+  - it: should mount remote kubeconfig volume when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: remote-kubeconfig
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true

@@ -1,12 +1,46 @@
 global:
+  opensearch:
+    endpoint: local
   clusterType: local
+  opensearchTools:
+    tag: "latest"
+  sapcert:
+    enabled: false
   truststore:
     enabled: false
     cert_pw: DEFINIED-IN-REGIONS
     cert: DEFINIED-IN-REGIONS
   linkerd_requested: true
   region: DEFINED_IN_VALUES_FILE
-  curator_image: "20250409174833"
+  data_stream:
+    enabled: true
+    names: "hermes"
+    schema_version: "25"
+    hermes:
+      min_index_age: "1d"
+      min_size: "50gb"
+      min_doc_count: 100000000
+    # OpenSearch security-plugin audit log datastream. Distinct from the
+    # Hermes CADF cloud-audit datastream (which lands in "hermes"). Disabled
+    # by default; regions opt in via region values file alongside flipping
+    # audit.enabled / audit.enable_rest / audit.enable_transport.
+    #
+    # Expected steady-state volume is small: only admin actions, failed
+    # logins, and privilege probes survive after the service-account
+    # ignore_users filter. Estimate 50-1000 events/day, ~1MB/day.
+    # The min_doc_count rollover guard exists for brute-force scenarios
+    # where FAILED_LOGIN can spike to thousands/sec.
+    opensearch_security_audit:
+      enabled: false
+      min_index_age: "30d"
+      min_size: "1gb"
+      min_doc_count: 1000000
+      # PCI-DSS 10.5.1 minimum is 12 months; BSI sectoral guidance for
+      # KRITIS/financial operators prefers 24 months. Set to the higher
+      # bar so a single retention setting satisfies both audits.
+      retention: "730d"
+  gardener:
+    enabled: false
   manager:
     secret: DEFINED_IN_VALUES_FILE
   users:
@@ -59,7 +93,85 @@ global:
     suffix: DEFINED_IN_VALUES_FILE
 
 auth:
-  ca_path: certs/admin/tls.crt
+  ca_path: certs/rest/ca.crt
+
+retention:
+  ds: "365d"
+
+# OpenSearch security-plugin audit logging.
+#
+# Compliance scope: PCI-DSS 4.0 Req. 10.2, BSI IT-Grundschutz APP.4.6 / OPS.1.2.5
+# / ORP.4.A23, BSI C5 (KRITIS B3S Cloud Computing). The category set kept ON
+# below is the intersection of those baselines. Anything not required by a
+# baseline is OFF to keep volume and retention cost down.
+#
+# Operational model: only the hermes service and named admins may bypass the
+# API. Service accounts are added to ignore_users to drop legitimate
+# high-volume traffic; everything else (including admin CLI access via
+# securityadmin.sh, dashboards probes, manual queries) is recorded.
+#
+# Default state is disabled. Regions opt in via their region values file.
+audit:
+  enabled: false
+  enable_rest: false
+  enable_transport: false
+
+  # Categories the security plugin will NOT audit. The compliance-required set
+  # (FAILED_LOGIN, MISSING_PRIVILEGES, GRANTED_PRIVILEGES, AUTHENTICATED,
+  # BAD_HEADERS, SSL_EXCEPTION) is deliberately absent from this list.
+  # INDEX_EVENT and OPENDISTRO_SECURITY_INDEX_ATTEMPT are noisy and not
+  # required by any baseline.
+  disabled_rest_categories:
+    - INDEX_EVENT
+    - OPENDISTRO_SECURITY_INDEX_ATTEMPT
+  disabled_transport_categories:
+    - INDEX_EVENT
+    - OPENDISTRO_SECURITY_INDEX_ATTEMPT
+
+  # Service accounts that legitimately bypass the Hermes API. Anything
+  # outside this list will be audited, including admin actions.
+  #
+  # Why each is here:
+  #   kibanaserver/kibanaserver2 - dashboard service, polls every ~1s
+  #   hermes                     - Hermes-API service account; user requests
+  #                                authenticated via Keystone are proxied
+  #                                through this user, so user-driven volume
+  #                                lands here. Auditing it would create
+  #                                the noisiest possible signal.
+  #   audit/audit2               - logstash CADF writer. Auditing the
+  #                                audit-writer is a feedback loop.
+  #   promuser/promuser2         - prometheus-exporter scrape every 30s
+  #                                (~2880 events/day per source). Pure noise.
+  ignore_users:
+    - kibanaserver
+    - kibanaserver2
+    - hermes
+    - audit
+    - audit2
+    - promuser
+    - promuser2
+  ignore_requests: []
+
+  resolve_bulk_requests: false
+  log_request_body: true
+  resolve_indices: true
+  # Required by PCI-DSS to keep bearer tokens out of the audit log.
+  exclude_sensitive_headers: true
+
+  compliance:
+    enabled: true
+    # BSI ORP.4.A23: log security configuration changes.
+    internal_config: true
+    external_config: false
+    read_metadata_only: true
+    read_watched_fields: {}
+    read_ignore_users:
+      - kibanaserver
+    write_metadata_only: true
+    write_log_diffs: false
+    write_watched_indices: []
+    write_ignore_users:
+      - kibanaserver
 
 owner-info:
   support-group: observability
@@ -76,7 +188,7 @@ alerts:
 exporter:
   enabled: false
   prometheus: DEFINED-IN-SECRETS
-tag: 2.19.1
+tag: 3.7.0
 
 linkerd-support:
   annotate_namespace: true
@@ -87,7 +199,7 @@ opensearch_hermes:
   ca:
     crt: DEFINED-IN-SECRETS
   image:
-    tag: 2.19.1
+    tag: 3.7.0
   service:
     port: 5601
   nameOverride: "opensearch-hermes"
@@ -107,20 +219,31 @@ opensearch_hermes:
     size: 100Gi
     image: "library/busybox"
   clusterName: "opensearch-hermes"
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "nodes-cert,opensearch-hermes-ca-secret"
   secretMounts:
     - name: opensearch-certificates
-      secretName: cert-manager
+      secretName: nodes-cert
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0700
   plugins:
     enabled: true
     installList:
-      - https://github.com/Virtimo/prometheus-exporter-plugin-for-opensearch/releases/download/v2.19.1/prometheus-exporter-2.19.1.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.7.0.0/prometheus-exporter-3.7.0.0.zip
   securityConfig:
     path: "/usr/share/opensearch/config/opensearch-security"
     enabled: true
     config:
       securityConfigSecret: "security-config"
+  # Route OpenSearch security-plugin audit logs to a dedicated datastream.
+  # The default ("audit-YYYY.MM.dd") collides with the Hermes "audit-*" role
+  # grant in roles.yml, which would let cloud-audit consumers read OpenSearch
+  # infrastructure-audit. Writing to the "opensearch-security-audit" datastream
+  # routes through the datastream abstraction; ISM owns rollover + retention.
+  # No date suffix here — backing indices are named .ds-...-NNNNNN by OpenSearch.
+  config:
+    opensearch.yml: |
+      plugins.security.audit.config.index: "opensearch-security-audit"
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
@@ -131,7 +254,7 @@ opensearch_hermes_master:
   ca:
     crt: DEFINED-IN-SECRETS
   image:
-    tag: 2.19.1
+    tag: 3.7.0
   service:
     port: 5601
   nameOverride: "opensearch-hermes-master"
@@ -149,20 +272,29 @@ opensearch_hermes_master:
     size: 1Gi
     image: "library/busybox"
   clusterName: "opensearch-hermes"
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "nodes-cert,opensearch-hermes-ca-secret"
   secretMounts:
     - name: opensearch-certificates
-      secretName: cert-manager
+      secretName: nodes-cert
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0700
   plugins:
     enabled: true
     installList:
-      - https://github.com/Virtimo/prometheus-exporter-plugin-for-opensearch/releases/download/v2.19.1/prometheus-exporter-2.19.1.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.7.0.0/prometheus-exporter-3.7.0.0.zip
   securityConfig:
     path: "/usr/share/opensearch/config/opensearch-security"
     enabled: true
     config:
       securityConfigSecret: "security-config"
+  # Master nodes also run the security plugin and need the same audit-index
+  # override to keep behavior consistent across the cluster. Datastream name,
+  # no date suffix — ISM owns rollover via the ds-opensearch-security-audit-ism
+  # policy bound by index_patterns in the index template.
+  config:
+    opensearch.yml: |
+      plugins.security.audit.config.index: "opensearch-security-audit"
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
@@ -170,7 +302,7 @@ opensearch_hermes_master:
 opensearch_hermes_dashboards:
   enabled: false
   image:
-    tag: "2.19.1"
+    tag: "3.7.0"
   fullnameOverride: opensearch-hermes-dashboards
   nameOverride: opensearch-hermes-dashboards
   serviceAccount:
@@ -198,4 +330,4 @@ elasticdump:
 opensearch_hermes_manager:
   enabled: false
   port_internal: 9000 
-  image_version: "20240214094510"
+  image_version: "20260518120206"

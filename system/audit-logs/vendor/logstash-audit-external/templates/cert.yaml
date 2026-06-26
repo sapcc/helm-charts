@@ -1,10 +1,11 @@
-{{ if .Values.syslog.enabled -}}
+{{- if or (eq .Values.http.enabled true) (eq .Values.mtls.enabled true) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: tls-logstash-audit-external
 spec:
   dnsNames:
+  - audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
   - logstash-audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
   issuerRef:
     group: certmanager.cloud.sap

@@ -4,12 +4,13 @@ global:
   ghcrIoMirror:
   registryK8sIoMirror:
   quayIoMirror:
+  fluxEnabled: true
 
 mappedOrgAdminIdPGroup: ccloudAdminGroup
 
 pluginPreset:
   enabled: true
-cephOperations: 
+cephOperations:
   enabled: true
 kvmMonitoring:
   enabled: true
@@ -78,6 +79,8 @@ alerts:
 certManager:
   webhook:
     timeoutSeconds: 15
+  overrideShootNetworkPolicy:
+    - cluster-one-test
 
 digicert:
   enabled: true
@@ -86,6 +89,8 @@ digicert:
     organizationID: "1337"
     organizationUnits:
       - MyUnit
+  overrideShootNetworkPolicy:
+    - cluster-one-test
 
 kubeconfigGenerator:
   enabled: true
@@ -197,8 +202,87 @@ ingressPlugins:
     recordName: ss.aa.rr
   - cluster: bar
     recordName: ss.aa.rr
+    overrideShootNetworkPolicy: true
 
 discoPlugins:
   - cluster: hase
     region: qa
     password: superSecret
+    overrideShootNetworkPolicy: true
+
+opensearch:
+  enabled: true
+  additionalRuleLabels:
+    testkey1: test1
+  dashboards:
+    service:
+      labels:
+        testkey2: test2
+  certManager:
+    digicert:
+      group: certmanager.test.sap
+      kind: DigicertIssuer
+      name: test-digicert-issuer
+  usersRoleBinding:
+    - name: "test-role"
+      users: ["logs", "logs2"]
+      roles: ["test-role"]
+  clusters:
+    - region: "test-region-1"
+      cluster: "test-cluster-1"
+      endpoint:
+        - opensearch-logs-client.test-cluster-1.tld
+      users:
+        admin:
+          username: "admin1"
+          password: "adminpass1"
+          hash: "hash1"
+        logs:
+          username: "logs1"
+          password: "logspass1"
+        logs2:
+          username: "logs21"
+          password: "logs2pass1"
+        dashboards:
+          username: "dash1"
+          password: "dashpass1"
+        dashboards2:
+          username: "dash21"
+          password: "dash2pass1"
+      ingress:
+        enabled: true
+        className: nginx
+        annotations:
+          disco: "true"
+        hosts:
+          - host: opensearch-logs-client.test-cluster-1.tld
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - opensearch-logs-client.test-cluster-1.tld
+            secretName: opensearch-http-cert-external-1
+    - region: "test-region-2"
+      cluster: "test-cluster-2"
+      endpoint:
+        - opensearch-logs-client.test-cluster-2.tld
+      users:
+        admin:
+          username: "admin2"
+          password: "adminpass2"
+          hash: "hash2"
+        logs:
+          username: "logs2"
+          password: "logspass2"
+        logs2:
+          username: "logs22"
+          password: "logs2pass2"
+        dashboards:
+          username: "dash2"
+          password: "dashpass2"
+        dashboards2:
+          username: "dash22"
+          password: "dash2pass2"
+      ingress:
+        enabled: false

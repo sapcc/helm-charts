@@ -26,38 +26,10 @@ groups:
           starved for CPU time, so try checking the CPU throttling metrics.
 
     ############################################################################
-    # alerts concerning pgmetrics collector (alerting this condition separately
-    # allows to avoid a bunch of absent() checks in other alerts' expressions)
-    #
-    # Note that we do not check absent(castellum_min_greenlit_at_gauge). This
-    # condition will occur during normal operation whenever there are no
-    # operations in state "greenlit".
-    #
-    # We also guard absent(castellum_*_min_scraped_at) to avoid false positives
-    # when there are no resources or assets in the DB.
-
-    - alert: OpenstackCastellumMissingDatabaseMetrics
-      expr: absent(castellum_asset_count_gauge) or absent(castellum_resource_count_gauge) or (castellum_resource_count_gauge > 0 and absent(castellum_resource_min_scraped_at)) or (castellum_asset_count_gauge > 0 and absent(castellum_asset_min_scraped_at))
-      for: 10m
-      labels:
-        context: database-metrics
-        service: castellum
-        severity: warning
-        support_group: containers
-        tier: os
-        playbook: 'docs/support/playbook/castellum/missing_database_metrics'
-      annotations:
-        description: The pgmetrics deployment is not sending all expected metrics.
-          Other Castellum alerts may not fire because of missing timeseries.
-          Check if castellum-pgmetrics is working correctly.
-        summary: Missing database metrics (alerting reliability impacted)
-
-    ############################################################################
     # alerts concerning resource scraping in castellum-observer
 
     - alert: OpenstackCastellumNoResourceScraping
-      expr: absent(rate(castellum_aggregated_successful_resource_scrapes[60m]) > 0)
-        and max(castellum_resource_count_gauge) > 0
+      expr: sum(increase(castellum_resource_scrapes{task_outcome="success"}[60m])) == 0 and max(castellum_resource_count_gauge) > 0
       for: 5m
       labels:
         context: resource-scraping
@@ -102,7 +74,7 @@ groups:
         support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/resource_scraping_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/resources/castellum/playbooks/resource_scraping_failing'
         meta: "Some resource scrapes are failing!"
       annotations:
         description: |
@@ -114,8 +86,7 @@ groups:
     # alerts concerning asset scraping in castellum-observer
 
     - alert: OpenstackCastellumNotScrapingAnyAssets
-      expr: absent(rate(castellum_aggregated_successful_asset_scrapes[30m]) > 0)
-        and max(castellum_asset_count_gauge) > 0
+      expr: sum(increase(castellum_asset_scrapes{task_outcome="success"}[60m])) == 0 and max(castellum_asset_count_gauge) > 0
       for: 5m
       labels:
         context: asset-scraping
@@ -166,7 +137,7 @@ groups:
         support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/asset_scraping_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/resources/castellum/playbooks/asset_scraping_failing'
         meta: "Some asset scrapes of fresh assets are failing!"
       annotations:
         description: |
@@ -184,7 +155,7 @@ groups:
         support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/asset_scraping_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/resources/castellum/playbooks/asset_scraping_failing'
         meta: "Some asset scrapes of existing assets are failing!"
       annotations:
         description: |
@@ -234,7 +205,7 @@ groups:
         summary: Resize operations are not getting executed in a timely manner
 
     - alert: OpenstackCastellumErroredAssetResizes
-      expr: sum(increase(castellum_aggregated_errored_asset_resizes[5m])) BY (asset) > 0
+      expr: sum by (asset) (increase(castellum_asset_resizes{task_outcome="failure"}[5m])) > 0
       for: 10m
       labels:
         context: asset-resizing
@@ -258,14 +229,33 @@ groups:
         severity: warning
         support_group: containers
         tier: os
-        playbook: 'docs/support/playbook/castellum/asset_resizing_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/resources/castellum/playbooks/non_manila_asset_resizing_failing'
         dashboard: castellum
-        meta: "Some asset resizes are failing!"
+        meta: "Some non-Manila asset resizes are failing!"
       annotations:
         description: |
-          Castellum encountered backend errors while resizing some assets.
+          Castellum encountered backend errors while resizing some non-Manila assets.
           Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
-        summary: Castellum encountered backend errors while resizing some assets
+        summary: Castellum encountered backend errors while resizing some non-Manila assets
+
+    # This alert is separate, to specify the storage support_group directly.
+    - alert: OpenstackCastellumManilaAssetResizingFailing
+      expr: castellum_manila_asset_resize_errors_gauge > 0
+      for: 5m
+      labels:
+        context: asset-resizing
+        service: manila
+        severity: warning
+        support_group: compute-storage-api
+        tier: os
+        playbook: 'https://operations.global.cloud.sap/docs/resources/castellum/playbooks/manila_asset_resizing_failing'
+        dashboard: castellum
+        meta: "Some Manila asset resizes are failing!"
+      annotations:
+        description: |
+          Castellum encountered backend errors while resizing some Manila assets.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
+        summary: Castellum encountered backend errors while resizing some Manila assets
 
     - alert: OpenstackCastellumAuditEventPublishFailing
       # The underlying metric counts failed submission attempts, e.g. because the hermes-rabbitmq server is restarting.

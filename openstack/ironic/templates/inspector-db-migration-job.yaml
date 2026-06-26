@@ -1,4 +1,4 @@
-# Might we worth building your own ipxe stack here: https://rom-o-matic.eu/
+{{- $serviceaccount := lookup "v1" "ServiceAccount" .Release.Namespace .Release.Name -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,7 +16,13 @@ metadata:
     ccloud/service: ironic
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if $serviceaccount }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       restartPolicy: OnFailure
       initContainers:
       {{- tuple . (dict "service" (include "ironic.db_service" . | quote)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
@@ -32,6 +38,7 @@ spec:
         - |
           set -e
           ironic-inspector-dbsync upgrade
+          {{- include "utils.script.job_finished_hook" . | nindent 10 }}
         env:
         - name: PGAPPNAME
           valueFrom:

@@ -39,12 +39,15 @@
   'cloud_network_admin':%(target.role.name)s or
   'cloud_dns_admin':%(target.role.name)s or
   'cloud_dns_viewer':%(target.role.name)s or
+  'cloud_dns_backup':%(target.role.name)s or
   'dns_admin':%(target.role.name)s or
   'dns_hostmaster':%(target.role.name)s or
   'dns_zonemaster':%(target.role.name)s or
   'dns_mailmaster':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
+  'cloud_compute_viewer':%(target.role.name)s or
+  'cloud_compute_migrate':%(target.role.name)s or
   'cloud_keymanager_admin':%(target.role.name)s or
   'cloud_volume_admin':%(target.role.name)s or
   'cloud_sharedfilesystem_admin':%(target.role.name)s or
@@ -236,7 +239,7 @@
 # GET  /v3/domains
 # Intended scope(s): system
 #"identity:list_domains": "role:reader and system_scope:all"
-"identity:list_domains": "rule:cloud_reader or role:role_viewer"
+"identity:list_domains": "rule:cloud_reader"
 
 # Create domain.
 # POST  /v3/domains
@@ -254,7 +257,7 @@
 # DELETE  /v3/domains/{domain_id}
 # Intended scope(s): system
 #"identity:delete_domain": "role:admin and system_scope:all"
-"identity:delete_domain": "rule:cloud_admin"
+"identity:delete_domain": "!{{- if .Values.tempest.enabled }} or (project_id:{{.Values.tempest.adminProjectId}} and role:admin){{ end }}"
 
 # Create domain configuration.
 # PUT  /v3/domains/{domain_id}/config
@@ -340,6 +343,10 @@
 "identity:ec2_delete_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 "identity:ec2_delete_credentials": "rule:identity:ec2_delete_credential"
+
+"identity:ec2tokens_validate": "rule:service_or_admin"
+"identity:s3tokens_validate": "rule:service_or_admin"
+
 # Show endpoint details.
 # GET  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
@@ -592,8 +599,8 @@
 # Intended scope(s): system, domain
 #"identity:list_groups": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.group.domain_id)s)"
 "identity:list_groups": "rule:cloud_reader or
-  (role:reader and (domain_id:%(target.group.domain_id)s or domain_id:%(domain_id)s)) or
-  (role:role_viewer and (project_domain_id:%(domain_id)s) or project_domain_id:%(target.group.domain_id)s)"
+  (role:reader and (domain_id:%(target.group.domain_id)s or domain_id:%(filter_attr.domain_id)s)) or
+  (role:role_viewer and (project_domain_id:%(filter_attr.domain_id)s) or project_domain_id:%(target.group.domain_id)s)"
 
 # List groups to which a user belongs.
 # GET  /v3/users/{user_id}/groups
@@ -620,7 +627,7 @@
 # DELETE  /v3/groups/{group_id}
 # Intended scope(s): system, domain
 #"identity:delete_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
-"identity:delete_group": "rule:cloud_admin"
+"identity:delete_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # List members of a specific group.
 # GET  /v3/groups/{group_id}/users
@@ -925,8 +932,8 @@
 #"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_projects": "rule:cloud_reader or
   (role:reader and domain_id:%(target.domain_id)s) or
-  (role:reader and domain_id:%(domain_id)s) or
-  (role:reader and project_id:%(parent_id)s)"
+  (role:reader and domain_id:%(filter_attr.domain_id)s) or
+  (role:reader and project_id:%(filter_attr.parent_id)s)"
 
 # List projects for user.
 # GET  /v3/users/{user_id}/projects
@@ -940,7 +947,7 @@
 # POST  /v3/projects
 # Intended scope(s): system, domain
 #"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
-"identity:create_project": ""
+"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.parent_id)s) or user_domain_id:%(target.project.domain_id)s"
 
 # Update project.
 # PATCH  /v3/projects/{project_id}
@@ -953,7 +960,7 @@
 # Intended scope(s): system, domain
 #"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
 # The corresponding `prodel` service details are available on GitHub under `cc/prodel`
-"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}project_id:{{.Values.tempest.adminProjectId}} or {{ end }}{{ .Values.prodel.url }})"
+"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}project_id:{{.Values.tempest.adminProjectId}} or {{ end }}{{ include "prodel_url" $ }})"
 
 # List tags for a project.
 # GET  /v3/projects/{project_id}/tags
@@ -1156,7 +1163,7 @@
 # DELETE  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:delete_role": "role:admin and system_scope:all"
-"identity:delete_role": "rule:cloud_admin"
+"identity:delete_role": "!{{- if .Values.tempest.enabled }} or (project_id:{{.Values.tempest.adminProjectId}} and role:admin){{ end }}"
 
 # Show domain role.
 # GET  /v3/roles/{role_id}
@@ -1197,8 +1204,8 @@
 #"identity:list_role_assignments": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_role_assignments": "rule:cloud_reader or
   (role:reader and domain_id:%(target.domain_id)s) or
-  (role:reader and domain_id:%(scope.domain.id)s) or
-  ((role:reader or role:role_viewer) and project_id:%(scope.project.id)s)"
+  (role:reader and domain_id:%(filter_attr.scope.domain.id)s) or
+  ((role:reader or role:role_viewer) and project_id:%(filter_attr.scope.project.id)s)"
 
 # List all role assignments for a given tree of hierarchical projects.
 # GET  /v3/role_assignments?include_subtree
@@ -1366,8 +1373,8 @@
 #"identity:list_users": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_users": "rule:cloud_reader or
   (role:reader and domain_id:%(target.domain_id)s) or
-  project_domain_id:%(domain_id)s or
-  user_domain_id:%(domain_id)s"
+  project_domain_id:%(filter_attr.domain_id)s or
+  user_domain_id:%(filter_attr.domain_id)s"
 
 # List all projects a user has access to via role assignments.
 # GET   /v3/auth/projects

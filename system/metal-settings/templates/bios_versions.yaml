@@ -1,0 +1,50 @@
+{{- if .Values.biosVersions.enabled }}
+{{- range $vendor, $vendorConfig := .Values.machines }}
+{{- if $vendorConfig }}
+
+{{/* Vendor filtering */}}
+{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosVersions.filters.vendors) }}
+{{- $processedModels := dict }}
+{{- range $entryName, $entry := $vendorConfig.models }}
+{{- if $entry.bios }}
+{{- $model := $entry.model }}
+{{- $version := $entry.bios.version }}
+{{- $modelKey := printf "%s-%s" $model $version }}
+{{- $versionParams := (get $entry.bios "versionParams") | default dict }}
+{{- $serverFilters := (get $versionParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
+
+{{/* Skip if we've already processed this model-version combination */}}
+{{- if not (hasKey $processedModels $modelKey) }}
+{{- $_ := set $processedModels $modelKey true }}
+
+{{/* Model and Version filtering */}}
+{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.biosVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.biosVersions.filters.versions)) }}
+apiVersion: metal.ironcore.dev/v1alpha1
+kind: BIOSVersionSet
+metadata:
+  {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
+  {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  name: {{ $resourceName }}
+spec:
+  serverSelector:
+    matchLabels:
+      kubernetes.metal.cloud.sap/type: {{ $model }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
+{{- end }}
+  biosVersionTemplate:
+    serverMaintenancePolicy: OwnerApproval
+    version: {{ $version | quote }}
+    image:
+      URI: {{ $entry.bios.imageURI | quote }}
+      transferProtocol: "HTTPS"
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

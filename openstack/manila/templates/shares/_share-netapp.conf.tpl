@@ -16,6 +16,8 @@ backend_url = file://$state_path
 {{- $share_backend := $share.backend_name | default $share.vserver | default "netapp-multi"}}
 
 [{{$share.name}}]
+netapp_use_legacy_client={{ $share.use_zapi | default "True" }}
+
 share_backend_name={{ $share_backend }}
 replication_domain={{ $share.replication_domain | default $share_backend }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
@@ -42,9 +44,14 @@ netapp_root_volume_aggregate={{$share.root_volume_aggregate}}
 netapp_aggregate_name_search_pattern={{$share.aggregate_search_pattern}}
 netapp_reset_snapdir_visibility = hidden
 
+# Preserve custom snapshot policies during share manage/migrate operations.
+# hxm_backups must be listed explicitly as it was dropped from the upstream default.
+netapp_volume_snapshot_policy_exceptions = ec2_backups,hxm_backups
+
 netapp_volume_name_template = {{ $share.netapp_volume_name_template | default $context.Values.netapp_volume_name_template | default "share_%(share_id)s" }}
 netapp_lif_name_template = os_%(net_allocation_id)s
 netapp_port_name_search_pattern = {{ $share.port_search_pattern  | default "(a0b)" }}
+netapp_restrict_lif_creation_per_ha_pair = {{ $share.restrict_lif_creation_per_ha_pair | default "False" }}
 
 neutron_physical_net_name={{$share.physical_network}}
 {{ if hasKey $share "binding_host" }}
@@ -78,9 +85,6 @@ netapp_flexgroup_pool_only = {{ $share.disable_flexvol | default "False" }}
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
 
-# Set last transfer size limit to 1 PB (1024 * 1024 * 1024 * 1024 KB), effectively disabling that setting
-netapp_snapmirror_last_transfer_size_limit = 1099511627776
-
 # Set asynchronous SnapMirror schedule to one hour, and configure the waiting time for
 # snapmirror to complete on replica promote to be double of this value, alligning with
 # our RPO (Recovery Point Objective) of 2 hours.
@@ -94,18 +98,24 @@ netapp_volume_move_cutover_timeout = {{ $share.volume_move_cutover_timeout | def
 # state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
 netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 
+# SAP default: 6 years (we refresh the hardware earlier than that). Upstream default is 1 year
+netapp_security_cert_expire_days = 2190
+
+# enables cifs security aes encryption and sets types aes-128 and aes-256. Manila default is "False", but SAP default is "True"
+netapp_cifs_aes_encryption = {{ $share.cifs_aes_encryption | default "True" }}
+
 # The percentage of backend capacity reserved. Default 0 (integer value)
 
 {{- if eq 100 (int $share.reserved_share_percentage)}}
 reserved_share_percentage = 100
 {{- else }}
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 25 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 30 }}
 {{- end }}
 
 {{- if eq 100 (int $share.reserved_share_extend_percentage)}}
 reserved_share_extend_percentage = 100
 {{- else }}
-reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
+reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 20 }}
 {{- end }}
 
 {{- if eq 100 (int $share.reserved_share_from_snapshot_percentage)}}
@@ -132,7 +142,9 @@ max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $c
 max_share_server_size  = {{ $share.max_share_server_size | default $context.Values.max_share_server_size | default 10240 }}
 
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
-goodness_function = {{ $share.goodness_function | default "((share.share_proto == 'CIFS') and (capabilities.channel_binding_support)) ? 100 : 50" }}
+goodness_function = {{ $share.goodness_function | default "100 - capabilities.utilization" }}
 
+# Disable concurrency by default, enable it by setting to a positive value
+share_service_concurrency = {{ $context.Values.share_service_concurrency | default 1 }}
 {{- end -}}
 {{- end }}

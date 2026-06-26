@@ -6,7 +6,6 @@
 debug: "True"
 
 tempest_enabled: false
-nanny_enabled: false
 
 dbType: "mariadb"
 
@@ -34,12 +33,15 @@ global:
   linkerd_requested: false
 
 pod:
+  pdb:
+    enabled: true
+    min_available: 1
   replicas:
     api: 3
     central: 3
     mdns: 2
     poolmanager: 1
-    producer: 4
+    producer: 2
     worker: 3
     sink: 1
   lifecycle:
@@ -73,6 +75,9 @@ rndc_keys:
 db_name: designate
 pool_id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
 scheduler_filters: attribute, pool_id_attribute, in_doubt_default_pool, fallback
+scheduler_filters_shared_pools: attribute, pool_id_attribute, domain_id
+shared_pools_enabled: false
+
 sink_enabled: False
 
 quota_api_export_size: 100000
@@ -98,7 +103,7 @@ percona_cluster:
   db_name: designate
   db_user: designate
   alerts:
-    support_group: network-api
+    support_group: coredns
 
 proxysql:
   mode: host_alias
@@ -113,7 +118,7 @@ mariadb:
   persistence_claim:
     name: db-designate-pvclaim
   alerts:
-    support_group: network-api
+    support_group: coredns
   backup:
     enabled: false
   ccroot_user:
@@ -143,7 +148,7 @@ pxc_db:
   name: designate
   initdb_job: true
   alerts:
-    support_group: network-api
+    support_group: coredns
   ccroot_user:
     enabled: true
   databases:
@@ -242,19 +247,39 @@ mysql_metrics:
     - name: openstack_designate_records
       help: "records count grouped by status"
       labels:
-        - "status"
         - "zone_id"
+        - "project_id"
+        - "status"
       values:
         - "count_gauge"
       query:  |
               SELECT
                 zone_id,
+                tenant_id AS project_id,
                 status,
                 count(id) AS count_gauge
               FROM records
               GROUP BY
                 zone_id,
+                project_id,
                 status
+
+    - name: openstack_designate_recordsets
+      help: "recordsets count grouped by project and zone id"
+      labels:
+        - "zone_id"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                zone_id,
+                tenant_id AS project_id,
+                count(id) AS count_gauge
+              FROM recordsets
+              GROUP BY
+                zone_id,
+                project_id
 
 cors:
   enabled: false
@@ -318,7 +343,7 @@ audit:
 memcached:
   server_ips_ports: []
   alerts:
-    support_group: network-api
+    support_group: coredns
 
 rabbitmq:
   enabled: true
@@ -335,13 +360,17 @@ rabbitmq:
       user: admin
       password: secret
   alerts:
-    support_group: network-api
+    support_group: coredns
   metrics:
     enabled: true
     sidecar:
       enabled: false
     enableDetailedMetrics: true
     enablePerObjectMetrics: true
+
+  # backward compatibility with the existing deployments
+  # using the older rabbitmq helm chart which defaulted to SSL disabled
+  enableSsl: false
 
 rabbitmq_notifications:
   use_alternate_registry: true
@@ -402,7 +431,7 @@ alerts:
   prometheus:
     openstack: openstack
     kubernetes: kubernetes
-  support_group: network-api
+  support_group: coredns
 
 osprofiler:
   enabled: false
@@ -413,11 +442,14 @@ coordination:
     enabled: false
 
 owner-info:
-  support-group: network-api
+  support-group: coredns
   service: designate
   maintainers:
-    - David Hoeller
-    - Benjamin Tinney
+    - Matthias Braun
+    - Soenke Lange
+    - Florian Streibelt
+    - Vassil Dimitrov
+    - Torsten Sachse
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate
 
 utils:
@@ -438,10 +470,10 @@ api-ratelimit-redis:
   persistence:
     enabled: false
   alerts:
-    support_group: network-api
+    support_group: coredns
 
 rate_limit:
-  enabled: false
+  enabled: true
   backend_secret_file: /etc/designate/ratelimit-backend-secret.conf
   rate_limit_by: target_project_id
   max_sleep_time_seconds: 0
@@ -450,6 +482,7 @@ rate_limit:
   whitelist:
     - Default/service
     - Default/admin
+    - tempest/performance-testing
     - ccadmin/cloud_admin
     - ccadmin/master
   whitelist_users: null
@@ -507,6 +540,18 @@ rate_limit:
       quotas:
         - action: read/list
           limit: 100r/m
+      service_statuses/*:
+        - action: read/list
+          limit: 100r/m
       service_statuses:
         - action: read/list
           limit: 100r/m
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
+
+# if true, the mdns load balancer service will be created using calico annotations
+# see templates/mdns-service.yaml
+# https://github.com/projectcalico/calico/issues/11815
+calicoLoadBalancer: false

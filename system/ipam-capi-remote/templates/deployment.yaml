@@ -18,16 +18,25 @@ spec:
       labels:
         control-plane: controller-manager
         networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
         networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+        networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
       {{- include "ipam-capi-remote.selectorLabels" . | nindent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
     spec:
+      initContainers:
+      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}
       containers:
       - args: {{- toYaml .Values.controllerManager.manager.args | nindent 8 }}
         command:
         - /manager
         env:
+        - name: KUBECONFIG
+          value: {{ quote .Values.controllerManager.manager.env.kubeconfig }}
         - name: KUBERNETES_SERVICE_HOST
           value: {{ quote .Values.controllerManager.manager.env.kubernetesServiceHost }}
         - name: KUBERNETES_CLUSTER_DOMAIN
@@ -41,6 +50,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -52,20 +65,36 @@ spec:
         securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
           | nindent 10 }}
         volumeMounts:
-        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-certs
+          readOnly: true
+        - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+          name: remote-serviceaccount
+          readOnly: true
+        - mountPath: /var/run/remote-kubeconfig
           name: remote-kubeconfig
           readOnly: true
-      hostNetwork: true
+      nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
-      serviceAccountName: default
+      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
       terminationGracePeriodSeconds: 10
+      tolerations: {{- toYaml .Values.controllerManager.tolerations | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.controllerManager.topologySpreadConstraints
+        | nindent 8 }}
       volumes:
-      - name: remote-kubeconfig
+      - emptyDir: {}
+        name: webhook-certs
+      - name: remote-serviceaccount
         secret:
+          defaultMode: 420
           items:
           - key: token
             path: token
           - key: bundle.crt
             path: ca.crt
           secretName: ipam-capi-remote-kubeconfig
+      - configMap:
+          defaultMode: 420
+          name: ipam-capi-remote-kubeconfig
+        name: remote-kubeconfig

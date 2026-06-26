@@ -7,20 +7,23 @@ metadata:
     system: openstack
     type: api
     component: nova
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "nova-api-metadata"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: nova-api-metadata
   {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.metadata }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  {{- $strategy := dig "metadata" "podReplacementStrategy" .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy .Values.pod.lifecycle.upgrades.deployments.overrides }}
   strategy:
-    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
-    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    type: {{ $strategy }}
+    {{- if eq $strategy "RollingUpdate" }}
     rollingUpdate:
       maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
-    {{ end }}
+    {{- end }}
   selector:
     matchLabels:
       name: nova-api-metadata
@@ -34,25 +37,31 @@ spec:
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
         {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "name" "nova-api-metadata") | include "utils.topology.constraints" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
       initContainers:
-      {{- tuple . (dict "service" (print .Values.mariadb_api.name "-mariadb") "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.db_service" (tuple . "api")) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
         - name: nova-api-metadata
           image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-          - dumb-init
           - nova-api
           env:
           - name: STATSD_HOST
@@ -97,9 +106,11 @@ spec:
             name: nova-etc
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
@@ -122,18 +133,14 @@ spec:
               items:
               - key:  nova.conf
                 path: nova.conf
-              - key:  nova-api.conf
-                path: nova-api-metadata.conf
+              - key:  nova-api-metadata.conf
+                path: nova-api.conf
               - key:  api-paste.ini
                 path: api-paste.ini
               - key:  policy.yaml
                 path: policy.yaml
               - key:  logging.ini
                 path: logging.ini
-              - key:  rootwrap.conf
-                path: rootwrap.conf
-              - key:  api-metadata.filters
-                path: rootwrap.d/api-metadata.filters
               - key:  release
                 path: release
               {{- if .Values.api.use_uwsgi }}
@@ -153,16 +160,19 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: cell1.conf
-                path: nova.conf.d/cell1.conf
+              - key: cell0.conf
+                path: nova.conf.d/cell0.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
-              - key: nova-api-metadata-secrets.conf
-                path: nova.conf.d/nova-api-metadata-secrets.conf
               {{- if .Values.osprofiler.enabled }}
               - key: osprofiler.conf
                 path: nova.conf.d/osprofiler.conf
               {{- end }}
+          - secret:
+              name: nova-api-metadata
+              items:
+              - key: nova-api-metadata-secrets.conf
+                path: nova.conf.d/nova-api-metadata-secrets.conf
       - name: statsd-etc
         projected:
           sources:
