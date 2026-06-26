@@ -5,7 +5,61 @@ name: clauderator
 # This is intentionally left unset to force explicit selection at install time.
 
 rbacProfiles:
-  # Management cluster - machine controller resources
+  # ---------------------------------------------------------------------------
+  # Compute cluster - KVM hypervisor workloads
+  # ---------------------------------------------------------------------------
+  # Basic K8s debugging + kvm.cloud.sap CRDs (Hypervisor, Eviction, etc.)
+  compute:
+    - apiGroups: [""]
+      resources:
+        - namespaces
+        - pods
+        - services
+        - events
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources:
+        - pods/log
+      verbs: ["get"]
+    - apiGroups: ["apps"]
+      resources:
+        - deployments
+        - replicasets
+        - daemonsets
+        - statefulsets
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["kvm.cloud.sap"]
+      resources: ["*"]
+      verbs: ["get", "list", "watch"]
+
+  # ---------------------------------------------------------------------------
+  # Controlplane cluster - OpenStack control plane
+  # ---------------------------------------------------------------------------
+  # Basic K8s debugging (same as runtime)
+  controlplane:
+    - apiGroups: [""]
+      resources:
+        - namespaces
+        - pods
+        - services
+        - events
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources:
+        - pods/log
+      verbs: ["get"]
+    - apiGroups: ["apps"]
+      resources:
+        - deployments
+        - replicasets
+        - daemonsets
+        - statefulsets
+      verbs: ["get", "list", "watch"]
+
+  # ---------------------------------------------------------------------------
+  # Management cluster - Gardener machine controller
+  # ---------------------------------------------------------------------------
+  # Basic K8s debugging + machine.sapcloud.io CRDs
   management:
     - apiGroups: [""]
       resources:
@@ -33,17 +87,29 @@ rbacProfiles:
         - machines
       verbs: ["get", "list", "watch"]
 
-  # Greenhouse cluster - plugin and catalog resources
-  greenhouse:
-    - apiGroups: ["greenhouse.sap"]
+  # ---------------------------------------------------------------------------
+  # Metal cluster - IronCore bare metal inventory
+  # ---------------------------------------------------------------------------
+  # Namespaces + metal.ironcore.dev CRDs (Servers, BMCs) + IPAM
+  metal:
+    - apiGroups: [""]
       resources:
-        - plugins
-        - pluginpresets
-        - plugindefinitions
-        - catalogs
+        - namespaces
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["metal.ironcore.dev"]
+      resources:
+        - servers
+        - bmcs
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["ipam.cluster.x-k8s.io"]
+      resources:
+        - ipaddresses
       verbs: ["get", "list", "watch"]
 
-  # Runtime cluster - core debugging resources
+  # ---------------------------------------------------------------------------
+  # Runtime cluster - foundational "Soil" cluster
+  # ---------------------------------------------------------------------------
+  # Basic K8s debugging
   runtime:
     - apiGroups: [""]
       resources:
@@ -62,4 +128,74 @@ rbacProfiles:
         - replicasets
         - daemonsets
         - statefulsets
+      verbs: ["get", "list", "watch"]
+
+  # ---------------------------------------------------------------------------
+  # Garden cluster - Virtual Garden (Gardener control plane)
+  # ---------------------------------------------------------------------------
+  # Full Gardener API access (shoots, seeds, projects, etc.)
+  garden:
+    - apiGroups: [""]
+      resources:
+        - namespaces
+        - pods
+        - services
+        - events
+        - configmaps
+        - nodes
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources:
+        - pods/log
+      verbs: ["get"]
+    - apiGroups: ["apps"]
+      resources:
+        - deployments
+        - replicasets
+        - daemonsets
+        - statefulsets
+      verbs: ["get", "list", "watch"]
+    - apiGroups:
+        - core.gardener.cloud
+        - seedmanagement.gardener.cloud
+        - settings.gardener.cloud
+        - extensions.gardener.cloud
+        - resources.gardener.cloud
+        - operator.gardener.cloud
+      resources: ["*"]
+      verbs: ["get", "list", "watch"]
+
+  # ---------------------------------------------------------------------------
+  # Greenhouse cluster - plugin lifecycle management
+  # ---------------------------------------------------------------------------
+  # Greenhouse CRDs (Plugins, PluginPresets, Clusters, etc.)
+  greenhouse:
+    - apiGroups: [""]
+      resources:
+        - namespaces
+        - pods
+        - services
+        - events
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources:
+        - pods/log
+      verbs: ["get"]
+    - apiGroups: ["apps"]
+      resources:
+        - deployments
+        - replicasets
+        - daemonsets
+        - statefulsets
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["greenhouse.sap"]
+      resources:
+        - clusters
+        - organizations
+        - plugins
+        - pluginpresets
+        - plugindefinitions
+        - teams
+        - teammemberships
+        - teamrolebindings
       verbs: ["get", "list", "watch"]
