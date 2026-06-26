@@ -31,6 +31,15 @@ while true; do
         date
         /var/lib/openstack/bin/glance-manage db purge --age_in_days $GLANCE_DB_PURGE_OLDER_THAN --max_rows $GLANCE_DB_PURGE_MAX_NUMBER
     fi
+
+    # `glance-manage db purge` skips the `images` table (OSSN-0075).
+    # Purge it separately so that soft-deleted image rows are removed
+    # and previously-used image UUIDs can be reused.
+    if [ "$GLANCE_DB_PURGE_IMAGES_TABLE_ENABLED" = "True" ] || [ "$GLANCE_DB_PURGE_IMAGES_TABLE_ENABLED" = "true" ]; then
+        echo -n "INFO: purging at max $GLANCE_DB_PURGE_IMAGES_TABLE_MAX_NUMBER deleted rows older than $GLANCE_DB_PURGE_IMAGES_TABLE_OLDER_THAN days from the glance images table - "
+        date
+        /var/lib/openstack/bin/glance-manage db purge_images_table --age_in_days $GLANCE_DB_PURGE_IMAGES_TABLE_OLDER_THAN --max_rows $GLANCE_DB_PURGE_IMAGES_TABLE_MAX_NUMBER
+    fi
     echo -n "INFO: waiting $GLANCE_NANNY_INTERVAL minutes before starting the next loop run - "
     date
     sleep $(( 60 * $GLANCE_NANNY_INTERVAL ))
