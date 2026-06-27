@@ -1,4 +1,13 @@
+{{- if hasKey .Values "log-router-postgresql" }}
+{{- fail "The 'log-router-postgresql' values key has been renamed to 'hermes-postgresql' (postgres-ng subchart aliased). Rename your override block to avoid silently reverting to subchart defaults." }}
+{{- end }}
 {{- if .Values.logRouter.enabled }}
+{{- if not .Values.hermes.api_enabled }}
+{{- fail "logRouter.enabled=true requires hermes.api_enabled=true: log-router reads from the shared hermes-postgresql subchart, which is only deployed when hermes.api_enabled is true." }}
+{{- end }}
+{{- if not .Values.logRouter.swift.enabled }}
+{{- fail "logRouter.enabled=true requires logRouter.swift.enabled=true: log-router authenticates to Ceph RGW via Keystone tokens (Swift-compatible endpoint). AWS HMAC ec2 credentials are not supported. Set logRouter.swift.enabled=true and provide .Values.hermes.seed_password." }}
+{{- end }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -25,7 +34,7 @@ spec:
         {{- end }}
         kubectl.kubernetes.io/default-container: "log-router"
         configmap.reloader.stakater.com/reload: "log-router-etc"
-        secret.reloader.stakater.com/reload: "log-router-secret"
+        secret.reloader.stakater.com/reload: "log-router-secret,{{ .Release.Name }}-pguser-{{ .Values.logRouter.hermesDb.user }}"
         deployment.reloader.stakater.com/pause-period: "60s"
     spec:
       nodeSelector:
@@ -57,6 +66,13 @@ spec:
         - name: log-router
           image: {{ include "log_router_image" . }}
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: http
               containerPort: 8080
