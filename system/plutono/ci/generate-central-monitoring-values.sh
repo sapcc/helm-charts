@@ -9,6 +9,10 @@ CONTEXT="${CONTEXT:-pg-p-eu-de-1}"
 NAMESPACE="${NAMESPACE:-garden}"
 OUT_FILE="${OUT_FILE:-/tmp/central-monitoring-values.generated.yaml}"
 
+# Prevent u8s self-update/version checks from blocking script execution.
+: "${U8S_NO_UPDATE:=true}"
+export U8S_NO_UPDATE
+
 # Output header
 cat >"${OUT_FILE}" <<'YAML'
 global:
