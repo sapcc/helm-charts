@@ -41,8 +41,12 @@ plutono:
     datasources:
 YAML
 
-# Discover all *.monitoring secrets from source-of-truth namespace
-mapfile -t MONITORING_SECRETS < <(
+# Discover all *.monitoring secrets from source-of-truth namespace.
+# Use a Bash 3 compatible loop (mapfile is not available on macOS default Bash).
+MONITORING_SECRETS=()
+while IFS= read -r seed; do
+  MONITORING_SECRETS+=("${seed}")
+done < <(
   u8s kubectl --context "${CONTEXT}" -n "${NAMESPACE}" get secrets -o name \
     | sed -n 's|^secret/\(.*\)\.monitoring$|\1|p' \
     | sort
