@@ -8,13 +8,20 @@ set -euo pipefail
 CONTEXT="${CONTEXT:-pg-p-eu-de-1}"
 NAMESPACE="${NAMESPACE:-garden}"
 OUT_FILE="${OUT_FILE:-/tmp/central-monitoring-values.generated.yaml}"
+TMP_OUT_FILE="${OUT_FILE}.tmp"
 
 # Prevent u8s self-update/version checks from blocking script execution.
 : "${U8S_NO_UPDATE:=true}"
 export U8S_NO_UPDATE
 
+# Cleanup temporary file on interruption/failure.
+cleanup() {
+  rm -f "${TMP_OUT_FILE}"
+}
+trap cleanup INT TERM ERR
+
 # Output header
-cat >"${OUT_FILE}" <<'YAML'
+cat >"${TMP_OUT_FILE}" <<'YAML'
 global:
   registry: "replace-me"
   registryK8sIoMirror: "replace-me"
@@ -70,7 +77,7 @@ for seed in "${MONITORING_SECRETS[@]}"; do
     default_flag="true"
   fi
 
-  cat >>"${OUT_FILE}" <<YAML
+  cat >>"${TMP_OUT_FILE}" <<YAML
       - name: prometheus-${seed%p}
         type: prometheus
         access: proxy
@@ -87,7 +94,7 @@ for seed in "${MONITORING_SECRETS[@]}"; do
 YAML
 done
 
-cat >>"${OUT_FILE}" <<'YAML'
+cat >>"${TMP_OUT_FILE}" <<'YAML'
 authentication:
   enabled: false
 
@@ -95,6 +102,9 @@ ingress:
   enabled: true
   global: false
 YAML
+
+mv "${TMP_OUT_FILE}" "${OUT_FILE}"
+trap - INT TERM ERR
 
 echo "Generated ${OUT_FILE} with ${#MONITORING_SECRETS[@]} datasources."
 echo "Use it with: helm upgrade --install <release> system/plutono -f ${OUT_FILE} ..."
