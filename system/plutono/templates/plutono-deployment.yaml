@@ -18,6 +18,7 @@ spec:
         checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-secret.yaml" . | sha256sum }}
         checksum/plutono.ini: {{ include "plutono/templates/_plutono.ini.tpl" . | sha256sum }}
         checksum/plutono-secrets: {{ include "plutono/templates/plutono-secrets.yaml" . | sha256sum }}
+        checksum/plutono-inline-datasources: {{ include "plutono/templates/plutono-inline-datasources-secret.yaml" . | sha256sum }}
         checksum/ldap.toml: {{ include "plutono/templates/_ldap.toml.tpl" . | sha256sum }}
         checksum/plutono-start: {{ include "plutono/templates/_plutono-start.tpl" . | sha256sum }}
         checksum/plutono-initial-setup: {{ include "plutono/templates/_plutono-initial-setup.tpl" . | sha256sum }}
@@ -37,6 +38,12 @@ spec:
           secret:
             secretName: plutono-secrets
 {{- end }}
+{{- if .Values.plutono.centralMonitoring.enabled }}
+        - name: plutono-inline-datasources
+          secret:
+            secretName: plutono-inline-datasources
+{{- end }}
+{{- if .Values.plutono.gitsync.enabled }}
         - name: plutono-git
 {{- if .Values.plutono.content.persistence.enabled }}
           persistentVolumeClaim:
@@ -46,6 +53,8 @@ spec:
 {{- end }}
         - name: plutono-content
           emptyDir: {}
+{{- end }}
+{{- if .Values.plutono.gitsync.enabled }}
       initContainers:
       - name: fix-permissions
         image: {{.Values.global.registry}}/shared-app-images/alpine-busybox:latest-latest
@@ -53,6 +62,7 @@ spec:
         volumeMounts:
         - name: plutono-git
           mountPath: /git
+{{- end }}
       containers:
         - name: "plutono"
           image: {{ .Values.global.ghcrIoMirror | required ".Values.global.ghcrIoMirror is missing" }}/{{.Values.plutono.image}}:{{.Values.plutono.image_version}}
@@ -84,8 +94,15 @@ spec:
             - name: plutono-secrets
               mountPath: /plutono-secrets
 {{- end }}
+{{- if .Values.plutono.centralMonitoring.enabled }}
+            - name: plutono-inline-datasources
+              mountPath: /plutono-inline-datasources
+              readOnly: true
+{{- end }}
+{{- if .Values.plutono.gitsync.enabled }}
             - name: plutono-content
               mountPath: /git
+{{- end }}
           resources:
             requests:
               memory: "500Mi"
@@ -99,6 +116,7 @@ spec:
               port: 3000
             initialDelaySeconds: 120
             periodSeconds: 30
+{{- if .Values.plutono.gitsync.enabled }}
         - name: "gitsync"
           image: {{.Values.global.registryK8sIoMirror}}/git-sync/git-sync:v4.4.0
           imagePullPolicy: {{.Values.image.pullPolicy}}
@@ -159,6 +177,7 @@ spec:
             limits:
               memory: "150Mi"
               cpu: "150m"
+{{- end }}
 {{- if .Values.nginx.enabled }}
         - name: nginx
           image: {{.Values.global.registry}}/shared-app-images/alpine-nginx:mainline-slim-latest

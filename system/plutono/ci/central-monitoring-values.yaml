@@ -1,0 +1,61 @@
+global:
+  registry: "replace-me"
+  registryK8sIoMirror: "replace-me"
+  ghcrIoMirror: "replace-me"
+  region: eu-de-1
+  domain: persephone.eu-de-1.cloud.sap
+
+plutono:
+  image: credativ/plutono
+  image_version: latest
+  mode: operator
+
+  auth:
+    basic_auth:
+      enabled: true
+    ldap:
+      enabled: true
+
+  endpoint:
+    host:
+      public: plutono-central.runtime.prod.persephone.eu-de-1.cloud.sap
+
+  gitsync:
+    enabled: false
+
+  centralMonitoring:
+    enabled: true
+    # Example only: keep at least two datasources to show cross-region centralization.
+    # For production, add all managed-seed datasources (13 in Persephone prod).
+    datasources:
+      - name: prometheus-eude1-01
+        type: prometheus
+        access: proxy
+        url: https://p-garden--eude1-01p.ingress.prt-p-eu-de-1.soil.prod.persephone.eu-de-1.cloud.sap
+        basicAuth: true
+        basicAuthUser: admin
+        isDefault: true
+        jsonData:
+          timeInterval: 1m
+        secureJsonData:
+          basicAuthPassword: REPLACE_ME
+
+      # apjp1-01 is intentionally included as a non-eu-de-1 seed example.
+      - name: prometheus-apjp1-01
+        type: prometheus
+        access: proxy
+        url: https://p-garden--apjp1-01p.ingress.prt-p-eu-de-1.soil.prod.persephone.eu-de-1.cloud.sap
+        basicAuth: true
+        basicAuthUser: admin
+        isDefault: false
+        jsonData:
+          timeInterval: 1m
+        secureJsonData:
+          basicAuthPassword: REPLACE_ME
+
+authentication:
+  enabled: false
+
+ingress:
+  enabled: true
+  global: false
