@@ -247,6 +247,25 @@ backup_v2:
     #     bucket_name: mariadb-backup-eu-de-2   # optional, defaults to mariadb-backup-<global.region>
     #     force_path_style: true                # optional, inherits chart-local default
     #     verify: false                         # optional, inherits chart-local default
+  cse:
+    # Client-side encryption for backups uploaded to S3 (AWS and every Ceph target).
+    enabled: false
+    # Name of the active KEK; required when cse.enabled is true. Must be a key in
+    # global.mariadb.backup_v2.cse.keys (see below). New backups are encrypted under
+    # this KEK; any KEK in the map can decrypt historical backups, enabling rotation.
+    active_key: ""
+    # CSE KEK material (lives in vault, shared across every s3 storage). Map keyed by
+    # KEK name; each value is base64-encoded 32 bytes (44 base64 chars), e.g.
+    # `openssl rand -base64 32`. Kubernetes base64-decodes the Secret `data` field on
+    # mount, so the file at /etc/backup/cse/<name> contains the 32 raw bytes that the
+    # backup binary's loadCSEKey consumes.
+    #   global:
+    #     mariadb:
+    #       backup_v2:
+    #         cse:
+    #           keys:
+    #             kek-2026-q3: vault+kvv2:///secrets/.../cse-kek-2026-q3
+    #             kek-2026-q2: vault+kvv2:///secrets/.../cse-kek-2026-q2   # kept around so older backups decrypt
   swift:
     enabled: true
     user_name: db_backup

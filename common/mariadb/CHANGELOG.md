@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.40.0 - 2026/06/29
+* add client-side encryption for backup-v2 S3 uploads (AWS + Ceph targets) via `backup_v2.cse` and `global.mariadb.backup_v2.cse.keys`
+* chart version bumped
+
 ## v0.39.0 - 2026/06/22
 * support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
 * drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys
