@@ -268,6 +268,7 @@ spec:
           - context: log
             conditions:
               - resource.attributes["k8s.container.name"] == "keystone-api"
+              - not IsMatch(log.body, "^\\{.*\\}$")
             statements:
               - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:severity_text} %{NOTSPACE:otel.scope.name} \\[%{NOTSPACE:infra.request.id} %{NOTSPACE:infra.global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:domain.project.id} dom %{NOTSPACE} usr-dom %{NOTSPACE} prj-dom %{NOTSPACE:domain.name}\\] %{GREEDYDATA:msg}", true), "upsert")
               - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{NOTSPACE:severity_text} %{NOTSPACE:otel.scope.name} \"%{NOTSPACE:infra.global.request.id}\" %{NOTSPACE:client.address} - - \"%{NOTSPACE:http.request.method} %{NOTSPACE:url.path} %{NOTSPACE:httpversion}\" %{NUMBER:http.response.status_code} %{GREEDYDATA} \"%{GREEDYDATA}\" \"%{GREEDYDATA:user_agent.original}\"", true), "upsert")
@@ -287,17 +288,19 @@ spec:
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:client.address}:[\\s]*",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
-              - delete_key(log.attributes, "msg")
+              - delete_key(log.attributes, "microseconds")
+              - delete_key(log.attributes, "log.kind")
+              - set(log.body, nil) where log.attributes["keystone_timestamp"] != nil
 
       transform/keystone_api_json:
         error_mode: ignore
         log_statements:
           - context: log
             conditions:
-              - resource.attributes["k8s.cluster.name"] == "qa-de-2"
               - resource.attributes["k8s.container.name"] == "keystone-api"
+              - IsMatch(log.body, "^\\{.*\\}$")
             statements:
-              - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{.*\\}$")
+              - merge_maps(log.cache, ParseJSON(log.body), "upsert")
               - set(log.time, Time(log.cache["asctime"], "%Y-%m-%d %H:%M:%S,%L")) where log.cache["asctime"] != nil
               - set(log.attributes["msg"], log.cache["message"])
               - set(log.severity_text, log.cache["levelname"])
@@ -332,7 +335,6 @@ spec:
               - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "(?:AC-)%{NOTSPACE:user.id}\\s+has a remaining credit of %{NUMBER} - request %{WORD:http.request.method} %{NOTSPACE:http.url.path} returned %{NUMBER:http.response.status_code:int}", true), "upsert") where log.attributes["msg"] != nil and log.attributes["log.kind"] == "keystone_middleware_lifesaver"
               - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:client.address}", true), "upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
               - delete_key(log.attributes, "log.kind")
-              - delete_key(log.attributes, "msg")
               - set(log.body, nil)
 
       transform/vault:
