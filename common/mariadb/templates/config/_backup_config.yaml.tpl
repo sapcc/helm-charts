@@ -31,7 +31,22 @@ database:
     - "{{$tl}}"
   {{- end }}
 storages:
-  {{- if or .Values.backup_v2.aws.enabled .Values.backup_v2.ceph_s3.enabled }}
+  {{- $cephTargets := list }}
+  {{- if .Values.backup_v2.ceph_s3.enabled }}
+    {{- $cephTargets = default (list) (dig "mariadb" "backup_v2" "ceph_s3" "targets" (list) .Values.global) }}
+    {{- if eq (len $cephTargets) 0 }}
+      {{- fail "backup_v2.ceph_s3.enabled is true but global.mariadb.backup_v2.ceph_s3.targets is empty" }}
+    {{- end }}
+    {{- $names := list }}
+    {{- range $t := $cephTargets }}
+      {{- $r := default $.Values.global.region $t.region }}
+      {{- $names = append $names (default (printf "ceph-%s" $r) $t.name) }}
+    {{- end }}
+    {{- if ne (len $names) (len (uniq $names)) }}
+      {{- fail (printf "duplicate ceph_s3 target name(s) in %v — please change 'name' to be unique" $names) }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.backup_v2.aws.enabled (gt (len $cephTargets) 0) }}
   s3:
     {{- if .Values.backup_v2.aws.enabled }}
     - name: aws-{{ .Values.global.mariadb.backup_v2.aws.region }}
@@ -42,15 +57,16 @@ storages:
       sse_customer_algorithm: "AES256"
       sse_customer_key: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}
     {{- end }}
-    {{- if .Values.backup_v2.ceph_s3.enabled }}
-    - name: ceph-{{ default .Values.global.region .Values.global.mariadb.backup_v2.ceph_s3.region }}
-      aws_access_key_id: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.ceph_s3_access_key_id }}
-      aws_secret_access_key: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.ceph_s3_secret_access_key }}
-      aws_endpoint: {{ .Values.global.mariadb.backup_v2.ceph_s3.endpoint | required "global.mariadb.backup_v2.ceph_s3.endpoint is required when ceph_s3 is enabled" | quote }}
-      s3_force_path_style: {{ .Values.backup_v2.ceph_s3.force_path_style }}
-      region: {{ default .Values.global.region .Values.global.mariadb.backup_v2.ceph_s3.region }}
-      bucket_name: {{ .Values.global.mariadb.backup_v2.ceph_s3.bucket_name | default (printf "mariadb-backup-%s" .Values.global.region) | quote }}
-      {{- if .Values.backup_v2.ceph_s3.verify }}
+    {{- range $t := $cephTargets }}
+    {{- $region := default $.Values.global.region $t.region }}
+    - name: {{ default (printf "ceph-%s" $region) $t.name }}
+      aws_access_key_id: {{ include "mariadb.resolve_secret_squote" (required "ceph_s3 target requires aws_access_key_id" $t.aws_access_key_id) }}
+      aws_secret_access_key: {{ include "mariadb.resolve_secret_squote" (required "ceph_s3 target requires aws_secret_access_key" $t.aws_secret_access_key) }}
+      aws_endpoint: {{ required "ceph_s3 target requires endpoint" $t.endpoint | quote }}
+      s3_force_path_style: {{ if hasKey $t "force_path_style" }}{{ $t.force_path_style }}{{ else }}{{ $.Values.backup_v2.ceph_s3.force_path_style }}{{ end }}
+      region: {{ $region }}
+      bucket_name: {{ $t.bucket_name | default (printf "mariadb-backup-%s" $.Values.global.region) | quote }}
+      {{- if ternary $t.verify $.Values.backup_v2.ceph_s3.verify (hasKey $t "verify") }}
       verify: true
       {{- end }}
     {{- end }}

@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.39.0 - 2026/06/22
+* support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
+* drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys
+* chart version bumped
+
+## v0.38.2 - 2026/06/16
+* use global.mariadb.backup_v2 for ceph s3 access and secret key
+* chart version bumped
+
+## v0.38.1 - 2026/06/11
+* `maria-back-me-up` updated to `10.11-20260611113653`
+  * fixes aws s3 upload
+* chart version bumped
+
+## v0.38.0 - 2026/06/03
+* MariaDB version updated to [10.11.18](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.18)
+* `maria-back-me-up` updated to `10.11-20260603173712`
+* chart version bumped
+
 ## v0.37.0 - 2026/05/21
 * MariaDB version updated to [10.11.17](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.17)
 * `maria-back-me-up` updated to `10.11-20260521084302`

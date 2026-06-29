@@ -39,8 +39,8 @@ groups:
       summary: "Openstack Barbican API is flapping"
 
   - alert: OpenstackBarbicanCanaryCreateSecretDown
-    expr: cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+", phase="call"} == 0
-    for: 3h
+    expr: cc3test_status{service="barbican",name=~"TestKeyManager_create_secret", phase="call"} == 0
+    for: 10m
     labels:
       severity: warning
       support_group: identity
@@ -57,8 +57,8 @@ groups:
       summary: "Openstack Barbican Canary is down, see report for more details"
 
   - alert: OpenstackBarbicanCanaryCreateSecretFlapping
-    expr: changes(cc3test_status{service="barbican",name=~"TestKeyManager_create_secret.+",phase="call"}[2h]) > 8
-    for: 3h
+    expr: changes(cc3test_status{service="barbican",name=~"TestKeyManager_create_secret",phase="call"}[2h]) > 8
+    for: 30m
     labels:
       severity: info
       support_group: identity

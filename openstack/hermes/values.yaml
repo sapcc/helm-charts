@@ -8,8 +8,10 @@ global:
   keystoneNamespace: monsoon3
   # Set to true for global regions
   is_global_region: false
+  gardener:
+    enabled: false
   
-hermes_image_version_logstash: "20250717202634"
+hermes_image_version_logstash: "20260608182629"
       
 owner-info:
   support-group: observability
@@ -41,6 +43,23 @@ logstash:
   debug: false
   swift: true
   audit: true
+  # Kafka output mirroring the Octobus audit filter.
+  # Off by default; enable per-region. Public CA, no client credentials.
+  # global.forwarding.kafka.bootstrap_servers must be set in region secrets
+  # (comma-separated host:port list, e.g. "broker1:9093,broker2:9093").
+  kafka:
+    enabled: false
+    topic: hermes
+    client_id: hermes-logstash
+    # Durability-first defaults: every audit event must reach the SIEM.
+    # acks=all + idempotence + high retries survive single-broker loss
+    # without dropping or duplicating events. Requires broker-side
+    # min.insync.replicas >= 2 to actually deliver the durability acks=all
+    # promises.
+    acks: "all"
+    retries: 2147483647
+    compression_type: zstd
+    ssl_endpoint_identification_algorithm: ""
   jdbc:
     enabled: false
     schedule: "12 0 * * *"
@@ -163,3 +182,62 @@ elasticsearch_hermes_kibana:
 
 opensearch_hermes:
   enabled: false
+
+logRouter:
+  enabled: false
+  image_tag: ""
+  init_image: "keppel.eu-de-1.cloud.sap/ccloud/shared-app-images/alpine-busybox:3.23-20260415235512"
+  replicas: 2
+
+  debug: "false"
+  flush_interval: "30s"
+  shutdown_timeout: "30s"
+  ingest_channel_capacity: "10000"
+  max_concurrent_flushes: "100"
+
+  db:
+    user: log-router
+
+  rabbitmq:
+    port: 5672
+    queue: "dataplane.audit"
+    exchange: ""
+    routing_key: "#"
+    prefetch: "10"
+    # user/password injected by deployment pipeline
+    # user:
+    # password:
+
+  s3:
+    endpoint: ""
+    region: ""
+    bucket: ""
+    prefix: ""
+    # access_key/secret_key removed — log-router authenticates to Ceph RGW
+    # via Keystone token (Swift-compatible endpoint) using the hermes service
+    # account, not AWS HMAC ec2 credentials.
+
+  wal:
+    storage: 10Gi
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+log-router-postgresql:
+  postgresVersion: 17
+  databases:
+    log-router: {}
+  users:
+    log-router: {}
+  config:
+    max_connections: 64
+  persistence:
+    enabled: true
+    size: 10Gi
+  alerts:
+    support_group: observability

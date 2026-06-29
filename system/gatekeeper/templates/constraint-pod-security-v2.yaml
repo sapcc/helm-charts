@@ -166,17 +166,6 @@ spec:
       {{- end }}
 
       ##########################################################################
-      # Rules for infra-monitoring
-
-      {{- if eq .Values.cluster_type "baremetal" }}
-      - matchNamespace:  infra-monitoring
-        matchRepository: ccloud-dockerhub-mirror/cloudprober/cloudprober
-        justification: |
-          The cloudprober pods need to send pings.
-        mayUseCapabilities: [ NET_RAW ]
-      {{- end }}
-
-      ##########################################################################
       # Rules for kube-monitoring
 
       {{- if eq .Values.cluster_type "baremetal" "concourse" "cloudshell" "internet" "scaleout" }}
@@ -580,7 +569,7 @@ spec:
 
       {{- if eq .Values.cluster_name "eu-de-3" }}
       - matchNamespace: bridge-attach
-        matchRepository: ccloud/bridge-attach
+        matchRepository: ccloud/shared-app-images/alpine-iproute2
         justification: |
           The bridge-attach DaemonSet attaches a host network interface to a
           Linux bridge on apod nodes. It needs hostNetwork to operate in the
@@ -1014,6 +1003,31 @@ spec:
           TODO
         mayBePrivileged: true
 
+      {{- if eq .Values.cluster_name "eu-de-3" }}
+      - matchNamespace: archer
+        matchRepository: ccloud/archer
+        justification: |
+          Archer network agents need host networking and
+          CAP_NET_ADMIN to manage network namespaces and
+          interfaces for private endpoint connectivity across
+          OpenStack networks.
+        mayBePrivileged: true
+
+      - matchNamespace: archer
+        matchRepository: ccloud/loci-neutron
+        justification: |
+          Archer network agents need host neutron network agents and
+          CAP_NET_ADMIN to manage network namespaces and
+          interfaces for private endpoint connectivity across
+          OpenStack networks.
+        mayUseCapabilities:
+        - DAC_OVERRIDE
+        - DAC_READ_SEARCH
+        - NET_ADMIN
+        - SYS_ADMIN
+        - SYS_PTRACE
+      {{- end }}
+
       {{- if eq .Values.cluster_type "baremetal" "admin" }}
       # TODO: delete after full migration to RSBC images
       - matchNamespace: monsoon3
@@ -1320,6 +1334,18 @@ spec:
         mayUseHostNetwork: true
         mayUseCapabilities: [ NET_ADMIN ]
       {{- end }}
+
+      ##########################################################################
+      # Rules for vault
+
+      - matchNamespace: vault
+        matchRepository: ccloud-dockerhub-mirror/hashicorp/vault
+        justification: |
+          Vault 2.0.1's binary ships with the `cap_ipc_lock=ep` file capability
+          baked in at build time. The Linux kernel refuses to exec such a
+          binary inside a container unless IPC_LOCK is granted in the
+          container's securityContext.
+        mayUseCapabilities: [ IPC_LOCK ]
 
       ##########################################################################
       # End of rules

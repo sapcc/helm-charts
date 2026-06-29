@@ -93,6 +93,8 @@
   value: '/etc/keppel-issuer-key/previous-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
+- name:  KEPPEL_LIQUIDAPI_LISTEN_ADDRESS
+  value: ':80'
 - name:  KEPPEL_PEERS
   value: {{ index (include "build_peers" $ | fromYaml) "peers" | toJson | quote }}
 - name: KEPPEL_REDIS_ENABLE

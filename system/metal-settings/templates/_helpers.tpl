@@ -60,3 +60,55 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Generic filter check: determines if an item should be included based on included/excluded lists
+Returns: "true" if item should be included, "" (empty string) otherwise
+
+Usage:
+  {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosSettings.filters.vendors) }}
+
+Filter Logic:
+  - If filters.included is empty/nil: include all items (unless explicitly excluded)
+  - If filters.included has values: only include items in that list
+  - If filters.excluded has values: exclude those items (takes precedence over included)
+  - If item appears in both included and excluded: excluded wins
+*/}}
+{{- define "metal-settings.shouldInclude" -}}
+{{- $included := or (not .filters.included) (has .item .filters.included) -}}
+{{- $excluded := and .filters.excluded (has .item .filters.excluded) -}}
+{{- if and $included (not $excluded) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render server selector matchExpressions from a serverFilters object.
+Expected input:
+  dict "serverFilters" (dict "included" (list ...) "excluded" (list ...))
+
+Returns empty string if both lists are empty.
+*/}}
+{{- define "metal-settings.serverMatchExpressions" -}}
+{{- $serverFilters := .serverFilters -}}
+{{- if or $serverFilters.included $serverFilters.excluded -}}
+matchExpressions:
+{{- if $serverFilters.included }}
+  - key: kubernetes.metal.cloud.sap/name
+    operator: In
+    values:
+{{- range $serverFilters.included }}
+      - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- if $serverFilters.excluded }}
+  - key: kubernetes.metal.cloud.sap/name
+    operator: NotIn
+    values:
+{{- range $serverFilters.excluded }}
+      - {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end -}}
+{{- end -}}
+

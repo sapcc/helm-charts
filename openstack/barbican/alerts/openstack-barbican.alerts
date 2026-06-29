@@ -51,7 +51,7 @@ groups:
       summary: barbican has reported issues to Sentry
 
   - alert: OpenstackBarbicanRateLimitActionIsAbove50
-    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
+    expr: sum by(region, initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
     for: 1m
     labels:
       severity: warning
@@ -85,7 +85,7 @@ groups:
       summary: "A barbican server is DOWN"
 
   - alert: OpenstackBarbicanDatabaseIsDown
-    expr: count(up{component="barbican-mariadb"} == 0) == count(up{component="barbican-mariadb"})
+    expr: count by(region) (up{component="barbican-mariadb"} == 0) == count by(region) (up{component="barbican-mariadb"})
     for: 5m
     labels:
       context: availability
@@ -101,7 +101,7 @@ groups:
       summary: "barbican Database is DOWN"
 
   - alert: OpenstackBarbicanApiAllDown
-    expr: count(up{component="barbican",type="api"} == 0) == count(up{component="barbican",type="api"})
+    expr: count by(region) (up{component="barbican",type="api"} == 0) == count by(region) (up{component="barbican",type="api"})
     for: 5m
     labels:
       context: availability

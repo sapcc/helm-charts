@@ -1,12 +1,12 @@
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "opensearch-%s" $path | replace "/" "-" }}
+  name: {{ printf "opensearch-%s" $path | replace "/" "-" | trimSuffix ".tpl" }}
   labels:
     app: opensearch-logs
     tier: os
@@ -14,7 +14,9 @@ metadata:
     prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+{{- with $ }}
+{{ tpl (printf "%s" $bytes) . | indent 2 }}
+{{- end }}
 
 {{- end }}
 {{- end }}

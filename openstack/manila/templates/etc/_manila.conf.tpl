@@ -65,6 +65,16 @@ server_migration_driver_continue_update_interval = {{ .Values.server_migration_d
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
 ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
+driver_updatable_metadata = snapshot_policy,cross_dedup_disabled
+driver_updatable_subnet_metadata = showmount,pnfs
+# Prevent shares from transitioning to 'ensuring' status (2025.1 default changed to True)
+update_shares_status_on_ensure = False
+
+# manila by default would put "{project_id}_" as prefix, but since we anyhow don't have cross-project share servers, we can skip that.
+# obviously having shares with the same mount point name in the same share server is not possible,
+# but this cannot be solved by a prefix (for that case we have the share instance uuid, if mount point name is not used)
+default_mount_point_prefix = {{ .Values.mount_point_prefix | default "''" }}
+
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
@@ -109,6 +119,10 @@ insecure = True
 
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
+# Set False to preserve old Keystone RBAC behavior (non-scoped); 2025.1 defaults changed to True
+# look out for "using the intended scope is required" warnings in log
+enforce_new_defaults = False
+enforce_scope = False
 
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}

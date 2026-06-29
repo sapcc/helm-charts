@@ -1,0 +1,96 @@
+groups:
+- name: openstack-kmip.alerts
+  rules:
+  - alert: OpenstackKmipApiIsDown
+    expr: up{app="kmip-restapi"} == 0
+    for: 5m
+    labels:
+      context: availability
+      dashboard: kmip
+      meta: "a kmip instance went down on {{ $labels.instance }}"
+      service: kmip
+      support_group: identity
+      severity: critical
+      tier: os
+      no_alert_on_absence: "true"
+    annotations:
+      description: "A kmip-restapi pod on {{ $labels.instance }} is DOWN."
+      summary: "A kmip server is DOWN"
+
+  - alert: OpenstackKmipApiAllDown
+    expr: count(up{app="kmip-restapi"} == 0) == count(up{app="kmip-restapi"})
+    for: 5m
+    labels:
+      context: availability
+      meta: all kmip instances are down
+      service: kmip
+      severity: critical
+      support_group: identity
+      tier: os
+      dashboard: kmip
+      no_alert_on_absence: "true"
+    annotations:
+      description: All kmip-restapi pods are down.
+      summary: kmip is unavailable.
+
+  - alert: OpenstackKmipDatabaseIsDown
+    expr: count(up{app="kmip-mariadb"} == 0) == count(up{app="kmip-mariadb"})
+    for: 5m
+    labels:
+      context: availability
+      service: kmip
+      severity: critical
+      support_group: identity
+      tier: os
+      dashboard: mariadb-overview?var-host=kmip-mariadb
+      no_alert_on_absence: "true"
+    annotations:
+      description: "kmip database on {{ $labels.instance }} is DOWN."
+      summary: "kmip Database is DOWN"
+
+  - alert: OpenstackKmipUnresolvedSentryIssues
+    expr: sentry_unresolved_issues_count{project="kmip"} > 0
+    for: 3d
+    labels:
+      context: sentry-metrics
+      service: kmip
+      severity: info
+      tier: os
+      sentry: 'kmip/'
+      support_group: identity
+      no_alert_on_absence: "true"
+    annotations:
+      description: kmip has encountered unexpected errors and reported them to Sentry.
+        Please have a look at the list of unresolved issues at
+        <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/kmip/>.
+      summary: kmip has reported issues to Sentry
+
+  - alert: OpenstackKmipHighPreActiveKeys
+    expr: sum by (owner) (openstack_kmip_managed_objects_by_state_gauge{state="1"}) > 100
+    for: 1h
+    labels:
+      context: keys
+      service: kmip
+      severity: info
+      support_group: identity
+      tier: os
+      no_alert_on_absence: "true"
+      meta: 'Owner {{ $labels.owner }} has {{ $value }} PRE_ACTIVE keys'
+    annotations:
+      description: 'Owner {{ $labels.owner }} has {{ $value }} keys stuck in PRE_ACTIVE state for over 1 hour. These keys may not be usable.'
+      summary: 'High number of PRE_ACTIVE KMIP keys for {{ $labels.owner }}'
+
+  - alert: OpenstackKmipDeactivatedKeys
+    expr: sum by (owner) (openstack_kmip_managed_objects_by_state_gauge{state="3"}) > 0
+    for: 10m
+    labels:
+      context: keys
+      service: kmip
+      severity: info
+      support_group: identity
+      tier: os
+      no_alert_on_absence: "true"
+      meta: 'Owner {{ $labels.owner }} has {{ $value }} DEACTIVATED keys'
+    annotations:
+      description: 'Owner {{ $labels.owner }} has {{ $value }} DEACTIVATED keys. These should be rotated or destroyed.'
+      summary: 'DEACTIVATED KMIP keys detected for {{ $labels.owner }}'

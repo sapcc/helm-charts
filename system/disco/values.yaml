@@ -2,6 +2,19 @@ image:
   repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sapcc/disco
   tag: v2.0.0
 
+# Remote Kubernetes cluster configuration (for Gardener token-requestor)
+remote:
+  # Enable remote kubeconfig mounting for connecting to a remote Kubernetes cluster
+  enabled: false
+  # API server host for the remote cluster (required when enabled: true)
+  # Example: api.my-shoot.cp.internal.garden.example.com
+  apiServerHost: ""
+  # API server port for the remote cluster (defaults to 443)
+  apiServerPort: "443"
+  # Namespace on the shoot cluster where the ServiceAccount, namespaced RBAC resources,
+  # and leader election lease are created.
+  shootNamespace: kube-system
+
 # These labels will be set on the DISCO controller manager
 controllerLabels: {}
 
@@ -13,8 +26,43 @@ seed:
   enabled: false
 
 rbac:
+  # Create RBAC resources (ClusterRoles, ClusterRoleBindings, Roles, RoleBindings)
   create: true
-  serviceAccountName: disco
+
+serviceAccount:
+  # Create the service account
+  create: true
+  # Name of the service account to use (if create is false, this must be an existing service account)
+  name: disco-controller-manager
+
+# Cert-manager resources for webhook TLS certificates
+certManager:
+  # Create cert-manager Issuer and Certificate resources
+  enabled: true
+
+# Webhook configuration for Record validation
+webhooks:
+  # Create webhook service and MutatingWebhookConfiguration
+  enabled: true
+
+# Metrics service for Prometheus scraping
+metrics:
+  # Create the metrics service
+  enabled: true
+  # Port to expose metrics on.
+  port: 8080
+  # Name of the Prometheis by which the metrics will be scraped.
+  # Can be a comma (,) separated list.
+  prometheus: kubernetes
+
+# Reload the controller manager when the disco-config secret changes.
+reloader:
+  enabled: true
+
+# Annotations for the Deployment metadata.
+# By default, triggers a rolling restart when the disco-config secret changes.
+deploymentAnnotations:
+  secret.reloader.stakater.com/reload: "disco-config"
 
 # Credentials of the service user who creates the recordsets in OpenStack Designate.
 openstack: {}
@@ -30,14 +78,6 @@ openstack: {}
 
 # Record which should be used. e.g.: 'ingress.domain.tld.'. Must be provided.
 # record: DEFINED-IN-SECRETS
-
-# Prometheus metrics.
-metrics:
-  # Port to expose metrics on.
-  port: 9091
-  # Name of the Prometheis by which the metrics will be scraped.
-  # Can be a comma (,) separated list.
-  prometheus: kubernetes
 
 # The resources provide boundaries for the VPA, by which the actual resource requirements are configured based on usage.
 resources:

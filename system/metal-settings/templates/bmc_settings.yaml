@@ -3,40 +3,35 @@
 {{- if $vendorConfig }}
 
 {{/* Vendor filtering */}}
-{{- $vendorIncluded := or (not $.Values.bmcSettings.filters.vendors.included) (has $vendor $.Values.bmcSettings.filters.vendors.included) }}
-{{- $vendorExcluded := and $.Values.bmcSettings.filters.vendors.excluded (has $vendor $.Values.bmcSettings.filters.vendors.excluded) }}
-
-{{- if and $vendorIncluded (not $vendorExcluded) }}
-{{- range $entry := $vendorConfig.models }}
+{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcSettings.filters.vendors) }}
+{{- range $entryName, $entry := $vendorConfig.models }}
 {{- if and $entry.clusterTypes $entry.bmc $entry.bmc.settingsFileName }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
+{{- $settingsParams := (get $entry.bmc "settingsParams") | default dict }}
+{{- $serverFilters := (get $settingsParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
-{{/* Model filtering */}}
-{{- $modelIncluded := or (not $.Values.bmcSettings.filters.models.included) (has $model $.Values.bmcSettings.filters.models.included) }}
-{{- $modelExcluded := and $.Values.bmcSettings.filters.models.excluded (has $model $.Values.bmcSettings.filters.models.excluded) }}
-
-{{/* Version filtering */}}
-{{- $versionIncluded := or (not $.Values.bmcSettings.filters.versions.included) (has $version $.Values.bmcSettings.filters.versions.included) }}
-{{- $versionExcluded := and $.Values.bmcSettings.filters.versions.excluded (has $version $.Values.bmcSettings.filters.versions.excluded) }}
-
-{{- if and $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
+{{/* Model and Version filtering */}}
+{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcSettings.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcSettings.filters.versions)) }}
 {{- range $clusterType := $entry.clusterTypes }}
 
 {{/* ClusterType filtering */}}
-{{- $clusterTypeIncluded := or (not $.Values.bmcSettings.filters.clusterTypes.included) (has $clusterType $.Values.bmcSettings.filters.clusterTypes.included) }}
-{{- $clusterTypeExcluded := and $.Values.bmcSettings.filters.clusterTypes.excluded (has $clusterType $.Values.bmcSettings.filters.clusterTypes.excluded) }}
-
-{{- if and $clusterTypeIncluded (not $clusterTypeExcluded) }}
+{{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.bmcSettings.filters.clusterTypes) }}
+{{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
+{{- $resourceName := (get $settingsParams "setMetadataName") | default $defaultName }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BMCSettingsSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $clusterType }}
+  name: {{ $resourceName }}
 spec:
   bmcSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
       kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
+{{- end }}
   bmcSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}

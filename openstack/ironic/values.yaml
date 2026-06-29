@@ -21,7 +21,6 @@ global:
   ironicServiceUser: ironic
   ironictftpPortPublic: "69"
   ironic_pxe_port_public: "69"
-  osprofiler: {}
   dbUser: ironic
   fernetRouter:
     image: "monsoon/fernet-router:latest"
@@ -218,8 +217,10 @@ conductor:
     conductor:
       conductor_always_validates_images: false # We only use the direct interface, so leave it to the agent
       permitted_image_formats: 'raw,qcow2,iso,vmdk'
-      # HDA has a parallelism of 50 nodes, but with deleting they ran into the limit of 60, so increasing to 100 for now
-      max_concurrent_clean: 100
+      # HDA has a parallelism of 50 nodes, but with deleting they ran into the limit of 60, so increasing to 90. The network in the biggest
+      # region only has a /25 (126) & /26 (62) so ~188 useable IPs but each node uses 2, so enough for ~94 nodes. But we need some for the router
+      # as well and want a small puffer so 90 it is.
+      max_concurrent_clean: 90
 
 agent:
   deploy_logs:
@@ -429,9 +430,6 @@ dbName: ironic
 max_pool_size: 1
 max_overflow: 50
 
-sentry:
-  enabled: true
-
 rabbitmq:
   name: ironic
   persistence:
@@ -448,6 +446,10 @@ rabbitmq:
     sidecar:
       enabled: false
 
+# use sentry via openstack/utils
+sentry:
+  enabled: true
+
 logging:
   formatters:
     context:
@@ -457,22 +459,26 @@ logging:
       class: StreamHandler
       args: "(sys.stdout,)"
       formatter: context
-    sentry:
-      class: sapcc_sentrylogger.handler.SentryEventHandler
+    sentry_events:
+      class: "sapcc_sentrylogger.handler.EventHandler"
       level: ERROR
+      args: "()"
+    sentry_breadcrumbs:
+      class: "sapcc_sentrylogger.handler.BreadcrumbHandler"
+      level: INFO
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: WARNING
     ironic:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
     auditmiddleware:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
 
 memcached:

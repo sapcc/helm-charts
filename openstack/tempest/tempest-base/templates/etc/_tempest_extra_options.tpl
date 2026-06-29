@@ -62,6 +62,9 @@ subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
 [network-feature-enabled]
 ipv6 = False
 
+[neutron_plugin_options]
+max_mtu = 9000
+
 [baremetal]
 max_microversion = 1.78
 # Driver to use for API tests for Queens and newer:

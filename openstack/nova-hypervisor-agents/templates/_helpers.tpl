@@ -121,13 +121,12 @@ Params:
 {{- define "nova.helpers.cell_rabbitmq_chart_alias" }}
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
-  {{- $aliasSuffix := "" }}
-  {{- if not (has $cellId (list "cell1")) }}
-    {{- $aliasSuffix = printf "_%s" $cellId }}
-  {{- end }}
-  {{- $rmqChartAlias := printf "%s%s" "rabbitmq" $aliasSuffix }}
+  {{- $rmqChartAlias := printf "rabbitmq_%s" $cellId }}
   {{- if not (hasKey $envAll.Values $rmqChartAlias) }}
-    {{- fail (printf "No RabbitMQ chart '%s' found for cell '%s'" $rmqChartAlias $cellId )}}
+    {{- $rmqChartAlias = "rabbitmq" }}
+  {{- end }}
+  {{- if not (hasKey $envAll.Values $rmqChartAlias) }}
+    {{- fail (printf "No RabbitMQ chart '%s' or 'rabbitmq_%s' found for cell '%s'" "rabbitmq" $cellId $cellId )}}
   {{- end }}
   {{- print $rmqChartAlias }}
 {{- end }}

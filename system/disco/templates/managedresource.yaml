@@ -1,0 +1,34 @@
+{{- if .Values.remote.enabled }}
+---
+apiVersion: resources.gardener.cloud/v1alpha1
+kind: ManagedResource
+metadata:
+  name: disco-crd
+spec:
+  secretRefs:
+  - name: disco-crd
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: disco-crd
+type: Opaque
+data:
+  objects.yaml: {{ .Files.Get "crds/records.disco.stable.sap.cc.yaml" | b64enc }}
+---
+apiVersion: resources.gardener.cloud/v1alpha1
+kind: ManagedResource
+metadata:
+  name: disco-rbac
+spec:
+  secretRefs:
+  - name: disco-rbac
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: disco-rbac
+type: Opaque
+data:
+  objects.yaml: {{ include "disco.shootRBAC" . | b64enc }}
+{{- end }}

@@ -1,0 +1,306 @@
+suite: service account
+templates:
+  - disco-manager-serviceaccount.yaml
+tests:
+  - it: should not render ServiceAccount when serviceAccount.create is false
+    set:
+      serviceAccount.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render exactly one ServiceAccount
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount
+
+  - it: should be named disco-controller-manager
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-controller-manager
+
+  - it: should always use Release.Namespace regardless of remote.enabled
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+---
+suite: manager cluster role
+templates:
+  - disco-manager-role.yaml
+tests:
+  - it: should render exactly one ClusterRole
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ClusterRole
+
+  - it: should be named disco-manager-role
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-manager-role
+
+  - it: should grant ingress read permissions
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - networking.k8s.io
+            resources:
+              - ingresses
+            verbs:
+              - get
+              - list
+              - watch
+
+  - it: should grant record CRUD permissions
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - disco.stable.sap.cc
+            resources:
+              - records
+            verbs:
+              - create
+              - delete
+              - get
+              - list
+              - patch
+              - update
+              - watch
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
+---
+suite: manager cluster role binding
+templates:
+  - disco-manager-rolebinding.yaml
+tests:
+  - it: should render exactly one ClusterRoleBinding
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ClusterRoleBinding
+
+  - it: should be named disco-manager-rolebinding
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-manager-rolebinding
+
+  - it: should bind disco-controller-manager service account
+    asserts:
+      - equal:
+          path: subjects[0].name
+          value: disco-controller-manager
+      - equal:
+          path: subjects[0].kind
+          value: ServiceAccount
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
+---
+suite: leader election role
+templates:
+  - disco-leader-election-role.yaml
+tests:
+  - it: should render exactly one Role
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Role
+
+  - it: should be named disco-leader-election-role
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-leader-election-role
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
+---
+suite: leader election role binding
+templates:
+  - disco-leader-election-rolebinding.yaml
+tests:
+  - it: should render exactly one RoleBinding
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: RoleBinding
+
+  - it: should be named disco-leader-election-rolebinding
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-leader-election-rolebinding
+
+  - it: should bind disco-controller-manager service account
+    asserts:
+      - equal:
+          path: subjects[0].name
+          value: disco-controller-manager
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
+---
+suite: proxy cluster role
+templates:
+  - disco-proxy-role.yaml
+tests:
+  - it: should render exactly one ClusterRole
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ClusterRole
+
+  - it: should be named disco-proxy-role
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-proxy-role
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
+---
+suite: proxy cluster role binding
+templates:
+  - disco-proxy-rolebinding.yaml
+tests:
+  - it: should render exactly one ClusterRoleBinding
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ClusterRoleBinding
+
+  - it: should be named disco-proxy-rolebinding
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-proxy-rolebinding
+
+  - it: should bind disco-controller-manager service account
+    asserts:
+      - equal:
+          path: subjects[0].name
+          value: disco-controller-manager
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
+---
+suite: metrics reader cluster role
+templates:
+  - disco-metrics-reader.yaml
+tests:
+  - it: should render exactly one ClusterRole
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ClusterRole
+
+  - it: should be named disco-metrics-reader
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-metrics-reader
+
+  - it: should grant /metrics read access
+    asserts:
+      - contains:
+          path: rules
+          content:
+            nonResourceURLs:
+              - /metrics
+            verbs:
+              - get
+
+  - it: should not render when remote.enabled is true
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - hasDocuments:
+          count: 0
+---
+suite: rbac disabled
+templates:
+  - disco-manager-role.yaml
+  - disco-manager-rolebinding.yaml
+  - disco-leader-election-role.yaml
+  - disco-leader-election-rolebinding.yaml
+  - disco-proxy-role.yaml
+  - disco-proxy-rolebinding.yaml
+  - disco-metrics-reader.yaml
+tests:
+  - it: should not render any RBAC resources when rbac.create is false
+    set:
+      rbac.create: false
+    asserts:
+      - template: disco-manager-role.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-manager-rolebinding.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-leader-election-role.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-leader-election-rolebinding.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-proxy-role.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-proxy-rolebinding.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-metrics-reader.yaml
+        hasDocuments:
+          count: 0

@@ -179,5 +179,14 @@ mysql_query_rules =
         cache_ttl = 3600000,
         match_pattern = "^SELECT 1$",
     },
+{{- range $i, $rule := .global.Values.proxysql.query_rules | default list }}
+    {
+        rule_id = {{ add 1 $i }},
+        active = 1,
+        apply = 1,
+        cache_ttl = {{ printf "%.0f" (float64 $rule.cache_ttl) }},
+        match_digest = "{{ $rule.match_pattern }}",
+    },
+{{- end }}
 )
 {{- end }}

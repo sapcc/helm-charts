@@ -3,10 +3,16 @@
   restartPolicy: Always
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
-    - --webhook-config-name=metal-operator-remote-webhook-config
-    - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
-    - --leader-election-id=metal-operator-remote-webhook-injector-leader
-    - --cert-secret-name=metal-operator-remote-cert-secret-name
+    - "--webhook-config-name=metal-operator-remote-webhook-config"
+    - "--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig"
+    - "--leader-election-id=metal-operator-remote-webhook-injector-leader"
+    - "--cert-secret-name=metal-operator-remote-cert-secret"
+    - "--cert-sans=metal-operator-remote-webhook-service"
+    - "--managed-resource-label=metal-operator-remote-webhook-injector=true"
+    - "--external-host=metal-operator-remote-webhook-service"
+    - "--external-port=443"
+    - "--rotation-overlap-window=30s"
+    - "--rotation-gate-timeout=30s"
   ports:
     - name: metrics
       containerPort: 8082

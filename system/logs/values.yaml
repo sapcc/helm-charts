@@ -30,72 +30,35 @@ global:
     password: DEFINED-IN-SECRETS
 
 openTelemetryPlugin:
-  alerts:
-    enabled: false
   opentelemetry-operator:
     admissionWebhooks:
-      failurePolicy: 'Ignore'
-      create: true
       certManager:
         enabled: true
-      autoGenerateCert:
-        enabled: false
-        recreate: false
     manager:
       image:
         repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/open-telemetry/opentelemetry-operator/opentelemetry-operator
         tag: v0.152.0
-      collectorImage:
-        repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
-        tag: "acad8a2"
-      prometheusRule:
-        enabled: true
-        defaultRules:
-          enabled: true
       serviceMonitor:
-        enabled: true
         extraLabels:
-          prometheus: infra-frontend
+          prometheus: DEFINED-IN-SECRETS
+
   openTelemetry:
-    customLabels:
-      prometheus: DEFINED-IN-SECRETS
+    collectorImage:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
+      tag: "a8981ba"
+    metricsCollector:
+      enabled: true
+    prometheus:
+      additionalLabels:
+        prometheus: DEFINED-IN-SECRETS
     openSearchLogs:
       endpoint: DEFINED-IN-SECRETS
       failover_username_a: DEFINED-IN-SECRETS
       failover_password_a: DEFINED-IN-SECRETS
       failover_username_b: DEFINED-IN-SECRETS
       failover_password_b: DEFINED-IN-SECRETS
-      index: DEFINED-IN-SECRETS
     cluster: DEFINED-IN-SECRETS
     region: DEFINED-IN-SECRETS
-    logsCollector:
-      enabled: false
-      journaldConfig:
-        enabled: false
-      k8seventsConfig:
-        enabled: false
-      containerdConfig:
-        enabled: false
-      kvmConfig:
-        enabled: false
-      cephConfig:
-        enabled: false
-      openstackConfig:
-        enabled: false
-      externalConfig:
-        enabled: false
-        external_ip: ''
-        alertmanager_port: 1515
-        deployments_port: 1516
-      tracesConfig:
-        enabled: false
-        otlp_grpc_port: 4317
-        otlp_http_port: 4318
-    prometheus:
-      additionalLabels:
-        prometheus: infra-frontend
-      podMonitor:
-        enabled: false
 
 fluent_prometheus:
   enabled: false

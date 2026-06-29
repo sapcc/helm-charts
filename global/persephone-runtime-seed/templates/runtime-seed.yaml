@@ -9,6 +9,14 @@ kind: Shoot
 metadata:
   name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
   namespace: garden
+  labels:
+    {{- if $.Values.clusterType }}
+    cluster-type: {{ $.Values.clusterType }}
+    {{- end }}
+    metadata.greenhouse.sap/region: {{ required "missing value for $cluster.region" $cluster.region }}
+    {{- if $.Values.greenhouseShootGrafter }}
+    greenhouse.sap/shoot-grafter-transport: {{ $.Values.greenhouseShootGrafter }}
+    {{- end }}
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
@@ -60,7 +68,6 @@ spec:
     version: {{ required "missing value for $cluster.kubernetes.version" $cluster.kubernetes.version }}
 {{- if $cluster.oidcConfig.enabled }}
     kubeAPIServer:
-      enableAnonymousAuthentication: true
       structuredAuthentication:
         configMapName: {{ $defaultAuthConfigName }}
 {{- end }}

@@ -1,7 +1,7 @@
 groups:
 - name: cc3test-hermes.alerts
   rules:
-  - alert: CCloudHermesApiDown
+  - alert: CCloudHermesCanaryDown
     expr: |
         max(cc3test_status{service="hermes", type="api", phase="call"} == 0) unless max(cc3test_status{service="keystone", type="api"} == 0)
     for: 16m
@@ -10,16 +10,16 @@ groups:
       support_group: observability
       tier: os
       service: hermes
-      meta: "CCloud Hermes API is down"
+      meta: "CCloud Hermes canary probe is failing"
       dashboard: "cc3test-api-status?var-service=hermes"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service=hermes"
       playbook: "docs/support/playbook/hermes/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "CCloud Hermes API is down"
-      summary: "CCloud Hermes API is down"
+      description: "CCloud Hermes canary probe is failing"
+      summary: "CCloud Hermes canary probe is failing"
 
-  - alert: CCloudHermesApiFlapping
+  - alert: CCloudHermesCanaryFlapping
     expr: |
         changes(cc3test_status{service="hermes", type="api", phase="call"}[30m]) > 8
     labels:
@@ -27,14 +27,14 @@ groups:
       support_group: observability
       tier: os
       service: "{{`{{ $labels.service }}`}}"
-      meta: "CCloud Hermes API is flapping"
+      meta: "CCloud Hermes canary probe is flapping"
       dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/hermes/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "CCloud Hermes API is flapping"
-      summary: "CCloud Hermes API is flapping"
+      description: "CCloud Hermes canary probe is flapping"
+      summary: "CCloud Hermes canary probe is flapping"
 
   - alert: CCloudHermesAuditEventMissing
     expr: cc3test_status{service="hermes",name=~"TestHermes_hermes.+", phase="call"} == 0

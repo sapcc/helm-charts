@@ -135,3 +135,21 @@ groups:
     annotations:
       description: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
       summary: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+
+  - alert: OpenStackFileShareCanaryCreateShareDown
+    expr: cc3test_status{service="manila",name=~"TestFileShare_create_share.+", phase="call"} == 0
+    for: 2h
+    labels:
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/manila/alerts/cc3test-alert-create-share/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "OpenStack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+      summary: "OpenStack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"

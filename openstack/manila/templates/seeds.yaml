@@ -23,7 +23,9 @@ spec:
   - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
   {{- end }}
   {{- end }}
+  {{- if .Values.seeds.requires_swift }}
   - swift/swift-seed
+  {{- end }}
 
   services:
   {{- if .Values.api_v1_enabled }}
@@ -129,12 +131,26 @@ spec:
       role_assignments:
       - user: admin@Default
         role: cloud_sharedfilesystem_admin
+      {{- if $.Values.seeds.integration_test_user.enabled }}
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: cloud_sharedfilesystem_admin
+      {{- end }}
       {{- if $.Values.seeds.backup_user.enabled }}
       - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_objectstore_admin
       - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_sharedfilesystem_admin
       {{- end }}
+    {{- if $.Values.seeds.integration_test_user.enabled }}
+    - name: manila
+      role_assignments:
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: cloud_sharedfilesystem_admin
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: member
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: monitoring_viewer
+    {{- end }}
     {{- end }}
     groups:
     {{- if eq . "ccadmin" }}

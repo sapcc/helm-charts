@@ -3,6 +3,22 @@
 
 # Regional filtering configuration for selective deployment
 # Use these settings to control which resources are deployed in each region
+#
+# FILTER BEHAVIOR:
+# - included: [] (empty) = include all items (default behavior)
+# - included: [dell, hpe] = ONLY include items in this list
+# - excluded: [lenovo] = exclude these items (takes precedence over included)
+# - If an item appears in both included and excluded, excluded wins
+#
+# CLUSTER TYPES & RESOURCE GENERATION:
+# - BIOSSettingsSet/BMCSettingsSet: Generate one resource PER clusterType listed below
+#   (e.g., if a model has 6 clusterTypes, it generates 6 separate Settings resources)
+# - BIOSVersionSet/BMCVersionSet: Generate one resource PER model+version
+#   (clusterTypes field is ignored)
+#
+# defaultClusterTypes anchor: Used by most models to reference standard cluster types
+# Some models (e.g., proliant-dl560-gen11) may have multiple entries with different
+# clusterTypes to support different BIOS/BMC settings per cluster type.
 
 defaultClusterTypes: &defaultClusterTypes
   - cc-kvm-compute
@@ -94,21 +110,81 @@ clusterConfig:
 
 
 
+# Machine inventory: Hardware configurations for all supported servers
+#
+# SETTINGS FILE ORGANIZATION:
+# BIOS Settings Files (bios_settings/):
+#   - Dell: Most models use "dell-default.yaml" (shared by 10+ models)
+#     Exception: poweredge-r7615 uses "dell-r7615.yaml" (special PXE settings)
+#   - HPE: Most use "hpe-dl380-gen11.yaml"
+#     Exception: proliant-dl560-gen11 has TWO files:
+#       * hpe-dl560-gen11-kvm.yaml (for cc-kvm-compute with AdvancedEcc)
+#       * hpe-dl560-gen11-sci.yaml (for sci-k8s-* with FastFaultTolerantADDDC)
+#   - Lenovo: Each model series has its own file (sr650.yaml, sr850-v3.yaml, etc.)
+#
+# BMC Settings Files (bmc_settings/):
+#   - Dell: "dell-idrac.yaml" (shared by all Dell models)
+#   - HPE: "hpe-ilo.yaml" (shared by all HPE models)
+#   - Lenovo: "lenovo-xcc.yaml" (shared by all Lenovo models)
+#
+# Map keys: use the hardware model name as the key (e.g., poweredge-r640).
+# For models that need multiple entries (different clusterTypes/settings), use a descriptive
+# suffix as the key (e.g., proliant-dl560-gen11-kvm) and set model: explicitly inside the
+# entry so the hardware label in selectors stays correct.
+#
+# OPTIONAL PER-ENTRY PARAMS (SEPARATE PER PURPOSE):
+# - BIOS settings: machines.<vendor>.models.<name>.bios.settingsParams
+# - BIOS versions: machines.<vendor>.models.<name>.bios.versionParams
+# - BMC settings:  machines.<vendor>.models.<name>.bmc.settingsParams
+# - BMC versions:  machines.<vendor>.models.<name>.bmc.versionParams
+#
+# Params object supports:
+# - serverFilter:
+#     included: []                   # empty = all servers
+#     excluded: []                   # excluded wins
+# - setMetadataName: <string>        # optional explicit CRD metadata.name
+
 machines:
   dell:
     models:
-      - model: poweredge-r640
+      poweredge-r640:
+        model: poweredge-r640
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.22.2"
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/BIOS_F8GPH_WN64_2.22.2.EXE"
+          # Optional params for BIOSSettingsSet of this entry:
+          # settingsParams:
+          #   serverFilter:
+          #     included: [node001-bb001, node002-bb001]
+          #     excluded: []
+          #   setMetadataName: dell-poweredge-r640-cc-kvm-compute
+          # Optional params for BIOSVersionSet of this entry:
+          # versionParams:
+          #   serverFilter:
+          #     included: [node001-bb001, node002-bb001]
+          #     excluded: []
+          #   setMetadataName: dell-poweredge-r640
         bmc:
           version: "7.00.00.183"
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+          # Optional params for BMCSettingsSet of this entry:
+          # settingsParams:
+          #   serverFilter:
+          #     included: [node001-bb001]
+          #     excluded: []
+          #   setMetadataName: dell-poweredge-r640-custom-settings
+          # Optional params for BMCVersionSet of this entry:
+          # versionParams:
+          #   serverFilter:
+          #     included: []
+          #     excluded: [node003-bb086]
+          #   setMetadataName: dell-poweredge-r640-custom-version
 
-      - model: poweredge-r660
+      poweredge-r660:
+        model: poweredge-r660
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.4.4"
@@ -119,7 +195,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r660/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
-      - model: poweredge-r6715
+      poweredge-r6715:
+        model: poweredge-r6715
         clusterTypes: *defaultClusterTypes
         bios:
           version: "1.3.3"
@@ -130,7 +207,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r6715/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
 
-      - model: poweredge-r740
+      poweredge-r740:
+        model: poweredge-r740
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.22.2"
@@ -141,7 +219,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r740/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
 
-      - model: poweredge-r740xd
+      poweredge-r740xd:
+        model: poweredge-r740xd
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.22.2"
@@ -152,7 +231,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r740xd/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
 
-      - model: poweredge-r760
+      poweredge-r760:
+        model: poweredge-r760
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.4.4"
@@ -163,7 +243,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r760/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
-      - model: poweredge-r7615
+      poweredge-r7615:
+        model: poweredge-r7615
         clusterTypes: *defaultClusterTypes
         bios:
           version: "1.11.2"
@@ -174,7 +255,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
-      - model: poweredge-r770
+      poweredge-r770:
+        model: poweredge-r770
         clusterTypes: *defaultClusterTypes
         bios:
           version: "1.4.4"
@@ -185,7 +267,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r770/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
 
-      - model: poweredge-r7715
+      poweredge-r7715:
+        model: poweredge-r7715
         clusterTypes: *defaultClusterTypes
         bios:
           version: "1.3.3"
@@ -196,7 +279,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7715/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
 
-      - model: poweredge-r840
+      poweredge-r840:
+        model: poweredge-r840
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.22.1"
@@ -207,7 +291,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r840/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
 
-      - model: poweredge-r860
+      poweredge-r860:
+        model: poweredge-r860
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.4.4"
@@ -218,7 +303,8 @@ machines:
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r860/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
-      - model: poweredge-xe9680
+      poweredge-xe9680:
+        model: poweredge-xe9680
         clusterTypes: *defaultClusterTypes
         bios:
           version: "2.4.4"
@@ -232,7 +318,8 @@ machines:
   hpe:
     models:
       # Models with biosSettings
-      - model: proliant-dl380-gen11
+      proliant-dl380-gen11:
+        model: proliant-dl380-gen11
         clusterTypes: *defaultClusterTypes
         bios:
           version: "U54 v2.50 (04/22/2025)"
@@ -245,7 +332,8 @@ machines:
 
       # dl560-gen11: cc-kvm-compute uses AdvancedEcc; sci-k8s-* uses FastFaultTolerantADDDC
       # This model has different biosSettings per cluster type
-      - model: proliant-dl560-gen11
+      proliant-dl560-gen11-kvm:
+        model: proliant-dl560-gen11     # explicit: map key differs from hardware model label
         clusterTypes: [cc-kvm-compute]
         bios:
           version: "U59 v2.50 (04/22/2025)"
@@ -256,7 +344,8 @@ machines:
           settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_168.fwpkg"
 
-      - model: proliant-dl560-gen11
+      proliant-dl560-gen11-sci:
+        model: proliant-dl560-gen11     # explicit: map key differs from hardware model label
         clusterTypes:
           [
             sci-k8s-controlplane,
@@ -275,7 +364,8 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_168.fwpkg"
 
       # Models with firmware only (no biosSettings)
-      - model: proliant-dl320-gen11
+      proliant-dl320-gen11:
+        model: proliant-dl320-gen11
         bios:
           version: "U63 v2.50 (04/22/2025)"
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl320-gen11/U63_2.50_04_22_2025.fwpkg"
@@ -284,7 +374,8 @@ machines:
           settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl320-gen11/ilo6_168.fwpkg"
 
-      - model: proliant-dl345-gen11
+      proliant-dl345-gen11:
+        model: proliant-dl345-gen11
         bios:
           version: "A56 v2.50 (05/16/2025)"
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl345-gen11/A56_2.50_05_16_2025.fwpkg"
@@ -293,7 +384,8 @@ machines:
           settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl345-gen11/ilo6_168.fwpkg"
 
-      - model: proliant-dl360-gen10
+      proliant-dl360-gen10:
+        model: proliant-dl360-gen10
         bios:
           version: "U32 v3.50 (04/17/2025)"
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl360-gen10/U32_3.50_04_17_2025.fwpkg"
@@ -302,7 +394,8 @@ machines:
           settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl360-gen10/ilo5_313.fwpkg"
 
-      - model: proliant-dl380-gen12
+      proliant-dl380-gen12:
+        model: proliant-dl380-gen12
         bios:
           version: "U68 v1.52 (10/03/2025)"
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl380-gen12/U68_1.52_10_03_2025.fwpkg"
@@ -311,7 +404,8 @@ machines:
           settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl380-gen12/ilo7_1.18.00.fwpkg"
 
-      - model: proliant-dl560-gen10
+      proliant-dl560-gen10:
+        model: proliant-dl560-gen10
         bios:
           version: "U34 v3.50 (04/17/2025)"
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen10/U34_3.50_04_17_2025.fwpkg"
@@ -322,7 +416,8 @@ machines:
 
   lenovo:
     models:
-      - model: thinksystem-sr650
+      thinksystem-sr650:
+        model: thinksystem-sr650
         clusterTypes: *defaultClusterTypes
         bios:
           version: "IVE184H"
@@ -333,7 +428,8 @@ machines:
           settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr650/lnvgy_fw_xcc_cdi3b4e-9.98_anyos_noarch.uxz"
 
-      - model: thinksystem-sr650-v3
+      thinksystem-sr650-v3:
+        model: thinksystem-sr650-v3
         clusterTypes: *defaultClusterTypes
         bios:
           version: "ESE130E"
@@ -344,7 +440,8 @@ machines:
           settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr650-v3/lnvgy_fw_xcc_esx338t-6.00_anyos_comp.uxz"
 
-      - model: thinksystem-sr655-v3
+      thinksystem-sr655-v3:
+        model: thinksystem-sr655-v3
         clusterTypes: *defaultClusterTypes
         bios:
           version: "KAE140F"
@@ -355,7 +452,8 @@ machines:
           settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr655-v3/lnvgy_fw_xcc_kax364u-5.80_anyos_comp.uxz"
 
-      - model: thinksystem-sr850p
+      thinksystem-sr850p:
+        model: thinksystem-sr850p
         clusterTypes: *defaultClusterTypes
         bios:
           version: "TEE184H"
@@ -366,7 +464,8 @@ machines:
           settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr850p/lnvgy_fw_xcc_tei3e4d-4.12_anyos_noarch.uxz"
 
-      - model: thinksystem-sr850-v3
+      thinksystem-sr850-v3:
+        model: thinksystem-sr850-v3
         clusterTypes: *defaultClusterTypes
         bios:
           version: "RSE124G"
@@ -377,7 +476,8 @@ machines:
           settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr850-v3/lnvgy_fw_xcc_rsx316l-6.10_anyos_comp.uxz"
 
-      - model: thinksystem-sr950
+      thinksystem-sr950:
+        model: thinksystem-sr950
         clusterTypes: *defaultClusterTypes
         bios:
           version: "PSE150G"
@@ -388,7 +488,8 @@ machines:
           settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr950/lnvgy_fw_xcc_psi356b-3.20_anyos_noarch.uxz"
 
-      - model: thinksystem-sr950-v3
+      thinksystem-sr950-v3:
+        model: thinksystem-sr950-v3
         clusterTypes: *defaultClusterTypes
         bios:
           version: "EBE114G"

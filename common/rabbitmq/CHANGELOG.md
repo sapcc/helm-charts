@@ -2,6 +2,16 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.2 - 2026/06/03
+
+- `rabbitmq-user-credential-updater` updated to `20260521084806` version
+- Chart version bumped
+
+## 0.25.1 - 2026/05/26
+
+- RabbitMQ [4.3.1 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.1)
+- Chart version bumped
+
 ## 0.25.0 - 2026/05/12
 
 - Allow not adding `rabbitmq.serviceName` to the certificate's dnsNames
