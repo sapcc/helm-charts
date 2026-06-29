@@ -957,10 +957,40 @@ spec:
           TODO
         mayReadHostPathVolumes: [ /var/log ]
 
+      - matchNamespace: fortlogs-logs
+        matchRepository: ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
+        justification: |
+          OTel logs-collector DaemonSet reads container log files on the host.
+        mayReadHostPathVolumes: [ /var/log ]
+
+      - matchNamespace: fortlogs-audit
+        matchRepository: ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
+        justification: |
+          OTel audit-logs collector runs as auditd reader: needs hostPID,
+          privileged, AUDIT_* caps, and read access to host audit-related paths.
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayUseCapabilities: [ AUDIT_READ, AUDIT_WRITE, AUDIT_CONTROL ]
+        mayReadHostPathVolumes: [ /var/log ]
+
       - matchNamespace: opensearch-logs
         matchRepository: busybox
         justification: |
           TODO
+        mayBePrivileged: true
+
+      - matchNamespace: fortlogs-logs
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
+        justification: |
+          OpenSearch init-sysctl container needs to increase vm.max_map_count
+          on the node: <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
+        mayBePrivileged: true
+
+      - matchNamespace: fortlogs-audit
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
+        justification: |
+          OpenSearch init-sysctl container needs to increase vm.max_map_count
+          on the node: <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
         mayBePrivileged: true
 
       ##########################################################################
