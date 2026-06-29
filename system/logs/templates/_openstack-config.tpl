@@ -160,51 +160,6 @@ transform/keystone_api:
       statements:
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{DATE_EU} %{TIME} %{NUMBER} %{NOTSPACE:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE:domain.id} usr-dom %{NOTSPACE:user.domain.id} prj-dom %{NOTSPACE:project.domain.id}\\] %{GREEDYDATA}'%{WORD:request.method} %{URIPATH:uri}' %{WORD:action}", true), "upsert")
 
-transform/keystone_api_json:
-  error_mode: ignore
-  log_statements:
-    - context: log
-      conditions:
-        - resource.attributes["k8s.cluster.name"] == "qa-de-2"
-        - resource.attributes["k8s.container.name"] == "keystone-api"
-      statements:
-        - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{.*\\}$")
-        - set(log.time, Time(log.cache["asctime"], "%Y-%m-%d %H:%M:%S,%L")) where log.cache["asctime"] != nil
-        - set(log.attributes["msg"], log.cache["message"])
-        - set(log.severity_text, log.cache["levelname"])
-        - set(log.attributes["infra.container.component"], log.cache["name"])
-        - set(log.attributes["infra.request.id"], log.cache["context"]["request_id"])
-        - set(log.attributes["infra.request.id"], log.cache["request_id"]) where log.cache["request_id"] != nil and log.attributes["infra.request.id"] == nil
-        - set(log.attributes["infra.global.request.id"], log.cache["context"]["global_request_id"])
-        - set(log.attributes["user.id"], log.cache["context"]["user"])
-        - set(log.attributes["user.id"], log.cache["user_id"]) where log.cache["user_id"] != nil and log.attributes["user.id"] == nil
-        - set(log.attributes["user.name"], log.cache["context"]["user_name"])
-        - set(log.attributes["domain.project.id"], log.cache["context"]["project_id"])
-        - set(log.attributes["domain.project.id"], log.cache["project_id"]) where log.cache["project_id"] != nil and log.attributes["domain.project.id"] == nil
-        - set(log.attributes["domain.project.name"], log.cache["context"]["project_name"])
-        - set(log.attributes["domain.id"], log.cache["context"]["project_domain"])
-        - set(log.attributes["client.address"], log.cache["client_ip"])
-        - set(log.attributes["client.address"], log.cache["remote_addr"]) where log.cache["remote_addr"] != nil and log.attributes["client.address"] == nil
-        - set(log.attributes["http.request.method"], log.cache["method"])
-        - set(log.attributes["http.url.path"], log.cache["uri"])
-        - set(log.attributes["network.protocol.version"], log.cache["protocol"])
-        - set(log.attributes["http.response.status_code"], log.cache["status"])
-        - set(log.attributes["http.user_agent.original"], log.cache["user_agent"])
-        - set(log.attributes["log.kind"], "cadf_action") where IsMatch(log.attributes["msg"], "^\\s*cadf action for.*")
-        - set(log.attributes["log.kind"], "target_type_uri") where IsMatch(log.attributes["msg"], "^\\s*target type URI of requests.*")
-        - set(log.attributes["log.kind"], "authentication") where IsMatch(log.attributes["msg"], "^\\s*Authenticating.*")
-        - set(log.attributes["log.kind"], "keystone_exception_UserNotFound") where IsMatch(log.attributes["infra.container.component"], "keystone\\.auth\\.plugins\\.core")
-        - set(log.attributes["log.kind"], "keystone_middleware_lifesaver") where log.attributes["infra.container.component"] == "cc\\.keystone\\.middleware\\.lifesaver" and IsMatch(log.attributes["msg"], ".*has a remaining credit of.*")
-        - set(log.attributes["log.kind"], "keystone_exception_Unauthorized") where IsMatch(log.attributes["msg"], "^\\s*Authorization failed\\..*")
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*cadf action for '%{NOTSPACE:http.request.method} %{URIPATH:http.url.path}' is '%{NOTSPACE:event.action}'", true), "upsert") where log.attributes["log.kind"] == "cadf_action"
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*target type URI of requests '%{NOTSPACE:http.request.method} %{URIPATH:http.url.path}' is '%{NOTSPACE:target.type_uri}'", true), "upsert") where log.attributes["log.kind"] == "target_type_uri"
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*Authenticating %{NOTSPACE:user.name}@%{NOTSPACE:domain.name}\\.\\.", true), "upsert") where log.attributes["log.kind"] == "authentication"
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*Could not find user:[\\s]+%{NOTSPACE:user.id}\\.", true), "upsert") where log.attributes["log.kind"] == "keystone_exception_UserNotFound"
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "(?:AC-)%{NOTSPACE:user.id}\\s+has a remaining credit of %{NUMBER} - request %{WORD:http.request.method} %{NOTSPACE:http.url.path} returned %{NUMBER:http.response.status_code:int}", true), "upsert") where log.attributes["msg"] != nil and log.attributes["log.kind"] == "keystone_middleware_lifesaver"
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:client.address}", true), "upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
-        - delete_key(log.attributes, "log.kind")
-        - delete_key(log.attributes, "msg")
-
 filter/hermes_logstash:
   error_mode: ignore
   logs:
@@ -261,7 +216,7 @@ opensearch/swift_failover_b:
 {{- define "openstack.pipeline" }}
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8s_attributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/keystone_api_json,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash,transform/swift_proxy,attributes/swift_proxy]
+  processors: [k8s_attributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash,transform/swift_proxy,attributes/swift_proxy]
   exporters: [routing]
 
 logs/route_swift:
