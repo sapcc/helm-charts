@@ -217,8 +217,8 @@ logRouter:
   max_concurrent_flushes: "100"
 
   # Read-only login role for hermes's dataplane_config table.
-  # The hermes postgres seed creates this user; hermez's migration 001 is
-  # responsible for granting membership in the log_router_reader role.
+  # The hermes postgres seed creates this user; hermez's migration 001 grants
+  # SELECT on dataplane_config directly to the log-router login role.
   # Until that GRANT lands, SELECT fails and log-router falls back to the
   # admin tier (ccadmin/master) — events still flow.
   hermesDb:
@@ -266,20 +266,16 @@ logRouter:
 
 hermes-postgresql:
   # Shared postgres backing the hermes dataplane_config table.
-  # hermes-api writes; log-router reads via log_router_reader role membership.
-  # The membership GRANT is issued by hermez's migration 001, not the chart —
-  # postgres-ng has no `memberOf` primitive, and hermez (as table owner) holds
-  # the GRANT privilege. Until the GRANT runs, log-router gets permission
-  # denied on SELECT and fails closed to the admin tier (safe).
+  # hermes-api writes; log-router reads via a GRANT SELECT issued by hermez's
+  # migration 001 directly to the log-router login user.
   postgresVersion: 17
   databases:
     hermes: {}
   users:
     # Writer role used by the hermes API. Owns the table created by migration 001.
     hermes: {}
-    # Read-only consumer for log-router. The hermez migration creates the
-    # log_router_reader NOLOGIN role with SELECT on dataplane_config and
-    # grants membership to this login user.
+    # Read-only consumer for log-router. hermez's migration 001 grants
+    # SELECT on dataplane_config to this login user.
     log-router: {}
   config:
     max_connections: 64
