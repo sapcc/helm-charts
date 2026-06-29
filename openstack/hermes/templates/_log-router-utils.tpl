@@ -104,7 +104,7 @@
 - name: OS_IDENTITY_API_VERSION
   value: '3'
 - name: OS_INTERFACE
-  value: 'internal'
+  value: 'public'
 - name: OS_PASSWORD
   valueFrom:
     secretKeyRef:
