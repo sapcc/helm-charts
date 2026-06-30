@@ -94,7 +94,7 @@
       key: LOG_ROUTER_SWIFT_SERVICE_TYPE
 {{- if .Values.logRouter.swift.enabled }}
 # Keystone credentials for Swift/Ceph RGW authentication (hermes service account).
-# cloud_objectstore_admin in ccadmin/cloud_admin grants cross-tenant RGW access.
+# Authenticates as ccadmin/master for Ceph bucket writes.
 # Mirrors the keppel/deployment-health-monitor OS_* env block (alphabetized,
 # explicit auth-version pins for gophercloud).
 - name: OS_AUTH_URL
@@ -113,7 +113,7 @@
 - name: OS_PROJECT_DOMAIN_NAME
   value: 'ccadmin'
 - name: OS_PROJECT_NAME
-  value: 'cloud_admin'
+  value: 'master'
 - name: OS_REGION_NAME
   value: {{ required ".Values.global.region must be set when logRouter.swift.enabled=true (used for Swift endpoint catalog lookup)" $.Values.global.region | quote }}
 - name: OS_USER_DOMAIN_NAME
