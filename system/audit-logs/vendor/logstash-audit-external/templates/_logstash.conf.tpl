@@ -258,6 +258,17 @@ filter {
               rename => { "[responseStatus][status]" => "[responseStatus][statusText]" }
             }
           }
+
+          # ---- use API server timestamp for correct event ordering ----
+          # requestReceivedTimestamp is when the API server received the request,
+          # which is the authoritative "when did this happen" time.
+          # Without this, @timestamp reflects batching/forwarding time which
+          # causes events from different API servers to appear out of order.
+          date {
+            match => ["requestReceivedTimestamp", "ISO8601"]
+            target => "@timestamp"
+            tag_on_failure => ["_dateparsefailure_requestReceivedTimestamp"]
+          }
         }
       }
 
