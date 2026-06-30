@@ -31,6 +31,13 @@ database:
     - "{{$tl}}"
   {{- end }}
 storages:
+  {{- if .Values.backup_v2.cse.enabled }}
+    {{- $active := required "backup_v2.cse.active_key required when cse.enabled" .Values.backup_v2.cse.active_key }}
+    {{- $cseKeys := dig "mariadb" "backup_v2" "cse" "keys" (dict) .Values.global }}
+    {{- if not (hasKey $cseKeys $active) }}
+      {{- fail (printf "backup_v2.cse.active_key %q not found in global.mariadb.backup_v2.cse.keys (have: %v)" $active (keys $cseKeys)) }}
+    {{- end }}
+  {{- end }}
   {{- $cephTargets := list }}
   {{- if .Values.backup_v2.ceph_s3.enabled }}
     {{- $cephTargets = default (list) (dig "mariadb" "backup_v2" "ceph_s3" "targets" (list) .Values.global) }}
@@ -56,6 +63,14 @@ storages:
       bucket_name: "mariadb-backup-{{ .Values.global.region }}"
       sse_customer_algorithm: "AES256"
       sse_customer_key: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}
+      {{- if $.Values.backup_v2.cse.enabled }}
+      cse_active_key: {{ $.Values.backup_v2.cse.active_key | quote }}
+      cse_keys:
+        {{- range $name, $_ := (dig "mariadb" "backup_v2" "cse" "keys" (dict) $.Values.global) }}
+        - name: {{ $name | quote }}
+          file: "/etc/backup/cse/{{ $name }}"
+        {{- end }}
+      {{- end }}
     {{- end }}
     {{- range $t := $cephTargets }}
     {{- $region := default $.Values.global.region $t.region }}
@@ -68,6 +83,14 @@ storages:
       bucket_name: {{ $t.bucket_name | default (printf "mariadb-backup-%s" $.Values.global.region) | quote }}
       {{- if ternary $t.verify $.Values.backup_v2.ceph_s3.verify (hasKey $t "verify") }}
       verify: true
+      {{- end }}
+      {{- if $.Values.backup_v2.cse.enabled }}
+      cse_active_key: {{ $.Values.backup_v2.cse.active_key | quote }}
+      cse_keys:
+        {{- range $name, $_ := (dig "mariadb" "backup_v2" "cse" "keys" (dict) $.Values.global) }}
+        - name: {{ $name | quote }}
+          file: "/etc/backup/cse/{{ $name }}"
+        {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
