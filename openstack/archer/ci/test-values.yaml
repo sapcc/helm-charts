@@ -4,12 +4,26 @@ global:
   dockerHubMirror: keppel.example.com/dockerhub
   dockerHubMirrorAlternateRegion: registry-other.example.com/dockerhub
   vaultBaseURL: https://vault.example.com
+  linkerd_enabled: false
+  linkerd_requested: false
+  clusterDNSSearchDomain: cluster.local
 
 image:
   tag: test-tag-123
 
+cp_network_interface: bond1
+
+agents:
+  ni:
+    cp001:
+      create_service: false
+  cp:
+    - physical_network: cp001
+      replicas: 1
+  f5:
+    f5host1.example.com:
+      cp: cp001
+
 pgbackup:
   database:
     password: testdbpassword
-  swift:
-    os_password: testbackuppassword

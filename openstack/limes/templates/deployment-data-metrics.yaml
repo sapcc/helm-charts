@@ -1,3 +1,5 @@
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -62,8 +64,16 @@ spec:
           resources:
             limits:
                 cpu: '1'
-                memory: '500Mi'
+                {{- if eq $region "eu-de-1" }}
+                memory: '800Mi'
+                {{- else }}
+                memory: '600Mi'
+                {{- end }}
             requests:
                 cpu: '100m'
-                memory: '500Mi'
+                {{- if eq $region "eu-de-1" }}
+                memory: '800Mi'
+                {{- else }}
+                memory: '600Mi'
+                {{- end }}
           {{- end }}

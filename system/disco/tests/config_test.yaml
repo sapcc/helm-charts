@@ -1,0 +1,83 @@
+suite: disco-config secret
+values:
+  - ../ci/test-values.yaml
+templates:
+  - disco-config.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should render exactly one Secret
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Secret
+
+  - it: should be named disco-config
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-config
+
+  - it: should be Opaque type
+    asserts:
+      - equal:
+          path: type
+          value: Opaque
+
+  - it: should contain all required environment keys
+    asserts:
+      - isNotEmpty:
+          path: data.OS_AUTH_URL
+      - isNotEmpty:
+          path: data.OS_REGION_NAME
+      - isNotEmpty:
+          path: data.OS_USERNAME
+      - isNotEmpty:
+          path: data.OS_PASSWORD
+      - isNotEmpty:
+          path: data.OS_PROJECT_NAME
+      - isNotEmpty:
+          path: data.OS_PROJECT_DOMAIN_NAME
+      - isNotEmpty:
+          path: data.OS_USER_DOMAIN_NAME
+      - isNotEmpty:
+          path: data.DEFAULT_DNS_ZONE_NAME
+      - isNotEmpty:
+          path: data.DEFAULT_DNS_RECORD
+---
+suite: openstack seed
+values:
+  - ../ci/test-values.yaml
+templates:
+  - seed.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should not render by default
+    set:
+      seed.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render when seed is enabled
+    set:
+      seed.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: OpenstackSeed
+
+  - it: should be named disco-seed when enabled
+    set:
+      seed.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-seed

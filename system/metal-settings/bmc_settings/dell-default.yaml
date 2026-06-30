@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Default iDRAC BMC settings for all Dell PowerEdge models.
+# Applied via BMCSettingsSet after the BMC firmware reaches the target version.
+# Rendered as a Helm template via tpl — configMapName is substituted at chart render time.
+# NodeName, BB and Region are resolved at reconcile time from BMC object labels.
+# SyslogServer is resolved from the metal-bmc-settings ConfigMap.
+#
+# Values sourced from: baremetal-config/dell/*/bmc/defaultsettings.yml
+settings:
+  IPMILan.1.Enable: "Enabled"
+  SNMP.1.AgentEnable: "Disabled"
+  IPMILan.1.AlertEnable: "Enabled"
+  OS-BMC.1.AdminState: "Disabled"
+  NTPConfigGroup.1.NTPEnable: "Enabled"
+  NIC.1.DNSDomainNameFromDHCP: "Disabled"
+  IPv6.1.Enable: "Disabled"
+  SysLog.1.SysLogEnable: "Enabled"
+  NTPConfigGroup.1.NTP1: "timehost1.global.cloud.sap"
+  NTPConfigGroup.1.NTP2: "timehost2.global.cloud.sap"
+  NTPConfigGroup.1.NTP3: "timehost3.global.cloud.sap"
+  IPv4Static.1.DNS1: "147.204.9.200"
+  IPv4Static.1.DNS2: "147.204.9.201"
+  CurrentIPv4.1.DNS1: "147.204.9.200"
+  CurrentIPv4.1.DNS2: "147.204.9.201"
+  SysLog.1.Port: "514"
+  Time.1.DayLightOffset: "0"
+  Time.1.Timezone: "UTC"
+  Time.1.TimeZoneOffset: "0"
+  WebServer.1.SSLEncryptionBitLength: "256-Bit or higher"
+  WebServer.1.TLSProtocol: "TLS 1.2 and Higher"
+  # Per-BMC dynamic settings resolved at reconcile time via controller variables below.
+  # $(NodeName)r-$(BB) → e.g. "node002r-ap052" (matches inventory_hostname_short convention)
+  NIC.1.DNSRacName: "$(NodeName)r-$(BB)"
+  # cc.$(Region).cloud.sap → e.g. "cc.qa-de-1.cloud.sap"
+  NIC.1.DNSDomainName: "cc.$(Region).cloud.sap"
+  SysLog.1.Server1: "$(SyslogServer)"
+variables:
+  # BmcName: resolved from the BMCSettings object itself — used as the name for all objectFieldRef lookups below.
+  - key: BmcName
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.BMCRef.name
+  # NodeName: short node name from BMC label (e.g. "node002").
+  - key: NodeName
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[kubernetes.metal.cloud.sap/nodename]
+  # BB: building block identifier from BMC label (e.g. "ap052").
+  - key: BB
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[kubernetes.metal.cloud.sap/bb]
+  # Region: topology region from BMC label (e.g. "qa-de-1") — used to construct the DNS domain.
+  - key: Region
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[topology.kubernetes.io/region]
+  # SyslogServer: cluster-level syslog endpoint from the metal-bmc-settings ConfigMap.
+  - key: SyslogServer
+    valueFrom:
+      configMapKeyRef:
+        name: {{ .Values.clusterConfig.configMapName }}
+        namespace: {{ .Values.clusterConfig.managedNamespace }}
+        key: syslogServer

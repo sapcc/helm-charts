@@ -23,14 +23,6 @@ template: |
       vcenter: {= host =}
       datacenter: {= availability_zone =}
       vccluster: {= cluster_name =}
-      {{- if .Values.nsxv3_managed_service_users }}
-      vcenter-operator-secret-version: {= service_user_version | quote =}
-      {{- end }}
-    {{- if .Values.nsxv3_managed_service_users }}
-    # Must match vcsu name
-    annotations:
-      uses-service-user: nsxt
-    {{- end }}
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -52,12 +44,19 @@ template: |
           vcenter: {= host =}
           datacenter: {= availability_zone =}
           vccluster: {= cluster_name =}
+          {{- if .Values.nsxv3_managed_service_users }}
+          vcenter-operator-secret-version: {= service_user_version | quote =}
+          {{- end }}
         annotations:
           kubectl.kubernetes.io/default-container: neutron-nsxv3-agent
           configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
           {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
+          {{- if .Values.nsxv3_managed_service_users }}
+          # Must match vcsu name
+          uses-service-user: nsxt
+          {{- end }}
       spec:
         containers:
         - name: neutron-nsxv3-agent
@@ -77,12 +76,16 @@ template: |
           ports:
             - name: metrics-agent
               containerPort: 8000
+          {{- if .Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
             initialDelaySeconds: 200
             periodSeconds: 30
             timeoutSeconds: 10
+          {{- else }}
+          livenessProbe: null
+          {{- end }}
           resources:
 {{ toYaml .Values.pod.resources.nsxv3_agent | indent 12 }}
           volumeMounts:

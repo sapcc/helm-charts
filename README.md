@@ -19,7 +19,7 @@ units or imply other semantics.
 ## Charts
 
 On the second level we expect a chart. This can be a single chart or
-a meta-chart that describe a dependent set of compononents. Meta-charts contain
+a meta-chart that describes a dependent set of components. Meta-charts contain
 sub-charts or reference charts from other repositories using Helm dependencies.
 
 ```
@@ -61,7 +61,7 @@ This has the benefits that:
 
   * Values required for releasing a chart can be found at the same place in `cc/regions`
   * Cleanup of a failed release, is as easy as deleting the namespace.
-  * For testing a chart can deployed in a seperate testing namespace.
+  * For testing a chart can be deployed in a separate testing namespace.
   * Pods and other Kubernetes primitives are reflected at a known place in
       Kubernetes
 

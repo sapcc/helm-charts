@@ -22,9 +22,13 @@ data:
 {{ include "util.helpers.valuesToIni" .Values.bigvm.config_file | indent 4 }}
   nova-conductor.conf: |
 {{ include "util.helpers.valuesToIni" .Values.conductor.config_file | indent 4 }}
+{{- if .Values.rabbitmq_api.enabled }}
+  nova-super-conductor.conf: |
+{{ include "util.helpers.valuesToIni" .Values.conductor.config_file | indent 4 }}
+{{- end }}
 {{- $envAll := . }}
 {{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
-{{- if ne $cellId "cell1"}}
+{{- if or $envAll.Values.rabbitmq_api.enabled (ne $cellId "cell1") }}
 {{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
 {{- $configErrorMsg := printf "'.Values.%[1]s.conductor.config_file' is required for cell '%[1]s'" $cellId }}
 {{- $cellValues := get $envAll.Values $cellId | required $configErrorMsg }}

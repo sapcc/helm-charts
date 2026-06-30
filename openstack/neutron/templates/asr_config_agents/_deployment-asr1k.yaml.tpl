@@ -45,12 +45,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-start
+          {{- if $context.Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "ASR1K L3 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+          {{- end }}
           env:
             - name: DEBUG_CONTAINER
             {{ if $context.Values.pod.debug.asr1k_agent }}
@@ -90,12 +92,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /container.init/neutron-asr1k-ml2-start
+          {{ if $context.Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--agent-type", "ASR1K ML2 Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+          {{ end }}
           env:
             - name: DEBUG_CONTAINER
             {{ if $context.Values.pod.debug.asr1k_ml2_agent }}

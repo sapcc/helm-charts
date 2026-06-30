@@ -6,6 +6,10 @@ metadata:
     {{- with .Values.controllerLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+  {{- with .Values.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   name: disco-controller-manager
 spec:
   replicas: 1
@@ -19,6 +23,10 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/disco-config.yaml") . | sha256sum }}
       labels:
         app: disco
+        {{- if .Values.remote.enabled }}
+        networking.gardener.cloud/to-shoot-apiserver: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+        {{- end }}
         {{- with .Values.controllerLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -28,9 +36,19 @@ spec:
         - /disco
         env:
         - name: NAMESPACE
+        {{- if .Values.remote.enabled }}
+          value: {{ .Values.remote.shootNamespace | quote }}
+        {{- else }}
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        {{- end }}
+        {{- if .Values.remote.enabled }}
+        - name: KUBERNETES_SERVICE_HOST
+          value: {{ required "remote.apiServerHost is required when remote.enabled is true" .Values.remote.apiServerHost | quote }}
+        - name: KUBERNETES_SERVICE_PORT
+          value: {{ .Values.remote.apiServerPort | quote }}
+        {{- end }}
         envFrom:
         - secretRef:
             name: disco-config
@@ -43,9 +61,11 @@ spec:
           periodSeconds: 20
         name: manager
         ports:
+        {{- if .Values.webhooks.enabled }}
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
+        {{- end }}
         - containerPort: 8080
           name: https
           protocol: TCP
@@ -57,16 +77,39 @@ spec:
           periodSeconds: 10
         securityContext:
           allowPrivilegeEscalation: false
+        {{- if or .Values.webhooks.enabled .Values.remote.enabled }}
         volumeMounts:
+        {{- if .Values.webhooks.enabled }}
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        {{- end }}
+        {{- if .Values.remote.enabled }}
+        - name: remote-kubeconfig
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        {{- end }}
+        {{- end }}
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: disco-controller-manager
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: 10
+      {{- if or .Values.webhooks.enabled .Values.remote.enabled }}
       volumes:
+      {{- if .Values.webhooks.enabled }}
       - name: cert
         secret:
           defaultMode: 420
           secretName: tls-disco-webhook-service
+      {{- end }}
+      {{- if .Values.remote.enabled }}
+      - name: remote-kubeconfig
+        secret:
+          secretName: disco-remote-kubeconfig
+          items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+      {{- end }}
+      {{- end }}

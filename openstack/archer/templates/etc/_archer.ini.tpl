@@ -33,3 +33,11 @@ endpoint = 0
 enabled = true
 queue_name = notifications.info
 {{- end }}
+
+[notification]
+enabled = true
+campfire_url = https://limes-campfire.{{ .Values.global.region }}.cloud.sap/v1/send-email?from=archer
+template_path = /etc/archer
+mime_type = text/html; charset="utf-8"
+# Send out digest reminder mondays at 9:00 AM
+digest_cron = 0 9 * * 1

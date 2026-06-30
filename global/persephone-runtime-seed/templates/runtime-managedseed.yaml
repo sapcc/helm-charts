@@ -1,22 +1,27 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
-{{- $infraCredsName := default "openstack-infra-creds-seed" $cluster.infraCredentialsSecretName }}
+{{- $defaultInfraCredsName := printf "openstack-infra-creds-seed-%s" $key | trunc 63 | trimSuffix "-" }}
+{{- $infraCredsName := default $defaultInfraCredsName $cluster.infraCredentialsSecretName }}
+{{- $appset := get $.Values "appset" | default dict }}
+{{- $gardenRegion := default $cluster.region (get $appset "region") }}
+{{- $seedShootName := printf "%s%s" $key ($cluster.landscapeName | substr 0 1) }}
+{{- $seedIngressDomain := printf "ingress.%s.garden.external.%s.persephone.%s.cloud.sap" $seedShootName $cluster.landscapeName $cluster.region }}
 ---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: ManagedSeed
 metadata:
-  name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+  name: {{ $seedShootName }}
   namespace: garden
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
   shoot:
-    name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+    name: {{ $seedShootName }}
   gardenlet:
     config:
       apiVersion: gardenlet.config.gardener.cloud/v1alpha1
       kind: GardenletConfiguration
       gardenClientConnection:
-        gardenClusterAddress: https://api.virtual.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+        gardenClusterAddress: https://api.virtual.{{ $cluster.landscapeName }}.persephone.{{ $gardenRegion }}.cloud.sap
       logging:
         enabled: true
       seedConfig:
@@ -28,6 +33,10 @@ spec:
           backup:
 {{ toYaml $cluster.backup | indent 12 }}
 {{- end }}
+          ingress:
+            domain: {{ $seedIngressDomain }}
+            controller:
+              kind: nginx
           dns:
             defaults:
             - credentialsRef:
@@ -46,7 +55,9 @@ spec:
               type: openstack-designate
               domain: internal.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
             provider:
-              secretRef:
+              credentialsRef:
+                apiVersion: v1
+                kind: Secret
                 name: {{ $infraCredsName }}
                 namespace: garden
               type: openstack-designate

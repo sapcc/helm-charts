@@ -9,7 +9,7 @@ global:
       enabled: true
 
 name: null
-image: library/mariadb:10.11.16
+image: library/mariadb:10.11.18
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -210,20 +210,20 @@ use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: "20260210104857"
+  image_version: "20260521132613"
   # set to true if backup_v2 is not enabled, but readiness sidecar is required
   useSidecar: false
 
 credentialUpdater:
   image: 'shared-app-images/alpine-mariadb'
-  imageTag: 'python3.13-alpine3.23-20260207085008'
+  imageTag: 'python3.13-alpine3.23-20260506191108'
   checkInterval: '10'
 
 backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "10.11-20260409091116"
+  image_version: "10.11-20260611113653"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -237,6 +237,16 @@ backup_v2:
     enabled: false
     force_path_style: true
     verify: false
+    # Ceph S3 targets:
+    # NOTE: this configuration lives under global.mariadb.backup_v2.ceph_s3.targets
+    #   - name: ceph-eu-de-1-cold               # optional, defaults to ceph-<region>
+    #     endpoint: "https://..."               # required
+    #     aws_access_key_id: vault+kvv2:...     # required
+    #     aws_secret_access_key: vault+kvv2:... # required
+    #     region: eu-de-1                       # optional, defaults to global.region
+    #     bucket_name: mariadb-backup-eu-de-2   # optional, defaults to mariadb-backup-<global.region>
+    #     force_path_style: true                # optional, inherits chart-local default
+    #     verify: false                         # optional, inherits chart-local default
   swift:
     enabled: true
     user_name: db_backup

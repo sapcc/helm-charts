@@ -51,53 +51,21 @@ groups:
       summary: barbican has reported issues to Sentry
 
   - alert: OpenstackBarbicanRateLimitActionIsAbove50
-    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
+    expr: sum by(region, initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
     for: 1m
     labels:
       severity: warning
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: 'barbican'
+      context: 'barbican'
       dashboard: barbican
       meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations' 
       no_alert_on_absence: "true"
       support_group: identity
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      playbook: 'docs/support/playbook/barbican/alerts/rate-limit/'
     annotations:
-      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
+      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations'
       summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
-
-  - alert: OpenstackBarbicanScrapeMissing
-    expr: absent(up{component="barbican",type="api"})
-    for: 1h
-    labels:
-      context: availability
-      dashboard: barbican
-      service: barbican
-      severity: warning
-      support_group: identity
-      tier: os
-      no_alert_on_absence: "true"
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: barbican failed to be scraped. Monitoring might miss metrics it needs to alert on.
-      summary: barbican cannot be scraped
-
-  - alert: OpenstackBarbicanDatabaseScrapeMissing
-    expr: absent(up{app="barbican-mariadb"})
-    for: 1h
-    labels:
-      context: availability
-      dashboard: barbican
-      service: barbican
-      severity: critical
-      support_group: identity
-      tier: os
-      no_alert_on_absence: "true"
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: barbicans database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
-      summary: barbican database cannot be scraped
 
   - alert: OpenstackBarbicanApiIsDown
     expr: up{component="barbican",type="api"} == 0
@@ -110,14 +78,14 @@ groups:
       support_group: identity
       severity: critical
       tier: os
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-api/'
       no_alert_on_absence: "true"
     annotations:
       description: "A barbican-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A barbican server is DOWN"
 
   - alert: OpenstackBarbicanDatabaseIsDown
-    expr: count(up{component="barbican-mariadb"} == 0) == count(up{component="barbican-mariadb"})
+    expr: count by(region) (up{component="barbican-mariadb"} == 0) == count by(region) (up{component="barbican-mariadb"})
     for: 5m
     labels:
       context: availability
@@ -126,14 +94,14 @@ groups:
       support_group: identity
       tier: os
       dashboard: mariadb-overview?var-host=barbican-mariadb
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-api/'
       no_alert_on_absence: "true"
     annotations:
       description: "barbican database on {{ $labels.instance }} is DOWN."
       summary: "barbican Database is DOWN"
 
   - alert: OpenstackBarbicanApiAllDown
-    expr: count(up{component="barbican",type="api"} == 0) == count(up{component="barbican",type="api"})
+    expr: count by(region) (up{component="barbican",type="api"} == 0) == count by(region) (up{component="barbican",type="api"})
     for: 5m
     labels:
       context: availability
@@ -143,7 +111,7 @@ groups:
       support_group: identity
       tier: os
       dashboard: barbican
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-api/'
       no_alert_on_absence: "true"
     annotations:
       description: All barbican-api server pods are down.

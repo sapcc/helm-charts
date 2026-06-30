@@ -1,0 +1,45 @@
+{{- if .Values.logRouter.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-router
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: log-router
+  annotations:
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus }}
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    component: log-router
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-router-headless
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: log-router
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    component: log-router
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+{{- end }}

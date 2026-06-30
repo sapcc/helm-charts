@@ -1,49 +1,50 @@
 {{- if .Values.bmcVersions.enabled }}
-{{- range $path, $_  := $.Files.Glob "bmc_versions/**" }}
-{{- $name := base (dir $path) }}
-{{- if eq (len (splitList "/" $path)) 4 -}}
-
-{{- $folders := splitList "/" $path }}
-{{- $version := index $folders 3}}
-{{- $vendor := index $folders 1 }}
-{{- $model := index $folders 2 }}
-{{- $version := replace "_" "-" $version}}
-{{- $version := replace ".yaml" "" $version}}
+{{- range $vendor, $vendorConfig := .Values.machines }}
+{{- if $vendorConfig }}
 
 {{/* Vendor filtering */}}
-{{- $vendorIncluded := or (not $.Values.bmcVersions.filters.vendors.included) (has $vendor $.Values.bmcVersions.filters.vendors.included) }}
-{{- $vendorExcluded := and $.Values.bmcVersions.filters.vendors.excluded (has $vendor $.Values.bmcVersions.filters.vendors.excluded) }}
+{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcVersions.filters.vendors) }}
+{{- $processedModels := dict }}
+{{- range $entryName, $entry := $vendorConfig.models }}
+{{- if $entry.bmc }}
+{{- $model := $entry.model }}
+{{- $version := $entry.bmc.version }}
+{{- $modelKey := printf "%s-%s" $model $version }}
+{{- $versionParams := (get $entry.bmc "versionParams") | default dict }}
+{{- $serverFilters := (get $versionParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
-{{/* Model filtering */}}
-{{- $modelIncluded := or (not $.Values.bmcVersions.filters.models.included) (has $model $.Values.bmcVersions.filters.models.included) }}
-{{- $modelExcluded := and $.Values.bmcVersions.filters.models.excluded (has $model $.Values.bmcVersions.filters.models.excluded) }}
+{{/* Skip if we've already processed this model-version combination */}}
+{{- if not (hasKey $processedModels $modelKey) }}
+{{- $_ := set $processedModels $modelKey true }}
 
-{{/* Version filtering */}}
-{{- $versionIncluded := or (not $.Values.bmcVersions.filters.versions.included) (has $version $.Values.bmcVersions.filters.versions.included) }}
-{{- $versionExcluded := and $.Values.bmcVersions.filters.versions.excluded (has $version $.Values.bmcVersions.filters.versions.excluded) }}
-
-{{/* Apply all filters */}}
-{{- if and $vendorIncluded (not $vendorExcluded) $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
-{{ range $path, $_ := $.Files.Glob (printf "bmc_versions/%s/%s/*.yaml" $vendor $model) -}}
+{{/* Model and Version filtering */}}
+{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcVersions.filters.versions)) }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BMCVersionSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $version }}
+  {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
+  {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  name: {{ $resourceName }}
 spec:
   bmcSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
+{{- end }}
   bmcVersionTemplate:
     serverMaintenancePolicy: OwnerApproval
-{{- if $.Files.Lines $path | len | eq 2 }}
-{{ $.Files.Get (printf "bmc_versions/%s/default.yaml" $vendor) | trim | indent 4 }}
-{{ $.Files.Get $path | trim | indent 4 }}
-{{- else }}
-{{ $.Files.Get $path | trim | indent 4 }}
-{{- end }}
+    version: {{ $version | quote }}
+    image:
+      URI: {{ $entry.bmc.imageURI | quote }}
+      transferProtocol: "HTTPS"
 ---
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

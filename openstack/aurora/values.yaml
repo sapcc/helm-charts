@@ -1,12 +1,14 @@
 global:
   registry: "DEFINED IN SECRETS"
-# Default values for elektra.
+# Default values for Aurora.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 replica_count: 5
 image:
   tag: latest
   pullPolicy: IfNotPresent
+
+port: 3000
 
 owner-info:
   support-group: containers
@@ -17,7 +19,21 @@ owner-info:
     - Hans-Georg Winkler
     - Andreas Pfau
 
+# Optional overrides - if not set, defaults are generated from global.region and global.tld
+# identity_endpoint: "http://custom-endpoint:5000/v3"  # Defaults to: https://identity-3.{region}.{tld}/v3
+# ingress:
+#   host: "custom-host.example.com"  # Defaults to: dashboard-aurora.{region}.{tld}
 
-identity_endpoint: "DEFINED IN SECRETS"
-ingress: 
-  host: "DEFINED IN SECRETS"
+# Ensure ingress is defined so templates can access .Values.ingress.host
+ingress: {}
+
+ceph_region: ""
+
+prPreview:
+  enabled: false
+
+# Deploy Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack

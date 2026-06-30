@@ -25,7 +25,7 @@
                     {
                         "state_name": "snapshot",
                         "conditions": {
-                            "min_index_age": "7d"
+                            "min_index_age": "{{ .Values.global.data_stream.logs.min_index_age }}"
                         }
                     }
                 ]
@@ -43,17 +43,22 @@
                             "repository": "{{ .Values.global.data_stream.logs.snapshots.repository }}",
                             "snapshot": "{_SNAPSHOT_NAME_}"
                         }
-                    } 
+                    }
                 ],
                 "transitions": [
                     {
+{{- if .Values.global.data_stream.logs.searchable_snapshots.enabled }}
                         "state_name": "link_snapshot",
+{{- else }}
+                        "state_name": "delete",
+{{- end }}
                         "conditions": {
                             "min_doc_count": 5
                         }
                     }
                 ]
             },
+{{- if .Values.global.data_stream.logs.searchable_snapshots.enabled }}
             {
                 "name": "link_snapshot",
                 "actions": [
@@ -69,7 +74,7 @@
                           "rename_pattern": "remote_$1"
                       }
                     }
-                ],  
+                ],
                 "transitions": [
                     {
                         "state_name": "delete",
@@ -79,6 +84,7 @@
                     }
                 ]
             },
+{{- end }}
 {{- else }}
                 "transitions": [
                     {

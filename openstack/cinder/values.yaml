@@ -161,6 +161,21 @@ nanny:
 proxysql:
   mode: null  # Disabled by default
   native_sidecar: true
+  volume:
+    scale: 2  # volume pods get max_connections = base * scale = 20 * 2 = 40
+  backup:
+    max_connections_per_proc: 10  # backup pods get their own proxysql secret with max_connections = 10
+  query_rules:
+    # Cache attachment_specs lookups (table is empty, 0 rows ever, queried 1249/sec)
+    # 1h TTL — table has never had data in any region, feature is unused
+    - cache_ttl: 3600000
+      match_pattern: "^SELECT.*FROM attachment_specs WHERE"
+    # Cache volume_types full list (3 rows, static admin config, rarely changes)
+    - cache_ttl: 300000
+      match_pattern: "^SELECT.*FROM volume_types.*ORDER BY"
+    # Cache volume_types by ID or name lookup
+    - cache_ttl: 300000
+      match_pattern: "^SELECT.*FROM.*volume_types WHERE"
 
 mariadb:
   enabled: true
@@ -474,6 +489,8 @@ cindernetappconfig:
   enabled: false
   # template for matching volumes from netapp filer
   volumeregextemplate: "(^cinder_|^nfs_{{FilerName}}_).*"
+  cinderbackendconfig:
+    reserved_percentage: 20
   
 # openstack-watcher-middleware
 watcher:

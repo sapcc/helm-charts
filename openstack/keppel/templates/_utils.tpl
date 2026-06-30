@@ -93,6 +93,8 @@
   value: '/etc/keppel-issuer-key/previous-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
+- name:  KEPPEL_LIQUIDAPI_LISTEN_ADDRESS
+  value: ':80'
 - name:  KEPPEL_PEERS
   value: {{ index (include "build_peers" $ | fromYaml) "peers" | toJson | quote }}
 - name: KEPPEL_REDIS_ENABLE
@@ -108,6 +110,8 @@
     secretKeyRef:
       name: keppel-redis-user-default
       key: password
+- name: KEPPEL_TRACK_BYTES_QUOTA
+  value: {{ ne .Values.keppel.driver "swift" | quote }}
 - name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
   value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"
 - name: KEPPEL_TRIVY_URL

@@ -53,12 +53,14 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
             {{- include "utils.trust_bundle.env" . | indent 12 }}
+          {{- if .Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "--config-file", "/run/hostname.conf", "--agent-type", "Metadata agent"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+           {{- end }}
           resources:
 {{  toYaml .Values.pod.resources.metadata_agent | indent 12 }}
           volumeMounts:

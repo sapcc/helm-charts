@@ -1,0 +1,12 @@
+{{- if .Values.rabbitmq_api.enabled }}
+{{- $serviceDependencies := (include "nova.helpers.cell_services" (tuple . "api")) }}
+{{- $conductorArgs := dict
+  "name" "nova-super-conductor"
+  "replicas" .Values.pod.replicas.conductor
+  "config_file" .Values.conductor.config_file
+  "dependencies" (dict "service" $serviceDependencies)
+  "config_map_key" "nova-super-conductor.conf"
+  "secret_keys" (list "api-rpc.conf" "cell0.conf")
+}}
+{{ include "nova.conductor_deployment" (tuple . $conductorArgs) }}
+{{- end }}

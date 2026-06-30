@@ -1,3 +1,4 @@
+{{- $host := .Values.ingress.host | default (printf "dashboard-aurora.%s.%s" .Values.global.region .Values.global.tld) -}}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -12,9 +13,9 @@ spec:
   tls:
     - secretName: aurora-ingress-tls
       # prettier-ignore
-      hosts: ["dashboard-aurora.{{.Values.global.region}}.{{ .Values.global.tld }}"]
+      hosts: ["{{ $host }}"]
   rules:
-    - host: "dashboard-aurora.{{.Values.global.region}}.{{ .Values.global.tld }}"
+    - host: "{{ $host }}"
       http:
         paths:
           - path: /

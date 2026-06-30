@@ -88,7 +88,7 @@ spec:
         - name: CONFIG_FILE
           value: "/etc/config/config.yaml"
         volumeMounts:
-{{- if .Values.persistence_claim.enabled }}
+{{- if and .Values.persistence_claim.enabled (has "ReadWriteMany" .Values.persistence_claim.access_modes) }}
         - name: mariadb-persistent-storage
           mountPath: /var/lib/mysql
           readOnly: false
@@ -100,7 +100,7 @@ spec:
         - name: mariadb-etc
           configMap:
             name: mariadb-{{.Values.name}}-etc
-{{- if .Values.persistence_claim.enabled }}
+{{- if and .Values.persistence_claim.enabled (has "ReadWriteMany" .Values.persistence_claim.access_modes) }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
            claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}

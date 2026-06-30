@@ -23,7 +23,7 @@ groups:
   - alert: PrometheusFailedConfigReload
     # Without max_over_time, failed scrapes could create false negatives, see
     # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
-    expr: max_over_time(prometheus_config_last_reload_successful{prometheus="{{ include "prometheus.name" . }}"}[5m]) == 0
+    expr: max_over_time(prometheus_config_last_reload_successful{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) == 0
     for: 10m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -40,7 +40,7 @@ groups:
 
   - alert: PrometheusRuleFailures
     expr: |
-      increase(prometheus_rule_evaluation_failures_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      increase(prometheus_rule_evaluation_failures_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) > 0
     for: 15m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -58,7 +58,7 @@ groups:
 
   - alert: PrometheusMissingRuleEvaluations
     expr: |
-      increase(prometheus_rule_group_iterations_missed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      increase(prometheus_rule_group_iterations_missed_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) > 0
     for: 15m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -75,7 +75,7 @@ groups:
 
   - alert: PrometheusWALCorruption
     expr: |
-      round(increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ include "prometheus.name" . }}"}[2h1m]) > 0)
+      round(increase(prometheus_tsdb_wal_corruptions_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[2h1m]) > 0)
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
@@ -89,7 +89,7 @@ groups:
 
   - alert: PrometheusTSDBReloadsFailing
     expr: |
-      increase(prometheus_tsdb_reloads_failures_total{prometheus="{{ include "prometheus.name" . }}"}[3h]) > 0
+      increase(prometheus_tsdb_reloads_failures_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[3h]) > 0
     for: 4h
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -105,7 +105,7 @@ groups:
 
   - alert: PrometheusTSDBCompactionsFailing
     expr: |
-      increase(prometheus_tsdb_compactions_failed_total{prometheus="{{ include "prometheus.name" . }}"}[3h]) > 0
+      increase(prometheus_tsdb_compactions_failed_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[3h]) > 0
     for: 4h
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -122,12 +122,12 @@ groups:
   - alert: PrometheusNotIngestingSamples
     expr: |
       (
-        rate(prometheus_tsdb_head_samples_appended_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) <= 0
+        rate(prometheus_tsdb_head_samples_appended_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) <= 0
       and
         (
-          sum without(scrape_job) (prometheus_target_metadata_cache_entries{prometheus="{{ include "prometheus.name" . }}"}) > 0
+          sum without(scrape_job) (prometheus_target_metadata_cache_entries{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}) > 0
         or
-          sum without(rule_group) (prometheus_rule_group_rules{prometheus="{{ include "prometheus.name" . }}"}) > 0
+          sum without(rule_group) (prometheus_rule_group_rules{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}) > 0
         )
       )
     for: 10m
@@ -146,7 +146,7 @@ groups:
 
   - alert: PrometheusDuplicateTimestamps
     expr: |
-      rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0
+      rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) > 0
     for: 10m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -163,7 +163,7 @@ groups:
 
   - alert: PrometheusOutOfOrderTimestamps
     expr: |
-      rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 0.1
+      rate(prometheus_target_scrapes_sample_out_of_order_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) > 0.1
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
@@ -179,7 +179,7 @@ groups:
 
   - alert: PrometheusTargetSyncFailure
     expr: |
-      increase(prometheus_target_sync_failed_total{prometheus="{{ include "prometheus.name" . }}"}[30m]) > 0
+      increase(prometheus_target_sync_failed_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[30m]) > 0
     for: 5m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -195,9 +195,9 @@ groups:
 
   - alert: PrometheusHighQueryLoad
     expr: |
-      avg_over_time(prometheus_engine_queries{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      avg_over_time(prometheus_engine_queries{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m])
       /
-      max_over_time(prometheus_engine_queries_concurrent_max{prometheus="{{ include "prometheus.name" . }}"}[5m])
+      max_over_time(prometheus_engine_queries_concurrent_max{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m])
       >
       0.8
     for: 15m
@@ -244,7 +244,7 @@ groups:
   {{- end}}
   {{- if and $root.Values.alerts.multiplePodScrapes.enabled (not $root.Values.alerts.thanos.enabled) }}
   - alert: PrometheusMultiplePodScrapes
-    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*{{ include "prometheus.name" . }}.*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
+    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*{{ include "prometheus.name" . }}.*pod-sd"}) > 1)* on(pod, namespace) group_left(label_alert_tier, label_alert_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
     labels:
       service: {{ include "alertServiceLabelOrDefault" "metrics" }}
@@ -296,7 +296,7 @@ groups:
     # Without max_over_time, failed scrapes could create false negatives, see
     # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
     expr: |
-      max_over_time(prometheus_notifications_alertmanagers_discovered{prometheus="{{ include "prometheus.name" . }}"}[5m]) < 1
+      max_over_time(prometheus_notifications_alertmanagers_discovered{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) < 1
     for: 10m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -312,9 +312,9 @@ groups:
   - alert: PrometheusErrorSendingAlerts
     expr: |
       (
-        rate(prometheus_notifications_errors_total{prometheus="{{ include "prometheus.name" . }}"}[5m])
+        rate(prometheus_notifications_errors_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m])
       /
-        rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m])
+        rate(prometheus_notifications_sent_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m])
       )
       * 100
       > 1
@@ -333,7 +333,7 @@ groups:
 
   - alert: PrometheusHighAlertRate
     expr: |
-      avg by (prometheus) (rate(prometheus_notifications_sent_total{prometheus="{{ include "prometheus.name" . }}"}[5m]) > 50)
+      avg by (prometheus) (rate(prometheus_notifications_sent_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]) > 50)
     for: 5m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -353,9 +353,9 @@ groups:
     # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
     expr: |
       (
-        predict_linear(prometheus_notifications_queue_length{prometheus="{{ include "prometheus.name" . }}"}[5m], 60 * 30)
+        predict_linear(prometheus_notifications_queue_length{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m], 60 * 30)
       >
-        min_over_time(prometheus_notifications_queue_capacity{prometheus="{{ include "prometheus.name" . }}"}[5m])
+        min_over_time(prometheus_notifications_queue_capacity{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m])
       )
     for: 15m
     labels:
@@ -374,9 +374,9 @@ groups:
   - alert: PrometheusRemoteWriteDown
     expr: |
       (
-        (rate(prometheus_remote_storage_samples_failed_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        (rate(prometheus_remote_storage_samples_failed_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]))
       /
-        (rate(prometheus_remote_storage_samples_total{prometheus="{{ include "prometheus.name" . }}"}[5m]))
+        (rate(prometheus_remote_storage_samples_total{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m]))
       )
       * 100
       > 1
@@ -400,9 +400,9 @@ groups:
     # https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.
     expr: |
       (
-        max_over_time(prometheus_remote_storage_highest_timestamp_in_seconds{prometheus="{{ include "prometheus.name" . }}"}[5m])
+        max_over_time(prometheus_remote_storage_highest_timestamp_in_seconds{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m])
       - ignoring(remote_name, url) group_right
-        max_over_time(prometheus_remote_storage_queue_highest_sent_timestamp_seconds{prometheus="{{ include "prometheus.name" . }}"}[5m])
+        max_over_time(prometheus_remote_storage_queue_highest_sent_timestamp_seconds{prometheus="{{ $root.Release.Namespace }}/{{ include "prometheus.name" . }}"}[5m])
       )
       > 120
     for: 15m

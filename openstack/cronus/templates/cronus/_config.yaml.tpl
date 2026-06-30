@@ -53,6 +53,10 @@ cronus:
   maillog:
     uri: {{ .Values.cronus.maillog.uri | quote }}
 {{- end }}
+{{- if .Values.cronus.postfixUsage }}
+  postfixUsage:
+    uri: {{ .Values.cronus.postfixUsage.uri | quote }}
+{{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}

@@ -1,10 +1,14 @@
-{{- $domain := .Values.limes.clusters.ccloud.catalog_url | trimPrefix "https://" -}}
+{{- $v1_domain := .Values.limes.api_domain_names.v1 | required "missing value for .Values.limes.api_domain_names.v1" -}}
+{{- $v2_domain := .Values.limes.api_domain_names.v2 | required "missing value for .Values.limes.api_domain_names.v2" -}}
+
+{{- range $cfg := (list (dict "name" "limes-api-ccloud" "domain" $v1_domain) (dict "name" "limitas-api" "domain" $v2_domain)) }}
+---
 
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
 metadata:
-  name: limes-api-ccloud
+  name: {{ $cfg.name }}
   labels:
     app: limes-api
   annotations:
@@ -14,19 +18,19 @@ metadata:
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
-    {{- if .Values.global.is_global_region }}
+    {{- if $.Values.global.is_global_region }}
     kubernetes.io/ingress.class: "nginx-external"
     {{- end }}
 
 spec:
-  {{- if .Values.global.is_global_region }}
+  {{- if $.Values.global.is_global_region }}
   ingressClassName: "nginx-external"
   {{- end }}
   tls:
-    - secretName: limes-api-ccloud
-      hosts: [ {{ $domain }} ]
+    - secretName: {{ $cfg.name }}
+      hosts: [ {{ $cfg.domain }} ]
   rules:
-    - host: {{ $domain }}
+    - host: {{ $cfg.domain }}
       http:
         paths:
           - path: /
@@ -36,3 +40,5 @@ spec:
                 name: limes-api-ccloud
                 port:
                   number: 80
+
+{{- end }}

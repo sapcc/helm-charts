@@ -101,7 +101,6 @@ limes:
         - { key: 'instances_hana_.+_v2', value: {name: 'per_flavor_hana_sapphire_rapids', display_name: 'HANA Flavors (Sapphire Rapids)'} }
         - { key: 'instances_hana_.+', value: {name: 'per_flavor_hana_cascade_lake', display_name: 'HANA Flavors (Cascade Lake)'} }
 
-
     designate:
       prometheus_config:
         api:
@@ -110,6 +109,8 @@ limes:
           zones: count(openstack_designate_zones{project_id="{{.ProjectUUID}}",status!="DELETED"})
           recordsets_per_zone: max(openstack_designate_recordsets{project_id="{{.ProjectUUID}}"})
 
+    swift: {}
+
   # Map with entries like:
   #
   #   cluster_id:
@@ -117,6 +118,11 @@ limes:
   #     rabbitmq_user: hare
   #     rabbitmq_password: blowfish
   passwords: DEFINED_IN_VALUES_FILE
+
+  # Values for the $LIMES_API_DOMAIN_NAME_{V1,V2} environment variables. Must be supplied in regional values.
+  api_domain_names:
+    v1: null
+    v2: null
 
   # This section of the YAML must be identical to the "clusters" section of the
   # Limes configuration file.
@@ -230,24 +236,6 @@ pgmetrics:
             - count:
                 usage: "GAUGE"
                 description: "Number of projects in the Limes DB"
-
-        limes_project_resources_by_type:
-          query: >
-            SELECT s.type AS service, r.name AS resource, COUNT(*) AS count
-            FROM project_resources pr
-            JOIN resources r ON r.id = pr.resource_id
-            JOIN services s ON s.id = r.service_id
-            GROUP BY s.type, r.name
-          metrics:
-            - service:
-                usage: "LABEL"
-                description: "Service type"
-            - resource:
-                usage: "LABEL"
-                description: "Resource name"
-            - count:
-                usage: "GAUGE"
-                description: "Number of projects that have a project_resources entry for this service and resource"
 
         # This metric is federated into prometheus-kubernetes for alerting in
         # Kubernikus. (Low free Swift quota means Kubernikus might become unable to

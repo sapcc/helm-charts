@@ -8,6 +8,11 @@ data:
 
     connection_timeout: {{ required ".Values.updater.connection_timeout" .Values.updater.connection_timeout }}
     scrape_interval: {{ required ".Values.updater.scrape_interval" .Values.updater.scrape_interval }}
+    workers: {{ .Values.updater.workers | default 10 }}
 
     netbox:
 {{ omit .Values.updater.netbox "token" | toYaml | nindent 6 }}
+{{- if .Values.updater.manufacturer_aliases }}
+    manufacturer_aliases:
+{{ .Values.updater.manufacturer_aliases | toYaml | nindent 6 }}
+{{- end }}

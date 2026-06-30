@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.39.0 - 2026/06/22
+* support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
+* drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys
+* chart version bumped
+
+## v0.38.2 - 2026/06/16
+* use global.mariadb.backup_v2 for ceph s3 access and secret key
+* chart version bumped
+
+## v0.38.1 - 2026/06/11
+* `maria-back-me-up` updated to `10.11-20260611113653`
+  * fixes aws s3 upload
+* chart version bumped
+
+## v0.38.0 - 2026/06/03
+* MariaDB version updated to [10.11.18](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.18)
+* `maria-back-me-up` updated to `10.11-20260603173712`
+* chart version bumped
+
+## v0.37.0 - 2026/05/21
+* MariaDB version updated to [10.11.17](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.17)
+* `maria-back-me-up` updated to `10.11-20260521084302`
+* `user-credential-updater` updated to `python3.13-alpine3.23-20260506191108`
+* `pod-readiness` updated to `20260521132613`
+* chart version bumped
+
+## v0.36.0 - 2026/05/14
+* skip mariadb PVC mount in backup deployment when access modes don't include `ReadWriteMany`
+* `maria-back-me-up` updated to `10.11-20260515121634`
+* chart version bumped
+
+## v0.35.1 - 2026/05/06
+* fixed pvc storage_class templating
+* chart version bumped
+
 ## v0.35.0 - 2026/04/14
 * add Ceph S3 storage backend support for backup-v2
 * fix Swift template to use `values.yaml` fields instead of hardcoded values

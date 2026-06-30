@@ -49,6 +49,9 @@ template: |
           datacenter: {= availability_zone =}
           configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+          {{- if and .Values.proxysql.mode .Values.proxysql.backup .Values.proxysql.backup.max_connections_per_proc }}
+          proxysql-backup-secret-hash: {{ include (print $.Template.BasePath "/proxysql-secret-backup.yaml") . | sha256sum }}
+          {{- end }}
           {{- if .Values.proxysql.mode }}
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -153,6 +156,14 @@ template: |
         - name: backup-config
           configMap:
             name:  backup-vmware-{= name =}
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- if .Values.proxysql }}
+        {{- if .Values.proxysql.mode }}
+        - name: runproxysql
+          emptyDir: {}
+        - name: etcproxysql
+          secret:
+            secretName: {{ .Release.Name }}-proxysql-etc-backup
+        {{- end }}
+        {{- end }}
         {{- include "utils.coordination.volumes" . | indent 8 }}
 {{- end }}

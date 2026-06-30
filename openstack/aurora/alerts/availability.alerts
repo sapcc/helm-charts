@@ -1,0 +1,31 @@
+groups:
+- name: availability.alerts
+  rules:
+  - alert: OpenstackAuroraPodAvailabilityLow
+    expr: (sum(up{name="aurora", container="server"}) BY (region) / count(up{name="aurora", container="server"}) BY (region)) < 0.5
+    for: 3m
+    labels:
+      context: openstack
+      dashboard: aurora-details
+      service: aurora
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description:  |
+        📊 Aurora Pod Availability Alert - Region {{ $labels.region }}
+        
+        • Threshold: 50% minimum required
+        • Last Measured: {{ $value | humanizePercentage }} (at last evaluation)
+        • Evaluation Period: 3 minutes
+        
+        Alert Status:
+        🔴 RED alert = Currently below 50%
+        🟢 GREEN alert = Recovered above 50%
+        
+        Note: "Last Measured" may not reflect current state when resolved
+        
+        Quick Actions:
+        • Check pods: kubectl -n aurora get pods -l name=aurora
+        • View Dashboard: https://dashboard.{{ $labels.region }}.cloud.sap
+      summary: 'Aurora pod availability threshold alert - {{ $labels.region }}'

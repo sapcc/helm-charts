@@ -114,7 +114,21 @@ storage:
   - "storage"
   - "storage2"
 
+{{- if eq .Values.global.region "qa-de-1" }}
 security_analytics_full_access:
   reserved: false
+  users:
+  - "securityanalytics"
   backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+  - VAULT_QA_ROLE_CYBER-SECURITY_METADATA_READ
+
+alerting_full_access:
+  reserved: false
+  users:
+  - "securityanalytics"
+
+siem_terraform_operator:
+  reserved: false
+  users:
+  - "securityanalytics"
+{{- end }}

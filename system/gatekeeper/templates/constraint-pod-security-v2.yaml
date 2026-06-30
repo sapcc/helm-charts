@@ -104,6 +104,7 @@ spec:
       # Rules for gardener
 
       {{- if eq .Values.cluster_type "baremetal" }}
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: gardener-project/releases/3rd/envoyproxy/envoy
         justification: |
@@ -132,23 +133,43 @@ spec:
         mayBePrivileged: true
         mayUseCapabilities: [ NET_ADMIN ]
         mayWriteHostPathVolumes: [ /dev/net/tun ]
-      {{- end }}
 
-      ##########################################################################
-      # Rules for infra-monitoring
-
-      {{- if eq .Values.cluster_type "baremetal" }}
-      - matchNamespace:  infra-monitoring
-        matchRepository: ccloud-dockerhub-mirror/cloudprober/cloudprober
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/gardener-project/releases/3rd/envoyproxy/envoy
         justification: |
-          The cloudprober pods need to send pings.
-        mayUseCapabilities: [ NET_RAW ]
+          TODO
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/gardener-project/releases/gardener/apiserver-proxy
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/gardener-project/releases/gardener/alpine-conntrack
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/gardener-project/releases/gardener/vpn-client
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayUseCapabilities: [ NET_ADMIN ]
+        mayWriteHostPathVolumes: [ /dev/net/tun ]
       {{- end }}
 
       ##########################################################################
       # Rules for kube-monitoring
 
       {{- if eq .Values.cluster_type "baremetal" "concourse" "cloudshell" "internet" "scaleout" }}
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-monitoring
         matchRepository: ccloud-dockerhub-mirror/falcosecurity/falco
         justification: |
@@ -156,8 +177,18 @@ spec:
         mayBePrivileged: true
         mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc ]
         mayWriteHostPathVolumes: [ /lib/modules, /run/containerd, /run/crio, /var/run ]
+
+      # RSBC images
+      - matchNamespace: kube-monitoring
+        matchRepository: gardener-releases/registry-1_docker_io/falcosecurity/falco
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc ]
+        mayWriteHostPathVolumes: [ /lib/modules, /run/containerd, /run/crio, /var/run ]
       {{- end }}
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-monitoring
         matchRepository: ccloud-dockerhub-mirror/prom/node-exporter
         justification: |
@@ -201,6 +232,32 @@ spec:
         mayUseHostNetwork: true
         mayUseHostPID: true
 
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/quay_io/prometheus/node-exporter
+        justification: |
+          The node-exporter requires node-level access and needs to inspect the host filesystem
+          in order to collect node metrics.
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayReadHostPathVolumes: [ / ]
+
+      - matchNamespace: kube-monitoring
+        matchRepository: gardener-releases/quay_io/prometheus/node-exporter
+        justification: |
+          The node-exporter requires node-level access and needs to inspect the host filesystem
+          in order to collect node metrics.
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayReadHostPathVolumes: [ / ]
+
+      - matchNamespace: kube-monitoring
+        matchRepository: gardener-releases/quay_io/brancz/kube-rbac-proxy
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+
       {{- if eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "internet" "scaleout" }}
       - matchNamespace: kube-monitoring
         matchRepository: ccloud/kubernetes-oomkill-exporter
@@ -221,20 +278,37 @@ spec:
           TODO
         mayUseHostNetwork: true
 
+      - matchNamespace: cni-nanny
+        matchRepository: ccloud/cni-nanny-discovery
+        justification: |
+          cni-nanny spawns short-lived discovery Jobs to detect BGP peer
+          IPs via traceroute on the host network. The Job's pod runs the
+          cni-nanny-discovery image and requires hostNetwork: true.
+        mayUseHostNetwork: true
+
       - matchNamespace: calico-apiserver
         matchRepository: ccloud-dockerhub-mirror/calico/apiserver
         justification: |
           TODO
         mayUseHostNetwork: true
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/calico/kube-controllers
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/quay_io/calico/kube-controllers
         justification: |
           TODO
         mayUseHostNetwork: true
       {{- end }}
 
       {{- if eq .Values.cluster_type "baremetal" "cloudshell" }}
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/calico/node
         justification: |
@@ -252,7 +326,7 @@ spec:
         mayBePrivileged: true
         mayReadHostPathVolumes: [ /var/log/calico/cni, /proc ]
         mayWriteHostPathVolumes: [ /etc/cni/net.d, /run/xtables.lock, /sys/fs/, /var/lib/calico, /var/run/calico, /var/run/nodeagent ]
-      
+
       - matchNamespace: kube-system
         matchRepository: ccloud-ghcr-io-mirror/czerwonk/bird_exporter
         justification: |
@@ -266,7 +340,7 @@ spec:
         justification: |
           TODO
         mayUseHostNetwork: true
-      
+
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/calico/cni
         justification: |
@@ -284,7 +358,7 @@ spec:
         mayBePrivileged: true
         mayUseHostNetwork: true
         mayWriteHostPathVolumes: [ /etc/cni/net.d, /opt/cni/bin ]
-      
+
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/calico/typha
         justification: |
@@ -293,6 +367,39 @@ spec:
 
       - matchNamespace: kube-system
         matchRepository: ccloud-quay-mirror/calico/typha
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/quay_io/calico/node
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /var/log/calico/cni, /proc ]
+        mayWriteHostPathVolumes: [ /etc/cni/net.d, /run/xtables.lock, /sys/fs/, /var/lib/calico, /var/run/calico, /var/run/nodeagent ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/ghcr_io/czerwonk/bird_exporter
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayReadHostPathVolumes:
+        - /var/run/calico
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/quay_io/calico/cni
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayBePrivileged: true
+        mayUseHostNetwork: true
+        mayWriteHostPathVolumes: [ /etc/cni/net.d, /opt/cni/bin ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/quay_io/calico/typha
         justification: |
           TODO
         mayUseHostNetwork: true
@@ -360,6 +467,7 @@ spec:
         mayUseHostNetwork: true
         mayWriteHostPathVolumes: [ /opt/cni/bin ]
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: ccloud-ghcr-io-mirror/k8snetworkplumbingwg/multus-cni
         justification: |
@@ -377,6 +485,24 @@ spec:
         mayUseHostNetwork: true
         mayWriteHostPathVolumes: [ /opt/cni/bin ]
 
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/ghcr_io/k8snetworkplumbingwg/multus-cni
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /opt/cni/bin, /etc/cni/net.d ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/gardener-project/releases/gardener/extensions/cni-plugins
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayUseHostNetwork: true
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
+
       - matchNamespace: kube-system
         matchRepository: ccloud/pause-amd64
         justification: |
@@ -385,8 +511,21 @@ spec:
         mayUseHostNetwork: true
       {{- end }}
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/kube-proxy
+        justification: |
+          Many kube-system components need broad node-level access (e.g.
+          kube-proxy, MTU discovery, wormhole to k8s central).
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /usr/share/ca-certificates ]
+        mayWriteHostPathVolumes: [ /run/xtables.lock, /lib/modules, /var/lib/kube-proxy ]
+        mayUseCapabilities: [ NET_ADMIN, SYS_RESOURCE]
+
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/registry_k8s_io/kube-proxy
         justification: |
           Many kube-system components need broad node-level access (e.g.
           kube-proxy, MTU discovery, wormhole to k8s central).
@@ -428,6 +567,18 @@ spec:
         mayUseHostNetwork: true
         mayUseCapabilities: [ NET_ADMIN ]
 
+      {{- if eq .Values.cluster_name "eu-de-3" }}
+      - matchNamespace: bridge-attach
+        matchRepository: ccloud/shared-app-images/alpine-iproute2
+        justification: |
+          The bridge-attach DaemonSet attaches a host network interface to a
+          Linux bridge on apod nodes. It needs hostNetwork to operate in the
+          host's network namespace and CAP_NET_ADMIN to run
+          `ip link set <iface> master <bridge>`.
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN ]
+      {{- end }}
+
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: default
         matchRepository: ccloud/sporebox
@@ -468,6 +619,7 @@ spec:
       ##########################################################################
       # Rules for kube-system
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/coredns/coredns
         justification: |
@@ -491,7 +643,7 @@ spec:
         mayBePrivileged: true
         mayUseCapabilities: [ SYS_ADMIN ]
         mayWriteHostPathVolumes: [ /dev, /var/lib/kubelet ]
-      
+
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/livenessprobe
         justification: |
@@ -501,9 +653,47 @@ spec:
         mayBePrivileged: true
         mayUseCapabilities: [ SYS_ADMIN ]
         mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
-      
+
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/csi-node-driver-registrar
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/cinder.csi.openstack.org, /var/lib/kubelet/plugins_registry/ ]
+
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/registry_k8s_io/coredns/coredns
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/registry_k8s_io/provider-os/cinder-csi-plugin
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayWriteHostPathVolumes: [ /dev, /var/lib/kubelet ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/registry_k8s_io/sig-storage/livenessprobe
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
+
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/registry_k8s_io/sig-storage/csi-node-driver-registrar
         justification: |
           TODO
         mayUseHostNetwork: true
@@ -531,8 +721,18 @@ spec:
         mayUseCapabilities: [ NET_BIND_SERVICE ]
 
       {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "scaleout" }}
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: [ / ]
+
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/registry-1_docker_io/library/alpine
         justification: |
           TODO
         mayBePrivileged: true
@@ -554,6 +754,7 @@ spec:
         mayUseHostNetwork: true
       {{- end }}
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/node-problem-detector/node-problem-detector
         justification: |
@@ -569,6 +770,16 @@ spec:
         mayUseHostNetwork: true
         mayBePrivileged: true
         mayReadHostPathVolumes: [ /etc/localtime, /proc, /var/log/, /dev/kmsg ]
+
+      # RSBC images
+      - matchNamespace: kube-system
+        matchRepository: gardener-releases/registry_k8s_io/node-problem-detector/node-problem-detector
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /etc/localtime, /proc, /var/log/, /dev/kmsg ]
+
 
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: kube-system
@@ -673,8 +884,21 @@ spec:
         mayUseHostPID: true
       
       {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "scaleout" }}
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: audit-logs
         matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          The init container "enable-pamd-tty" needs to break out into the host
+          to setup audit logging for PAM-based authentication (this is only
+          necessary in clusters where the worker nodes are provisioned by
+          OpenStack instead of Terraform).
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: [ / ]
+
+      # RSBC images
+      - matchNamespace: audit-logs
+        matchRepository: gardener-releases/registry-1_docker_io/library/alpine
         justification: |
           The init container "enable-pamd-tty" needs to break out into the host
           to setup audit logging for PAM-based authentication (this is only
@@ -733,10 +957,40 @@ spec:
           TODO
         mayReadHostPathVolumes: [ /var/log ]
 
+      - matchNamespace: fortlogs-logs
+        matchRepository: ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
+        justification: |
+          OTel logs-collector DaemonSet reads container log files on the host.
+        mayReadHostPathVolumes: [ /var/log ]
+
+      - matchNamespace: fortlogs-audit
+        matchRepository: ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
+        justification: |
+          OTel audit-logs collector runs as auditd reader: needs hostPID,
+          privileged, AUDIT_* caps, and read access to host audit-related paths.
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayUseCapabilities: [ AUDIT_READ, AUDIT_WRITE, AUDIT_CONTROL ]
+        mayReadHostPathVolumes: [ /var/log ]
+
       - matchNamespace: opensearch-logs
         matchRepository: busybox
         justification: |
           TODO
+        mayBePrivileged: true
+
+      - matchNamespace: fortlogs-logs
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
+        justification: |
+          OpenSearch init-sysctl container needs to increase vm.max_map_count
+          on the node: <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
+        mayBePrivileged: true
+
+      - matchNamespace: fortlogs-audit
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
+        justification: |
+          OpenSearch init-sysctl container needs to increase vm.max_map_count
+          on the node: <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
         mayBePrivileged: true
 
       ##########################################################################
@@ -779,7 +1033,33 @@ spec:
           TODO
         mayBePrivileged: true
 
+      {{- if eq .Values.cluster_name "eu-de-3" }}
+      - matchNamespace: archer
+        matchRepository: ccloud/archer
+        justification: |
+          Archer network agents need host networking and
+          CAP_NET_ADMIN to manage network namespaces and
+          interfaces for private endpoint connectivity across
+          OpenStack networks.
+        mayBePrivileged: true
+
+      - matchNamespace: archer
+        matchRepository: ccloud/loci-neutron
+        justification: |
+          Archer network agents need host neutron network agents and
+          CAP_NET_ADMIN to manage network namespaces and
+          interfaces for private endpoint connectivity across
+          OpenStack networks.
+        mayUseCapabilities:
+        - DAC_OVERRIDE
+        - DAC_READ_SEARCH
+        - NET_ADMIN
+        - SYS_ADMIN
+        - SYS_PTRACE
+      {{- end }}
+
       {{- if eq .Values.cluster_type "baremetal" "admin" }}
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: monsoon3
         matchRepository: ccloud-dockerhub-mirror/library/alpine
         justification: |
@@ -789,6 +1069,22 @@ spec:
 
       - matchNamespace: ldap-named-user
         matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: [ / ]
+
+      # RSBC images
+      - matchNamespace: monsoon3
+        matchRepository: gardener-releases/registry-1_docker_io/library/alpine
+        justification: |
+          The init container mounts the entire host FS to load kernel modules.
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ / ]
+
+      - matchNamespace: ldap-named-user
+        matchRepository: gardener-releases/registry-1_docker_io/library/alpine
         justification: |
           TODO
         mayBePrivileged: true
@@ -840,8 +1136,18 @@ spec:
       {{- end }}
 
       {{- if eq .Values.cluster_type "admin" "baremetal" }}
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 and legacy baremetal clusters for some reason)
         matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: [ / ]
+
+      # RSBC images
+      - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 and legacy baremetal clusters for some reason)
+        matchRepository: gardener-releases/registry-1_docker_io/library/alpine
         justification: |
           TODO
         mayBePrivileged: true
@@ -922,6 +1228,7 @@ spec:
         - /var/lib/kubelet/pods
         - /var/lib/rook/rook-ceph.cephfs.csi.ceph.com/log
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: rook-ceph
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/csi-node-driver-registrar
         justification: |
@@ -929,7 +1236,18 @@ spec:
         mayUseHostNetwork: true
         mayBePrivileged: true
         mayUseHostPID: true
-        mayWriteHostPathVolumes: 
+        mayWriteHostPathVolumes:
+        - /var/lib/kubelet
+
+      # RSBC images
+      - matchNamespace: rook-ceph
+        matchRepository: gardener-releases/registry_k8s_io/sig-storage/csi-node-driver-registrar
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayWriteHostPathVolumes:
         - /var/lib/kubelet
 
       - matchNamespace: rook-ceph
@@ -969,8 +1287,20 @@ spec:
         mayReadHostPathVolumes: [ / ]
         mayWriteHostPathVolumes: [ / ]
 
+      # TODO: delete after full migration to RSBC images
       - matchNamespace: trident
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/csi-node-driver-registrar
+        justification: |
+          Trident provisions persistent volumes for Kubernetes and requires
+          direct node access to mount filesystems for the kubelet.
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayReadHostPathVolumes: [ / ]
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/ ]
+
+      # RSBC images
+      - matchNamespace: trident
+        matchRepository: gardener-releases/registry_k8s_io/sig-storage/csi-node-driver-registrar
         justification: |
           Trident provisions persistent volumes for Kubernetes and requires
           direct node access to mount filesystems for the kubelet.
@@ -1034,6 +1364,18 @@ spec:
         mayUseHostNetwork: true
         mayUseCapabilities: [ NET_ADMIN ]
       {{- end }}
+
+      ##########################################################################
+      # Rules for vault
+
+      - matchNamespace: vault
+        matchRepository: ccloud-dockerhub-mirror/hashicorp/vault
+        justification: |
+          Vault 2.0.1's binary ships with the `cap_ipc_lock=ep` file capability
+          baked in at build time. The Linux kernel refuses to exec such a
+          binary inside a container unless IPC_LOCK is granted in the
+          container's securityContext.
+        mayUseCapabilities: [ IPC_LOCK ]
 
       ##########################################################################
       # End of rules

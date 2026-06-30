@@ -109,7 +109,8 @@ default_pool_id = '794ccc2c-d751-44fe-b57f-8894c9f5c842'
 managed_resource_tenant_id = {{ .Values.managed_resource_tenant_id | default "00000000-0000-0000-0000-000000000000" }}
 # What filters to use. They are applied in order listed in the option, from
 # left to right
-scheduler_filters = {{ .Values.scheduler_filters }}
+
+scheduler_filters = {{ if .Values.shared_pools_enabled }}{{ .Values.scheduler_filters_shared_pools }}{{ else }}{{ .Values.scheduler_filters }}{{ end }}
 
 #-----------------------
 # API Service

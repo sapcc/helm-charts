@@ -5,7 +5,7 @@
         "deletion": {
             "schedule": {
                 "cron": {
-                    "expression": "0 0 * * *",
+                    "expression": "0 2 * * *",
                     "timezone": "UTC"
                 }
             },

@@ -19,7 +19,11 @@ spec:
   - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
   {{- end }}
   {{- end }}
+  {{- if or .Values.ceph.enabled .Values.ceph_s3.enabled (and .Values.swift.enabled (eq (.Values.swift.service_type | default "") "object-store-ceph")) }}
+  - monsoon3/ceph-seed
+  {{- else if .Values.swift.enabled }}
   - swift/swift-seed
+  {{- end }}
 
   roles:
   - name: cloud_image_admin

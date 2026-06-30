@@ -1,0 +1,42 @@
+groups:
+- name: cc3test-limes.alerts
+  rules:
+  - alert: CCloudLimesApiDown
+    # NOTE: Limes outages are not alerted when Keystone is also down,
+    # because then the Keystone outage is the actual problem and ringing
+    # support group "containers" will not help anything.
+    expr: |
+        max(cc3test_status{service="limes", type="api", phase="call"} == 0) unless max(cc3test_status{service="keystone", type="api"} == 0)
+    for: 16m
+    labels:
+      severity: critical
+      support_group: containers
+      tier: os
+      service: limes
+      context: limes
+      meta: "CCloud Limes API is down"
+      dashboard: "cc3test-api-status?var-service=limes"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service=limes"
+      playbook: "docs/resources/limes/playbooks/cc3test-alert-api/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Limes API is down"
+      summary: "CCloud Limes API is down"
+
+  - alert: CCloudLimesApiFlapping
+    expr: |
+        changes(cc3test_status{service="limes", type="api", phase="call"}[30m]) > 8
+    labels:
+      severity: warning
+      support_group: containers
+      tier: os
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "CCloud Limes API is flapping"
+      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/resources/limes/playbooks/cc3test-alert-api/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Limes API is flapping"
+      summary: "CCloud Limes API is flapping"
