@@ -40,48 +40,58 @@ deschedulingInterval: 5m
 cmdOptions:
   v: 4
 
+deschedulerPolicyAPIVersion: "descheduler/v1alpha2"
+
 deschedulerPolicy:
-  strategies:
-    RemoveDuplicates:
-      enabled: true
-      params:
-        thresholdPriorityClassName: critical-infrastructure
-    RemovePodsViolatingNodeTaints:
-      enabled: true
-      params:
-        thresholdPriorityClassName: critical-infrastructure
-    RemovePodsViolatingNodeAffinity:
-      enabled: true
-      params:
-        thresholdPriorityClassName: critical-infrastructure
-        nodeAffinityType:
-        - requiredDuringSchedulingIgnoredDuringExecution
-    RemovePodsViolatingInterPodAntiAffinity:
-      enabled: true
-      params:
-        thresholdPriorityClassName: critical-infrastructure
-    LowNodeUtilization:
-      enabled: true
-      params:
-        thresholdPriorityClassName: critical-infrastructure
-        nodeResourceUtilizationThresholds:
-          thresholds:
-            cpu: 20
-            memory: 20
-            pods: 20
-          targetThresholds:
-            cpu: 50
-            memory: 50
-            pods: 50
-    HighNodeUtilization:
-      enabled: true
-      params:
-        thresholdPriorityClassName: critical-infrastructure
-        nodeResourceUtilizationThresholds:
-          thresholds:
-            "cpu" : 20
-            "memory": 20
-            "pods": 20
+  profiles:
+    - name: default
+      pluginConfig:
+        - name: DefaultEvictor
+          args:
+            priorityThreshold:
+              name: critical-infrastructure
+        - name: RemoveDuplicates
+        - name: RemovePodsViolatingNodeTaints
+        - name: RemovePodsViolatingNodeAffinity
+          args:
+            nodeAffinityType:
+            - requiredDuringSchedulingIgnoredDuringExecution
+        - name: RemovePodsViolatingInterPodAntiAffinity
+        - name: LowNodeUtilization
+          args:
+            thresholds:
+              cpu: 20
+              memory: 20
+              pods: 20
+            targetThresholds:
+              cpu: 50
+              memory: 50
+              pods: 50
+        - name: HighNodeUtilization
+          args:
+            thresholds:
+              cpu: 20
+              memory: 20
+              pods: 20
+      plugins:
+        balance:
+          enabled:
+          - LowNodeUtilization
+          - HighNodeUtilization
+        deschedule:
+          enabled:
+          - RemovePodsViolatingNodeTaints
+          - RemovePodsViolatingNodeAffinity
+          - RemovePodsViolatingInterPodAntiAffinity
+        filter:
+          enabled:
+          - DefaultEvictor
+        preEvictionFilter:
+          enabled:
+          - DefaultEvictor
+        sort:
+          enabled:
+          - RemoveDuplicates
 
 priorityClassName: system-cluster-critical
 
