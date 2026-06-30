@@ -138,11 +138,11 @@
 # (created by hermez's migration 001), which holds the SELECT grant on the
 # dataplane_config table. Log-router fails closed on connection errors —
 # all events still reach the admin tier (ccadmin/master) regardless.
-- name: LOG_ROUTER_HERMES_DB_PASSWORD
+- name: LOG_ROUTER_DB_PASSWORD
   valueFrom:
     secretKeyRef:
       name: '{{ $.Release.Name }}-pguser-{{ $.Values.logRouter.hermesDb.user }}'
       key: postgres-password
-- name: LOG_ROUTER_HERMES_DB_URL
-  value: "postgres://{{ $.Values.logRouter.hermesDb.user }}:$(LOG_ROUTER_HERMES_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/hermes?sslmode=disable"
+- name: LOG_ROUTER_DB_URL
+  value: "postgres://{{ $.Values.logRouter.hermesDb.user }}:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/hermes?sslmode=disable"
 {{- end -}}
