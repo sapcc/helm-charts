@@ -7,3 +7,4 @@
   value: {{ .Values.ceph_region | quote }}
 - name: DASHBOARD_COOKIE_NAME
   value: {{ .Values.dashboard_cookie_name | quote }}
+  
