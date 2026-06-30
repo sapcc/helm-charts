@@ -61,7 +61,11 @@
 - name:  KEPPEL_DRIVER_RATELIMIT
   value: {{ include "driver_config_ratelimit" $ | fromYaml | toJson | quote }}
 - name:  KEPPEL_DRIVER_STORAGE
+  {{- if eq .Values.keppel.driver "ceph" }}
+  value: '{"type":"swift","params":{"service_type":"object-store-ceph","use_service_user_project":true}}'
+  {{- else }}{{/* TODO: if eq .Values.keppel.driver "multi", use that driver once it exists */}}
   value: '{"type":"swift"}'
+  {{- end }}
 - name:  KEPPEL_FEDERATION_OS_AUTH_URL
   value: "https://identity-3.{{ $peer_group.leader }}.{{ $tld }}/v3"
 - name:  KEPPEL_FEDERATION_OS_AUTH_VERSION
@@ -135,9 +139,17 @@
       name: keppel-secret
       key: service_user_password
 - name:  OS_PROJECT_DOMAIN_NAME
+  {{- if eq .Values.keppel.driver "swift" }}
   value: 'ccadmin'
+  {{- else }}
+  value: 'Default'
+  {{- end }}
 - name:  OS_PROJECT_NAME
+  {{- if eq .Values.keppel.driver "swift" }}
   value: 'cloud_admin'
+  {{- else }}
+  value: 'keppel-payloads'
+  {{- end }}
 - name:  OS_REGION_NAME
   value: {{ quote $region }}
 - name:  OS_USER_DOMAIN_NAME
