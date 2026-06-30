@@ -110,6 +110,8 @@
     secretKeyRef:
       name: keppel-redis-user-default
       key: password
+- name: KEPPEL_TRACK_BYTES_QUOTA
+  value: {{ quote $.Values.keppel.track_bytes_quota }}
 - name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
   value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"
 - name: KEPPEL_TRIVY_URL
