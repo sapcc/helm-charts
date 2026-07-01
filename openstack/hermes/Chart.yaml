@@ -18,7 +18,11 @@ dependencies:
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.2.0
   - name: postgresql-ng
-    alias: log-router-postgresql
-    condition: logRouter.enabled
+    alias: hermes-postgresql
+    # Shared by hermes-api (writer) and log-router (read-only via log_router_reader role).
+    # Tied to hermes.api_enabled because the API owns the dataplane_config schema.
+    # log-router cannot be enabled without api_enabled — a `fail` guard in
+    # templates/log-router-statefulset.yaml enforces this invariant.
+    condition: hermes.api_enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: '>= 0.0.0'

@@ -39,6 +39,21 @@ hermes:
     queue_name: "notifications.info"
     # hostnames are derived from this template using the key of the targets entry
     host_template: "%s-rabbitmq-notifications.monsoon3"
+
+  # Audit-event publisher for hermes-api PUT/DELETE dataplane-config operations.
+  # Reuses the rabbitmq_notifications subchart; events land on the
+  # notifications.info queue alongside other OpenStack control-plane audit events.
+  audit:
+    rabbitmq:
+      hostname: '{{ .Release.Name }}-rabbitmq-notifications.{{ .Release.Namespace }}.svc'
+      port: 5672
+      queue_name: "notifications.info"
+      # user/password injected by deployment pipeline (vault-resolved).
+      # When BOTH user AND password render empty (dev default), hermez logs the
+      # auth failure and falls back to a null auditor — PUT/DELETE operations
+      # are NOT audited. Set both for any region that requires an audit trail.
+      # user:
+      # password:
 logstash:
   debug: false
   swift: true
@@ -184,18 +199,29 @@ opensearch_hermes:
   enabled: false
 
 logRouter:
+  # Enabling log-router requires three coordinated flags:
+  #   1. logRouter.enabled = true        (this flag)
+  #   2. hermes.api_enabled = true       (provides the shared postgres + dataplane_config schema)
+  #   3. logRouter.swift.enabled = true  (RGW auth via Keystone token — only supported mode)
+  # AND .Values.hermes.seed_password must be supplied by the pipeline.
+  # templates/log-router-statefulset.yaml enforces flags 2 and 3 with `fail` guards.
   enabled: false
   image_tag: ""
   init_image: "keppel.eu-de-1.cloud.sap/ccloud/shared-app-images/alpine-busybox:3.23-20260415235512"
   replicas: 2
 
   debug: "false"
-  flush_interval: "30s"
+  flush_interval: "1m"
   shutdown_timeout: "30s"
   ingest_channel_capacity: "10000"
   max_concurrent_flushes: "100"
 
-  db:
+  # Read-only login role for hermes's dataplane_config table.
+  # The hermes postgres seed creates this user; hermez's migration 001 grants
+  # SELECT on dataplane_config directly to the log-router login role.
+  # Until that GRANT lands, SELECT fails and log-router falls back to the
+  # admin tier (ccadmin/master) — events still flow.
+  hermesDb:
     user: log-router
 
   rabbitmq:
@@ -211,11 +237,26 @@ logRouter:
   s3:
     endpoint: ""
     region: ""
+    # bucket: S3 bucket name for S3 mode. Also used as the Swift container name
+    # when logRouter.swift.enabled=true (LOG_ROUTER_S3_BUCKET → Swift container).
     bucket: ""
     prefix: ""
     # access_key/secret_key removed — log-router authenticates to Ceph RGW
     # via Keystone token (Swift-compatible endpoint) using the hermes service
     # account, not AWS HMAC ec2 credentials.
+
+  swift:
+    # enabled: when true, log-router uses Keystone token auth (OS_* env vars)
+    # against the Ceph RGW Swift endpoint instead of S3/HMAC credentials.
+    # Requires cloud_objectstore_admin role in ccadmin/cloud_admin (see
+    # keystone-seed.yaml). Password sourced from .Values.hermes.seed_password.
+    enabled: false
+    service_type: "object-store-ceph"
+    # adminProjectID: the ccadmin/master project UUID. The admin compliance bucket
+    # (hermes-audit) lives in this project. Log-router authenticates as
+    # ccadmin/cloud_admin for cross-account access, then switches to this account
+    # for admin writes. Must be set when swift.enabled=true.
+    adminProjectID: ""
 
   wal:
     storage: 10Gi
@@ -228,11 +269,18 @@ logRouter:
       memory: "512Mi"
       cpu: "500m"
 
-log-router-postgresql:
+hermes-postgresql:
+  # Shared postgres backing the hermes dataplane_config table.
+  # hermes-api writes; log-router reads via a GRANT SELECT issued by hermez's
+  # migration 001 directly to the log-router login user.
   postgresVersion: 17
   databases:
-    log-router: {}
+    hermes: {}
   users:
+    # Writer role used by the hermes API. Owns the table created by migration 001.
+    hermes: {}
+    # Read-only consumer for log-router. hermez's migration 001 grants
+    # SELECT on dataplane_config to this login user.
     log-router: {}
   config:
     max_connections: 64

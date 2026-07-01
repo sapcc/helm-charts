@@ -1,7 +1,13 @@
 global:
   region: earth
+  tld: example.com
   master_password: topSecret
+  clusterDNSSearchDomain: cluster.local
+  registry: keppel.eu-de-1.cloud.sap
+  linkerd_enabled: false
+  linkerd_requested: false
   metis:
+    user: metis-user
     password: topSecret
   forwarding:
     audit:
@@ -33,6 +39,8 @@ hermes:
   image_tag: latest
   image_pull_policy: IfNotPresent
   dockerHubMirror: another-region
+  # Required by log-router-secret when logRouter.swift.enabled=true (CI exercises that path).
+  seed_password: test
   certs:
     tls_crt: my-tls-cert
     tls_key: my-tls-key
@@ -110,8 +118,11 @@ logRouter:
     region: "qa"
     bucket: "audit-qa"
     prefix: "dataplane/"
-    access_key: test
-    secret_key: test
+
+  # CI exercises the Swift/Keystone-token auth path (the only supported mode).
+  swift:
+    enabled: true
+    service_type: "object-store-ceph"
 
   wal:
     storage: 1Gi
@@ -124,11 +135,12 @@ logRouter:
       memory: "128Mi"
       cpu: "100m"
 
-log-router-postgresql:
+hermes-postgresql:
   postgresVersion: 17
   databases:
-    log-router: {}
+    hermes: {}
   users:
+    hermes: {}
     log-router: {}
   config:
     max_connections: 16
