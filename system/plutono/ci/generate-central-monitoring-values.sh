@@ -23,9 +23,9 @@ trap cleanup INT TERM ERR
 # Output header
 cat >"${TMP_OUT_FILE}" <<'YAML'
 global:
-  registry: "replace-me"
-  registryK8sIoMirror: "replace-me"
-  ghcrIoMirror: "replace-me"
+  registry: keppel.eu-de-1.cloud.sap/ccloud
+  registryK8sIoMirror: keppel.eu-de-1.cloud.sap/ccloud-registry-k8s-io-mirror
+  ghcrIoMirror: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror
   region: eu-de-1
   domain: persephone.eu-de-1.cloud.sap
 
