@@ -18,7 +18,9 @@
 {{/* ClusterType filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.biosSettings.filters.clusterTypes) }}
 {{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
-{{- $resourceName := (get $settingsParams "setMetadataName") | default $defaultName }}
+{{- $explicitName := (get $settingsParams "setMetadataName") }}
+{{- $withCluster := printf "%s-%s" $explicitName (lower $clusterType) }}
+{{- $resourceName := ternary $withCluster $defaultName (ne $explicitName "") }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSSettingsSet
 metadata:
