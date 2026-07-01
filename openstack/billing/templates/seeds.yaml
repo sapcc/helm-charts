@@ -6,6 +6,7 @@
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "ccadmin") $cdomains -}}
 {{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+{{- $regionHasSwift := ne .Values.global.region "eu-de-3" }}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -17,7 +18,7 @@ spec:
     - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .|lower}}-seed
     {{- end }}
     - {{ $.Values.global.keystoneNamespace }}/domain-cc3test-seed
-    {{- if not .Values.global.is_global_region }}
+    {{- if and $regionHasSwift (not .Values.global.is_global_region) }}
     - swift/swift-seed
     {{- end }}
 
@@ -88,8 +89,10 @@ spec:
       # Role provisioned from CAM to enable takeover of seeded project by billing admins
       - group: CCADMIN_BILLING_ADMIN
         role: admin
+    {{- if $regionHasSwift }}
       swift:
         enabled: true
+    {{- end }}
     {{- end }}
     - name: cloud_admin
       role_assignments:
