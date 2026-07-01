@@ -5,7 +5,7 @@
 {{/* Vendor filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosSettings.filters.vendors) }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if and $entry.clusterTypes $entry.bios $entry.bios.settingsFileName }}
+{{- if and $entry.clusterTypes $entry.bios (or $entry.bios.settingsFileName $entry.bios.settingsContent) }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
 {{- $settingsParams := (get $entry.bios "settingsParams") | default dict }}
@@ -34,7 +34,11 @@ spec:
 {{- end }}
   biosSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
+{{- if $entry.bios.settingsContent }}
+{{ $entry.bios.settingsContent | trim | indent 4 }}
+{{- else }}
 {{ $.Files.Get (printf "bios_settings/%s" $entry.bios.settingsFileName) | trim | indent 4 }}
+{{- end }}
     version: {{ $version | quote }}
 ---
 {{- end }}
