@@ -92,6 +92,18 @@ spec:
         role: cloud_image_admin
       - project: service
         role: cloud_objectstore_admin
+    {{- if .Values.global.oho_service_password }}
+    - name: '{{ .Values.global.oho_service_user | default "openstack-hypervisor-operator" | include "resolve_secret" }}'
+      description: "OpenStack hypervisor operator service user"
+      password: '{{ .Values.global.oho_service_password | include "resolve_secret" }}'
+      role_assignments:
+      - project: test@cc3test
+        role: compute_admin
+      - project: test@cc3test
+        role: member
+      - project: service
+        role: cloud_compute_admin
+    {{- end }}
     groups:
     - name: administrators
       role_assignments:
