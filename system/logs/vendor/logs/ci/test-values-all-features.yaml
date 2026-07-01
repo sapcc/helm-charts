@@ -81,6 +81,26 @@ openTelemetry:
       otlp_http_port: 4318
   metricsCollector:
     enabled: false
+  ingesterCollector:
+    enabled: true
+    replicas: 1
+    prometheus:
+      podMonitor:
+        enabled: false
+    collectors:
+      logs:
+        enabled: true
+        topic: logs
+        opensearch:
+          endpoint: https://opensearch.test.svc.cluster.local:9200
+          tls:
+            caSecret: opensearch-ca
+            caSecretKey: ca.crt
+            insecure: true
+          failover_username_a: test
+          failover_password_a: test
+          failover_username_b: test
+          failover_password_b: test
   prometheus:
     additionalLabels:
       key1: value1

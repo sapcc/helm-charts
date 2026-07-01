@@ -42,6 +42,16 @@ data:
     }
     {{- end }}
 
+    {{- if .Values.openTelemetry.ingesterCollector.enabled }}
+    {{- range $name, $cfg := .Values.openTelemetry.ingesterCollector.collectors }}
+    {{- if and $cfg.enabled $cfg.topic }}
+    @test "Verify successful deployment and running status of the logs-ingester-{{ $name }} collector" {
+        try "at most 5 times every 10s to get pods named 'logs-ingester-{{ $name }}-collector' and verify that '.status.phase' is 'running'"
+    }
+    {{- end }}
+    {{- end }}
+    {{- end }}
+
     @test "Verify presence of custom resource definitions (CRDs) for {{ .Release.Name }}" {
         verify "there is 1 customresourcedefinition named 'instrumentations.opentelemetry.io'"
         verify "there is 1 customresourcedefinition named 'opampbridges.opentelemetry.io'"

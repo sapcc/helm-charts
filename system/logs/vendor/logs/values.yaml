@@ -4,6 +4,9 @@
 # -- common labels to apply to all resources.
 commonLabels: {}
 
+# -- Extra Kubernetes manifests to include in the Helm release. Each entry is rendered as-is (map) or with `tpl` (string). Useful for ConfigMaps that satisfy cluster admission policies.
+extraManifests: []
+
 # opentelemetry-operator is an upstream dependency, it is required that it is a separate block. This is customised configuration of the dependency.
 opentelemetry-operator:
   # -- Set to true to enable the installation of the OpenTelemetry Operator.
@@ -137,8 +140,12 @@ openTelemetry:
       enabled: false
       # -- TCP port for TLS syslog (rfc5424)
       tcp_port: 6514
-      # -- cert-manager ClusterIssuer name for DigiCert
+      # -- cert-manager Issuer or ClusterIssuer name for TLS certificate
       issuerName:
+      # -- cert-manager issuer kind (Issuer or ClusterIssuer)
+      issuerKind: ClusterIssuer
+      # -- cert-manager issuer group (e.g. cert-manager.io or certmanager.cloud.sap)
+      issuerGroup: cert-manager.io
       # -- DNS name for the TLS certificate
       dnsName:
     # -- Activates the external alertmanager webhook and deployment event receivers.
@@ -155,6 +162,38 @@ openTelemetry:
       otlp_grpc_port: 4317
       # -- HTTP port for OTLP traces
       otlp_http_port: 4318
+  # -- Kafka -> OpenSearch ingest collectors. One Deployment per entry.
+  # @default -- see values.yaml
+  ingesterCollector:
+    # -- Enable the ingest collectors block.
+    enabled: false
+    # -- Replica count per ingest collector Deployment.
+    replicas: 1
+    image:
+      # -- Image repository override; falls back to openTelemetry.collectorImage.repository.
+      repository: ""
+      # -- Image tag override; falls back to openTelemetry.collectorImage.tag.
+      tag: ""
+    # -- Pod resources per ingest collector Deployment.
+    resources: {}
+    prometheus:
+      podMonitor:
+        # -- Render a PodMonitor per enabled ingest collector.
+        enabled: true
+    # Entry shape:
+    #   <name>:
+    #     enabled: bool                         # render this collector
+    #     topic: <kafka-topic>                  # single Kafka topic consumed by this collector
+    #     initialOffset: latest | earliest      # optional, defaults to latest
+    #     kafka: { brokers, protocol_version, encoding }  # optional override of openTelemetry.kafka
+    #     opensearch:
+    #       endpoint: <url>
+    #       tls: { caSecret, caSecretKey, insecure }
+    #       failover_username_a / failover_password_a / failover_username_b / failover_password_b
+    # Each entry renders one OpenTelemetryCollector named "logs-ingester-<name>" with
+    # group_id "logs-ingester-<name>" and indexes documents into OpenSearch index "<name>".
+    # -- Map of ingest collectors keyed by name. Configured via PluginPreset.
+    collectors: {}
   # -- Activates the standard configuration for metrics.
   metricsCollector:
     enabled: false
