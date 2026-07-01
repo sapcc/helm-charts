@@ -5,7 +5,7 @@
 {{/* Vendor filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcSettings.filters.vendors) }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if and $entry.clusterTypes $entry.bmc $entry.bmc.settingsFileName }}
+{{- if and $entry.clusterTypes $entry.bmc (or $entry.bmc.settingsFileName $entry.bmc.settingsContent) }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
 {{- $settingsParams := (get $entry.bmc "settingsParams") | default dict }}
@@ -35,7 +35,11 @@ spec:
   bmcSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
+{{- if $entry.bmc.settingsContent }}
+{{ $entry.bmc.settingsContent | trim | indent 4 }}
+{{- else }}
 {{ tpl ($.Files.Get (printf "bmc_settings/%s" $entry.bmc.settingsFileName)) $ | trim | indent 4 }}
+{{- end }}
 ---
 {{- end }}
 {{- end }}
