@@ -27,47 +27,63 @@ function start_application {
   #  (while [ `curl -s http://localhost:3000 > /dev/null ; echo $?` != "0" ]; do sleep 5; done; bash /plutono-bin/plutono-initial-setup ) 2>&1 | tee /var/log/plutono/initial-setup.log &
     (while ! wget -q -O /dev/null http://localhost:3000; do sleep 5; done; bash /plutono-bin/plutono-initial-setup ) 2>&1 | tee /var/log/plutono/initial-setup.log &
   fi
-  while [ ! -d /git/plutono-content/datasources-config ]; do
-    echo "waiting 5 more seconds for the plutono-content to be mounted and synced via git-sync ..."
-    sleep 5
-  done
-  # create an auto provisioning dir for plutono and copy the content from the git to it
-  # the cp is required in order to be able to modify the datasources below, the dashboard
-  # config references back to the dashboard-sources dir in the git repo directly
+  # create an auto provisioning dir for plutono and populate dashboards/datasources
   mkdir -p /var/lib/plutono/provisioning
-  # do not do the above if the are in author more - then we do not provision anything
-  if [ "{{.Values.plutono.mode}}" != "author" ]; then
-    rm -rf /var/lib/plutono/provisioning/dashboards
-    cp -r /git/plutono-content/dashboards-config-{{.Values.plutono.mode}} /var/lib/plutono/provisioning/dashboards
+
+  if [ "{{ .Values.plutono.gitsync.enabled }}" = "true" ]; then
+    while [ ! -d /git/plutono-content/datasources-config ]; do
+      echo "waiting 5 more seconds for the plutono-content to be mounted and synced via git-sync ..."
+      sleep 5
+    done
+
+    # do not copy dashboards in author mode
+    if [ "{{.Values.plutono.mode}}" != "author" ]; then
+      rm -rf /var/lib/plutono/provisioning/dashboards
+      cp -r /git/plutono-content/dashboards-config-{{.Values.plutono.mode}} /var/lib/plutono/provisioning/dashboards
+    fi
   fi
+
   rm -rf /var/lib/plutono/provisioning/datasources
   mkdir -p /var/lib/plutono/provisioning/datasources
-  cd /git/plutono-content/datasources-config
-  for i in * ; do
-    grep -qw "    tlsAuthWithCACert: true" $i
-    ADD_CERTS_YN_LC=$?
-    grep -qw "    tlsAuthWithCACert: True" $i
-    ADD_CERTS_YN_UC=$?
-    if [ "$ADD_CERTS_YN_LC" = "0" ] || [ "$ADD_CERTS_YN_UC" = "0" ]; then
-      cat $i | grep -v "json object of data that will be encrypted" | grep -v secureJsonData > /var/lib/plutono/provisioning/datasources/$i
-      echo "  # <string> json object of data that will be encrypted." >> /var/lib/plutono/provisioning/datasources/$i
-      echo "  secureJsonData:" >> /var/lib/plutono/provisioning/datasources/$i
-      if [ -f /plutono-secrets/cacert.crt ]; then
-        echo '    tlsCACert: |' >> /var/lib/plutono/provisioning/datasources/$i
-        cat /plutono-secrets/cacert.crt | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
+
+  if [ "{{ .Values.plutono.gitsync.enabled }}" = "true" ]; then
+    cd /git/plutono-content/datasources-config
+    for i in * ; do
+      grep -qw "    tlsAuthWithCACert: true" $i
+      ADD_CERTS_YN_LC=$?
+      grep -qw "    tlsAuthWithCACert: True" $i
+      ADD_CERTS_YN_UC=$?
+      if [ "$ADD_CERTS_YN_LC" = "0" ] || [ "$ADD_CERTS_YN_UC" = "0" ]; then
+        cat $i | grep -v "json object of data that will be encrypted" | grep -v secureJsonData > /var/lib/plutono/provisioning/datasources/$i
+        echo "  # <string> json object of data that will be encrypted." >> /var/lib/plutono/provisioning/datasources/$i
+        echo "  secureJsonData:" >> /var/lib/plutono/provisioning/datasources/$i
+        if [ -f /plutono-secrets/cacert.crt ]; then
+          echo '    tlsCACert: |' >> /var/lib/plutono/provisioning/datasources/$i
+          cat /plutono-secrets/cacert.crt | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
+        fi
+        if [ -f /plutono-secrets/sso.crt ]; then
+          echo '    tlsClientCert: |' >> /var/lib/plutono/provisioning/datasources/$i
+          cat /plutono-secrets/sso.crt | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
+        fi
+        if [ -f /plutono-secrets/sso.key ]; then
+          echo '    tlsClientKey: |' >> /var/lib/plutono/provisioning/datasources/$i
+          cat /plutono-secrets/sso.key | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
+        fi
+      else
+        cp -a $i /var/lib/plutono/provisioning/datasources
       fi
-      if [ -f /plutono-secrets/sso.crt ]; then
-        echo '    tlsClientCert: |' >> /var/lib/plutono/provisioning/datasources/$i
-        cat /plutono-secrets/sso.crt | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
-      fi
-      if [ -f /plutono-secrets/sso.key ]; then
-        echo '    tlsClientKey: |' >> /var/lib/plutono/provisioning/datasources/$i
-        cat /plutono-secrets/sso.key | sed 's/^/      /' >> /var/lib/plutono/provisioning/datasources/$i
-      fi
+    done
+  elif [ "{{ .Values.plutono.centralMonitoring.enabled }}" = "true" ]; then
+    if [ -f /plutono-inline-datasources/datasources.yaml ]; then
+      cp -a /plutono-inline-datasources/datasources.yaml /var/lib/plutono/provisioning/datasources/central-datasources.yaml
     else
-      cp -a $i /var/lib/plutono/provisioning/datasources
+      echo "WARNING: central monitoring is enabled but no inline datasource file was mounted"
     fi
-  done
+  else
+    echo "WARNING: neither git-sync nor inline central monitoring datasources are enabled"
+  fi
+
+  if ls /var/lib/plutono/provisioning/datasources/* >/dev/null 2>&1; then
   if [ -f /plutono-secrets/elk_password ]; then
     sed -i "s,__ELK_PASSWORD__,$(cat /plutono-secrets/elk_password),g" /var/lib/plutono/provisioning/datasources/*
   else
@@ -87,6 +103,7 @@ function start_application {
     sed -i "s,__PROMETHEUS_REGION__,$(cat /plutono-secrets/region),g" /var/lib/plutono/provisioning/datasources/*
   else
     echo "WARNING: plutono region not set"
+  fi
   fi
 
   cd /usr/share/plutono
