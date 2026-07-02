@@ -254,7 +254,7 @@
     - targets:
       # currently only pulling in every az with 0, if there is compute-cc-$az1, it needs to be adapted
       {{- range .Values.global.availability_zones }}
-      - compute-cc-{{ trimPrefix $root.Values.global.region . }}0.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+      - compute-cc-{{ trimPrefix $root.Values.global.region . }}0-internal.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
       {{- end }}
   metrics_path: '/federate'
   params:
