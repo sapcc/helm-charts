@@ -74,6 +74,19 @@
 #      - '{__name__=~"^openstack_.+",project_id!=""}'
 #      - '{__name__=~"^limes_(project|domain)_(quota|usage)"}'
 
+- job_name: 'prometheus-kube-monitoring'
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  static_configs:
+    - targets: ['prometheus-collector.kube-monitoring:9090']
+  metric_relabel_configs:
+    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|cluster|cluster_type"
+      action: labeldrop
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      - '{__name__=~"^kvm_domain_libvirt_.+",project_id!=""}'
+
 - job_name: 'prometheus-openstack'
   scrape_interval: 1m
   scrape_timeout: 55s
