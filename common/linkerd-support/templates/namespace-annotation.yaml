@@ -1,4 +1,5 @@
 {{- if and .Values.global.linkerd_enabled .Values.global.linkerd_requested .Values.annotate_namespace }}
+{{- $rbacName := printf "annotate-namespace-for-linkerd-%s-%s" .Release.Namespace .Release.Name | trunc 253 | trimSuffix "-" }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -7,27 +8,27 @@ metadata:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: annotate-namespace-for-linkerd
+  name: {{ $rbacName }}
 rules:
 - apiGroups: [ "" ]
   resources: [ namespaces ]
-  resourceNames: [ {{ .Release.Namespace }} ]
+  resourceNames: [ {{ .Release.Namespace | quote }} ]
   verbs: [ get, patch ]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: annotate-namespace-for-linkerd
+  name: {{ $rbacName }}
 subjects:
   - kind: ServiceAccount
     name: annotate-namespace-for-linkerd
     namespace: {{ .Release.Namespace }}
 roleRef:
-  kind: Role
-  name: annotate-namespace-for-linkerd
+  kind: ClusterRole
+  name: {{ $rbacName }}
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -39,6 +40,8 @@ metadata:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
+  activeDeadlineSeconds: 120
+  backoffLimit: 3
   template:
     metadata:
       labels:
@@ -61,4 +64,5 @@ spec:
           - ns
           - {{ .Release.Namespace }}
           - linkerd.io/inject=enabled
+          - --overwrite
 {{- end }}
