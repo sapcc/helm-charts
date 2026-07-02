@@ -241,3 +241,26 @@
     - regex: "cluster|cluster_type|instance|job|organization|prometheus|prometheus_replica"
       action: labeldrop
 {{ end }}
+
+{{- if $root.Values.prometheus_kvm.enabled }}
+- job_name: 'prometheus-kvm'
+  scheme: https
+  scrape_interval: "{{ $root.Values.prometheus_kvm.scrape_interval }}"
+  scrape_timeout: "{{ $root.Values.prometheus_kvm.scrape_timeout }}"
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
+  static_configs:
+    - targets:
+      # currently only pulling in every az with 0, if there is compute-cc-$az1, it needs to be adapted
+      {{- range .Values.global.availability_zones }}
+      - compute-cc-{{ trimPrefix $root.Values.global.region . }}0.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+      {{- end }}
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      - '{__name__=~"{{- include "prometheusKVMFederationMatches" $root }}"}'
+  metric_relabel_configs:
+    - regex: "cluster|cluster_type|instance|job|organization|prometheus|prometheus_replica"
+      action: labeldrop
+{{ end }}
