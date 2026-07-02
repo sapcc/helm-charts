@@ -1,16 +1,20 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # since this name changes with every image change, removal and creation of
-  # this Job happens on nearly every deployment. Check the helm-chart changes
-  # to see if this needs more review.
-  name: {{ tuple . "migration-job" | include "job_name" }}
+  name: {{ .Release.Name }}-migration-job
   labels:
     app: {{ template "name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: glance
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: containers
+    ccloud/service: glance
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     metadata:
