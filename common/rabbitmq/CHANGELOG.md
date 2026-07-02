@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.4 - 2026/07/01
+
+- Fix `projectcalico.org/loadBalancerIPs` annotation needing JSON as value
+
 ## 0.25.3 - 2026/07/01
 
 - Set `projectcalico.org/loadBalancerIPs` annotation to `externalIPs`' values to support newer, Gardener-based clusters
