@@ -41,7 +41,9 @@ syslog/tcp-tls:
     tls:
       cert_file: /etc/ssl/syslog-tls/tls.crt
       key_file: /etc/ssl/syslog-tls/tls.key
+      {{- if .Values.openTelemetry.externalCollector.syslogTLSConfig.clientCAEnabled }}
       ca_file: /etc/ssl/syslog-tls/ca.crt
+      {{- end }}
 {{- end }}
 
 {{- define "syslog.exporter" }}
