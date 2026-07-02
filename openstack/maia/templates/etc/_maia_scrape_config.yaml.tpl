@@ -244,7 +244,7 @@
 
 {{- if $root.Values.prometheus_kvm.enabled }}
 - job_name: 'prometheus-kvm'
-  scheme: https
+  scheme: http
   scrape_interval: "{{ $root.Values.prometheus_kvm.scrape_interval }}"
   scrape_timeout: "{{ $root.Values.prometheus_kvm.scrape_timeout }}"
   tls_config:
