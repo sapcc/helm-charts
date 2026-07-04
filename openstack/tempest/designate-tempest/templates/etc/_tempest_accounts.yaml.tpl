@@ -18,3 +18,9 @@
   project_name: 'tempest2'
   types:
    - demo
+- username: 'tempestuser3'
+  password: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
+  tenant_name: 'tempest3'
+  project_name: 'tempest3'
+  types:
+   - member
