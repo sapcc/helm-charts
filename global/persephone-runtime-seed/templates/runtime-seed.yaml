@@ -10,9 +10,13 @@ metadata:
   name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
   namespace: garden
   labels:
-    cluster-type: {{ required "missing value for .Values.clusterType" $.Values.clusterType }}
+    {{- if $.Values.clusterType }}
+    cluster-type: {{ $.Values.clusterType }}
+    {{- end }}
     metadata.greenhouse.sap/region: {{ required "missing value for $cluster.region" $cluster.region }}
-    greenhouse.sap/shoot-grafter-transport: {{ required "missing value for .Values.greenhouseShootGrafter" $.Values.greenhouseShootGrafter }}
+    {{- if $.Values.greenhouseShootGrafter }}
+    greenhouse.sap/shoot-grafter-transport: {{ $.Values.greenhouseShootGrafter }}
+    {{- end }}
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:

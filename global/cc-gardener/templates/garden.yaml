@@ -156,6 +156,10 @@ spec:
     gardener:
       clusterIdentity: {{ .Values.global.clusterIdentity | default .Values.global.cluster }}
       gardenerAPIServer:
+        {{- with .Values.garden.gardenerAPIServer.featureGates }}
+        featureGates:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         admissionPlugins:
         - name: ShootVPAEnabledByDefault
           disabled: true

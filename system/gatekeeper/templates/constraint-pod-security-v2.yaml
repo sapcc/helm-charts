@@ -957,10 +957,40 @@ spec:
           TODO
         mayReadHostPathVolumes: [ /var/log ]
 
+      - matchNamespace: fortlogs-logs
+        matchRepository: ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
+        justification: |
+          OTel logs-collector DaemonSet reads container log files on the host.
+        mayReadHostPathVolumes: [ /var/log ]
+
+      - matchNamespace: fortlogs-audit
+        matchRepository: ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
+        justification: |
+          OTel audit-logs collector runs as auditd reader: needs hostPID,
+          privileged, AUDIT_* caps, and read access to host audit-related paths.
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayUseCapabilities: [ AUDIT_READ, AUDIT_WRITE, AUDIT_CONTROL ]
+        mayReadHostPathVolumes: [ /var/log ]
+
       - matchNamespace: opensearch-logs
         matchRepository: busybox
         justification: |
           TODO
+        mayBePrivileged: true
+
+      - matchNamespace: fortlogs-logs
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
+        justification: |
+          OpenSearch init-sysctl container needs to increase vm.max_map_count
+          on the node: <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
+        mayBePrivileged: true
+
+      - matchNamespace: fortlogs-audit
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
+        justification: |
+          OpenSearch init-sysctl container needs to increase vm.max_map_count
+          on the node: <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
         mayBePrivileged: true
 
       ##########################################################################
@@ -1334,6 +1364,24 @@ spec:
         mayUseHostNetwork: true
         mayUseCapabilities: [ NET_ADMIN ]
       {{- end }}
+
+      ##########################################################################
+      # Rules for vault
+
+      - matchNamespace: vault
+        matchRepository: ccloud-dockerhub-mirror/hashicorp/vault
+        justification: |
+          Vault 2.0.1's binary ships with the `cap_ipc_lock=ep` file capability
+          baked in at build time. The Linux kernel refuses to exec such a
+          binary inside a container unless IPC_LOCK is granted in the
+          container's securityContext.
+        mayUseCapabilities: [ IPC_LOCK ]
+
+      - matchNamespace: vault
+        matchRepository: ccloud/vault-snapshoter
+        justification: |
+          Same with the above
+        mayUseCapabilities: [ IPC_LOCK ]
 
       ##########################################################################
       # End of rules

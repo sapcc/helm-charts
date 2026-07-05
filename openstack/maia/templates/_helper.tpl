@@ -25,3 +25,11 @@ objectstore_(?:
 {{- end -}}
 )
 {{- end -}}
+
+{{- define "prometheusKVMFederationMatches" -}}
+kvm_domain_libvirt_(?:
+{{- range .Values.prometheus_kvm.matches -}}
+{{- . | trimPrefix "kvm_domain_libvirt_" -}}|
+{{- end -}}
+)
+{{- end -}}
