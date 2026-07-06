@@ -74,5 +74,15 @@ spec:
               externalTrafficPolicy: Local
               zonalIngress:
                 enabled: false
+            # Pin non-HA / failureToleranceType=node shoot control planes to
+            # the same AZ as the shoot's worker pool(s). Upstream feature:
+            # gardener/gardener#14238. Defaults to "Prefer" which never
+            # blocks scheduling — shoots whose worker zones do not intersect
+            # this seed's spec.provider.zones (e.g. workerless shoots) fall
+            # back to random placement, same as before the setting was
+            # introduced. Overridable per-landscape via
+            # mgmtShoots.<landscape>.zoneSelection (e.g. "Enforce" once each
+            # landscape has confirmed all shoots have matching zones).
+            zoneSelection: {{ default "Prefer" $cluster.zoneSelection | quote }}
 {{- end }}
 {{- end }}
