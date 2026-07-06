@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.42.0 - 2026/07/07
+* add client-side encryption for backup-v2 S3 uploads (AWS + Ceph targets) via `backup_v2.cse.enabled` and `global.mariadb.backup_v2.cse.{active_key,keys}`
+* chart version bumped
+
 ## v0.41.0 - 2026/07/06
 * support configurable S3 object lock on backup uploads
   * default at `backup_v2.object_lock.{enabled,lock_mode,retention_days}`

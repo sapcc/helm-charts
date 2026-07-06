@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backupverification") | indent 4 }}
   annotations:
-    secret.reloader.stakater.com/reload: "mariadb-backup-{{.Values.name}}-etc"
+    secret.reloader.stakater.com/reload: "mariadb-backup-{{.Values.name}}-etc{{- if .Values.backup_v2.cse.enabled }},mariadb-backup-{{.Values.name}}-cse{{- end }}"
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -48,8 +48,19 @@ spec:
           - name: mariadb-backup-etc
             mountPath: /etc/config
             readOnly: true
+          {{- if .Values.backup_v2.cse.enabled }}
+          - name: mariadb-backup-cse
+            mountPath: /etc/backup/cse
+            readOnly: true
+          {{- end }}
       volumes:
         - name: mariadb-backup-etc
           secret:
             secretName:  mariadb-backup-{{.Values.name}}-etc
+        {{- if .Values.backup_v2.cse.enabled }}
+        - name: mariadb-backup-cse
+          secret:
+            secretName: mariadb-backup-{{.Values.name}}-cse
+            defaultMode: 0400
+        {{- end }}
 {{- end }}
