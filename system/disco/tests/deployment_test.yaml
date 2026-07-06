@@ -244,3 +244,21 @@ tests:
             name: remote-kubeconfig
             mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             readOnly: true
+
+  - it: should reference release-name prefixed secret in remote kubeconfig volume
+    set:
+      remote.enabled: true
+      remote.apiServerHost: api.example.garden.cloud
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.volumes
+          content:
+            name: remote-kubeconfig
+            secret:
+              secretName: RELEASE-NAME-remote-kubeconfig
+              items:
+                - key: token
+                  path: token
+                - key: bundle.crt
+                  path: ca.crt
