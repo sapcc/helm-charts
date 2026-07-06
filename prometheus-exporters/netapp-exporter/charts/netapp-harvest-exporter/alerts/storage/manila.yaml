@@ -112,3 +112,24 @@ groups:
             volume_state or volume_type label for share {{ $labels.share_id }}.
             Castellum filters on {volume_type!="dp", volume_state!="offline"} — without
             these labels, autoscaling decisions may be affected.
+
+      - alert: ManilaShareLimesMissingLabels
+        expr: |
+          count by (share_id) (netapp_volume_used_bytes_for_limes)
+          unless
+          count by (share_id) (netapp_volume_used_bytes_for_limes{availability_zone!="", project_id!="", share_type!=""})
+        for: 5m
+        labels:
+          severity: warning
+          context: limes
+          service: manila
+          tier: os
+          support_group: compute-storage-api
+          support_component: manila_netapp
+        annotations:
+          summary: 'netapp_volume_used_bytes_for_limes is missing availability_zone, project_id, or share_type label'
+          description: >
+            The limes recording rule for manila share used bytes is missing one or more
+            required labels (availability_zone, project_id, share_type) for share
+            {{ $labels.share_id }}. Limes aggregates by these labels — missing labels
+            cause usage to be silently misattributed.
