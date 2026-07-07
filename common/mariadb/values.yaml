@@ -262,6 +262,22 @@ backup_v2:
     enabled: false
     lock_mode: COMPLIANCE # or GOVERNANCE
     retention_days: 7
+  cse:
+    # Client-side encryption for backups uploaded to S3 (AWS and every Ceph target).
+    enabled: false
+    # KEK material and active-key selection live under global.mariadb.backup_v2.cse
+    # (shared across every s3 storage):
+    #   global:
+    #     mariadb:
+    #       backup_v2:
+    #         cse:
+    #           active_key: kek-2026-q3         # required when cse.enabled; must be a key in `keys` below
+    #           keys:                            # base64-encoded 32 bytes per KEK, e.g. `openssl rand -base64 32`
+    #             kek-2026-q3: vault+kvv2:///secrets/.../cse-kek-2026-q3
+    #             kek-2026-q2: vault+kvv2:///secrets/.../cse-kek-2026-q2   # kept so older backups decrypt
+    # New backups are encrypted under active_key; any KEK in `keys` can decrypt historical backups.
+    # Kubernetes base64-decodes the Secret `data` field on mount, so /etc/backup/cse/<name>
+    # holds the 32 raw bytes the backup binary's loadCSEKey consumes.
   swift:
     enabled: true
     user_name: db_backup

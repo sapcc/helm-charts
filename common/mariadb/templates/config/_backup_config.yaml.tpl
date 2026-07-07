@@ -31,6 +31,16 @@ database:
     - "{{$tl}}"
   {{- end }}
 storages:
+  {{- if .Values.backup_v2.cse.enabled }}
+    {{- $active := dig "mariadb" "backup_v2" "cse" "active_key" "" .Values.global }}
+    {{- if not $active }}
+      {{- fail "global.mariadb.backup_v2.cse.active_key required when backup_v2.cse.enabled" }}
+    {{- end }}
+    {{- $cseKeys := dig "mariadb" "backup_v2" "cse" "keys" (dict) .Values.global }}
+    {{- if not (hasKey $cseKeys $active) }}
+      {{- fail (printf "global.mariadb.backup_v2.cse.active_key %q not found in global.mariadb.backup_v2.cse.keys (have: %v)" $active (keys $cseKeys)) }}
+    {{- end }}
+  {{- end }}
   {{- $cephTargets := list }}
   {{- if .Values.backup_v2.ceph_s3.enabled }}
     {{- $cephTargets = default (list) (dig "mariadb" "backup_v2" "ceph_s3" "targets" (list) .Values.global) }}
@@ -61,6 +71,14 @@ storages:
       {{- if $awsObjectLock }}
       {{- $awsObjectLock | nindent 6 }}
       {{- end }}
+      {{- if $.Values.backup_v2.cse.enabled }}
+      cse_active_key: {{ (dig "mariadb" "backup_v2" "cse" "active_key" "" $.Values.global) | quote }}
+      cse_keys:
+        {{- range $name, $_ := (dig "mariadb" "backup_v2" "cse" "keys" (dict) $.Values.global) }}
+        - name: {{ $name | quote }}
+          file: "/etc/backup/cse/{{ $name }}"
+        {{- end }}
+      {{- end }}
     {{- end }}
     {{- range $t := $cephTargets }}
     {{- $region := default $.Values.global.region $t.region }}
@@ -77,6 +95,14 @@ storages:
       {{- $cephObjectLock := include "mariadb.backup_v2.object_lock" (dict "target" $t.object_lock "default" $.Values.backup_v2.object_lock) }}
       {{- if $cephObjectLock }}
       {{- $cephObjectLock | nindent 6 }}
+      {{- end }}
+      {{- if $.Values.backup_v2.cse.enabled }}
+      cse_active_key: {{ (dig "mariadb" "backup_v2" "cse" "active_key" "" $.Values.global) | quote }}
+      cse_keys:
+        {{- range $name, $_ := (dig "mariadb" "backup_v2" "cse" "keys" (dict) $.Values.global) }}
+        - name: {{ $name | quote }}
+          file: "/etc/backup/cse/{{ $name }}"
+        {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
