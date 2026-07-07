@@ -52,8 +52,8 @@ groups:
 
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: |
-          netapp_volume_provision_case_two * on (share_id) group_left(share_name, share_type) max by (share_id) (
-          {__name__=~"netapp_volume_size_used|netapp_volume_snapshot_size_used"})
+          netapp_volume_provision_case_two * on (app, svm, volume) group_right(project_id, share_id, share_name, share_type, volume_state, volume_type) max by (app, svm, volume) (
+          {__name__=~"netapp_volume_size_used|netapp_volume_snapshots_size_used"})
 
       # Case three: same as case two, but logical space reporting and enforcement are enabled.
       # Share size = netapp volume total size (snapshot reserve excluded)
@@ -78,8 +78,8 @@ groups:
 
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: |
-          netapp_volume_provision_case_three * on (share_id) group_left(share_name, share_type) max by (share_id) (
-          {__name__=~"netapp_volume_space_logical_used_by_afs|netapp_volume_snapshot_size_used"})
+          netapp_volume_provision_case_three * on (app, svm, volume) group_right(project_id, share_id, share_name, share_type, volume_state, volume_type) max by (app, svm, volume) (
+          {__name__=~"netapp_volume_space_logical_used_by_afs|netapp_volume_snapshots_size_used"})
 
       # If the `manila_share_exclusion_reasons_for_castellum` metric has entries, Castellum will ignore the respective share.
       # This is required because Castellum discovers shares through the Manila API, but some shares do not have

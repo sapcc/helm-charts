@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.40.0 - 2026/07/03
+* optionally cohost the mariadb and the mariadb-backup pods on the same node via the `.Values.backup_v2.cohost_with_mariadb` flag
+* chart version bumped
+
 ## v0.39.0 - 2026/06/22
 * support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
 * drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys
