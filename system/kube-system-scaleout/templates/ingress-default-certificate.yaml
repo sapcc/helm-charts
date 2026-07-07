@@ -1,0 +1,22 @@
+{{- if .Values.ingress.defaultCertificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+
+metadata:
+  name: ingress-default
+
+spec:
+  secretName: ingress-default
+  dnsNames:
+{{- if .Values.ingress.defaultCertificate.dnsNames }}
+{{- range .Values.ingress.defaultCertificate.dnsNames }}
+    - {{ . }}
+{{- end }}
+{{- else }}
+    - ingress.scaleout.{{ required ".Values.global.region missing" .Values.global.region }}.{{ required ".Values.global.domain missing" .Values.global.domain }}
+{{- end }}
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: ClusterIssuer
+    name: digicert-issuer
+{{- end }}
