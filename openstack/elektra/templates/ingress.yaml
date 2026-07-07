@@ -19,8 +19,13 @@ metadata:
     {{- if .Values.ingress.ca }}
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    {{- if eq .Values.global.region "eu-de-3" }}
     ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/ingress-ca-cert
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/ingress-ca-cert
+    {{- else }}
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    {{- end }}
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
@@ -75,8 +80,13 @@ metadata:
     {{- if .Values.ingress.ca }}
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
     nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    {{- if eq .Values.global.region "eu-de-3" }}
     ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/ingress-ca-cert
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/ingress-ca-cert
+    {{- else }}
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    {{- end }}
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
