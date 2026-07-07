@@ -21,6 +21,35 @@
 {{- end -}}
 {{- end -}}
 
+{{/*
+  Emit S3 object-lock keys for a backup_v2 storage target, merging per-target
+  overrides onto the chart-level default (backup_v2.object_lock) per field.
+  Emits nothing when effectively disabled.
+  Usage:
+    include "mariadb.backup_v2.object_lock" (dict "target" $target.object_lock "default" .Values.backup_v2.object_lock)
+*/}}
+{{- define "mariadb.backup_v2.object_lock" -}}
+{{- $target := default (dict) .target -}}
+{{- $default := default (dict) .default -}}
+{{- $enabled := default false $default.enabled -}}
+{{- if hasKey $target "enabled" -}}{{- $enabled = $target.enabled -}}{{- end -}}
+{{- if $enabled -}}
+{{- $mode := default "COMPLIANCE" $default.lock_mode -}}
+{{- if hasKey $target "lock_mode" -}}{{- $mode = $target.lock_mode -}}{{- end -}}
+{{- if not (has $mode (list "COMPLIANCE" "GOVERNANCE")) -}}
+{{- fail (printf "backup_v2.object_lock.lock_mode must be COMPLIANCE or GOVERNANCE, got %q" $mode) -}}
+{{- end -}}
+{{- $days := default 7 $default.retention_days -}}
+{{- if hasKey $target "retention_days" -}}{{- $days = $target.retention_days -}}{{- end -}}
+{{- if not (gt (int $days) 0) -}}
+{{- fail (printf "backup_v2.object_lock.retention_days must be a positive integer, got %v" $days) -}}
+{{- end -}}
+object_lock_enabled: true
+object_lock_mode: {{ $mode | quote }}
+object_lock_retention_days: {{ $days }}
+{{- end -}}
+{{- end -}}
+
 {{- define "registry" -}}
 {{- if .Values.use_alternate_registry -}}
 {{- .Values.global.registryAlternateRegion -}}

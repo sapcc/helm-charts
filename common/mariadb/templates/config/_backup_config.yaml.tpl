@@ -56,6 +56,11 @@ storages:
       bucket_name: "mariadb-backup-{{ .Values.global.region }}"
       sse_customer_algorithm: "AES256"
       sse_customer_key: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}
+      {{- $awsOverride := dig "mariadb" "backup_v2" "aws" "object_lock" (dict) .Values.global }}
+      {{- $awsObjectLock := include "mariadb.backup_v2.object_lock" (dict "target" $awsOverride "default" .Values.backup_v2.object_lock) }}
+      {{- if $awsObjectLock }}
+      {{- $awsObjectLock | nindent 6 }}
+      {{- end }}
     {{- end }}
     {{- range $t := $cephTargets }}
     {{- $region := default $.Values.global.region $t.region }}
@@ -68,6 +73,10 @@ storages:
       bucket_name: {{ $t.bucket_name | default (printf "mariadb-backup-%s" $.Values.global.region) | quote }}
       {{- if ternary $t.verify $.Values.backup_v2.ceph_s3.verify (hasKey $t "verify") }}
       verify: true
+      {{- end }}
+      {{- $cephObjectLock := include "mariadb.backup_v2.object_lock" (dict "target" $t.object_lock "default" $.Values.backup_v2.object_lock) }}
+      {{- if $cephObjectLock }}
+      {{- $cephObjectLock | nindent 6 }}
       {{- end }}
     {{- end }}
   {{- end }}
