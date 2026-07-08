@@ -42,13 +42,12 @@ function start () {
   fi
 
   {{- if .Values.federation.saml.enabled }}
-  # Generate shibboleth2.xml and federation-saml.conf at runtime from the
-  # tenant-list ConfigMap (keystone-saml-tenant-list). This avoids duplicating
-  # tenant data in the Keystone chart values — all tenant data lives in the
-  # federation repo and is passed through via ConfigMaps.
-  mkdir -p /etc/shibboleth/metadata /etc/shibboleth/sp-keys /var/run/shibboleth /var/cache/shibboleth
-  python3 /scripts/generate-saml-config.py
-  # If shibd is available and we are running out-of-process, start it
+  # The Shibboleth SP config (shibboleth2.xml) and per-tenant Apache
+  # configuration (federation-saml.d/*.conf) are mounted read-only from
+  # ConfigMaps shipped by the keystone-saml-federation chart. No runtime
+  # generation. Just make sure the writable runtime directories exist
+  # before shibd starts.
+  mkdir -p /var/run/shibboleth /var/cache/shibboleth
   if command -v shibd &> /dev/null; then
     echo "Starting shibd daemon for SAML federation..."
     shibd -t && shibd -f || echo "WARN: shibd config validation failed or daemon not started, check logs above"
