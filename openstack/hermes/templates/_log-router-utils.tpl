@@ -6,6 +6,22 @@
   {{- end -}}
 {{- end -}}
 
+{{- define "log_router_rabbitmq_urls" -}}
+{{- $replicas := int (required ".Values.rabbitmq_notifications.replicas is missing" $.Values.rabbitmq_notifications.replicas) -}}
+{{- if le $replicas 0 -}}
+  {{- fail ".Values.rabbitmq_notifications.replicas must be greater than zero when logRouter.enabled=true" -}}
+{{- end -}}
+{{- $service := printf "%s-rabbitmq-notifications" $.Release.Name -}}
+{{- $domain := printf "%s.svc.%s" $.Release.Namespace (required ".Values.global.clusterDNSSearchDomain is missing" $.Values.global.clusterDNSSearchDomain) -}}
+{{- $port := required ".Values.logRouter.rabbitmq.port is missing" $.Values.logRouter.rabbitmq.port -}}
+{{- $urls := list -}}
+{{- range $i := until $replicas -}}
+  {{- $host := printf "%s-%d.%s.%s" $service $i $service $domain -}}
+  {{- $urls = append $urls (printf "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@%s:%v/" $host $port) -}}
+{{- end -}}
+{{- join "," $urls -}}
+{{- end -}}
+
 {{- define "log_router_common_envvars" }}
 - name: LOG_ROUTER_LISTEN_ADDRESS
   valueFrom:
@@ -135,8 +151,8 @@
     secretKeyRef:
       name: log-router-secret
       key: RABBITMQ_PASSWORD
-- name: RABBITMQ_URL
-  value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@{{ $.Release.Name }}-rabbitmq-notifications.{{ $.Release.Namespace }}.svc:{{ $.Values.logRouter.rabbitmq.port }}/"
+- name: RABBITMQ_URLS
+  value: {{ include "log_router_rabbitmq_urls" . | quote }}
 # Read-only connection to the hermes postgres for dataplane_config lookups.
 # The log_router login user is a member of the log_router_reader NOLOGIN role
 # (created by hermez's migration 001), which holds the SELECT grant on the
