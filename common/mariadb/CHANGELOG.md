@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.41.0 - 2026/07/06
+* support configurable S3 object lock on backup uploads
+  * default at `backup_v2.object_lock.{enabled,lock_mode,retention_days}`
+  * per-target overrides at `global.mariadb.backup_v2.aws.object_lock` and `global.mariadb.backup_v2.ceph_s3.targets[].object_lock`
+* `maria-back-me-up` updated to `10.11-20260706142324` for object-lock upload support
+* chart version bumped
+
+## v0.40.0 - 2026/07/03
+* optionally cohost the mariadb and the mariadb-backup pods on the same node via the `.Values.backup_v2.cohost_with_mariadb` flag
+* chart version bumped
+
 ## v0.39.0 - 2026/06/22
 * support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
 * drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys

@@ -4,7 +4,7 @@ PROVIDER_METAL_VERSION ?= cf12acd520aa203db28f21a326a61fddc9720b95
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v1.0.3
 PROVIDER_HELM ?= v0.4.1
-PROVIDER_KUBERNIKUS_VERSION ?= 1262b449706c87402bc1531ba7aa131d2bec9df6
+PROVIDER_KUBERNIKUS_VERSION ?= 9ef3fb8f8b42f5606edb5044693adf62d434d4e0
 BAREMETAL_OPERATOR_VERSION ?= v0.11.1
 
 SHELL := bash
@@ -115,6 +115,15 @@ build-provider-metal:
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
+	@# helmify names the manager ClusterRole after the upstream role ("cluster-api-control-plane-provider-kubernikus"),
+	@# producing capi-cp-provider-kubernikus-cluster-api-control-plane-provider-kubernikus. That's the manager role,
+	@# so rename it back to <fullname>-manager-role and keep the manager rolebinding pointing at it. Renaming an
+	@# existing ClusterRoleBinding.roleRef is rejected by the API server, so this stability matters across bumps.
+	@if [ -f provider-kubernikus/templates/cluster-api-control-plane-provider-kubernikus-rbac.yaml ]; then \
+		mv provider-kubernikus/templates/cluster-api-control-plane-provider-kubernikus-rbac.yaml \
+		   provider-kubernikus/templates/manager-clusterrole.yaml; \
+	fi
+	@find provider-kubernikus/templates -type f -exec $(SED) -i -e 's#-cluster-api-control-plane-provider-kubernikus#-manager-role#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
 
