@@ -77,9 +77,9 @@ spec:
           periodSeconds: 10
         securityContext:
           allowPrivilegeEscalation: false
-        {{- if or .Values.webhooks.enabled .Values.remote.enabled }}
+        {{- if or .Values.certManager.enabled .Values.remote.enabled }}
         volumeMounts:
-        {{- if .Values.webhooks.enabled }}
+        {{- if .Values.certManager.enabled }}
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
@@ -94,9 +94,9 @@ spec:
         runAsNonRoot: true
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: 10
-      {{- if or .Values.webhooks.enabled .Values.remote.enabled }}
+      {{- if or .Values.certManager.enabled .Values.remote.enabled }}
       volumes:
-      {{- if .Values.webhooks.enabled }}
+      {{- if .Values.certManager.enabled }}
       - name: cert
         secret:
           defaultMode: 420
