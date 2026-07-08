@@ -27,6 +27,9 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 sync_power_state_pool_size = {{ .Values.sync_power_state_pool_size | default 500 }}
 sync_power_state_interval = {{ .Values.sync_power_state_interval | default 1200 }}
 sync_power_state_unexpected_call_stop = false
+{{- if (.Values.imageVersion | hasPrefix "bobcat" | not) }}
+heal_instance_info_cache_interval = {{ .Values.heal_instance_info_cache_interval | default 86400 }}
+{{- end }}
 
 prepare_empty_host_for_spawning_interval = 600
 
