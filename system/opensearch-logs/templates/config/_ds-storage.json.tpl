@@ -4,7 +4,7 @@
   ],
   "template": {
     "settings": {
-      "index.number_of_shards": "4",
+      "index.number_of_shards": "6",
       "index.number_of_replicas": "1",
       "index.append_only.enabled": true,
       "index.refresh_interval": "120s",
