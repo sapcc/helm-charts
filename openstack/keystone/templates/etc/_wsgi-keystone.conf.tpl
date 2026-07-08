@@ -78,8 +78,10 @@ CustomLog /dev/stdout proxy env=forwarded
         SetHandler shib
     </LocationMatch>
 
-    # Per-tenant auth endpoints (generated at runtime by generate-saml-config.py)
-    IncludeOptional /etc/apache2/conf-enabled/federation-saml.conf
+    # Per-tenant auth endpoints (one .conf per tenant, mounted from the
+    # keystone-saml-federation-saml-tenants ConfigMap; ConfigMap content comes
+    # from the federation repo's generated/<region>/federation-saml.d/).
+    IncludeOptional /etc/apache2/conf-enabled/federation-saml.d/*.conf
     {{- end }}
 </VirtualHost>
 

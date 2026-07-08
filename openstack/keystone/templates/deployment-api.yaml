@@ -14,7 +14,7 @@ metadata:
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}"
     {{- if .Values.federation.saml.enabled }}
-    configmap.reloader.stakater.com/reload: "{{ .Values.federation.saml.idp.tenantListConfigMap }},{{ .Values.federation.saml.idp.metadataConfigMap }}"
+    configmap.reloader.stakater.com/reload: "keystone-saml-shibboleth-config,keystone-saml-federation-saml-tenants,{{ .Values.federation.saml.idp.metadataConfigMap }}"
     {{- end }}
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
@@ -233,14 +233,18 @@ spec:
               mountPath: /etc/shibboleth/shibd.logger
               subPath: shibd.logger
               readOnly: true
+            - name: keystone-saml-shibboleth-config
+              mountPath: /etc/shibboleth/shibboleth2.xml
+              subPath: shibboleth2.xml
+              readOnly: true
+            - name: keystone-saml-federation-saml-tenants
+              mountPath: /etc/apache2/conf-enabled/federation-saml.d
+              readOnly: true
             - name: saml-sp-tmpfs
               mountPath: /etc/shibboleth/sp-keys
               readOnly: true
             - name: keystone-saml-idp-metadata
               mountPath: /etc/shibboleth/metadata
-              readOnly: true
-            - name: keystone-saml-tenant-list
-              mountPath: /etc/shibboleth/tenant-list
               readOnly: true
             {{- end }}
             - name: keystone-etc
@@ -330,9 +334,13 @@ spec:
           configMap:
             name: {{ required "federation.saml.idp.metadataConfigMap is required when SAML is enabled" .Values.federation.saml.idp.metadataConfigMap }}
             defaultMode: 0444
-        - name: keystone-saml-tenant-list
+        - name: keystone-saml-shibboleth-config
           configMap:
-            name: {{ required "federation.saml.idp.tenantListConfigMap is required when SAML is enabled" .Values.federation.saml.idp.tenantListConfigMap }}
+            name: keystone-saml-shibboleth-config
+            defaultMode: 0444
+        - name: keystone-saml-federation-saml-tenants
+          configMap:
+            name: keystone-saml-federation-saml-tenants
             defaultMode: 0444
         {{- end }}
         - name: keystone-bin

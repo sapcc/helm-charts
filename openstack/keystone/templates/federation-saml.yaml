@@ -12,9 +12,10 @@ metadata:
     type: config
 type: Opaque
 data:
-  {{- /* shibboleth2.xml and federation-saml.conf are now generated at runtime
-         by the generate-saml-config.py script from the tenant-list ConfigMap.
-         Only attribute-map.xml remains static (same for all tenants). */}}
+  {{- /* shibboleth2.xml and per-tenant federation-saml.d/*.conf live in
+         ConfigMaps shipped by the keystone-saml-federation chart (statically
+         pre-rendered into the federation repo by bin/init-region and bin/onboard).
+         Only attribute-map.xml remains here -- it is identical for all tenants. */}}
   attribute-map.xml: |
     {{ include "keystone.attribute-map.xml" . | b64enc | indent 4 }}
 {{- end }}
