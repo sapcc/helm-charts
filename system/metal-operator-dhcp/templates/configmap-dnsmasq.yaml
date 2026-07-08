@@ -43,6 +43,10 @@ data:
     {{- end }}
     {{- end }}
 
+    # DHCP option 54: advertise the external/VIP as the server-identifier so
+    # clients send renewals to the load-balanced address, not the pod/node IP.
+    dhcp-option=option:server-identifier,{{ .Values.dnsmasq.externalIP }}
+
     # Set dns servers
     dhcp-option=6,{{ .Values.dnsmasq.dnsServers }}
     dhcp-option=option:domain-name,cc.{{ .Values.global.region }}.cloud.sap
