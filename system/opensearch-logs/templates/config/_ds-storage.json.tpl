@@ -4,11 +4,11 @@
   ],
   "template": {
     "settings": {
-      "index.number_of_shards": "6",
+      "index.number_of_shards": "{{ .Values.global.data_stream.storage.number_of_shards }}",
       "index.number_of_replicas": "1",
       "index.append_only.enabled": true,
-      "index.refresh_interval": "120s",
-      "index.translog.sync_interval": "120s",
+      "index.refresh_interval": "{{ .Values.global.data_stream.storage.refresh_interval }}",
+      "index.translog.sync_interval": "{{ .Values.global.data_stream.storage.refresh_interval }}",
       "index.translog.durability": "async"
     },
     "mappings": {
