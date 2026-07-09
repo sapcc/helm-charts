@@ -131,7 +131,7 @@ groups:
       summary: Hermes API is not available, check pod logs
 
   - alert: OpenstackHermesLogRouterRabbitMQDisconnected
-    expr: sum(log_router_rabbitmq_connected) == 0 and on() kube_statefulset_replicas{namespace="hermes", statefulset="log-router"} > 0
+    expr: sum(log_router_rabbitmq_connected) == 0
     for: 2m
     labels:
       context: log-router
@@ -148,7 +148,7 @@ groups:
       summary: "Log Router disconnected from RabbitMQ"
 
   - alert: OpenstackHermesLogRouterDLQFallback
-    expr: sum(rate(log_router_flush_dlq_fallbacks_total[5m])) > 0 and on() kube_statefulset_replicas{namespace="hermes", statefulset="log-router"} > 0
+    expr: sum(rate(log_router_flush_dlq_fallbacks_total[5m])) > 0
     for: 5m
     labels:
       context: log-router
@@ -165,7 +165,7 @@ groups:
       summary: "Log Router falling back to DLQ — data not reaching S3"
 
   - alert: OpenstackHermesLogRouterAdminWriteErrors
-    expr: sum(rate(log_router_admin_write_errors_total[5m])) > 0 and on() kube_statefulset_replicas{namespace="hermes", statefulset="log-router"} > 0
+    expr: sum(rate(log_router_admin_write_errors_total[5m])) > 0
     for: 5m
     labels:
       context: log-router
