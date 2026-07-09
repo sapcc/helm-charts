@@ -156,7 +156,9 @@ cluster.local
 {{- if $root.Values.queryDiscovery -}}
 endpoints:
 {{- $clusterList := list }}
+{{- if $root.Values.ruler.enabled -}}
 {{- $clusterList = append $clusterList $rulerEndpoint -}}
+{{- end -}}
 {{- range $index, $service := (lookup "v1" "Service" "" "").items }}
 {{- if and (hasPrefix "thanos" $service.metadata.name) (contains "query" $service.metadata.name) (not (contains "maia" $service.metadata.name)) (not (contains "metal" $service.metadata.name)) (not (contains "scaleout" $service.metadata.name)) (not (contains "regional" $service.metadata.name)) (not (contains "global" $service.metadata.name)) }}
 {{- $store := $service.metadata.name }}
