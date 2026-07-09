@@ -6,7 +6,7 @@ log_config_append = /etc/neutron/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
 max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
-max_routes = {{.Values.max_routes | default 256}}
+max_routes = {{.Values.max_routes | default 512}}
 
 allow_overlapping_ips = true
 core_plugin = ml2
