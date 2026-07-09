@@ -115,6 +115,15 @@ build-provider-metal:
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
+	@# helmify names the manager ClusterRole after the upstream role ("cluster-api-control-plane-provider-kubernikus"),
+	@# producing capi-cp-provider-kubernikus-cluster-api-control-plane-provider-kubernikus. That's the manager role,
+	@# so rename it back to <fullname>-manager-role and keep the manager rolebinding pointing at it. Renaming an
+	@# existing ClusterRoleBinding.roleRef is rejected by the API server, so this stability matters across bumps.
+	@if [ -f provider-kubernikus/templates/cluster-api-control-plane-provider-kubernikus-rbac.yaml ]; then \
+		mv provider-kubernikus/templates/cluster-api-control-plane-provider-kubernikus-rbac.yaml \
+		   provider-kubernikus/templates/manager-clusterrole.yaml; \
+	fi
+	@find provider-kubernikus/templates -type f -exec $(SED) -i -e 's#-cluster-api-control-plane-provider-kubernikus#-manager-role#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
 

@@ -94,6 +94,30 @@ tests:
               defaultMode: 420
               secretName: tls-disco-webhook-service
 
+  - it: should still mount webhook cert volume when webhooks.enabled is false
+    set:
+      webhooks.enabled: false
+    asserts:
+      - template: disco-controller-manager.yaml
+        contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: cert
+            readOnly: true
+
+  - it: should not mount webhook cert volume when certManager.enabled is false
+    set:
+      certManager.enabled: false
+    asserts:
+      - template: disco-controller-manager.yaml
+        notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: cert
+            readOnly: true
+
   - it: should set checksum/config annotation on pod template
     asserts:
       - template: disco-controller-manager.yaml
@@ -180,18 +204,6 @@ tests:
             containerPort: 9443
             name: webhook-server
             protocol: TCP
-
-  - it: should not mount webhook cert volume when webhooks.enabled is false
-    set:
-      webhooks.enabled: false
-    asserts:
-      - template: disco-controller-manager.yaml
-        notContains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            mountPath: /tmp/k8s-webhook-server/serving-certs
-            name: cert
-            readOnly: true
 
   - it: should add Gardener network labels when remote.enabled is true
     set:

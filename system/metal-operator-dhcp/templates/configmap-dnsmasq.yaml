@@ -11,6 +11,11 @@ data:
     tftp-root=/shared/tftpboot
     log-queries
 
+{{ if .Values.dnsmasq.service }}
+    interface=__INTERFACE__
+    listen-address={{ .Values.dnsmasq.externalIP }}
+{{ end }}
+
     # Configure listening for DNS (0 disables DNS)
     port=0
     log-dhcp
@@ -83,6 +88,10 @@ data:
 
     mkdir -p /shared/tftpboot
 
+    export INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+    echo "Outgoing inteface is ${INTERFACE}"
+    echo "${INTERFACE}" > /shared/interface
+
     {{- if .Values.ipxe.efi.host }}
     curl -o /shared/tftpboot/{{ .Values.ipxe.efi.file }} {{ .Values.ipxe.efi.host }}/{{ .Values.ipxe.efi.file }}
     {{- else }}
@@ -90,7 +99,12 @@ data:
     cp /tftpboot/snponly.efi /shared/tftpboot/{{ .Values.ipxe.efi.file | default "snponly.efi" }}
     {{- end }}
 
-    exec /usr/sbin/dnsmasq -d -q -C /opt/dnsmasq/dnsmasq.conf
+    cp /opt/dnsmasq/dnsmasq.conf /shared/dnsmasq.conf
+{{ if .Values.dnsmasq.service }}
+    sed -i "s/interface=__INTERFACE__/interface=${INTERFACE}/" /shared/dnsmasq.conf
+{{ end }}
+
+    exec /usr/sbin/dnsmasq -d -q -C /shared/dnsmasq.conf
   dhcp-init.sh: |
     #!/usr/bin/env bash
     set -euxo pipefail
@@ -99,6 +113,10 @@ data:
     export INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
 
     echo "Outgoing inteface is ${INTERFACE}"
+
+{{ if .Values.dnsmasq.service }}
+    ip addr add ${DHCPSERVERIP}/32 dev ${INTERFACE}
+{{ end }}
 
     echo "Adding rule for SNAT DHCP Reply to correct server IP address"
 
@@ -141,6 +159,16 @@ data:
     #!/usr/bin/env bash
     set -euxo pipefail
     # make sure to update dhcp-init script to keep commands aligned
+
+    INTERFACE=$(cat /shared/interface 2>/dev/null || true)
+
+{{ if .Values.dnsmasq.service }}
+    if [[ -n "${INTERFACE}" ]]; then
+      ip addr del ${DHCPSERVERIP}/32 dev ${INTERFACE} || true
+    else
+      echo "WARNING: could not determine interface from /shared/interface, skipping ip addr del"
+    fi
+{{ end }}
 
     echo "Deleting rule for SNAT DHCP Reply"
     iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}

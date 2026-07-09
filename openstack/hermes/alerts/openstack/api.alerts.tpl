@@ -129,3 +129,54 @@ groups:
     annotations:
       description: Hermes monitoring endpoint is down => Hermes is down
       summary: Hermes API is not available, check pod logs
+
+  - alert: OpenstackHermesLogRouterRabbitMQDisconnected
+    expr: sum(log_router_rabbitmq_connected) == 0
+    for: 2m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: critical
+      support_group: observability
+      tier: os
+      meta: "Log Router has lost its RabbitMQ connection — no audit events are being consumed"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "All log-router pods have lost their RabbitMQ connection. No audit events are being consumed from the queue. The queue depth will grow until the connection is restored."
+      summary: "Log Router disconnected from RabbitMQ"
+
+  - alert: OpenstackHermesLogRouterDLQFallback
+    expr: sum(rate(log_router_flush_dlq_fallbacks_total[5m])) > 0
+    for: 5m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: critical
+      support_group: observability
+      tier: os
+      meta: "Log Router is routing audit data to the DLQ after exhausting flush retries — data is not landing in the customer S3 bucket"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router flush retries have been exhausted and partitions are being routed to the DLQ. Audit events are not being written to the primary S3/Ceph bucket. Check S3 connectivity, bucket Object Lock configuration, and credentials."
+      summary: "Log Router falling back to DLQ — data not reaching S3"
+
+  - alert: OpenstackHermesLogRouterAdminWriteErrors
+    expr: sum(rate(log_router_admin_write_errors_total[5m])) > 0
+    for: 5m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: critical
+      support_group: observability
+      tier: os
+      meta: "Log Router admin-tier write errors — compliance audit copies may be missing from the admin bucket"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router is failing to write to the admin-tier storage. The admin tier provides unconditional compliance copies of all audit events. Sustained errors mean audit records are missing from the admin bucket."
+      summary: "Log Router admin-tier write errors — compliance data at risk"
