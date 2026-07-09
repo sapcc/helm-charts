@@ -151,7 +151,7 @@ cluster.local
 {{- define "thanos.storeAPIs" -}}
 {{- $host := index . 0 -}}
 {{- $root := index . 1 -}}
-{{- $rulerEndpoint := printf "dnssrvnoa+_grpc._tcp.thanos-ruler-%s.thanos.svc.%s" (include "thanos.name" (list $name $root)) (include "clusterDomainOrDefault" $root) -}}
+{{- $rulerEndpoint := printf "dnssrvnoa+_grpc._tcp.thanos-ruler-%s.thanos.svc.%s" (include "thanos.name" (list $host $root)) (include "clusterDomainOrDefault" $root) -}}
 {{/* Thanos Query discovery within the cluster */}}
 {{- if $root.Values.queryDiscovery -}}
 endpoints:
