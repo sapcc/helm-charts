@@ -59,6 +59,9 @@ spec:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
           command:
           - dumb-init
           - barbican-api
@@ -108,6 +111,10 @@ spec:
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican
+            - name: barbican-tmp
+              mountPath: /tmp
+            - name: barbican-run
+              mountPath: /run
             - name: barbican-etc
               mountPath: /etc/barbican/barbican.conf
               subPath: barbican.conf
@@ -257,6 +264,10 @@ spec:
             - key: secrets.conf
               path: secrets.conf
         - name: etcbarbican
+          emptyDir: {}
+        - name: barbican-tmp
+          emptyDir: {}
+        - name: barbican-run
           emptyDir: {}
         {{- if .Values.hsm.enabled }}
         - name: hsm
