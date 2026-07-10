@@ -15,7 +15,11 @@ spec:
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
+  {{- if $cluster.useWorkloadIdentity }}
+  credentialsBindingName: metal-wi-{{ $cluster.region | default $.Values.global.region }}
+  {{- else }}
   credentialsBindingName: metal-{{ $cluster.region | default $.Values.global.region }}
+  {{- end }}
   region: {{ $cluster.region | default $.Values.global.region }}
   {{- if $cluster.seedSelector }}
   seedSelector: {{- toYaml $cluster.seedSelector | nindent 4 }}
