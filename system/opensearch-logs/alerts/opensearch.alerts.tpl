@@ -68,7 +68,7 @@ groups:
       summary: '*opensearch-logs* cluster is *RED*'
 
   - alert: OpenSearchIndexSizeTooLarge
-    expr: (max by (cluster, region, elastic_cluster, index) (opensearch_index_store_size_bytes{context="primaries", index=~".ds.*"} / (1024 ^ 3)) > 200) and on(cluster, region, elastic_cluster, index) (rate(opensearch_index_doc_number{context="primaries", index=~".ds.*"}[15m]) > 1)
+    expr: (max by (cluster, region, elastic_cluster, index) (opensearch_index_store_size_bytes{context="primaries", index=~".ds.*"} / (1024 ^ 3)) > 400) and on(cluster, region, elastic_cluster, index) (rate(opensearch_index_doc_number{context="primaries", index=~".ds.*"}[15m]) > 1)
     for: 30m
     labels:
       context: nodes
@@ -80,5 +80,5 @@ groups:
       dashboard: health-opensearch?var-cluster=opensearch-logs
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-logs"
     annotations:
-      description: "The index {{`{{ $labels.index }}`}} has exceeded 200 GB in size. Please check the rollover status."
+      description: "The index {{`{{ $labels.index }}`}} has exceeded 400 GB in size. Please check the rollover status."
       summary: "Index size of ({{`{{ $labels.index }}`}}) has exceeeded the threshold."
