@@ -178,7 +178,7 @@ endpoints:
 endpoints:
 {{- $globalList := list }}
 {{- if $root.Values.ruler.enabled -}}
-{{- $clusterList = append $globalList $rulerEndpoint -}}
+{{- $globalList = append $globalList $rulerEndpoint -}}
 {{- end -}}
 {{- range $region := $root.Values.queryRegions -}}
 {{- range $cluster := $root.Values.queryStoreAPIs -}}
@@ -198,7 +198,7 @@ endpoints:
 endpoints:
 {{- $regionalList := list }}
 {{- if $root.Values.ruler.enabled -}}
-{{- $clusterList = append $regionalList $rulerEndpoint -}}
+{{- $regionalList = append $regionalList $rulerEndpoint -}}
 {{- end -}}
 {{- range $cluster := $root.Values.queryStoreAPIs }}
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $root.Values.global.region $root.Values.global.tld -}}
