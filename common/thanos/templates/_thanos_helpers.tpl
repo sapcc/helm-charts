@@ -103,7 +103,11 @@ thanos-{{ $name }}-internal.{{- required ".Values.global.region missing" $root.V
 {{- define "thanos.objectStorageConfigName" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- if has $name (list "global" "regional") -}}
+prometheus-metal-thanos-storage-config
+{{- else -}}
 prometheus-{{- include "thanos.name" . -}}-thanos-storage-config
+{{- end -}}
 {{- end -}}
 
 {{- define "thanos.defaultRelabelConfig" -}}

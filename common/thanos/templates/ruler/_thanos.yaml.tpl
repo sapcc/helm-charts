@@ -1,6 +1,5 @@
-{{- $host := index . 0 -}}
+{{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
-{{- $name := ternary "metal" $host (has $host (list "global" "regional")) -}}
 type: SWIFT
 config:
   auth_url: "https://identity-3.{{ $root.Values.global.region }}.cloud.sap/v3"
