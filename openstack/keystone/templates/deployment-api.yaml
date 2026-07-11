@@ -93,6 +93,12 @@ spec:
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       {{- if .Values.federation.saml.enabled }}
+      {{- /* Ordering safety gate: the keystone-saml-federation chart must be
+             deployed for this region BEFORE enabling SAML here, because the
+             ConfigMaps/Secret below are mounted as non-optional volumes. */}}
+      {{- if not .Values.federation.saml.iHaveAlreadyDeployedFederationChart }}
+        {{- fail "federation.saml.enabled is true but federation.saml.iHaveAlreadyDeployedFederationChart is false. keystone-api mounts ConfigMaps and a Secret from the keystone-saml-federation chart (keystone-saml-shibboleth-config, keystone-saml-federation-saml-tenants, keystone-saml-idp-metadata, keystone-saml-sp) as non-optional volumes and will FailedMount if they do not exist. Deploy the keystone-saml-federation chart for this region first, then set federation.saml.iHaveAlreadyDeployedFederationChart: true." }}
+      {{- end }}
       {{- /* Validate required key lifecycle axes */}}
       {{- if not .Values.federation.saml.spInit.keyGeneration }}
         {{- fail "federation.saml.spInit.keyGeneration is required when SAML is enabled (e.g. go-crypto)" }}

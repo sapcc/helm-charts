@@ -49,6 +49,16 @@ federation:
     crypto_passphrase: ""
   saml:
     enabled: false
+    # Ordering safety gate. When enabled=true, keystone-api mounts ConfigMaps
+    # and a Secret produced by the SEPARATE keystone-saml-federation chart
+    # (keystone-saml-shibboleth-config, keystone-saml-federation-saml-tenants,
+    # keystone-saml-idp-metadata, and the SP-key Secret) as non-optional
+    # volumes. If those resources do not exist yet, the pod will not start
+    # (FailedMount). You MUST deploy the keystone-saml-federation chart for
+    # this region first, then set this flag to true to acknowledge you have
+    # done so. The chart refuses to render while enabled=true and this is
+    # false.
+    iHaveAlreadyDeployedFederationChart: false
     spInit:
       image: keystone-saml-sp-init
       imageTag: ""
