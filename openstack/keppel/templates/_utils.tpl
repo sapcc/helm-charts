@@ -132,7 +132,11 @@
 - name:  OS_IDENTITY_API_VERSION
   value: '3'
 - name:  OS_INTERFACE
+  {{- if eq .Values.keppel.driver "swift" }}
   value: internal
+  {{- else }}
+  value: public
+  {{- end }}
 - name:  OS_PASSWORD
   valueFrom:
     secretKeyRef:
