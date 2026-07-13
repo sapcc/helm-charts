@@ -90,7 +90,7 @@ groups:
         expr: >
             elasticsearch_octobus_FCDObjectNotFound_issue_hostsystem_doc_count
         labels:
-          severity: warning
+          severity: critical
           service: compute
           tier: vmware
           support_group: compute
@@ -99,5 +99,5 @@ groups:
           playbook: docs/compute/playbooks/vcenter/#fcdobjectnotfound
         annotations:
           summary: "Error for FCD Object Storage Not Found "
-          description: "vCenter {{`{{ $labels.hostsystem }}`}} reported FCD Ojbect Not found, please follow the playbook to fix it"
+          description: "vCenter {{`{{ $labels.hostsystem }}`}} reported FCD Object Not Found, please follow the playbook to fix it"
 
