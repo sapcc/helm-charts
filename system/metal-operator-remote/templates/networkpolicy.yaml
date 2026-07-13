@@ -102,14 +102,14 @@ spec:
       app: kubernetes
       role: apiserver
   policyTypes:
-  - Egress
+    - Egress
   egress:
-  - ports:
-    - port: 443
-      protocol: TCP
-    to:
-    - ipBlock:
-        cidr: {{ .Values.virtualGardenLBIP }}/32
+    - to:
+      - ipBlock:
+          cidr: {{ .Values.virtualGardenLBIP }}/32
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: virtual-garden-istio-ingress
 {{- end }}
 ---
 apiVersion: networking.k8s.io/v1

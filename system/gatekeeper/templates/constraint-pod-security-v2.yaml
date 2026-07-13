@@ -967,11 +967,20 @@ spec:
         matchRepository: ccloud-ghcr-io-mirror/cloudoperators/opentelemetry-collector-contrib
         justification: |
           OTel audit-logs collector runs as auditd reader: needs hostPID,
-          privileged, AUDIT_* caps, and read access to host audit-related paths.
+          privileged, AUDIT_* caps, and read access to host root filesystem
+          for auditd log paths.
         mayBePrivileged: true
         mayUseHostPID: true
         mayUseCapabilities: [ AUDIT_READ, AUDIT_WRITE, AUDIT_CONTROL ]
-        mayReadHostPathVolumes: [ /var/log ]
+        mayReadHostPathVolumes: [ / ]
+
+      - matchNamespace: fortlogs-audit
+        matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          OTel audit-logs collector init container needs privileged access
+          and host root filesystem mount to set up auditd log reading.
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ / ]
 
       - matchNamespace: opensearch-logs
         matchRepository: busybox
