@@ -25,6 +25,7 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-kvm-etc-hash: {{ include "kvm_configmap" . | sha256sum }}
+        secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
