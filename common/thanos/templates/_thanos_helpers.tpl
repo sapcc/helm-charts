@@ -103,7 +103,11 @@ thanos-{{ $name }}-internal.{{- required ".Values.global.region missing" $root.V
 {{- define "thanos.objectStorageConfigName" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- if has $name (list "global" "regional") -}}
+prometheus-metal-thanos-storage-config
+{{- else -}}
 prometheus-{{- include "thanos.name" . -}}-thanos-storage-config
+{{- end -}}
 {{- end -}}
 
 {{- define "thanos.defaultRelabelConfig" -}}
@@ -151,10 +155,14 @@ cluster.local
 {{- define "thanos.storeAPIs" -}}
 {{- $host := index . 0 -}}
 {{- $root := index . 1 -}}
+{{- $rulerEndpoint := printf "dnssrvnoa+_grpc._tcp.thanos-ruler-%s.thanos.svc.%s" (include "thanos.name" (list $host $root)) (include "clusterDomainOrDefault" $root) -}}
 {{/* Thanos Query discovery within the cluster */}}
 {{- if $root.Values.queryDiscovery -}}
 endpoints:
 {{- $clusterList := list }}
+{{- if $root.Values.ruler.enabled -}}
+{{- $clusterList = append $clusterList $rulerEndpoint -}}
+{{- end -}}
 {{- range $index, $service := (lookup "v1" "Service" "" "").items }}
 {{- if and (hasPrefix "thanos" $service.metadata.name) (contains "query" $service.metadata.name) (not (contains "maia" $service.metadata.name)) (not (contains "metal" $service.metadata.name)) (not (contains "scaleout" $service.metadata.name)) (not (contains "regional" $service.metadata.name)) (not (contains "global" $service.metadata.name)) }}
 {{- $store := $service.metadata.name }}
@@ -169,6 +177,9 @@ endpoints:
 {{- else if and $root.Values.useQueryRegions $root.Values.queryStoreAPIs -}}
 endpoints:
 {{- $globalList := list }}
+{{- if $root.Values.ruler.enabled -}}
+{{- $globalList = append $globalList $rulerEndpoint -}}
+{{- end -}}
 {{- range $region := $root.Values.queryRegions -}}
 {{- range $cluster := $root.Values.queryStoreAPIs -}}
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $region $root.Values.global.tld -}}
@@ -186,6 +197,9 @@ endpoints:
 {{- else if and (not $root.Values.useQueryRegions) $root.Values.queryStoreAPIs -}}
 endpoints:
 {{- $regionalList := list }}
+{{- if $root.Values.ruler.enabled -}}
+{{- $regionalList = append $regionalList $rulerEndpoint -}}
+{{- end -}}
 {{- range $cluster := $root.Values.queryStoreAPIs }}
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $root.Values.global.region $root.Values.global.tld -}}
 {{- $regionalList = append $regionalList $storeItem -}}
