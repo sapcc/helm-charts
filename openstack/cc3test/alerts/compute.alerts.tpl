@@ -301,5 +301,3 @@ groups:
     annotations:
       description: "{{`{{ $labels.host }}`}}: host is disabled without reason. see last three reports for more details"
       summary: "{{`{{ $labels.host }}`}}: host is disabled without reason"
-
-  
