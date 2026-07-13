@@ -931,7 +931,7 @@
 # Intended scope(s): system, domain
 #"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_projects": "rule:cloud_reader or
-  (role:reader and domain_id:%(target.domain_id)s) or
+  (role:reader and domain_id:%(target.domain_id)s and not True:%(filter_attr.is_domain)s) or
   (role:reader and domain_id:%(filter_attr.domain_id)s) or
   (role:reader and project_id:%(filter_attr.parent_id)s)"
 
