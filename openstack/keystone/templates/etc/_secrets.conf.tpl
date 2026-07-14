@@ -35,7 +35,15 @@ heartbeat_timeout_threshold = {{ .Values.audit.central_service.heartbeat_timeout
 {{- end }}
 
 {{- if .Values.osprofiler.enabled }}
+{{- if and .Values.osprofiler.redis.enabled .Values.osprofiler.redis.redisPassword }}
+[profiler]
+enabled = true
+connection_string = redis://:{{ .Values.osprofiler.redis.redisPassword | include "resolve_secret" | trim }}@{{ .Release.Name }}-osprofiler-redis:6379
+hmac_keys = {{ .Values.global.osprofiler.hmac_keys | include "resolve_secret" }}
+trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
+{{- else }}
 {{- include "osprofiler" . }}
+{{- end }}
 {{- end }}
 
 {{ if .Values.api.cc_radius }}
