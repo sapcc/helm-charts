@@ -19,7 +19,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- if .Values.global.is_global_region -}}
 {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
 {{- else -}}
-{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.{{ required ".Values.global.clusterDNSSearchDomain" .Values.global.clusterDNSSearchDomain }}
 {{- end -}}
 {{- end -}}
 

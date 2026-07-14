@@ -13,14 +13,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   roles:
-  - name: admin
-    description: Keystone Administrator
-  - name: member
-    description: Keystone Member
-  - name: reader
-    description: Keystone Read-Only
-  - name: service
-    description: Keystone Service
   - name: cloud_identity_viewer
     description: Keystone Cloud Read-Only (deprecated)
   - name: role_admin
@@ -66,6 +58,9 @@ spec:
     parent_region: eu
   - id: eu-de-2
     description: 'Germany - Frankfurt'
+    parent_region: eu
+  - id: eu-de-3
+    description: 'Germany - Virtual'
     parent_region: eu
   - id: eu-nl-1
     description: 'Netherlands - Amsterdam'
@@ -120,12 +115,10 @@ spec:
 {{- end }}
     - interface: internal
       region: {{ .Values.global.region }}
-{{- if .Values.global.clusterDomain }}
-      url: http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3
-{{- else if .Values.global.is_global_region }}
+{{- if .Values.global.is_global_region }}
       url: http://{{ .Values.global.keystone_internal_ip }}:5000/v3
 {{- else }}
-      url: http://{{ .Release.Name }}.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
+      url: http://keystone.{{.Release.Namespace}}.svc.{{ required ".Values.global.clusterDNSSearchDomain" .Values.global.clusterDNSSearchDomain }}:5000/v3
 {{- end }}
 
   domains:

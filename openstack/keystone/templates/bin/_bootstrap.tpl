@@ -16,12 +16,10 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 {{- else }}
     --bootstrap-public-url {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
 {{- end }}
-{{- if .Values.global.clusterDomain }}
-    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3 \
-{{- else if .Values.global.is_global_region }}
+{{- if .Values.global.is_global_region }}
     --bootstrap-internal-url http://{{ .Values.global.keystone_internal_ip }}:5000/v3 \
 {{- else }}
-    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
+    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.{{ required ".Values.global.clusterDNSSearchDomain" .Values.global.clusterDNSSearchDomain }}:5000/v3 \
 {{- end }}
     --bootstrap-region-id {{ .Values.global.region }}
 
