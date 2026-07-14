@@ -122,7 +122,7 @@ home: https://github.com/gardener/gardener
 dependencies:
   - name: operator
     repository: oci://europe-docker.pkg.dev/gardener-project/releases/charts/gardener
-    version: v1.144.2
+    version: v1.145.0
   - name: cc-gardener
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: '>= 0.0.0'
