@@ -53,7 +53,92 @@
             }
           }
         }
-      ]
+      ],
+      "properties": {
+        "resource": {
+          "properties": {
+            "k8s": {
+              "properties": {
+                "cluster": {
+                  "properties": {
+                    "uid": { "type": "keyword", "fields": { "text": { "type": "text" } } }
+                  }
+                },
+                "container": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "restart_count": { "type": "keyword" }
+                  }
+                },
+                "cronjob": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } }
+                  }
+                },
+                "daemonset": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "uid": { "type": "keyword" }
+                  }
+                },
+                "deployment": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "uid": { "type": "keyword" }
+                  }
+                },
+                "job": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "uid": { "type": "keyword" }
+                  }
+                },
+                "namespace": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } }
+                  }
+                },
+                "node": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "uid": { "type": "keyword" }
+                  }
+                },
+                "object": {
+                  "properties": {
+                    "api_version": { "type": "keyword" },
+                    "fieldpath": { "type": "keyword" },
+                    "kind": { "type": "keyword" },
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "resource_version": { "type": "keyword" },
+                    "uid": { "type": "keyword" }
+                  }
+                },
+                "pod": {
+                  "properties": {
+                    "ip": { "type": "keyword" },
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "start_time": { "type": "date" },
+                    "uid": { "type": "keyword" }
+                  }
+                },
+                "replicaset": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "uid": { "type": "keyword" }
+                  }
+                },
+                "statefulset": {
+                  "properties": {
+                    "name": { "type": "keyword", "fields": { "text": { "type": "text" } } },
+                    "uid": { "type": "keyword" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "aliases": {
       "_DS_NAME_-ds": {}
