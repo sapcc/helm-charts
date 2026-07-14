@@ -15,7 +15,7 @@
                             "delay": "1m"
                         },
                         "rollover": {
-                            "min_primary_shard_size": "25gb",
+                            "min_primary_shard_size": "{{ .Values.global.data_stream.logs.min_size }}",
                             "min_index_age": "7d"
                         }
                     }
