@@ -326,6 +326,7 @@ cronus:
 {{- end }}
 {{- if .Values.hermes }}
   auditSink:
+    enabled: {{ .Values.config.cronusAuditSink.enabled | default false }}
     queueName: {{ .Values.config.cronusAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}
