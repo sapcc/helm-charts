@@ -5,9 +5,9 @@ input {
   }
 }
 filter {
-  if [type] == "esxi" and "FIREWALL_PKTLOG" in [message] {
+  if [type] == "esxi" and "FIREWALL-PKTLOG" in [message] {
     grok {
-      match => { "message" => "<%{POSINT:syslog_pri}>%{TIMESTAMP_ISO8601:timestamp}.%{IPORHOST}.FIREWALL_PKTLOG:.%{WORD:target_suffix}.%{WORD:af_value}.%{GREEDYDATA:message}" }
+      match => { "message" => "<%{POSINT:syslog_pri}>%{TIMESTAMP_ISO8601:timestamp}.%{IPORHOST}.FIREWALL-PKTLOG:.%{WORD:target_suffix}.%{WORD:af_value}.%{GREEDYDATA:message}" }
       overwrite => [ "message" ]
     }
     grok {
