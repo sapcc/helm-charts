@@ -25,6 +25,14 @@ gha-runner-scale-set:
   # https://docs.github.com/en/enterprise-server@3.11/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/about-actions-runner-controller#creating-your-own-runner-image
   template:
     spec:
+      # Container jobs run as the job image's uid (1000 here). Run the runner as
+      # the same uid so files it checks out/creates are owned by 1000 — otherwise
+      # actions/checkout hits EACCES on /__w/_temp and git reports "dubious
+      # ownership" on the checked-out repo. supplementalGroups keeps access to the
+      # dind docker socket (group 123); fsGroup owns the shared work volume as 1000.
+      securityContext:
+        fsGroup: 1000
+        supplementalGroups: [123]
       initContainers:
         - name: init-dind-externals
           image: ghcr.io/actions/actions-runner:latest
@@ -37,6 +45,9 @@ gha-runner-scale-set:
         - name: runner
           image: keppel.eu-de-1.cloud.sap/ccloud/actions-runner-ccloud:latest
           command: ["/home/runner/run.sh"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: DOCKER_HOST
               value: unix:///run/docker/docker.sock
@@ -59,6 +70,7 @@ gha-runner-scale-set:
               value: "123"
           securityContext:
             privileged: true
+            runAsUser: 0
           volumeMounts:
             - name: work
               mountPath: /home/runner/_work
@@ -82,6 +94,14 @@ gha-runner-scale-set-pci-codechecking-tests:
   # https://docs.github.com/en/enterprise-server@3.11/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/about-actions-runner-controller#creating-your-own-runner-image
   template:
     spec:
+      # Container jobs run as the job image's uid (1000 here). Run the runner as
+      # the same uid so files it checks out/creates are owned by 1000 — otherwise
+      # actions/checkout hits EACCES on /__w/_temp and git reports "dubious
+      # ownership" on the checked-out repo. supplementalGroups keeps access to the
+      # dind docker socket (group 123); fsGroup owns the shared work volume as 1000.
+      securityContext:
+        fsGroup: 1000
+        supplementalGroups: [123]
       initContainers:
         - name: init-dind-externals
           image: ghcr.io/actions/actions-runner:latest
@@ -94,6 +114,9 @@ gha-runner-scale-set-pci-codechecking-tests:
         - name: runner
           image: keppel.eu-de-1.cloud.sap/ccloud/actions-runner-ccloud:latest
           command: ["/home/runner/run.sh"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: DOCKER_HOST
               value: unix:///run/docker/docker.sock
@@ -116,6 +139,7 @@ gha-runner-scale-set-pci-codechecking-tests:
               value: "123"
           securityContext:
             privileged: true
+            runAsUser: 0
           volumeMounts:
             - name: work
               mountPath: /home/runner/_work
@@ -139,6 +163,14 @@ gha-runner-scale-set-tg17:
   # https://docs.github.com/en/enterprise-server@3.11/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/about-actions-runner-controller#creating-your-own-runner-image
   template:
     spec:
+      # Container jobs run as the job image's uid (1000 here). Run the runner as
+      # the same uid so files it checks out/creates are owned by 1000 — otherwise
+      # actions/checkout hits EACCES on /__w/_temp and git reports "dubious
+      # ownership" on the checked-out repo. supplementalGroups keeps access to the
+      # dind docker socket (group 123); fsGroup owns the shared work volume as 1000.
+      securityContext:
+        fsGroup: 1000
+        supplementalGroups: [123]
       initContainers:
         - name: init-dind-externals
           image: ghcr.io/actions/actions-runner:latest
@@ -151,6 +183,9 @@ gha-runner-scale-set-tg17:
         - name: runner
           image: keppel.eu-de-1.cloud.sap/ccloud/actions-runner-ccloud:latest
           command: ["/home/runner/run.sh"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: DOCKER_HOST
               value: unix:///run/docker/docker.sock
@@ -175,6 +210,7 @@ gha-runner-scale-set-tg17:
               value: "123"
           securityContext:
             privileged: true
+            runAsUser: 0
           volumeMounts:
             - name: work
               mountPath: /home/runner/_work
@@ -197,6 +233,14 @@ gha-runner-scale-set-isg:
   # https://docs.github.com/en/enterprise-server@3.11/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/about-actions-runner-controller#creating-your-own-runner-image
   template:
     spec:
+      # Container jobs run as the job image's uid (1000 here). Run the runner as
+      # the same uid so files it checks out/creates are owned by 1000 — otherwise
+      # actions/checkout hits EACCES on /__w/_temp and git reports "dubious
+      # ownership" on the checked-out repo. supplementalGroups keeps access to the
+      # dind docker socket (group 123); fsGroup owns the shared work volume as 1000.
+      securityContext:
+        fsGroup: 1000
+        supplementalGroups: [123]
       initContainers:
         - name: init-dind-externals
           image: ghcr.io/actions/actions-runner:latest
@@ -209,6 +253,9 @@ gha-runner-scale-set-isg:
         - name: runner
           image: keppel.eu-de-1.cloud.sap/ccloud/actions-runner-ccloud:latest
           command: ["/home/runner/run.sh"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: DOCKER_HOST
               value: unix:///run/docker/docker.sock
@@ -231,6 +278,7 @@ gha-runner-scale-set-isg:
               value: "123"
           securityContext:
             privileged: true
+            runAsUser: 0
           volumeMounts:
             - name: work
               mountPath: /home/runner/_work
@@ -253,6 +301,14 @@ gha-runner-scale-set-sci:
   # https://docs.github.com/en/enterprise-server@3.11/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/about-actions-runner-controller#creating-your-own-runner-image
   template:
     spec:
+      # Container jobs run as the job image's uid (1000 here). Run the runner as
+      # the same uid so files it checks out/creates are owned by 1000 — otherwise
+      # actions/checkout hits EACCES on /__w/_temp and git reports "dubious
+      # ownership" on the checked-out repo. supplementalGroups keeps access to the
+      # dind docker socket (group 123); fsGroup owns the shared work volume as 1000.
+      securityContext:
+        fsGroup: 1000
+        supplementalGroups: [123]
       initContainers:
         - name: init-dind-externals
           image: ghcr.io/actions/actions-runner:latest
@@ -265,6 +321,9 @@ gha-runner-scale-set-sci:
         - name: runner
           image: keppel.eu-de-1.cloud.sap/ccloud/actions-runner-ccloud:latest
           command: ["/home/runner/run.sh"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: DOCKER_HOST
               value: unix:///run/docker/docker.sock
@@ -287,6 +346,7 @@ gha-runner-scale-set-sci:
               value: "123"
           securityContext:
             privileged: true
+            runAsUser: 0
           volumeMounts:
             - name: work
               mountPath: /home/runner/_work
@@ -309,6 +369,14 @@ gha-runner-scale-set-plusone:
   # https://docs.github.com/en/enterprise-server@3.11/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/about-actions-runner-controller#creating-your-own-runner-image
   template:
     spec:
+      # Container jobs run as the job image's uid (1000 here). Run the runner as
+      # the same uid so files it checks out/creates are owned by 1000 — otherwise
+      # actions/checkout hits EACCES on /__w/_temp and git reports "dubious
+      # ownership" on the checked-out repo. supplementalGroups keeps access to the
+      # dind docker socket (group 123); fsGroup owns the shared work volume as 1000.
+      securityContext:
+        fsGroup: 1000
+        supplementalGroups: [123]
       initContainers:
         - name: init-dind-externals
           image: ghcr.io/actions/actions-runner:latest
@@ -321,6 +389,9 @@ gha-runner-scale-set-plusone:
         - name: runner
           image: keppel.eu-de-1.cloud.sap/ccloud/actions-runner-ccloud:latest
           command: ["/home/runner/run.sh"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: DOCKER_HOST
               value: unix:///run/docker/docker.sock
@@ -343,6 +414,7 @@ gha-runner-scale-set-plusone:
               value: "123"
           securityContext:
             privileged: true
+            runAsUser: 0
           volumeMounts:
             - name: work
               mountPath: /home/runner/_work
