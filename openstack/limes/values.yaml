@@ -151,6 +151,8 @@ postgresql:
     limes: {}
   sharedMemoryLimit: 128Mi
 
+  priorityClassName: important-payload
+
   config:
     log_min_duration_statement: 250
     # less than the postgresql chart's default; I want to know early when connections start getting out of hand
@@ -221,7 +223,7 @@ pgmetrics:
             FROM project_az_resources pazr
             JOIN az_resources azr ON azr.id = pazr.az_resource_id
             JOIN resources r ON r.id = azr.resource_id
-            WHERE azr.az = 'total' 
+            WHERE azr.az = 'total'
               AND pazr.usage > pazr.quota
               AND NOT (r.path = 'swift/capacity' AND pazr.usage < pazr.quota + 1099511627776)
           metrics:
