@@ -52,6 +52,10 @@ spec:
       tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
 
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+
       initContainers:
       - name: generate-secrets
         image: "{{ include "postgresql-ng.shared-app-images.ref" (tuple . "alpine-kubectl" "latest") }}"
