@@ -430,9 +430,6 @@ dbName: ironic
 max_pool_size: 1
 max_overflow: 50
 
-sentry:
-  enabled: true
-
 rabbitmq:
   name: ironic
   persistence:
@@ -449,6 +446,10 @@ rabbitmq:
     sidecar:
       enabled: false
 
+# use sentry via openstack/utils
+sentry:
+  enabled: true
+
 logging:
   formatters:
     context:
@@ -458,22 +459,26 @@ logging:
       class: StreamHandler
       args: "(sys.stdout,)"
       formatter: context
-    sentry:
-      class: sapcc_sentrylogger.handler.SentryEventHandler
+    sentry_events:
+      class: "sapcc_sentrylogger.handler.EventHandler"
       level: ERROR
+      args: "()"
+    sentry_breadcrumbs:
+      class: "sapcc_sentrylogger.handler.BreadcrumbHandler"
+      level: INFO
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: WARNING
     ironic:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
     auditmiddleware:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
 
 memcached:

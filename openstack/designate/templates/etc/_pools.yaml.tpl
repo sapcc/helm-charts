@@ -44,6 +44,9 @@
 {{- range $pool := .Values.catz_pools }}
 - name: {{ $pool.name }}
   description: Catz Pool
+  {{- with $pool.domain_id }}
+  domain_id: {{ . }}
+  {{- end }}
   {{- if $pool.attributes}}
   attributes:
    {{- range $attr := $pool.attributes}}

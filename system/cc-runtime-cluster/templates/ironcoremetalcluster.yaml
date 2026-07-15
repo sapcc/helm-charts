@@ -1,10 +1,15 @@
+{{- range $cluster := .Values.clusters }}
+{{ $apiserver := printf "apiserver.runtime.%s.cloud.sap" (default $.Values.global.region $cluster.region) }}
+---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: IroncoreMetalCluster
 metadata:
-  name: metalcluster-rt-{{ .Values.global.region }}
+  name: metalcluster-{{ $cluster.name }}
+  namespace: {{ $cluster.namespace }}
 spec:
   controlPlaneEndpoint:
-    host: {{ .Values.controlplane.address }}
-    port: {{ .Values.controlplane.port }}
+    host: {{ $apiserver }}
+    port: {{ $.Values.controlplane.port }}
   clusterNetwork:
-    apiServerPort: {{ .Values.controlplane.port }}
+    apiServerPort: {{ $.Values.controlplane.port }}
+{{- end }}

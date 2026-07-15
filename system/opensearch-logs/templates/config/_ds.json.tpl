@@ -31,7 +31,37 @@
             }
           }
         }
-      ]
+      ],
+      "properties": {
+        "resource": {
+          "properties": {
+            "k8s": {
+              "properties": {
+                "pod": {
+                  "properties": {
+                    "name": {
+                      "type": "keyword",
+                      "fields": {
+                        "text": { "type": "text" }
+                      }
+                    }
+                  }
+                },
+                "container": {
+                  "properties": {
+                    "name": {
+                      "type": "keyword",
+                      "fields": {
+                        "text": { "type": "text" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "aliases": {
       "_DS_NAME_-ds": {}

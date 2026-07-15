@@ -20,7 +20,7 @@ spec:
         linkerd.io/inject: enabled
         {{- end }}
         kubectl.kubernetes.io/default-container: "api"
-        secret.reloader.stakater.com/reload: "api-conf,hermes-es-api"
+        secret.reloader.stakater.com/reload: "api-conf,hermes-es-api,hermes-audit-rabbitmq,{{ .Release.Name }}-pguser-hermes"
         deployment.reloader.stakater.com/pause-period: "60s"
     spec:
       volumes:
@@ -50,6 +50,44 @@ spec:
                 secretKeyRef:
                   name: hermes-es-api
                   key: HERMES_ES_PASSWORD
+            # Postgres connection for the dataplane_config table.
+            # hermes runs migrations on startup and serves the v1/dataplane-config API.
+            # The Service name is <release>-postgresql regardless of the subchart
+            # alias (postgresql-ng's postgres.fullname strips the alias).
+            - name: HERMES_PG_HOSTNAME
+              value: '{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc'
+            - name: HERMES_PG_PORT
+              value: '5432'
+            - name: HERMES_PG_CONNECTION_OPTIONS
+              value: 'sslmode=disable'
+            - name: HERMES_PG_USERNAME
+              value: 'hermes'
+            - name: HERMES_PG_DBNAME
+              value: 'hermes'
+            - name: HERMES_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Release.Name }}-pguser-hermes'
+                  key: postgres-password
+            # Auditor for PUT/DELETE dataplane-config operations.
+            # When the credentials secret renders empty user/password (dev default),
+            # hermez logs the auth failure and falls back to a null auditor.
+            - name: HERMES_AUDIT_RABBITMQ_HOSTNAME
+              value: '{{ tpl .Values.hermes.audit.rabbitmq.hostname . }}'
+            - name: HERMES_AUDIT_RABBITMQ_PORT
+              value: '{{ .Values.hermes.audit.rabbitmq.port | default 5672 }}'
+            - name: HERMES_AUDIT_RABBITMQ_QUEUE_NAME
+              value: '{{ .Values.hermes.audit.rabbitmq.queue_name | default "notifications.info" }}'
+            - name: HERMES_AUDIT_RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-audit-rabbitmq
+                  key: username
+            - name: HERMES_AUDIT_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-audit-rabbitmq
+                  key: password
           volumeMounts:
             - mountPath: "/etc/hermes"
               name: config

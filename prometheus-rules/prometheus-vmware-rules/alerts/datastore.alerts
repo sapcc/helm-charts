@@ -322,6 +322,21 @@ groups:
       description: "There is no or incorrect Cinder tag present for the `{{ $labels.datastore }}` NFS SSD datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "Wrong or missing tag on `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}*"
 
+  - alert: CinderTagMissingForHDDDatastoreNFS
+    expr: |
+      vrops_datastore_summary_tag{type="nfs", datastore=~"nfs_.*std_ds.*", summary_tag!="[{\"category\":\"cinder\",\"name\":\"fcd-std\"}]"}
+    for: 1h
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "There is no or incorrect Cinder tag present for the `{{ $labels.datastore }}` NFS HDD datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/support/playbook/cinder/cinder-tag-missing
+    annotations:
+      description: "There is no or incorrect Cinder tag present for the `{{ $labels.datastore }}` NFS HDD datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "Wrong or missing tag on `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}*"
+
   - alert: CinderTagAddedForReservedDatastore
     expr: |
       vrops_datastore_summary_custom_tag_cinder_state{type=~"(vmfs_s_hdd|vmfs_p_ssd)", summary_custom_tag_cinder_state="reserved"} > 0
@@ -481,3 +496,34 @@ groups:
     annotations:
       description: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
+  - alert: DatastoreCinderAggregateIDCountMismatch
+    expr: |
+      topk(1,
+        max by (datacenter, vcenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+          vrops_datastore_summary_custom_tag_cinder_aggregate_id{summary_custom_tag_cinder_aggregate_id!=""}
+          and on (datacenter, summary_custom_tag_cinder_aggregate_id) (
+            count by (datacenter, summary_custom_tag_cinder_aggregate_id) (
+              vrops_datastore_summary_custom_tag_cinder_aggregate_id{summary_custom_tag_cinder_aggregate_id!=""}
+            )
+            <
+            on (datacenter) group_left
+            count by (datacenter) (
+              count by (datacenter, vcenter) (
+                vrops_datastore_summary_custom_tag_cinder_aggregate_id{summary_custom_tag_cinder_aggregate_id!=""}
+              )
+            )
+          )
+        )
+      ) by (datacenter, summary_custom_tag_cinder_aggregate_id)
+    for: 30m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "Datastore `{{ $labels.datastore }}` uses cinder_aggregate_id `{{ $labels.summary_custom_tag_cinder_aggregate_id }}` which appears on fewer datastores than the number of vCenters in *{{ $labels.datacenter }}* — possible misconfiguration of aggregate_id.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: https://operations.global.cloud.sap/docs/support/playbook/cinder/cinder-fcd-operations/#DatastoreCinderAggregateIDCountMismatch
+    annotations:
+      description: "Datastore `{{ $labels.datastore }}` uses cinder_aggregate_id `{{ $labels.summary_custom_tag_cinder_aggregate_id }}` which appears on fewer datastores than the number of vCenters in *{{ $labels.datacenter }}* availability zone — possible misconfiguration of aggregate_id.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "cinder_aggregate_id `{{ $labels.summary_custom_tag_cinder_aggregate_id }}` count mismatch in *{{ $labels.datacenter }}* (datastore: `{{ $labels.datastore }}`)"

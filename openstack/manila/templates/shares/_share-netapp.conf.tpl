@@ -101,6 +101,9 @@ netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 # SAP default: 6 years (we refresh the hardware earlier than that). Upstream default is 1 year
 netapp_security_cert_expire_days = 2190
 
+# enables cifs security aes encryption and sets types aes-128 and aes-256. Manila default is "False", but SAP default is "True"
+netapp_cifs_aes_encryption = {{ $share.cifs_aes_encryption | default "True" }}
+
 # The percentage of backend capacity reserved. Default 0 (integer value)
 
 {{- if eq 100 (int $share.reserved_share_percentage)}}

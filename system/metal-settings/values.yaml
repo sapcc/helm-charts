@@ -127,6 +127,15 @@ clusterConfig:
 #   - HPE: "hpe-ilo.yaml" (shared by all HPE models)
 #   - Lenovo: "lenovo-xcc.yaml" (shared by all Lenovo models)
 #
+# SETTINGS CONTENT SOURCES (settingsFileName vs settingsContent):
+#   - settingsFileName: References a file in bios_settings/ or bmc_settings/ bundled with the chart.
+#                      Used for shared, stable settings across all regions.
+#   - settingsContent: Inline YAML string provided via values (e.g., in kube-secrets overrides).
+#                      Used for region-specific or node-specific settings overrides.
+#                      When both are present, settingsContent takes precedence.
+#                      Use YAML anchors (&name) to define content once and reference (*name) multiple times
+#                      to avoid duplication in region-specific values files.
+#
 # Map keys: use the hardware model name as the key (e.g., poweredge-r640).
 # For models that need multiple entries (different clusterTypes/settings), use a descriptive
 # suffix as the key (e.g., proliant-dl560-gen11-kvm) and set model: explicitly inside the
@@ -154,6 +163,9 @@ machines:
           version: "2.22.2"
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/BIOS_F8GPH_WN64_2.22.2.EXE"
+          # For BIOS settings, choose ONE of:
+          # 1) settingsFileName: reference a file in bios_settings/ (recommended for shared settings)
+          # 2) settingsContent: inline YAML string (recommended for specific overrides)
           # Optional params for BIOSSettingsSet of this entry:
           # settingsParams:
           #   serverFilter:
@@ -170,6 +182,9 @@ machines:
           version: "7.00.00.183"
           settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+          # For BMC settings, choose ONE of:
+          # 1) settingsFileName: reference a file in bmc_settings/ (recommended for shared settings)
+          # 2) settingsContent: inline YAML string (recommended for specific overrides)
           # Optional params for BMCSettingsSet of this entry:
           # settingsParams:
           #   serverFilter:
@@ -199,13 +214,13 @@ machines:
         model: poweredge-r6715
         clusterTypes: *defaultClusterTypes
         bios:
-          version: "1.3.3"
-          settingsFileName: dell-default.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r6715/BIOS_N2K66_WN64_1.3.3_01.EXE"
+          version: "1.5.3"
+          settingsFileName: dell-r6715.yaml
+          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r6715/BIOS_X09CV_WN64_1.5.3_01.EXE"
         bmc:
-          version: "1.20.60.50"
-          settingsFileName: dell-default.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r6715/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
+          version: "1.30.10.50"
+          settingsFileName: dell-r6715.yaml
+          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r6715/iDRAC-with-Lifecycle-Controller_Firmware_YP95X_WN64_1.30.10.50_A00.EXE"
 
       poweredge-r740:
         model: poweredge-r740
@@ -260,11 +275,11 @@ machines:
         clusterTypes: *defaultClusterTypes
         bios:
           version: "1.4.4"
-          settingsFileName: dell-default.yaml
+          settingsFileName: dell-r770.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r770/BIOS_7J20R_WN64_1.4.4.EXE"
         bmc:
           version: "1.20.60.50"
-          settingsFileName: dell-default.yaml
+          settingsFileName: dell-r770.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r770/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
 
       poweredge-r7715:
@@ -295,13 +310,13 @@ machines:
         model: poweredge-r860
         clusterTypes: *defaultClusterTypes
         bios:
-          version: "2.4.4"
-          settingsFileName: dell-default.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r860/BIOS_PJYMD_WN64_2.4.4_02.EXE"
+          version: "2.9.4"
+          settingsFileName: dell-r860-kvm.yaml
+          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r860/BIOS_457WM_WN64_2.9.4.EXE"
         bmc:
-          version: "7.20.60.50"
+          version: "7.30.10.50"
           settingsFileName: dell-default.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r860/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r860/iDRAC-with-Lifecycle-Controller_Firmware_924YT_WN64_7.30.10.50_A00.EXE"
 
       poweredge-xe9680:
         model: poweredge-xe9680

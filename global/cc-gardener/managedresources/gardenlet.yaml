@@ -18,10 +18,12 @@ spec:
 {{- if and $.Values.gardenlet.image $.Values.gardenlet.image.repository }}
       repository: {{ $.Values.gardenlet.image.repository }}
 {{- end }}
+# set global gardner tag value
+{{- $gardenerTag := $.Values.operator.image.tag | default $.Chart.AppVersion }}
 {{- if and $.Values.gardenlet.image $.Values.gardenlet.image.tag }}
       tag: {{ $.Values.gardenlet.image.tag }}
 {{- else }}
-      tag: {{ $.Chart.AppVersion }}
+      tag: {{ $gardenerTag }}
 {{- end }}
     imageVectorOverwrite: |
 {{ $.Values.operator.imageVectorOverwrite | indent 6 }}
@@ -31,7 +33,7 @@ spec:
       networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
     helm:
       ociRepository:
-{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" $.Values.gardenlet.helm.ociRepository "fallbackTag" $.Chart.AppVersion) | indent 8 }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" $.Values.gardenlet.helm.ociRepository "fallbackTag" $gardenerTag) | indent 8 }}
   config:
     gardenClientConnection:
       kubeconfigSecret:

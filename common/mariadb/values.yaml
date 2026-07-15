@@ -221,9 +221,10 @@ credentialUpdater:
 
 backup_v2:
   enabled: false
+  cohost_with_mariadb: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "10.11-20260611113653"
+  image_version: "10.11-20260706142324"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -237,6 +238,30 @@ backup_v2:
     enabled: false
     force_path_style: true
     verify: false
+    # Ceph S3 targets:
+    # NOTE: this configuration lives under global.mariadb.backup_v2.ceph_s3.targets
+    #   - name: ceph-eu-de-1-cold               # optional, defaults to ceph-<region>
+    #     endpoint: "https://..."               # required
+    #     aws_access_key_id: vault+kvv2:...     # required
+    #     aws_secret_access_key: vault+kvv2:... # required
+    #     region: eu-de-1                       # optional, defaults to global.region
+    #     bucket_name: mariadb-backup-eu-de-2   # optional, defaults to mariadb-backup-<global.region>
+    #     force_path_style: true                # optional, inherits chart-local default
+    #     verify: false                         # optional, inherits chart-local default
+    #     object_lock: {...}                    # optional, see backup_v2.object_lock below
+  # Default S3 object-lock settings applied to every S3 target unless overridden.
+  # Per-target overrides (per-field; omit a field to inherit the default below):
+  #   AWS:  global.mariadb.backup_v2.aws.object_lock
+  #   Ceph: global.mariadb.backup_v2.ceph_s3.targets[].object_lock
+  # Example per-target block:
+  #   object_lock:
+  #     enabled: true
+  #     lock_mode: COMPLIANCE   # or GOVERNANCE
+  #     retention_days: 7
+  object_lock:
+    enabled: false
+    lock_mode: COMPLIANCE # or GOVERNANCE
+    retention_days: 7
   swift:
     enabled: true
     user_name: db_backup

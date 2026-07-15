@@ -34,8 +34,6 @@ spec:
             - project: service
               role:    service
             - project: service
-              role:    admin          # for keppel-health-monitor (creating a Keppel account includes creating role assignments)
-            - project: service
               role:    registry_admin # for keppel-health-monitor
         {{- if eq $region "qa-de-1" }}
         - name: keppel_e2e
@@ -68,6 +66,19 @@ spec:
             - project: service
               role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
         {{- end }}
+      {{- if ne .Values.keppel.driver "swift" }}{{/* TODO: seed Ceph account in this project (TODO: how?) */}}
+      projects:
+        - name: keppel-payloads
+          role_assignments:
+            - user: keppel@Default
+              role: service           # to validate users' Keystone tokens
+            - user: keppel@Default
+              role: objectstore_admin # to read/write objects (blobs, manifests, reports) in this project's Ceph account
+            {{- if eq .Values.keppel.driver "both" }}
+            - user: keppel@Default
+              role: cloud_objectstore_admin # to read/write objects (blobs, manifests, reports) in customers' Swift accounts
+            {{- end }}
+      {{- end }}
 
     - name: ccadmin
       groups:
@@ -97,11 +108,13 @@ spec:
         {{- end }}
       projects:
         - name: cloud_admin
+          {{- if ne .Values.keppel.driver "ceph" }}
           role_assignments:
             - user: keppel@Default
               role: service       # to validate users' Keystone tokens
             - user: keppel@Default
               role: cloud_objectstore_admin # to read/write blobs and manifests from/into customer's Swift accounts
+          {{- end }}
         - name: master
           role_assignments:
             - user: keppel@Default

@@ -2,6 +2,25 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.6 - 2026/07/13
+
+- Fix volume-permission container failing on fresh PVCs. Only was working if `.erlang.cookie` was existing. 
+- Chart version bumped
+
+## 0.25.5 - 2026/07/02
+
+- RabbitMQ [4.3.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.2)
+- `rabbitmq-user-credential-updater` updated to `20260630105135` version
+- Chart version bumped
+
+## 0.25.4 - 2026/07/01
+
+- Fix `projectcalico.org/loadBalancerIPs` annotation needing JSON as value
+
+## 0.25.3 - 2026/07/01
+
+- Set `projectcalico.org/loadBalancerIPs` annotation to `externalIPs`' values to support newer, Gardener-based clusters
+
 ## 0.25.2 - 2026/06/03
 
 - `rabbitmq-user-credential-updater` updated to `20260521084806` version

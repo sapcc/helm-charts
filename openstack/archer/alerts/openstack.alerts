@@ -7,9 +7,10 @@ groups:
     labels:
       context: availability
       service: archer
-      severity: warning
+      severity: critical
       tier: os
       support_group: containers
+      playbook: docs/support/playbook/archer/alerts/archer-failed-pending-sync
     annotations:
       description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
       summary: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
@@ -39,3 +40,25 @@ groups:
     annotations:
       description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed health scrape loops > 5m.'
       summary: 'Archer agent for {{ $labels.cloud_sap_host }} has health scrape failures.'
+
+  # SLO: availability >= 99.90% (error budget 0.10%).
+  # Page when the 1h error rate burns the budget more than 2x faster than allowed,
+  # i.e. error rate > 2 * 0.001 = 0.002 (0.2%) sustained over 1h.
+  - alert: archer-slo-error-budget-burn
+    expr: |
+      (
+        sum(rate(http_requests_total{ccloud_service="archer",code=~"5.."}[1h]))
+        /
+        sum(rate(http_requests_total{ccloud_service="archer"}[1h]))
+      ) > (2 * 0.001)
+    for: 5m
+    labels:
+      context: api
+      service: archer
+      severity: critical
+      tier: os
+      support_group: containers
+      playbook: docs/support/playbook/archer/alerts/archer-slo-error-budget-burn
+    annotations:
+      description: 'Archer API is burning its 99.90% availability SLO error budget at more than 2x the allowed rate over the last 1h.'
+      summary: 'Archer SLO error budget burn rate > 2x over 1h.'

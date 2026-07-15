@@ -18,7 +18,7 @@ input {
     tags => ["audit"]
     user => '${AUDIT_HTTP_USER}'
     password => '${AUDIT_HTTP_PWD}'
-{{ if eq .Values.global.clusterType "metal" -}}
+{{ if ne .Values.global.clusterType "scaleout" -}}
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
@@ -213,19 +213,6 @@ filter {
             split {
               field => "items"
           }
-          # ---- clean managedFields ----
-          ruby {
-            code => '
-              mf = event.get("[requestObject][managedFields]")
-              if mf.is_a?(Array)
-                mf.each do |entry|
-                  entry.delete(".") if entry.is_a?(Hash)
-                end
-              elsif mf.is_a?(Hash)
-                mf.delete(".")
-              end
-            '
-          }
 
           if [items][annotations][shoot.gardener.cloud/name] {
             grok {
@@ -247,6 +234,41 @@ filter {
                           event.remove("items")
                 '
          }
+
+          # ---- remove managedFields entirely (contains dot-only keys that ES rejects) ----
+          # Must be AFTER items flatten so the field paths are correct
+          mutate {
+            remove_field => [
+              "[requestObject][metadata][managedFields]",
+              "[responseObject][metadata][managedFields]"
+            ]
+          }
+
+          # ---- fix responseObject.status type conflict ----
+          # When responseObject is a K8s Status (error response), the "status" field
+          # is a string ("Failure"/"Success") which conflicts with the object mapping
+          # from Shoot resources where status is a complex object.
+          if [responseObject][kind] == "Status" {
+            mutate {
+              rename => { "[responseObject][status]" => "[responseObject][statusText]" }
+            }
+          }
+          if [responseStatus][status] {
+            mutate {
+              rename => { "[responseStatus][status]" => "[responseStatus][statusText]" }
+            }
+          }
+
+          # ---- use API server timestamp for correct event ordering ----
+          # requestReceivedTimestamp is when the API server received the request,
+          # which is the authoritative "when did this happen" time.
+          # Without this, @timestamp reflects batching/forwarding time which
+          # causes events from different API servers to appear out of order.
+          date {
+            match => ["requestReceivedTimestamp", "ISO8601"]
+            target => "@timestamp"
+            tag_on_failure => ["_dateparsefailure_requestReceivedTimestamp"]
+          }
         }
       }
 

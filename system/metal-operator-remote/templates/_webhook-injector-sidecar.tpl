@@ -3,23 +3,21 @@
   restartPolicy: Always
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
-    - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
-    - --leader-election-id=metal-operator-remote-webhook-injector-leader
-    - --cert-secret-name=metal-operator-remote-cert-secret-name
-    - --webhook-label=metal-operator-remote-webhook-injector=true
-    - --cert-sans=metal-operator-remote-webhook-service
-    - --admission-webhook-name=metal-operator-webhook-injector-mutator
-    - --external-host=metal-operator-remote-webhook-service
-    - --external-port=443
-    - --admission-external-port=444
+    - "--webhook-config-name=metal-operator-remote-webhook-config"
+    - "--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig"
+    - "--leader-election-id=metal-operator-remote-webhook-injector-leader"
+    - "--cert-secret-name=metal-operator-remote-cert-secret"
+    - "--cert-sans=metal-operator-remote-webhook-service"
+    - "--managed-resource-label=metal-operator-remote-webhook-injector=true"
+    - "--external-host=metal-operator-remote-webhook-service"
+    - "--external-port=443"
+    - "--rotation-overlap-window=30s"
+    - "--rotation-gate-timeout=30s"
   ports:
     - name: metrics
       containerPort: 8082
     - name: health
       containerPort: 8083
-    - name: admission
-      containerPort: 9444
-      protocol: TCP
   securityContext:
     {{- toYaml .Values.controllerManager.manager.podSecurityContext | nindent 4 }}
   resources:

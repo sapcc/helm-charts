@@ -121,4 +121,14 @@ security_analytics_full_access:
   - "securityanalytics"
   backend_roles:
   - VAULT_QA_ROLE_CYBER-SECURITY_METADATA_READ
+
+alerting_full_access:
+  reserved: false
+  users:
+  - "securityanalytics"
+
+siem_terraform_operator:
+  reserved: false
+  users:
+  - "securityanalytics"
 {{- end }}
