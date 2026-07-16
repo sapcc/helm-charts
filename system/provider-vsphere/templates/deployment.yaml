@@ -23,6 +23,18 @@ spec:
       containers:
       - args: {{- toYaml .Values.controllerManager.manager.args | nindent 8 }}
         env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag
@@ -50,6 +62,7 @@ spec:
         resources: {}
         securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
           | nindent 10 }}
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
@@ -57,16 +70,14 @@ spec:
         - mountPath: /etc/capv
           name: manager-bootstrap-credentials
           readOnly: true
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+      nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
+      securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
+        8 }}
+      serviceAccountName: {{ include "provider-vsphere.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
-      tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
+      tolerations: {{- toYaml .Values.controllerManager.tolerations | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.controllerManager.topologySpreadConstraints
+        | nindent 8 }}
       volumes:
       - name: cert
         secret:

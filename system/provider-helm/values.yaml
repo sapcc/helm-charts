@@ -24,15 +24,16 @@ controllerManager:
       xdgStateHome: /tmp/xdg/.state
     image:
       repository: gcr.io/k8s-staging-cluster-api-helm/cluster-api-helm-controller
-      tag: v0.4.1
+      tag: v0.6.4
     imagePullPolicy: Always
+  nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
-  serviceAccount:
-    annotations: {}
+  tolerations: []
+  topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
 managerConfig:
   controllerManagerConfigYaml: |-
@@ -54,6 +55,11 @@ metricsService:
       protocol: TCP
       targetPort: 8443
   type: ClusterIP
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
 webhookService:
   ports:
     - port: 443

@@ -5,8 +5,8 @@ controllerManager:
       - --diagnostics-address=:8443
       - --insecure-diagnostics=false
       - --v=4
-      - --enable-keep-alive
-      - --feature-gates=NodeAntiAffinity=false
+      - --feature-gates=MultiNetworks=false,NodeAntiAffinity=false,NamespaceScopedZones=false,NodeAutoPlacement=false,PriorityQueue=true,ReconcilerRateLimiting=true
+      - --vm-operator-api-version=v1alpha5
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -16,12 +16,28 @@ controllerManager:
       runAsUser: 65532
     image:
       repository: gcr.io/k8s-staging-capi-vsphere/cluster-api-vsphere-controller
-      tag: v1.9.3
-    imagePullPolicy: IfNotPresent
+      tag: v1.16.1
+    imagePullPolicy: Always
+  nodeSelector: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   replicas: 1
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+  topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
 managerBootstrapCredentials:
   credentialsYaml: ""
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
 webhookService:
   ports:
     - port: 443

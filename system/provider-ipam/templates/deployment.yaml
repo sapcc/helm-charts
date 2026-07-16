@@ -57,10 +57,14 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+      nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
-      serviceAccountName: {{ include "provider-ipam.fullname" . }}-controller-manager
+      serviceAccountName: {{ include "provider-ipam.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
+      tolerations: {{- toYaml .Values.controllerManager.tolerations | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.controllerManager.topologySpreadConstraints
+        | nindent 8 }}
       volumes:
       - name: cert
         secret:

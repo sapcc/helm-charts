@@ -1,9 +1,8 @@
 controllerManager:
   manager:
     args:
-      - --metrics-bind-address=:8443
-      - --leader-elect
-      - --health-probe-bind-address=:8081
+      - --leader-elect=false
+      - --webhook-port=9443
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -11,6 +10,9 @@ controllerManager:
           - ALL
       runAsGroup: 65532
       runAsUser: 65532
+    env:
+      kubeconfig: /var/run/remote-kubeconfig/kubeconfig
+      kubernetesServiceHost: apiserver-url
     image:
       repository: controller
       tag: cf12acd520aa203db28f21a326a61fddc9720b95
@@ -27,6 +29,8 @@ controllerManager:
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
+  strategy:
+    type: Recreate
   tolerations: []
   topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local

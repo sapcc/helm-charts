@@ -13,16 +13,10 @@ rules:
   - ""
   resources:
   - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
   - events
   - nodes
+  - secrets
+  - serviceaccounts
   verbs:
   - create
   - delete
@@ -35,6 +29,7 @@ rules:
   - ""
   resources:
   - configmaps/status
+  - persistentvolumeclaims/status
   verbs:
   - get
   - patch
@@ -42,13 +37,11 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - namespaces
+  - services
   verbs:
-  - create
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - ""
@@ -64,43 +57,48 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - persistentvolumeclaims/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - services/status
   verbs:
   - get
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resourceNames:
+  - providerserviceaccounts.vmware.infrastructure.cluster.x-k8s.io
+  - vsphereclusters.vmware.infrastructure.cluster.x-k8s.io
+  - vsphereclustertemplates.vmware.infrastructure.cluster.x-k8s.io
+  - vspheremachines.vmware.infrastructure.cluster.x-k8s.io
+  - vspheremachinetemplates.vmware.infrastructure.cluster.x-k8s.io
+  resources:
+  - customresourcedefinitions
+  - customresourcedefinitions/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resourceNames:
+  - vsphereclusteridentities.infrastructure.cluster.x-k8s.io
+  - vsphereclusters.infrastructure.cluster.x-k8s.io
+  - vsphereclustertemplates.infrastructure.cluster.x-k8s.io
+  - vspheredeploymentzones.infrastructure.cluster.x-k8s.io
+  - vspherefailuredomains.infrastructure.cluster.x-k8s.io
+  - vspheremachines.infrastructure.cluster.x-k8s.io
+  - vspheremachinetemplates.infrastructure.cluster.x-k8s.io
+  - vspherevms.infrastructure.cluster.x-k8s.io
+  resources:
+  - customresourcedefinitions
+  - customresourcedefinitions/status
+  verbs:
+  - patch
+  - update
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -118,22 +116,8 @@ rules:
   resources:
   - clusters
   - clusters/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cluster.x-k8s.io
-  resources:
   - machinedeployments
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cluster.x-k8s.io
-  resources:
-  - machinedeployments
+  - machines/status
   - machinesets
   verbs:
   - get
@@ -149,14 +133,6 @@ rules:
   - patch
   - watch
 - apiGroups:
-  - cluster.x-k8s.io
-  resources:
-  - machines/status
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - controlplane.cluster.x-k8s.io
   resources:
   - kubeadmcontrolplanes
@@ -165,25 +141,10 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
+  - crd.nsx.vmware.com
   resources:
-  - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - delete
-  - get
-  - list
-- apiGroups:
-  - ""
-  resources:
-  - secrets
+  - subnetsets
+  - subnetsets/status
   verbs:
   - create
   - delete
@@ -196,105 +157,10 @@ rules:
   - infrastructure.cluster.x-k8s.io
   resources:
   - vsphereclusteridentities
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - vsphereclusteridentities/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
   - vsphereclusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - vsphereclusters/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
   - vspheredeploymentzones
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - vspheredeploymentzones/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
   - vspherefailuredomains
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
   - vspheremachines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - vspheremachines/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - vspheremachinetemplates
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
   - vspherevms
   verbs:
   - create
@@ -307,11 +173,26 @@ rules:
 - apiGroups:
   - infrastructure.cluster.x-k8s.io
   resources:
+  - vsphereclusteridentities/status
+  - vsphereclusters/status
+  - vspheredeploymentzones/status
+  - vspheremachines/status
   - vspherevms/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - infrastructure.cluster.x-k8s.io
+  resources:
+  - vsphereclustertemplates
+  - vspheremachinetemplates
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - ipam.cluster.x-k8s.io
   resources:
@@ -356,14 +237,8 @@ rules:
   - topology.tanzu.vmware.com
   resources:
   - availabilityzones
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - topology.tanzu.vmware.com
-  resources:
   - availabilityzones/status
+  - zones
   verbs:
   - get
   - list
@@ -371,44 +246,22 @@ rules:
 - apiGroups:
   - vmoperator.vmware.com
   resources:
+  - clustervirtualmachineimages
+  - virtualmachineclasses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - vmoperator.vmware.com
+  resources:
+  - virtualmachinegroups
+  - virtualmachinegroups/status
   - virtualmachineimages
   - virtualmachineimages/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vmoperator.vmware.com
-  resources:
   - virtualmachines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vmoperator.vmware.com
-  resources:
   - virtualmachineservices
   - virtualmachineservices/status
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vmoperator.vmware.com
-  resources:
   - virtualmachinesetresourcepolicies
   - virtualmachinesetresourcepolicies/status
   verbs:
@@ -439,11 +292,16 @@ rules:
   verbs:
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - vmware.infrastructure.cluster.x-k8s.io
   resources:
   - providerserviceaccounts/status
+  - vsphereclusters/status
+  - vspheremachines/status
+  - vspheremachinetemplates/status
   verbs:
   - get
   - patch
@@ -452,57 +310,8 @@ rules:
   - vmware.infrastructure.cluster.x-k8s.io
   resources:
   - vsphereclusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vmware.infrastructure.cluster.x-k8s.io
-  resources:
-  - vsphereclusters/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vmware.infrastructure.cluster.x-k8s.io
-  resources:
   - vsphereclustertemplates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vmware.infrastructure.cluster.x-k8s.io
-  resources:
   - vspheremachines
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vmware.infrastructure.cluster.x-k8s.io
-  resources:
-  - vspheremachines/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vmware.infrastructure.cluster.x-k8s.io
-  resources:
   - vspheremachinetemplates
   verbs:
   - create
@@ -512,14 +321,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - vmware.infrastructure.cluster.x-k8s.io
-  resources:
-  - vspheremachinetemplates/status
-  verbs:
-  - get
-  - patch
-  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -534,5 +335,5 @@ roleRef:
   name: '{{ include "provider-vsphere.fullname" . }}-aggregated-manager-role'
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: '{{ include "provider-vsphere.serviceAccountName" . }}'
   namespace: '{{ .Release.Namespace }}'
