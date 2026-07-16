@@ -301,10 +301,10 @@ spec:
               - IsMatch(log.body, "^\\{.*\\}$")
             statements:
               # dogpile.cache hardcodes a 300-char key limit; truncation marker breaks ParseJSON
-              - replace_pattern(log.body, `\s+\.\.\.\s+\(\d+ characters truncated\)\s+\.\.\.\s+`, " [TRUNCATED] ") where IsMatch(log.body, `\s+\.\.\.\s+\(\d+ characters truncated\)\s+\.\.\.\s+`)
+              - 'replace_pattern(log.body, "[ \t\n\r]+[.][.][.][ \t\n\r]+[(][0-9]+ characters truncated[)][ \t\n\r]+[.][.][.][ \t\n\r]+", " [TRUNCATED] ") where IsMatch(log.body, "[ \t\n\r]+[.][.][.][ \t\n\r]+[(][0-9]+ characters truncated[)][ \t\n\r]+[.][.][.][ \t\n\r]+")'
               # dogpile.cache.region: args.keys and message contain the full cache key (Python repr), which breaks ParseJSON
-              - 'replace_pattern(log.body, "\"args\"\\s*:\\s*\\{.+\\},\\s*\"levelname\"", "\"args\": \"[TRUNCATED]\", \"levelname\"") where IsMatch(log.body, "\"name\"\\s*:\\s*\"dogpile\\.cache\\.region\"") and IsMatch(log.body, "\"msg\"\\s*:\\s*\"Cache value generated")'
-              - 'replace_pattern(log.body, "(\"message\":\\s*\"Cache value generated in [0-9.]+ seconds) for key.+,\\s*\"asctime\"", "$1 [TRUNCATED]\", \"asctime\"") where IsMatch(log.body, "\"name\"\\s*:\\s*\"dogpile\\.cache\\.region\"") and IsMatch(log.body, "\"msg\"\\s*:\\s*\"Cache value generated")'
+              - 'replace_pattern(log.body, "\"args\":.*?\"levelname\"", "\"args\": \"[TRUNCATED]\", \"levelname\"") where IsMatch(log.body, "\"name\"[ \t]*:[ \t]*\"dogpile[.]cache[.]region\"") and IsMatch(log.body, "\"msg\"[ \t]*:[ \t]*\"Cache value generated")'
+              - 'replace_pattern(log.body, "(\"message\":[ \t]*\"Cache value generated in [0-9.]+ seconds) for key.*?,[ \t]*\"asctime\"", "$1 [TRUNCATED]\", \"asctime\"") where IsMatch(log.body, "\"name\"[ \t]*:[ \t]*\"dogpile[.]cache[.]region\"") and IsMatch(log.body, "\"msg\"[ \t]*:[ \t]*\"Cache value generated")'
               - merge_maps(log.cache, ParseJSON(log.body), "upsert")
               - set(log.time, Time(log.cache["asctime"], "%Y-%m-%d %H:%M:%S,%L")) where log.cache["asctime"] != nil
               - set(log.attributes["msg"], log.cache["message"])
