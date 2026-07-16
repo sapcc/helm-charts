@@ -270,8 +270,8 @@ spec:
               - resource.attributes["k8s.container.name"] == "keystone-api"
               - not IsMatch(log.body, "^\\{.*\\}$")
             statements:
-              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:severity_text} %{NOTSPACE:otel.scope.name} \\[%{NOTSPACE:infra.request.id} %{NOTSPACE:infra.global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:domain.project.id} dom %{NOTSPACE} usr-dom %{NOTSPACE} prj-dom %{NOTSPACE:domain.name}\\] %{GREEDYDATA:msg}", true), "upsert")
-              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{NOTSPACE:severity_text} %{NOTSPACE:otel.scope.name} \"%{NOTSPACE:infra.global.request.id}\" %{NOTSPACE:client.address} - - \"%{NOTSPACE:http.request.method} %{NOTSPACE:url.path} %{NOTSPACE:httpversion}\" %{NUMBER:http.response.status_code} %{GREEDYDATA} \"%{GREEDYDATA}\" \"%{GREEDYDATA:user_agent.original}\"", true), "upsert")
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:severity_text} %{NOTSPACE:otel.scope.name} \\[%{NOTSPACE:openstack.request.id} %{NOTSPACE:openstack.global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:openstack.project.id} dom %{NOTSPACE} usr-dom %{NOTSPACE} prj-dom %{NOTSPACE:openstack.domain.name}\\] %{GREEDYDATA:msg}", true), "upsert")
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{NOTSPACE:severity_text} %{NOTSPACE:otel.scope.name} \"%{NOTSPACE:openstack.global.request.id}\" %{NOTSPACE:client.address} - - \"%{NOTSPACE:http.request.method} %{NOTSPACE:url.path} %{NOTSPACE:httpversion}\" %{NUMBER:http.response.status_code} %{GREEDYDATA} \"%{GREEDYDATA}\" \"%{GREEDYDATA:user_agent.original}\"", true), "upsert")
               - set(log.attributes["keystone_timestamp"], Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"], ".", log.attributes["microseconds"]], "")) where log.attributes["timestamp_date"] != nil
               - set(log.time_unix_nano, UnixNano(Time(Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"]], " "), "%Y-%m-%d %H:%M:%S")) + Int(log.attributes["microseconds"]) * 1000) where log.attributes["timestamp_date"] != nil
               - set(log.attributes["log.kind"], "cadf_action") where IsMatch(log.attributes["msg"], "^\\s*cadf action for '")
@@ -282,9 +282,9 @@ spec:
               - set(log.attributes["log.kind"], "keystone_exception_Unauthorized") where IsMatch(log.attributes["msg"], "keystone\\.exception\\.Unauthorized")
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*cadf action for '%{NOTSPACE:http.request.method} %{URIPATH:url.path}' is '%{NOTSPACE:event.action}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "cadf_action"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*target type URI of requests '%{NOTSPACE:http.request.method} %{URIPATH:url.path}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:openstack.domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Could not find user:[\\s]+%{NOTSPACE:user.id}\\.",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_UserNotFound"
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*User b'%{DATA:user.id}' b'%{DATA:domain.name}'\\s+%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_middleware_lifesaver"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*User b'%{DATA:user.id}' b'%{DATA:openstack.domain.name}'\\s+%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_middleware_lifesaver"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:client.address}:[\\s]*",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
@@ -310,16 +310,16 @@ spec:
               - set(log.attributes["msg"], log.cache["message"])
               - set(log.severity_text, log.cache["levelname"])
               - set(log.attributes["otel.scope.name"], log.cache["name"])
-              - set(log.attributes["infra.request.id"], log.cache["context"]["request_id"])
-              - set(log.attributes["infra.request.id"], log.cache["request_id"]) where log.cache["request_id"] != nil and log.attributes["infra.request.id"] == nil
-              - set(log.attributes["infra.global.request.id"], log.cache["context"]["global_request_id"])
+              - set(log.attributes["openstack.request.id"], log.cache["context"]["request_id"])
+              - set(log.attributes["openstack.request.id"], log.cache["request_id"]) where log.cache["request_id"] != nil and log.attributes["openstack.request.id"] == nil
+              - set(log.attributes["openstack.global.request.id"], log.cache["context"]["global_request_id"])
               - set(log.attributes["user.id"], log.cache["context"]["user"])
               - set(log.attributes["user.id"], log.cache["user_id"]) where log.cache["user_id"] != nil and log.attributes["user.id"] == nil
               - set(log.attributes["user.name"], log.cache["context"]["user_name"])
-              - set(log.attributes["domain.project.id"], log.cache["context"]["project_id"])
-              - set(log.attributes["domain.project.id"], log.cache["project_id"]) where log.cache["project_id"] != nil and log.attributes["domain.project.id"] == nil
-              - set(log.attributes["domain.project.name"], log.cache["context"]["project_name"])
-              - set(log.attributes["domain.id"], log.cache["context"]["project_domain"])
+              - set(log.attributes["openstack.project.id"], log.cache["context"]["project_id"])
+              - set(log.attributes["openstack.project.id"], log.cache["project_id"]) where log.cache["project_id"] != nil and log.attributes["openstack.project.id"] == nil
+              - set(log.attributes["openstack.project.name"], log.cache["context"]["project_name"])
+              - set(log.attributes["openstack.domain.id"], log.cache["context"]["project_domain"])
               - set(log.attributes["client.address"], log.cache["client_ip"])
               - set(log.attributes["client.address"], log.cache["remote_addr"]) where log.cache["remote_addr"] != nil and log.attributes["client.address"] == nil
               - set(log.attributes["http.request.method"], log.cache["method"])
@@ -335,7 +335,7 @@ spec:
               - set(log.attributes["log.kind"], "keystone_exception_Unauthorized") where IsMatch(log.attributes["msg"], "^\\s*Authorization failed\\..*")
               - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*cadf action for '%{NOTSPACE:http.request.method} %{URIPATH:url.path}' is '%{NOTSPACE:event.action}'", true), "upsert") where log.attributes["log.kind"] == "cadf_action"
               - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*target type URI of requests '%{NOTSPACE:http.request.method} %{URIPATH:url.path}' is '%{NOTSPACE:target.type_uri}'", true), "upsert") where log.attributes["log.kind"] == "target_type_uri"
-              - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*Authenticating %{NOTSPACE:user.name}@%{NOTSPACE:domain.name}\\.\\.", true), "upsert") where log.attributes["log.kind"] == "authentication"
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*Authenticating %{NOTSPACE:user.name}@%{NOTSPACE:openstack.domain.name}\\.\\.", true), "upsert") where log.attributes["log.kind"] == "authentication"
               - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "^\\s*Could not find user:[\\s]+%{NOTSPACE:user.id}\\.", true), "upsert") where log.attributes["log.kind"] == "keystone_exception_UserNotFound"
               - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "(?:AC-)%{NOTSPACE:user.id}\\s+has a remaining credit of %{NUMBER} - request %{WORD:http.request.method} %{NOTSPACE:url.path} returned %{NUMBER:http.response.status_code:int}", true), "upsert") where log.attributes["msg"] != nil and log.attributes["log.kind"] == "keystone_middleware_lifesaver"
               - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:client.address}", true), "upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
