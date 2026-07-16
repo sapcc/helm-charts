@@ -1,7 +1,7 @@
-{{- if $.Values.backup_v2.enabled }}
-{{- $common := $.Values.backup_v2 }}
+{{- if $.Values.metisSync.enabled }}
+{{- $common := $.Values.metisSync.common }}
 {{- $global := $.Values.global }}
-{{- range $backup := $.Values.backup_v2.backups }}
+{{- range $backup := $.Values.metisSync.backups }}
 ---
 apiVersion: v1
 kind: Service
@@ -13,7 +13,7 @@ metadata:
     helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
+    app.kubernetes.io/version: "{{ $.Values.metisSync.imageVersion }}"
     alert-service: "metis"
   annotations:
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
@@ -38,7 +38,7 @@ metadata:
     helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
+    app.kubernetes.io/version: "{{ $.Values.metisSync.imageVersion }}"
     alert-service: "metis"
   annotations:
     secret.reloader.stakater.com/reload: "mariadb-sync-secrets,mariadb-sync-{{$backup.name}}-secrets"
