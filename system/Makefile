@@ -1,7 +1,6 @@
 CLUSTER_API_VERSION ?= v1.13.4
 PROVIDER_METAL3_VERSION ?= v1.13.1
 PROVIDER_METAL_VERSION ?= cf12acd520aa203db28f21a326a61fddc9720b95
-PROVIDER_VSPHERE_VERSION ?= v1.16.1
 PROVIDER_IPAM_VERSION ?= v1.1.0
 PROVIDER_HELM ?= v0.6.4
 PROVIDER_KUBERNIKUS_VERSION ?= 9ef3fb8f8b42f5606edb5044693adf62d434d4e0
@@ -58,14 +57,6 @@ build-provider-helm:
 	@find provider-helm/templates -type f -exec $(SED) -i -e 's#webhook-server-cert#caaph-webhook-server-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
 	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
-
-build-provider-vsphere:
-	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
-	$(call fix-crds,provider-vsphere)
-	@find provider-vsphere/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
-	@find provider-vsphere/templates -type f -exec $(SED) -i -e 's#secretName: capv-webhook-service-cert#secretName: capi-capv-webhook-service-cert#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_VSPHERE_VERSION)"' provider-vsphere/values.yaml
-	@yq -i '.fullnameOverride="capi-capi-provider-vsphere"' provider-vsphere/values.yaml
 
 build-provider-ipam:
 	$(call build-chart,provider-ipam,https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/default,$(PROVIDER_IPAM_VERSION))
