@@ -1,0 +1,39 @@
+{{- range $i, $project := .Values.projects }}
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ required (printf "projects[%d].name is required" $i) $project.name }}-seed
+  labels:
+    app: {{ template "fullname" $ }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-monsoon3-seed
+
+  domains:
+  - name: monsoon3
+    projects:
+    - name: {{ $project.name }}
+      description: {{ $project.description | default $.Values.defaults.description | quote }}
+      networks:
+      - name: default
+        subnets:
+        - name: {{ $project.name }}_private
+          cidr: {{ $project.cidr | default $.Values.defaults.cidr }}
+          ip_version: 4
+      routers:
+      - name: default
+        external_gateway_info:
+          network: FloatingIP-external-ccadmin-monitoring@ccadmin-net-infra@ccadmin
+          network: FloatingIP-external-monsoon3-01@monsoon3-shared-infra@monsoon3
+          external_fixed_ips:
+          - subnet: {{ $.Values.routerExternalSubnet | default $.Values.defaults.routerExternalSubnet }}
+        interfaces:
+        - subnet: {{ $project.name }}_private
+      role_assignments:
+      - user: {{ required (printf "projects[%d] (%s).technicalUser is required" $i $project.name) $project.technicalUser }}
+        role: objectstore_admin
+{{- end }}
