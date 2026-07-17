@@ -1,0 +1,83 @@
+chorus:
+  dynamicCredentials:
+    enabled: true
+    disableEncryption: false
+    pollInterval: 3s
+    masterPassword: "testpassword"
+  storage:
+    main: swift-main
+    storages:
+      swift-main:
+        type: SWIFT
+        authURL: http://keystone.openstack.example.com:5000/v3
+        storageEndpointName: swift
+        storageEndpointType: object-store
+        region: RegionOne
+        storageURL: http://swift-proxy.openstack.example.com:8080/v1
+      swift-backup:
+        type: SWIFT
+        authURL: http://keystone.openstack.example.com:5000/v3
+        storageEndpointName: swift
+        storageEndpointType: object-store
+        region: RegionOne
+        storageURL: http://swift-proxy.openstack.example.com:8080/v1
+  credentials:
+    storages:
+      swift-main:
+        # Project ID: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+        a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6:
+          username: swift-admin
+          password: "test-password"
+          domainName: Default
+          tenantName: admin-project
+        # Another project
+        b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7:
+          username: app-user
+          password: "test-password"
+          domainName: Default
+          tenantName: app-project
+      # S3 backup credentials
+      swift-backup:
+        # Project ID: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+        a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6:
+          username: swift-admin
+          password: "test-password"
+          domainName: Default
+          tenantName: admin-project
+        # Another project
+        b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7:
+          username: app-user
+          password: "test-password"
+          domainName: Default
+          tenantName: app-project
+  redis:
+    enabled: true
+    architecture: standalone
+    auth:
+      enabled: true
+      existingSecret: ""
+      existingSecretPasswordKey: redis-password
+  proxy:
+    enabled: false
+  worker:
+    replicas: 2
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/cobaltcore-storage/chorus/worker
+      tag: "" # Defaults to Chart.appVersion
+      pullPolicy: IfNotPresent
+    config:
+      concurrency: 10
+      api:
+        enabled: true
+        webhook:
+          enabled: false
+      log:
+        json: true
+        level: info
+  ui:
+    enabled: true
+    replicas: 1
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/cobaltcore-storage/chorus/web-ui
+      tag: ""
+      pullPolicy: IfNotPresent

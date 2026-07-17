@@ -1,0 +1,182 @@
+owner-info:
+  support-group: containers
+  service: ceph
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/chorus
+
+chorus:
+  dynamicCredentials:
+    enabled: false
+    disableEncryption: false
+    pollInterval: 3s
+    masterPassword: ""
+    existingSecret: ""
+    existingSecretKey: "master-password"
+
+  storage:
+    # Name of the main storage (must match a key in storages below)
+    main: ""
+
+    # Storage definitions
+    # For S3: same config works for both proxy and worker
+    # For Swift: worker uses authURL (Keystone), proxy uses storageURL
+    storages: {}
+      # Example S3 storage:
+      # main:
+      #   type: S3
+      #   address: s3.example.com
+      #   provider: Ceph  # Ceph, Minio, or Other
+      #   isSecure: true
+      #   defaultRegion: "us-east-1"
+      #   healthCheckInterval: 10s
+      #   httpTimeout: 1m
+      #   rateLimit:
+      #     enabled: false
+      #     rpm: 60
+      #
+      # Example Swift storage:
+      # swift-main:
+      #   type: SWIFT
+      #   # Worker config - uses Keystone for authentication
+      #   authURL: http://keystone:5000/v3
+      #   storageEndpointName: swift
+      #   storageEndpointType: object-store
+      #   region: RegionOne
+      #   # Proxy config - direct Swift endpoint (proxy cannot use Keystone)
+      #   storageURL: http://swift:8080/v1
+
+  # =============================================================================
+  # CREDENTIALS (Secret)
+  # =============================================================================
+  # Storage credentials - stored in Kubernetes Secret
+  credentials:
+    # Per-storage credentials
+    storages: {}
+      # S3 credentials example:
+      # main:
+      #   user1:
+      #     accessKeyID: "AKIAIOSFODNN7EXAMPLE"
+      #     secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+      #
+      # Swift credentials example (key must be OpenStack project ID):
+      # swift-main:
+      #   b6ebf758c9894224a105e5531eaa4ce9:
+      #     username: admin
+      #     password: secret
+      #     domainName: Default
+      #     tenantName: admin
+
+  # Use existing secret instead of creating one
+  # Secret must have 'config' key with YAML content matching override.yaml format
+  existingCredentialsSecret: ""
+
+  # =============================================================================
+  # FEATURES
+  # =============================================================================
+  features:
+    tagging: true
+    acl: true
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      # Extra labels for Prometheus discovery, e.g. { release: kube-prometheus-stack }
+      labels:
+        plugin: kube-monitoring
+      interval: "30s"
+      scrapeTimeout: "10s"
+
+  # =============================================================================
+  # REDIS CONFIGURATION
+  # =============================================================================
+  # Bundled Redis (Bitnami chart)
+  # When redis.enabled=true, a password is auto-generated and stored in a secret
+  # The Chorus components use this secret for Redis authentication
+  redis:
+    enabled: true
+    architecture: standalone
+    auth:
+      enabled: true
+      # Leave empty to auto-generate password, or specify existing secret name
+      existingSecret: ""
+      existingSecretPasswordKey: redis-password
+    # Persistence (recommended for production):
+    master:
+      persistence:
+        enabled: true
+        size: 64Gi
+
+  # =============================================================================
+  # PROXY
+  # =============================================================================
+  proxy:
+    enabled: false
+    replicas: 2
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/cobaltcore-storage/chorus/proxy
+      tag: "" # Defaults to Chart.appVersion
+      pullPolicy: IfNotPresent
+
+  # =============================================================================
+  # WORKER
+  # =============================================================================
+  worker:
+    replicas: 2
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/cobaltcore-storage/chorus/worker
+      tag: "" # Defaults to Chart.appVersion
+      pullPolicy: IfNotPresent
+
+    # gRPC API service (for chorctl)
+    grpcService:
+      type: ClusterIP
+      port: 9670
+      annotations: {}
+
+    # REST API service
+    restService:
+      type: ClusterIP
+      port: 9671
+      annotations: {}
+
+    # Webhook service (only created when webhook uses separate ports)
+    webhookService:
+      type: ClusterIP
+      annotations: {}
+
+    config:
+      concurrency: 10
+      api:
+        enabled: true
+        grpcPort: 9670
+        httpPort: 9671
+        webhook:
+          # Enable webhook endpoints for S3 notifications and Swift events.
+          # Webhook is handled by the worker — no separate service needed.
+          enabled: false
+          # Externally reachable base URL for webhook endpoints.
+          # If empty and webhook is enabled, auto-filled with internal k8s service URL:
+          #   http://<fullname>-rest.<namespace>.svc.cluster.local:<restPort>
+          # Override when the storage pushes from outside the cluster (e.g. via ingress).
+          baseUrl: ""
+          # Run webhook on separate ports (both must be set, or both 0).
+          # When 0, webhook shares the main API ports above.
+          grpcPort: 0
+          httpPort: 0
+      log:
+        json: true
+        level: info
+  # =============================================================================
+  # WEB UI
+  # =============================================================================
+  ui:
+    enabled: true
+    replicas: 1
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/cobaltcore-storage/chorus/web-ui
+      tag: ""
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      port: 9672
+      annotations: {}
