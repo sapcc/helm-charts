@@ -47,6 +47,29 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resourceNames:
+  - metal3clusters.infrastructure.cluster.x-k8s.io
+  - metal3clustertemplates.infrastructure.cluster.x-k8s.io
+  - metal3datas.infrastructure.cluster.x-k8s.io
+  - metal3datatemplates.infrastructure.cluster.x-k8s.io
+  - metal3machines.infrastructure.cluster.x-k8s.io
+  - metal3machinetemplates.infrastructure.cluster.x-k8s.io
+  resources:
+  - customresourcedefinitions
+  - customresourcedefinitions/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -71,7 +94,6 @@ rules:
 - apiGroups:
   - cluster.x-k8s.io
   resources:
-  - kubeadmcontrolplanes
   - machinedeployments
   - machines
   - machines/status
@@ -84,9 +106,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - controlplane.cluster.x-k8s.io
+  resources:
+  - kubeadmcontrolplanes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - infrastructure.cluster.x-k8s.io
   resources:
   - metal3clusters
+  - metal3clustertemplates
   - metal3dataclaims
   - metal3datas
   - metal3datatemplates
@@ -209,5 +240,5 @@ roleRef:
   name: '{{ include "provider-metal3.fullname" . }}-manager-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "provider-metal3.fullname" . }}-manager'
+  name: '{{ include "provider-metal3.serviceAccountName" . }}'
   namespace: '{{ .Release.Namespace }}'

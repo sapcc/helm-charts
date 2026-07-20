@@ -7,6 +7,7 @@ metadata:
   labels:
     cluster.x-k8s.io/provider: infrastructure-metal3
     cluster.x-k8s.io/v1beta1: v1beta1
+    cluster.x-k8s.io/v1beta2: v1beta2
   name: metal3clustertemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -21,7 +22,8 @@ spec:
     singular: metal3clustertemplate
   scope: Namespaced
   versions:
-    - name: v1beta1
+    - deprecated: true
+      name: v1beta1
       schema:
         openAPIV3Schema:
           description: Metal3ClusterTemplate is the Schema for the metal3clustertemplates API.
@@ -72,6 +74,23 @@ spec:
                             - host
                             - port
                           type: object
+                        failureDomains:
+                          additionalProperties:
+                            description: |-
+                              FailureDomainSpec is the Schema for Cluster API failure domains.
+                              It allows controllers to understand how many failure domains a cluster can optionally span across.
+                            properties:
+                              attributes:
+                                additionalProperties:
+                                  type: string
+                                description: attributes is a free form map of attributes an infrastructure provider might use or require.
+                                type: object
+                              controlPlane:
+                                description: controlPlane determines if this failure domain is suitable for use by control plane machines.
+                                type: boolean
+                            type: object
+                          description: FailureDomains specifies a list fo failure zones that can be used
+                          type: object
                         noCloudProvider:
                           description: |-
                             Determines if the cluster is not to be deployed with an external cloud provider.
@@ -87,6 +106,125 @@ spec:
               required:
                 - template
               type: object
+          type: object
+      served: true
+      storage: false
+    - name: v1beta2
+      schema:
+        openAPIV3Schema:
+          description: Metal3ClusterTemplate is the Schema for the metal3clustertemplates API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: spec defines the desired state of Metal3ClusterTemplate.
+              properties:
+                template:
+                  description: template describes the data for creating a Metal3Cluster from a template
+                  properties:
+                    metadata:
+                      description: |-
+                        metadata is the standard object's metadata.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+                      minProperties: 1
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            annotations is an unstructured key value map stored with a resource that may be
+                            set by external tools to store and retrieve arbitrary metadata. They are not
+                            queryable and should be preserved when modifying objects.
+                            More info: http://kubernetes.io/docs/user-guide/annotations
+                          type: object
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            labels is a map of string keys and values that can be used to organize and categorize
+                            (scope and select) objects. May match selectors of replication controllers
+                            and services.
+                            More info: http://kubernetes.io/docs/user-guide/labels
+                          type: object
+                      type: object
+                    spec:
+                      description: spec defines the desired state of Metal3Cluster.
+                      properties:
+                        cloudProviderEnabled:
+                          description: |-
+                            cloudProviderEnabled determines if the cluster is to be deployed with an external cloud provider.
+                            If set to false, CAPM3 will use node labels to set providerID on the kubernetes nodes.
+                            If set to true, providerID is set on nodes by other entities and CAPM3 uses the value of the providerID on the m3m resource.
+                          type: boolean
+                        controlPlaneEndpoint:
+                          description: controlPlaneEndpoint represents the endpoint used to communicate with the control plane.
+                          minProperties: 1
+                          properties:
+                            host:
+                              description: host is the hostname on which the API server is serving.
+                              maxLength: 512
+                              minLength: 1
+                              type: string
+                            port:
+                              description: port is the port on which the API server is serving.
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                          type: object
+                        failureDomains:
+                          description: failureDomains is a list of failure domain objects synced from the infrastructure provider.
+                          items:
+                            description: |-
+                              FailureDomain is the Schema for Cluster API failure domains.
+                              It allows controllers to understand how many failure domains a cluster can optionally span across.
+                            properties:
+                              attributes:
+                                additionalProperties:
+                                  type: string
+                                description: attributes is a free form map of attributes an infrastructure provider might use or require.
+                                type: object
+                              controlPlane:
+                                description: controlPlane determines if this failure domain is suitable for use by control plane machines.
+                                type: boolean
+                              name:
+                                description: name is the name of the failure domain.
+                                maxLength: 256
+                                minLength: 1
+                                type: string
+                            required:
+                              - name
+                            type: object
+                          maxItems: 100
+                          minItems: 1
+                          type: array
+                          x-kubernetes-list-map-keys:
+                            - name
+                          x-kubernetes-list-type: map
+                      type: object
+                  required:
+                    - spec
+                  type: object
+              required:
+                - template
+              type: object
+          required:
+            - spec
           type: object
       served: true
       storage: true

@@ -11,7 +11,7 @@ controllerManager:
       runAsUser: 65532
     image:
       repository: gcr.io/k8s-staging-capi-ipam-ic/cluster-api-ipam-in-cluster-controller
-      tag: v1.0.3
+      tag: v1.1.0
     imagePullPolicy: Always
     resources:
       limits:
@@ -20,13 +20,14 @@ controllerManager:
       requests:
         cpu: 10m
         memory: 64Mi
+  nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
-  serviceAccount:
-    annotations: {}
+  tolerations: []
+  topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
 managerConfig:
   controllerManagerConfigYaml: |-
@@ -48,6 +49,11 @@ metricsService:
       protocol: TCP
       targetPort: https
   type: ClusterIP
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
 webhookService:
   ports:
     - port: 443

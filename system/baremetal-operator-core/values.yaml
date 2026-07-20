@@ -2,7 +2,6 @@ baremetalOperatorControllerManager:
   manager:
     args:
       - --enable-leader-election
-      - --tls-min-version=TLS13
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -13,15 +12,16 @@ baremetalOperatorControllerManager:
       runAsUser: 65532
     image:
       repository: quay.io/metal3-io/baremetal-operator
-      tag: v0.11.1
+      tag: v0.13.1
     imagePullPolicy: Always
+  nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
-  serviceAccount:
-    annotations: {}
+  tolerations: []
+  topologySpreadConstraints: []
 baremetalOperatorControllerManagerMetricsService:
   ports:
     - name: https
@@ -40,8 +40,13 @@ ironic:
   ironicEndpoint: http://172.22.0.2:6385/v1/
   provisioningInterface: eth2
 kubernetesClusterDomain: cluster.local
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
 controllerManager:
   manager:
     image:
-      tag: v0.11.1
+      tag: v0.13.1
 fullnameOverride: metal3
