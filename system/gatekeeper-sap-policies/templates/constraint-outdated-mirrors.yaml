@@ -1,0 +1,18 @@
+{{- if .Values.policies.outdatedMirrors.enabled }}
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkOutdatedMirrors
+metadata:
+  name: outdated-mirrors
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: {{ .Values.policies.outdatedMirrors.enforcementAction }}
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["DaemonSet", "Deployment", "ReplicaSet", "StatefulSet"]
+      - apiGroups: ["batch"]
+        kinds: ["CronJob", "Job"]
+{{- end }}

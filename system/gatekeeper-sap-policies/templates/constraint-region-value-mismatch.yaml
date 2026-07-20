@@ -1,0 +1,21 @@
+{{- if .Values.policies.regionValueMismatch.enabled }}
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRegionValueMismatch
+metadata:
+  name: region-value-mismatch
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: {{ .Values.policies.regionValueMismatch.enforcementAction }}
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Secret"]
+    labelSelector:
+      matchExpressions:
+        - { key: "owner", operator: "In", values: [ "helm" ] }
+        - { key: "status", operator: "In", values: [ "pending-install", "pending-upgrade", "deployed" ] }
+  parameters:
+    helmManifestParserURL: {{ required "policies.regionValueMismatch.helmManifestParserURL is required when policies.regionValueMismatch.enabled=true" .Values.policies.regionValueMismatch.helmManifestParserURL | quote }}
+    region: {{ required "cluster.region is required when policies.regionValueMismatch.enabled=true" .Values.cluster.region | quote }}
+{{- end }}
