@@ -33,10 +33,6 @@ spec:
         command:
         - /manager
         env:
-        - name: KUBECONFIG
-          value: {{ quote .Values.controllerManager.manager.env.kubeconfig }}
-        - name: KUBERNETES_SERVICE_HOST
-          value: {{ quote .Values.controllerManager.manager.env.kubernetesServiceHost }}
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag
@@ -48,10 +44,6 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
-        ports:
-        - containerPort: 9443
-          name: webhook-server
-          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -62,16 +54,7 @@ spec:
           }}
         securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
           | nindent 10 }}
-        volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: webhook-certs
-          readOnly: true
-        - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
-          name: remote-serviceaccount
-          readOnly: true
-        - mountPath: /var/run/remote-kubeconfig
-          name: remote-kubeconfig
-          readOnly: true
+
       nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
@@ -80,19 +63,4 @@ spec:
       tolerations: {{- toYaml .Values.controllerManager.tolerations | nindent 8 }}
       topologySpreadConstraints: {{- toYaml .Values.controllerManager.topologySpreadConstraints
         | nindent 8 }}
-      volumes:
-      - emptyDir: {}
-        name: webhook-certs
-      - name: remote-serviceaccount
-        secret:
-          defaultMode: 420
-          items:
-          - key: token
-            path: token
-          - key: bundle.crt
-            path: ca.crt
-          secretName: ipam-capi-remote-kubeconfig
-      - configMap:
-          defaultMode: 420
-          name: ipam-capi-remote-kubeconfig
-        name: remote-kubeconfig
+
