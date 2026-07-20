@@ -1,0 +1,14 @@
+{{- if and .Values.policies.prometheusruleAlertLabels.enabled (ne .Values.cluster.type "postfix") }}
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPrometheusruleAlertLabels
+metadata:
+  name: prometheusrule-alert-labels
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: {{ .Values.policies.prometheusruleAlertLabels.enforcementAction }}
+  match:
+    kinds:
+      - apiGroups: ["monitoring.coreos.com"]
+        kinds: ["PrometheusRule"]
+{{- end }}

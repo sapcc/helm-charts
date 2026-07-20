@@ -1,0 +1,32 @@
+{{- if .Values.tests.enabled }}
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gklibtestvalidation
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkLibtestValidation
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+{{ include "gatekeeper-sap-policies.lib.validation" . | indent 16 }}
+            rego: |
+              package libtestvalidation
+
+              import data.lib.validation
+
+              iro := input.review.object
+
+              violation contains {"msg": msg} if {
+                  region := object.get(iro.metadata, ["annotations", "region"], "")
+                  validation.is_region_name(region)
+                  msg := sprintf("valid region: %s", [region])
+              }
+{{- end }}
