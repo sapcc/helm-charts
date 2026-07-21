@@ -123,6 +123,15 @@ spec:
             {{- end }}
             - name: SENTRY_FILTER_CONFIG_FILE
               value: /etc/config/rules.yaml
+            {{- if .Values.osprofiler.redis.enabled }}
+            - name: OSPROFILER_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-osprofiler-redis-user-default
+                  key: password
+            - name: OS_PROFILER__CONNECTION_STRING
+              value: "redis://:$(OSPROFILER_REDIS_PASSWORD)@{{ .Release.Name }}-osprofiler-redis:6379"
+            {{- end }}
           ports:
             - name: public
               containerPort: 5000
