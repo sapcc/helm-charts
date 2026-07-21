@@ -81,7 +81,7 @@ groups:
           support_group: compute
           no_alert_on_absence: "true"
           meta: "Alert for NFSLocked issue"
-          playbook: docs/compute/playbooks/vcenter/#NFSlockedError
+          playbook: docs/compute/playbooks/vcenter/#nfslockederror
         annotations:
           summary: "ESXi host detected NFSv4 lock error (NFS4ERR_LOCKED)"
           description: "ESXi host {{`{{ $labels.hostsystem }}`}} reported an NFSv4 lock error (NFS4ERR_LOCKED), it indicates that a file lock could not be obtained on the NFS datastore, which may impact VM operations such as disk access, snapshots, or migrations"
