@@ -18,6 +18,7 @@ spec:
     projects:
     - name: {{ $project.name }}
       description: {{ $project.description | default $.Values.defaults.description | quote }}
+      {{- if $project.network | default false }}
       networks:
       - name: default
         subnets:
@@ -32,6 +33,7 @@ spec:
           - subnet: {{ $.Values.routerExternalSubnet | default $.Values.defaults.routerExternalSubnet }}
         interfaces:
         - subnet: {{ $project.name }}_private
+      {{- end }}
       role_assignments:
       - user: {{ required (printf "projects[%d] (%s).technicalUser is required" $i $project.name) $project.technicalUser }}
         role: objectstore_admin
