@@ -16,6 +16,10 @@ metadata:
     tier: os
     type: alerting-rules
     {{ $ruler }}: {{ $cluster| required (printf ".Values.alerts.prometheus.%s missing" $target) }}
+    {{- if eq $ruler "thanos-ruler" }}
+    # Disable absent-metrics-operator (AMO) for Thanos-Ruler alerts.
+    absent-metrics-operator/disable: "true"
+    {{- end }}
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
