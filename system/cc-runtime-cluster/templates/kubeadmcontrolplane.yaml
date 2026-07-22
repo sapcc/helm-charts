@@ -79,7 +79,12 @@ spec:
             value: {{ $.Values.controlplane.port | quote }}
           - name: authentication-config
             value: "/etc/kubernetes/authentication.yaml"
-          {{- if default $.Values.etcd.useEncryption $cluster.etcdEncryption }}
+          {{- if hasKey $cluster "etcdEncryption" }}
+          {{- if $cluster.etcdEncryption }}
+          - name: encryption-provider-config
+            value: "/etc/kubernetes/enc/enc.yaml"
+          {{- end }}
+          {{- else if $.Values.etcd.useEncryption }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
@@ -99,7 +104,15 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
-        {{- if default $.Values.etcd.useEncryption $cluster.etcdEncryption }}
+        {{- if hasKey $cluster "etcdEncryption" }}
+        {{- if $cluster.etcdEncryption }}
+          - name: "encryption-config"
+            hostPath: "/etc/kubernetes/enc/enc.yaml"
+            mountPath: "/etc/kubernetes/enc/enc.yaml"
+            readOnly: true
+            pathType: File
+        {{- end }}
+        {{- else if $.Values.etcd.useEncryption }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
