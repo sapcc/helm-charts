@@ -390,9 +390,11 @@ spec:
       # https://github.com/kube-vip/kube-vip/issues/684
       - |
         sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
-      # avoid running kubeadm on L1 interface - wait for bond
+      # avoid running kubeadm on L1 interface - wait for bond/vlan
       # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
-      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ $.Values.controlplane.uplinkInterface }} --ipv4 --timeout 0
+      - |
+        VLAN_IF=$(ls /sys/devices/virtual/net/ | grep vlan)
+        /usr/lib/systemd/systemd-networkd-wait-online -i $VLAN_IF --ipv4 --timeout 0
     postKubeadmCommands:
      # https://github.com/kube-vip/kube-vip/issues/684
       - |
