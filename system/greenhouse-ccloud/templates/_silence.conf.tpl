@@ -290,3 +290,40 @@
     - region
     - devicename
     - ifDescr
+- status: active
+  title: Network - NetworkAsrBgpFabricPeerDown silence
+  description: neutron router to fabric bgp peer down alert silence
+  fixed_labels:
+    alertname: NetworkAsrBgpFabricPeerDown
+    support_group: network-data
+    service: asr
+    severity: critical
+  editable_labels:
+    - region
+    - name
+    - peer_ip
+    - vrf
+- status: active
+  title: Network - NetworkAsrBgpNeutronPeerDown silence
+  description: neutron to neutron router bgp peer down alert silence
+  fixed_labels:
+    alertname: NetworkAsrBgpNeutronPeerDown
+    support_group: network-data
+    service: asr
+    severity: critical
+  editable_labels:
+    - region
+    - name
+    - peer_ip
+- status: active
+  title: Network - NetworkAsrBgpCorePeerDown silence
+  description: neutron to core router bgp peer down alert silence
+  fixed_labels:
+    alertname: NetworkAsrBgpCorePeerDown
+    support_group: network-data
+    service: asr
+    severity: critical
+  editable_labels:
+    - region
+    - name
+    - peer_ip
