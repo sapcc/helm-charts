@@ -16,16 +16,19 @@ groups:
           summary: "Port Faults"
           description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Port suspended BGP neighbour down: {{ $labels.reason }}"
 
+      ##
+      ## Alert PortDown disabled upon Anand Ramu and Chris Franks request: https://jira.tools.sap/browse/NWCC-14773
+      ##
       # F0546 (!)
       # [QA-DE-1-CCACI-BB-2105-BB091-SW1][eth1/48] Port down: Port is down, reason:Error Disabled link Flaps(Err-Disabled), used by:Discovery [ACI Leaf, active]
-      - alert: PortDown
-        expr: |
-          sum by (node_name, node_intf, device_name, reason) (aci_obs_port_down{caused_by_id="", deduplicated="", device_role!~"(?i)^(Neutron Router|runtime-controlplane|runtime-worker)$", node_role=~"ACI Spine|ACI Leaf", node_status=~"active|", device_status=~"active|"} > 0)
-        for: 1m
-        labels:
-          severity: warning
-          support_group: network-data-aci-obs
-          aci_obs_group: PortFaultGroup
-        annotations:
-          summary: "Port Faults"
-          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Port down: {{ $labels.reason }}"
+      # - alert: PortDown
+      #   expr: |
+      #     sum by (node_name, node_intf, device_name, reason) (aci_obs_port_down{caused_by_id="", deduplicated="", device_role!~"(?i)^(Neutron Router|runtime-controlplane|runtime-worker)$", node_role=~"ACI Spine|ACI Leaf", node_status=~"active|", device_status=~"active|"} > 0)
+      #   for: 1m
+      #   labels:
+      #     severity: warning
+      #     support_group: network-data-aci-obs
+      #     aci_obs_group: PortFaultGroup
+      #   annotations:
+      #     summary: "Port Faults"
+      #     description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Port down: {{ $labels.reason }}"
