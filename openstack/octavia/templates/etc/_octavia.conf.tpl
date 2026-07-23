@@ -14,6 +14,9 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
 healthcheck_enabled = True
+{{- if .Values.allow_cross_pool_batch_members_update }}
+allow_cross_pool_batch_members_update = {{.Values.allow_cross_pool_batch_members_update }}
+{{- end }}
 
 # Enable/disable exposing API endpoints. By default, both v1 and v2 are enabled.
 api_v1_enabled = False
