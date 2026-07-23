@@ -151,7 +151,8 @@ build-metal-operator-remote:
 		-f metal-operator-remote/values-managed-resources.yaml | \
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - | \
-		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - \
+		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - | \
+		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - \
 		> metal-operator-remote/managedresources/crds-and-rbac.yaml
 	# Extract upstream Deployment template and inject webhook-injector as native sidecar (initContainer)
 	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml | \
