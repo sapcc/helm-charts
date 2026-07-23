@@ -102,6 +102,9 @@ build-provider-metal3:
 build-provider-metal:
 	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
 	$(call fix-crds,provider-metal)
+	@# Label CRDs so clusterctl move discovers them (IroncoreMetalMachine is a link
+	@# in the ownerRef chain IPAddressClaim -> ServerClaim -> IroncoreMetalMachine -> Machine -> Cluster)
+	@find provider-metal/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
 
@@ -179,7 +182,8 @@ build-boot-operator-remote:
 		-n kube-system \
 		-f boot-operator-remote/values-managed-resources.yaml | \
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - | \
+		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - >\
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
