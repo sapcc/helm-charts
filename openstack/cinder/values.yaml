@@ -166,11 +166,17 @@ proxysql:
   backup:
     max_connections_per_proc: 10  # backup pods get their own proxysql secret with max_connections = 10
   query_rules:
+    # Each rule supports an optional `enabled: false` to omit it (default: enabled).
+    # Note: Helm replaces lists, so a region override must re-declare the full list.
     # Cache attachment_specs lookups (table is empty, 0 rows ever, queried 1249/sec)
     # 1h TTL — table has never had data in any region, feature is unused
     - cache_ttl: 3600000
       match_pattern: "^SELECT.*FROM attachment_specs WHERE"
     # Cache volume_types full list (3 rows, static admin config, rarely changes)
+    # WARNING: ProxySQL query cache is TTL-only with no write-invalidation; a
+    # create/update/delete of a volume type is invisible until the TTL expires.
+    # Disable (enabled: false) in any region that creates volume types at runtime
+    # (e.g. tempest), otherwise create-then-read returns 404. See qa-de-1 override.
     - cache_ttl: 300000
       match_pattern: "^SELECT.*FROM volume_types.*ORDER BY"
     # Cache volume_types by ID or name lookup
