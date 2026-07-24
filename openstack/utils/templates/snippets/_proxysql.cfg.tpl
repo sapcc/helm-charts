@@ -180,6 +180,7 @@ mysql_query_rules =
         match_pattern = "^SELECT 1$",
     },
 {{- range $i, $rule := .global.Values.proxysql.query_rules | default list }}
+{{- if ne $rule.enabled false }}
     {
         rule_id = {{ add 1 $i }},
         active = 1,
@@ -187,6 +188,7 @@ mysql_query_rules =
         cache_ttl = {{ printf "%.0f" (float64 $rule.cache_ttl) }},
         match_digest = "{{ $rule.match_pattern }}",
     },
+{{- end }}
 {{- end }}
 )
 {{- end }}
