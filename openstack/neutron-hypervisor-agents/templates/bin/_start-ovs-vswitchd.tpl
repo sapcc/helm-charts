@@ -14,7 +14,24 @@
 
 set -eEuxo pipefail
 
-PUBLIC_INTERFACE=bond0
+# PUBLIC_INTERFACE is the NIC we place on the OVS bridge as the
+# integration point with the underlay network. On production
+# hypervisors this is always a bond ("bond0"); on cloud workers with a
+# single NIC there is no bond and the default-route device is what
+# carries traffic. Fall back to the default-route interface when
+# bond0 is absent so this chart runs on both shapes.
+PUBLIC_INTERFACE="${PUBLIC_INTERFACE:-}"
+if [[ -z "${PUBLIC_INTERFACE}" ]]; then
+    if ip link show bond0 &>/dev/null; then
+        PUBLIC_INTERFACE=bond0
+    else
+        PUBLIC_INTERFACE=$(ip -o -4 route show default | awk '{print $5; exit}')
+    fi
+fi
+if [[ -z "${PUBLIC_INTERFACE}" ]]; then
+    echo "start-ovs-vswitchd: could not determine PUBLIC_INTERFACE (no bond0, no default route)" >&2
+    exit 1
+fi
 OVS_PHYSICAL_BRIDGE=br-ovs0
 
 if pgrep -f /usr/sbin/ovs-vswitchd; then
