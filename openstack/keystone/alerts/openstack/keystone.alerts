@@ -90,3 +90,43 @@ groups:
     annotations:
       description: Api Requests to Keystone is {{ $value }}ops/s
       summary: Api Requests to Keystone is {{ $value }}ops/s
+
+  - alert: OpenstackKeystoneApiHighLatency
+    expr: >
+      histogram_quantile(0.99,
+        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity"}[5m]))
+        by (le)
+      ) > 1
+    for: 5m
+    labels:
+      context: latency
+      meta: Keystone API p99 response time exceeded 1s
+      service: keystone
+      severity: warning
+      tier: os
+      support_group: identity
+      dashboard: keystone
+      playbook: 'docs/support/playbook/keystone/alerts/keystone-high-latency'
+    annotations:
+      description: Keystone API p99 response time is {{ $value | humanizeDuration }}. Investigate slow requests.
+      summary: Keystone API p99 response time is high
+
+  - alert: OpenstackKeystoneApiCriticalLatency
+    expr: >
+      histogram_quantile(0.99,
+        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity"}[5m]))
+        by (le)
+      ) > 3
+    for: 2m
+    labels:
+      context: latency
+      meta: Keystone API p99 response time exceeded 3s
+      service: keystone
+      severity: critical
+      tier: os
+      support_group: identity
+      dashboard: keystone
+      playbook: 'docs/support/playbook/keystone/alerts/keystone-high-latency'
+    annotations:
+      description: Keystone API p99 response time is {{ $value | humanizeDuration }}. This matches incident-level degradation — act immediately.
+      summary: Keystone API p99 response time is critically high

@@ -1,0 +1,91 @@
+rule_files:
+  - keystone.alerts
+
+evaluation_interval: 1m
+
+tests:
+  # OpenstackKeystoneApiHighLatency: fires when p99 > 1s for 5m
+  - name: HighLatency fires after 5m above threshold
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="1"}'
+        values: '0+0x10'     # 0 requests completed within 1s
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="2.5"}'
+        values: '0+60x10'    # all 60 req/min complete within 2.5s → p99 ~2s
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="+Inf"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: OpenstackKeystoneApiHighLatency
+        exp_alerts: []        # not yet — for: 5m
+      - eval_time: 6m
+        alertname: OpenstackKeystoneApiHighLatency
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: keystone
+              context: latency
+              tier: os
+              support_group: identity
+              dashboard: keystone
+              meta: Keystone API p99 response time exceeded 1s
+              playbook: docs/support/playbook/keystone/alerts/keystone-high-latency
+            exp_annotations:
+              description: "Keystone API p99 response time is 2.485s. Investigate slow requests."
+              summary: "Keystone API p99 response time is high"
+
+  # OpenstackKeystoneApiHighLatency: does NOT fire when p99 is normal
+  - name: HighLatency does not fire at normal latency
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="0.1"}'
+        values: '0+60x10'    # all requests complete within 0.1s → p99 well below 1s
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="+Inf"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: OpenstackKeystoneApiHighLatency
+        exp_alerts: []
+
+  # OpenstackKeystoneApiCriticalLatency: fires when p99 > 3s for 2m
+  - name: CriticalLatency fires after 2m above threshold
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="2.5"}'
+        values: '0+0x10'     # 0 requests complete within 2.5s
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="5"}'
+        values: '0+60x10'    # all complete within 5s → p99 ~5s
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="+Inf"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: OpenstackKeystoneApiCriticalLatency
+        exp_alerts: []        # not yet — for: 2m
+      - eval_time: 3m
+        alertname: OpenstackKeystoneApiCriticalLatency
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: keystone
+              context: latency
+              tier: os
+              support_group: identity
+              dashboard: keystone
+              meta: Keystone API p99 response time exceeded 3s
+              playbook: docs/support/playbook/keystone/alerts/keystone-high-latency
+            exp_annotations:
+              description: "Keystone API p99 response time is 4.975s. This matches incident-level degradation — act immediately."
+              summary: "Keystone API p99 response time is critically high"
+
+  # OpenstackKeystoneApiCriticalLatency: does NOT fire below 3s p99
+  - name: CriticalLatency does not fire below 3s p99
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="2.5"}'
+        values: '0+60x10'    # all requests complete within 2.5s → p99 below 3s
+      - series: 'openstack_watcher_api_requests_duration_seconds_bucket{service="identity",le="+Inf"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: OpenstackKeystoneApiCriticalLatency
+        exp_alerts: []
