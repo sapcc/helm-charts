@@ -163,6 +163,14 @@ spec:
         admissionPlugins:
         - name: ShootVPAEnabledByDefault
           disabled: true
+        {{- if .Values.garden.gardenerAPIServer.shootTolerationRestriction.whitelist }}
+        - name: ShootTolerationRestriction
+          configuration:
+            apiVersion: shoottolerationrestriction.admission.gardener.cloud/v1alpha1
+            kind: Configuration
+            whitelist:
+            {{- toYaml .Values.garden.gardenerAPIServer.shootTolerationRestriction.whitelist | nindent 12 }}
+        {{- end }}
         {{- if .Values.extensions.auditing.enabled }}
         auditConfig:
           auditPolicy:
