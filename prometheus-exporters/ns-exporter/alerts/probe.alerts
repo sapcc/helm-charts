@@ -81,14 +81,68 @@ Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.networ
       summary: Network probes failed for `shoot--` networks.
   - alert: NetworkNamespaceProbeMetricsMissing
     expr: absent(ns_exporter_probe_success_total)
-    for: 10m
+    for: 30m
     labels:
       context: availability
       service: neutron
       severity: warning
       support_group: network-api
       tier: os
+      playbook: 'docs/support/playbook/neutron/ns-exporter'
       meta: 'Metrics for the namespace prober are missing'
     annotations:
       description: 'The metrics from the namespace prober are missing. This suggests there is a problem with the exporter deployment. Check the ns-exporter namespace for running pods.'
       summary: Metrics for namespace prober are missing
+  - alert: NetworkNamespaceProbeMetricsMissingCritical
+    expr: absent(ns_exporter_probe_success_total) and on () day_of_week() > 0 and on () day_of_week() < 6
+    for: 30m
+    labels:
+      context: availability
+      service: neutron
+      severity: critical
+      support_group: network-api
+      tier: os
+      playbook: 'docs/support/playbook/neutron/ns-exporter'
+      meta: 'Metrics for the namespace prober are missing'
+    annotations:
+      description: 'The metrics from the namespace prober are missing. This suggests there is a problem with the exporter deployment. Check the ns-exporter namespace for running pods.'
+      summary: Metrics for namespace prober are missing
+  - alert: NetworkNamespaceProbeDaemonSetDegraded
+    expr: |
+      (
+        kube_daemonset_status_number_ready{daemonset="ns-exporter"}
+        !=
+        kube_daemonset_status_desired_number_scheduled{daemonset="ns-exporter"}
+      )
+    for: 30m
+    labels:
+      context: availability
+      service: neutron
+      severity: warning
+      support_group: network-api
+      tier: os
+      playbook: 'docs/support/playbook/neutron/ns-exporter'
+      meta: 'ns-exporter DaemonSet has significantly fewer ready pods than desired'
+    annotations:
+      description: 'The ns-exporter DaemonSet does not have all pods ready. Check pod status and node conditions.'
+      summary: The ns-exporter DaemonSet is degraded
+  - alert: NetworkNamespaceProbeDaemonSetDegradedCritical
+    expr: |
+      (
+        kube_daemonset_status_number_ready{daemonset="ns-exporter"}
+        !=
+        kube_daemonset_status_desired_number_scheduled{daemonset="ns-exporter"}
+      )
+      and on () day_of_week() > 0 and on () day_of_week() < 6
+    for: 30m
+    labels:
+      context: availability
+      service: neutron
+      severity: critical
+      support_group: network-api
+      tier: os
+      playbook: 'docs/support/playbook/neutron/ns-exporter'
+      meta: 'ns-exporter DaemonSet has significantly fewer ready pods than desired'
+    annotations:
+      description: 'The ns-exporter DaemonSet does not have all pods ready. Check pod status and node conditions.'
+      summary: The ns-exporter DaemonSet is degraded
