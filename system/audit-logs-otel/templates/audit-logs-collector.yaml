@@ -205,6 +205,55 @@ spec:
             statements:
               - set(log.attributes["sap.cc.audit.source"], "falco")
 
+      transform/falco:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.container.name"] == "falco"
+              - IsMatch(log.body, "^\\{")
+            statements:
+              # proc.aname[N] keys contain brackets which OTTL cannot read from a parsed map;
+              # extract them from the raw JSON string before ParseJSON
+              - merge_maps(log.cache, ExtractGrokPatterns(log.body, "\"proc\\.aname\\[2\\]\"\\s*:\\s*\"(?P<aname2>[^\"]+)\"", true), "upsert")
+              - set(log.attributes["output_fields.proc.aname.2"], log.cache["aname2"]) where log.cache["aname2"] != nil
+              - merge_maps(log.cache, ExtractGrokPatterns(log.body, "\"proc\\.aname\\[3\\]\"\\s*:\\s*\"(?P<aname3>[^\"]+)\"", true), "upsert")
+              - set(log.attributes["output_fields.proc.aname.3"], log.cache["aname3"]) where log.cache["aname3"] != nil
+              - merge_maps(log.cache, ExtractGrokPatterns(log.body, "\"proc\\.aname\\[4\\]\"\\s*:\\s*\"(?P<aname4>[^\"]+)\"", true), "upsert")
+              - set(log.attributes["output_fields.proc.aname.4"], log.cache["aname4"]) where log.cache["aname4"] != nil
+              - merge_maps(log.cache, ParseJSON(log.body), "upsert")
+              # top-level fields
+              - set(log.attributes["output"], log.cache["output"])
+              - set(log.attributes["priority"], log.cache["priority"])
+              - set(log.attributes["rule"], log.cache["rule"])
+              - set(log.attributes["source"], log.cache["source"])
+              - set(log.attributes["tags"], log.cache["tags"])
+              - set(log.time, Time(log.cache["time"], "%Y-%m-%dT%H:%M:%S.%fZ")) where log.cache["time"] != nil
+              # output_fields
+              - set(log.attributes["output_fields.container.id"], log.cache["output_fields"]["container.id"])
+              - set(log.attributes["output_fields.container.image.repository"], log.cache["output_fields"]["container.image.repository"])
+              - set(log.attributes["output_fields.container.image.tag"], log.cache["output_fields"]["container.image.tag"])
+              - set(log.attributes["output_fields.container.name"], log.cache["output_fields"]["container.name"])
+              - set(log.attributes["output_fields.container.privileged"], log.cache["output_fields"]["container.privileged"])
+              - set(log.attributes["output_fields.evt.time"], log.cache["output_fields"]["evt.time"])
+              - set(log.attributes["output_fields.fd.name"], log.cache["output_fields"]["fd.name"])
+              - set(log.attributes["output_fields.k8s.ns.name"], log.cache["output_fields"]["k8s.ns.name"])
+              - set(log.attributes["output_fields.k8s.pod.id"], log.cache["output_fields"]["k8s.pod.id"])
+              - set(log.attributes["output_fields.k8s.pod.labels"], log.cache["output_fields"]["k8s.pod.labels"])
+              - set(log.attributes["output_fields.k8s.pod.name"], log.cache["output_fields"]["k8s.pod.name"])
+              - set(log.attributes["output_fields.proc.args"], log.cache["output_fields"]["proc.args"])
+              - set(log.attributes["output_fields.proc.cmdline"], log.cache["output_fields"]["proc.cmdline"])
+              - set(log.attributes["output_fields.proc.cwd"], log.cache["output_fields"]["proc.cwd"])
+              - set(log.attributes["output_fields.proc.loginshellid"], log.cache["output_fields"]["proc.loginshellid"])
+              - set(log.attributes["output_fields.proc.name"], log.cache["output_fields"]["proc.name"])
+              - set(log.attributes["output_fields.proc.pcmdline"], log.cache["output_fields"]["proc.pcmdline"])
+              - set(log.attributes["output_fields.proc.pid"], log.cache["output_fields"]["proc.pid"])
+              - set(log.attributes["output_fields.proc.pname"], log.cache["output_fields"]["proc.pname"])
+              - set(log.attributes["output_fields.proc.ppid"], log.cache["output_fields"]["proc.ppid"])
+              - set(log.attributes["output_fields.proc.sid"], log.cache["output_fields"]["proc.sid"])
+              - set(log.attributes["output_fields.user.loginuid"], log.cache["output_fields"]["user.loginuid"])
+              - set(log.attributes["output_fields.user.name"], log.cache["output_fields"]["user.name"])
+
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
   {{- include "auditpoller.processors" . | nindent 6 -}}
 {{- end }}
@@ -611,7 +660,7 @@ spec:
       pipelines:
         logs/containerd:
           receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/keystone_api,transform/keystone_api_json,transform/keystone_attributes,transform/keystone_global_attributes,transform/vault,transform/vault_attributes,transform/falco_attributes,batch]
+          processors: [k8sattributes,attributes/cluster,transform/keystone_api,transform/keystone_api_json,transform/keystone_attributes,transform/keystone_global_attributes,transform/vault,transform/vault_attributes,transform/falco_attributes,transform/falco,batch]
           exporters: [failover]
         logs/failover_a:
           receivers: [failover]
