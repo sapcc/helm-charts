@@ -1,0 +1,83 @@
+kind: Suite
+apiVersion: test.gatekeeper.sh/v1alpha1
+metadata:
+  name: gatekeeper-sap-policies-tests
+tests:
+
+# --- library tests ---
+
+- name: libtest-validation
+  template: rendered/gatekeeper-sap-policies/templates/constrainttemplate-libtest-validation.yaml
+  constraint: rendered/gatekeeper-sap-policies/templates/constraint-libtest-validation.yaml
+  cases:
+  - name: configmap-valid-region
+    object: fixtures/libtest-validation/configmap-valid-region.yaml
+    assertions:
+    - violations: 1
+      message: '^valid region: eu-de-1$'
+  - name: configmap-invalid-region
+    object: fixtures/libtest-validation/configmap-invalid-region.yaml
+    assertions:
+    - violations: 0
+
+# --- policy tests ---
+
+- name: restrict-monsoon3-namespace
+  template: rendered/gatekeeper-sap-policies/templates/constrainttemplate-restrict-monsoon3-namespace.yaml
+  constraint: rendered/gatekeeper-sap-policies/templates/constraint-restrict-monsoon3-namespace.yaml
+  cases:
+  - name: neutron-in-monsoon3-allowed
+    object: fixtures/restrict-monsoon3-namespace/secret-neutron-allowed.yaml
+    assertions:
+    - violations: 0
+  - name: evil-in-monsoon3-disallowed
+    object: fixtures/restrict-monsoon3-namespace/secret-evil-disallowed.yaml
+    assertions:
+    - violations: 1
+      message: '^helm release "evil" is not allowed in namespace "monsoon3"$'
+  - name: andromeda-in-monsoon3global-allowed
+    object: fixtures/restrict-monsoon3-namespace/secret-andromeda-global-allowed.yaml
+    assertions:
+    - violations: 0
+  - name: secret-in-unpatterned-namespace
+    object: fixtures/restrict-monsoon3-namespace/secret-default-namespace-unbound.yaml
+    assertions:
+    - violations: 0
+
+- name: outdated-mirrors
+  template: rendered/gatekeeper-sap-policies/templates/constrainttemplate-outdated-mirrors.yaml
+  constraint: rendered/gatekeeper-sap-policies/templates/constraint-outdated-mirrors.yaml
+  cases:
+  - name: pod-dockerhub-mirror-flagged
+    object: fixtures/outdated-mirrors/pod-dockerhub-mirror.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"owned_by":"none"\} >> container "foo" uses image from obsolete mirror: keppel\.eu-de-1\.cloud\.sap/ccloud-dockerhub-mirror/sapcc/foo:1$'
+  - name: pod-dockerhub-archive-flagged
+    object: fixtures/outdated-mirrors/pod-dockerhub-archive.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"owned_by":"none"\} >> container "bar" uses image from obsolete mirror: keppel\.eu-de-1\.cloud\.sap/ccloud-dockerhub-archive/bar:1 \(use regular mirror accounts for foreign images, or build via CI and push to ccloud account for own images\)$'
+  - name: pod-clean-image-allowed
+    object: fixtures/outdated-mirrors/pod-clean-image.yaml
+    assertions:
+    - violations: 0
+
+- name: prometheusrule-alert-labels
+  template: rendered/gatekeeper-sap-policies/templates/constrainttemplate-prometheusrule-alert-labels.yaml
+  constraint: rendered/gatekeeper-sap-policies/templates/constraint-prometheusrule-alert-labels.yaml
+  cases:
+  - name: rule-missing-severity
+    object: fixtures/prometheusrule-alert-labels/rule-missing-severity.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"owned_by":"none"\} >> rule SomethingWrong in group example\.alerts does not have a valid value for labels\.severity \("critical", "warning", "info" or "none"\)$'
+  - name: rule-missing-playbook
+    object: fixtures/prometheusrule-alert-labels/rule-missing-playbook.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"owned_by":"none"\} >> rule SomethingCritical in group example\.alerts does not have a valid value for labels\.playbook \(required for critical alerts\)$'
+  - name: rule-complete
+    object: fixtures/prometheusrule-alert-labels/rule-complete.yaml
+    assertions:
+    - violations: 0
