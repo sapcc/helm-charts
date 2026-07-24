@@ -166,6 +166,7 @@ prometheus-node-exporter:
     image:
       registry: keppel.global.cloud.sap
       repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
+      tag: v0.22.1
 
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
@@ -291,14 +292,16 @@ falco:
           tag: pci
 
 x509-certificate-exporter:
-  enabled: false
+  migration:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
   secretsExporter:
     podAnnotations:
       prometheus.io/port: "9793"
       prometheus.io/scrape: "true"
       prometheus.io/targets: kubernetes
   hostPathsExporter:
-    daemonSets: null
+    daemonSets: {}
   service:
     create: false
   prometheusServiceMonitor:

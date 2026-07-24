@@ -31,6 +31,7 @@ spec:
         kubectl.kubernetes.io/default-container: neutron-dhcp-agent
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        secret-neutron-common-hash: {{ include (print $.Template.BasePath "/secret-neutron-common.yaml") $ | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
         config.linkerd.io/skip-inbound-ports: "22,53,80,443"
         config.linkerd.io/skip-outbound-ports: "22,53,80,443"
@@ -90,10 +91,31 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
+              command:
+              - python3
+              - -c
+              - |
+                import json, time
+                try:
+                    with open('/var/run/dhcp-agent-status.json', 'r') as f:
+                        status = json.load(f)
+                        status_age = time.time() - status.get('time', 0)
+                        if status_age > 60:
+                            print(f"Status file is stale (age: {status_age :.1f}s)\n")
+                            raise SystemExit(1)
+                        if not isinstance(status.get('ready'), bool):
+                            print("Status field ready is not a bool.")
+                            raise SystemExit(1)
+                        print(f"{status.get('message')}\n")
+                        if not status.get('ready'):
+                            raise SystemExit(1)
+                except FileNotFoundError as e:
+                    print(e)
+                    raise SystemExit(1)
             initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
           securityContext:
             privileged: true
           resources:
@@ -147,6 +169,27 @@ spec:
               mountPath: /dev/log
               readOnly: false
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: agent-check-exporter
+          image: {{$.Values.global.registry}}/neutron-network-agent-checks:{{ $.Values.imageVersionAgentExporter | required "Please set neutron.imageVersionAgentExporter "}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: METRIC_PREFIX
+              value: openstack_neutron_agent_check
+          ports:
+            - name: metrics-export
+              containerPort: 9116
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9116
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+            periodSeconds: 60
+          resources:
+{{ toYaml $.Values.pod.resources.agent_checks_exporter | indent 12 }}
+          volumeMounts:
+            - name: network-namespace
+              mountPath: /var/run/netns
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
@@ -214,12 +257,6 @@ spec:
             - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
               value: {{required "A valid .Values.global.cp required!" $.Values.global.cp}}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface}}
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
-          readinessProbe:
-            exec:
-              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 10
           securityContext:
             capabilities:
               add:
@@ -231,6 +268,8 @@ spec:
           resources:
 {{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:
+            - name: network-namespace
+              mountPath: /var/run/netns
             - mountPath: /lib/modules
               name: modules
               readOnly: true
@@ -263,6 +302,8 @@ spec:
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
+        - name: network-namespace
+          emptyDir: {}
         - name: metadata-proxy
           hostPath:
             path: /run/metadata-proxy

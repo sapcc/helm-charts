@@ -21,6 +21,8 @@
 - name: MONSOON_OPENSTACK_AUTH_API_ENDPOINT
   value: {{ include "keystone_url" . | quote }}
 {{- end }}
+- name: MONSOON_OPENSTACK_AUTH_API_PUBLIC_ENDPOINT
+  value: {{ .Values.keystone_public_endpoint | default (printf "https://identity-3.%s.%s/v3/auth/tokens" .Values.global.region .Values.global.tld) | quote }}
 - name: MONSOON_OPENSTACK_AUTH_API_USERID
   value: {{ .Values.monsoon_openstack_auth_api_userid | quote }}
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
@@ -68,3 +70,5 @@
   value: {{ .Values.cerebro_custom_endpoint | quote }}
 - name: FEEDBACK_RECIPIENT_EMAIL
   value: {{ .Values.feedback_recipient_email | quote }}
+- name: SSO_PRECHECK_ENABLED
+  value: {{ .Values.sso_precheck_enabled | quote }}  

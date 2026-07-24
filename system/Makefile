@@ -1,11 +1,10 @@
-CLUSTER_API_VERSION ?= v1.11.6
-PROVIDER_METAL3_VERSION ?= v1.11.1
+CLUSTER_API_VERSION ?= v1.13.4
+PROVIDER_METAL3_VERSION ?= v1.13.1
 PROVIDER_METAL_VERSION ?= cf12acd520aa203db28f21a326a61fddc9720b95
-PROVIDER_VSPHERE_VERSION ?= v1.9.3
-PROVIDER_IPAM_VERSION ?= v1.0.3
-PROVIDER_HELM ?= v0.4.1
+PROVIDER_IPAM_VERSION ?= v1.1.0
+PROVIDER_HELM ?= v0.6.4
 PROVIDER_KUBERNIKUS_VERSION ?= 9ef3fb8f8b42f5606edb5044693adf62d434d4e0
-BAREMETAL_OPERATOR_VERSION ?= v0.11.1
+BAREMETAL_OPERATOR_VERSION ?= v0.13.1
 
 SHELL := bash
 .ONESHELL:
@@ -59,14 +58,6 @@ build-provider-helm:
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
 	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
 
-build-provider-vsphere:
-	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
-	$(call fix-crds,provider-vsphere)
-	@find provider-vsphere/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
-	@find provider-vsphere/templates -type f -exec $(SED) -i -e 's#secretName: capv-webhook-service-cert#secretName: capi-capv-webhook-service-cert#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_VSPHERE_VERSION)"' provider-vsphere/values.yaml
-	@yq -i '.fullnameOverride="capi-capi-provider-vsphere"' provider-vsphere/values.yaml
-
 build-provider-ipam:
 	$(call build-chart,provider-ipam,https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/default,$(PROVIDER_IPAM_VERSION))
 	$(call fix-crds,provider-ipam)
@@ -94,6 +85,7 @@ build-ipam-capi-remote:
 	@yq -i ".version=\"$$CHART_VERSION\"" ipam-capi-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}/g' ipam-capi-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/crds-rbac.yaml
+	@git restore kustomization.yaml
 
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
@@ -110,6 +102,9 @@ build-provider-metal3:
 build-provider-metal:
 	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
 	$(call fix-crds,provider-metal)
+	@# Label CRDs so clusterctl move discovers them (IroncoreMetalMachine is a link
+	@# in the ownerRef chain IPAddressClaim -> ServerClaim -> IroncoreMetalMachine -> Machine -> Cluster)
+	@find provider-metal/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
 
@@ -159,7 +154,8 @@ build-metal-operator-remote:
 		-f metal-operator-remote/values-managed-resources.yaml | \
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - | \
-		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - \
+		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - | \
+		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - \
 		> metal-operator-remote/managedresources/crds-and-rbac.yaml
 	# Extract upstream Deployment template and inject webhook-injector as native sidecar (initContainer)
 	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml | \
@@ -186,7 +182,8 @@ build-boot-operator-remote:
 		-n kube-system \
 		-f boot-operator-remote/values-managed-resources.yaml | \
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - | \
+		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - >\
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 

@@ -1,8 +1,6 @@
 {{- $region    := .Values.global.region    | required "missing value for .Values.global.region"    -}}
 {{- $db_region := .Values.global.db_region | required "missing value for .Values.global.db_region" -}}
 
-{{- if $db_region | hasPrefix "qa" -}}
-
 {{- $region_label := $region -}}
 {{- if and (eq $region "global") ($db_region | hasPrefix "qa") -}}
   {{- $region_label = "global-qa" -}}
@@ -20,7 +18,7 @@ apiVersion: monitoring.coreos.com/v1
 metadata:
   name: limitas-data-metrics
   labels:
-    prometheus: {{ quote .Values.alerts.prometheus.openstack }}
+    prometheus: obs-metrics-product-limitas
 
 spec:
   selector:
@@ -51,5 +49,3 @@ spec:
         - action: replace
           targetLabel: region
           replacement: {{ quote $region_label }}
-
-{{- end }}

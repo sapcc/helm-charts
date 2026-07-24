@@ -2,6 +2,16 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.7 - 2026/07/17
+
+- Add linkerd skip-inbound-ports annotation for TLS listener port in RabbitMQ deployment, if enabled
+- Chart version bumped
+
+## 0.25.6 - 2026/07/13
+
+- Fix volume-permission container failing on fresh PVCs. Only was working if `.erlang.cookie` was existing. 
+- Chart version bumped
+
 ## 0.25.5 - 2026/07/02
 
 - RabbitMQ [4.3.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.2)

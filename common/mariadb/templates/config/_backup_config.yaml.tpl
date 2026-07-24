@@ -74,6 +74,11 @@ storages:
       {{- if ternary $t.verify $.Values.backup_v2.ceph_s3.verify (hasKey $t "verify") }}
       verify: true
       {{- end }}
+      {{- $cephSseDefault := dig "mariadb" "backup_v2" "ceph_s3" "sse_customer_key" "" $.Values.global }}
+      {{- $cephSseC := include "mariadb.backup_v2.sse_c" (dict "target" $t "default" $cephSseDefault) }}
+      {{- if $cephSseC }}
+      {{- $cephSseC | nindent 6 }}
+      {{- end }}
       {{- $cephObjectLock := include "mariadb.backup_v2.object_lock" (dict "target" $t.object_lock "default" $.Values.backup_v2.object_lock) }}
       {{- if $cephObjectLock }}
       {{- $cephObjectLock | nindent 6 }}

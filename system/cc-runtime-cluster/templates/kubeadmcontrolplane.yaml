@@ -79,7 +79,12 @@ spec:
             value: {{ $.Values.controlplane.port | quote }}
           - name: authentication-config
             value: "/etc/kubernetes/authentication.yaml"
-          {{- if default $.Values.etcd.useEncryption $cluster.etcdEncryption }}
+          {{- if hasKey $cluster "etcdEncryption" }}
+          {{- if $cluster.etcdEncryption }}
+          - name: encryption-provider-config
+            value: "/etc/kubernetes/enc/enc.yaml"
+          {{- end }}
+          {{- else if $.Values.etcd.useEncryption }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
@@ -99,7 +104,15 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
-        {{- if default $.Values.etcd.useEncryption $cluster.etcdEncryption }}
+        {{- if hasKey $cluster "etcdEncryption" }}
+        {{- if $cluster.etcdEncryption }}
+          - name: "encryption-config"
+            hostPath: "/etc/kubernetes/enc/enc.yaml"
+            mountPath: "/etc/kubernetes/enc/enc.yaml"
+            readOnly: true
+            pathType: File
+        {{- end }}
+        {{- else if $.Values.etcd.useEncryption }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
@@ -390,9 +403,11 @@ spec:
       # https://github.com/kube-vip/kube-vip/issues/684
       - |
         sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
-      # avoid running kubeadm on L1 interface - wait for bond
+      # avoid running kubeadm on L1 interface - wait for bond/vlan
       # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
-      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ $.Values.controlplane.uplinkInterface }} --ipv4 --timeout 0
+      - |
+        VLAN_IF="$(ls /sys/devices/virtual/net/ | grep vlan)"
+        /usr/lib/systemd/systemd-networkd-wait-online -i "${VLAN_IF}" --ipv4 --timeout 0
     postKubeadmCommands:
      # https://github.com/kube-vip/kube-vip/issues/684
       - |

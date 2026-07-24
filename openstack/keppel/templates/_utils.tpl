@@ -62,7 +62,7 @@
   value: {{ include "driver_config_ratelimit" $ | fromYaml | toJson | quote }}
 - name:  KEPPEL_DRIVER_STORAGE
   {{- if eq .Values.keppel.driver "ceph" }}
-  value: '{"type":"swift","params":{"service_type":"object-store-ceph","use_service_user_project":true}}'
+  value: '{"type":"swift","params":{"apply_workarounds_for_ceph":true,"service_type":"object-store-ceph","use_service_user_project":true}}'
   {{- else }}{{/* TODO: if eq .Values.keppel.driver "multi", use that driver once it exists */}}
   value: '{"type":"swift"}'
   {{- end }}
@@ -132,7 +132,11 @@
 - name:  OS_IDENTITY_API_VERSION
   value: '3'
 - name:  OS_INTERFACE
+  {{- if eq .Values.keppel.driver "swift" }}
   value: internal
+  {{- else }}
+  value: public
+  {{- end }}
 - name:  OS_PASSWORD
   valueFrom:
     secretKeyRef:

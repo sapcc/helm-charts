@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.42.0 - 2026/07/13
+* support SSE-C for Ceph S3 backup uploads
+  * default at `global.mariadb.backup_v2.ceph_s3.sse_customer_key`
+  * per-target override at `global.mariadb.backup_v2.ceph_s3.targets[].sse_customer_key` (set to `""` to opt out of an inherited default)
+* chart version bumped
+
 ## v0.41.0 - 2026/07/06
 * support configurable S3 object lock on backup uploads
   * default at `backup_v2.object_lock.{enabled,lock_mode,retention_days}`

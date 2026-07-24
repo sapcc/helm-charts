@@ -17,6 +17,8 @@ kubeStateMetrics:
 
 absent-metrics-operator:
   enabled: true
+  args:
+    - --prom-rule-name={{ if index .metadata.labels "thanos-ruler" }}""{{ else if index .metadata.labels "prometheus" }}{{ index .metadata.labels "prometheus" }}{{ else }}no-selector{{ end }}
 
 kube-state-metrics:
   image:
@@ -60,6 +62,7 @@ prometheus-node-exporter:
     image:
       registry: keppel.global.cloud.sap
       repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
+      tag: v0.22.1
 
   extraArgs:
     - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
@@ -143,14 +146,16 @@ falco:
           tag: pci
 
 x509-certificate-exporter:
-  enabled: false
+  migration:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
   secretsExporter:
     podAnnotations:
       prometheus.io/port: "9793"
       prometheus.io/scrape: "true"
       prometheus.io/targets: kubernetes
   hostPathsExporter:
-    daemonSets: null
+    daemonSets: {}
   service:
     create: false
   prometheusServiceMonitor:
