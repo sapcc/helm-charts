@@ -123,6 +123,15 @@ spec:
             {{- end }}
             - name: SENTRY_FILTER_CONFIG_FILE
               value: /etc/config/rules.yaml
+            {{- if .Values.osprofiler.redis.enabled }}
+            - name: OSPROFILER_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-osprofiler-redis-user-default
+                  key: password
+            - name: OS_PROFILER__CONNECTION_STRING
+              value: "redis://:$(OSPROFILER_REDIS_PASSWORD)@{{ .Release.Name }}-osprofiler-redis:6379"
+            {{- end }}
           ports:
             - name: public
               containerPort: 5000
@@ -234,7 +243,9 @@ spec:
 {{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
+      {{- if not .Values.osprofiler.redis.enabled }}
       {{- include "jaeger_agent_sidecar" . | indent 8 }}
+      {{- end }}
       {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 8 }}
       {{- end }}
