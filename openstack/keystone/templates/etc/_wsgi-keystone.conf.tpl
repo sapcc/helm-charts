@@ -57,9 +57,20 @@ CustomLog /dev/stdout proxy env=forwarded
 
 {{- end }}
 
+{{- if .Values.api.metrics.enabled }}
+# Enable mod_wsgi request/process metrics so the per-process worker sampler
+# (loaded via WSGIImportScript below) can read mod_wsgi.process_metrics().
+WSGIServerMetrics On
+{{- end }}
+
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    {{- if .Values.api.metrics.enabled }}
+    # Load the worker-pool sampler into every keystone-public daemon process.
+    # It reports each process's active_requests to statsd for Prometheus.
+    WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
+    {{- end }}
     WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}
