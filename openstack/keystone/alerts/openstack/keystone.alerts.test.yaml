@@ -1,0 +1,106 @@
+# promtool test rules openstack/keystone/alerts/openstack/keystone.alerts.test.yaml
+rule_files:
+  - keystone.alerts
+
+evaluation_interval: 1m
+
+tests:
+  # OpenstackKeystoneApiHighLatency: fires when mean latency > 3s for 5m
+  - name: HighLatency fires after 5m above threshold
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_sum{service="identity"}'
+        values: '0+360x10'   # 360 units/min = 6s/req mean (above 3s threshold)
+      - series: 'openstack_watcher_api_requests_duration_seconds_count{service="identity"}'
+        values: '0+60x10'    # 60 req/min
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: OpenstackKeystoneApiHighLatency
+        exp_alerts: []        # not yet — for: 5m
+      - eval_time: 6m
+        alertname: OpenstackKeystoneApiHighLatency
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: keystone
+              context: latency
+              tier: os
+              support_group: identity
+              dashboard: keystone
+              meta: Keystone API mean response time exceeded 3s
+              playbook: docs/support/playbook/keystone/alerts/keystone-high-latency
+            exp_annotations:
+              description: "Keystone API mean response time is 6s. Investigate slow requests."
+              summary: "Keystone API response time is high"
+
+  # OpenstackKeystoneApiHighLatency: does NOT fire when mean latency is normal
+  - name: HighLatency does not fire at normal latency
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_sum{service="identity"}'
+        values: '0+6x10'     # 0.1s/req mean (well below 3s)
+      - series: 'openstack_watcher_api_requests_duration_seconds_count{service="identity"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: OpenstackKeystoneApiHighLatency
+        exp_alerts: []
+
+  # OpenstackKeystoneApiHighLatency: single slow request does NOT fire
+  # one outlier (62s cache miss) diluted by fast concurrent traffic = mean ~0.16s
+  - name: HighLatency does not fire on single slow request among fast traffic
+    interval: 1m
+    input_series:
+      # 1 slow request (62s) + 999 fast requests (0.1s each) = mean ~0.16s
+      - series: 'openstack_watcher_api_requests_duration_seconds_sum{service="identity"}'
+        values: '0+161x10'   # 62 + 99.9 = ~162s total per min
+      - series: 'openstack_watcher_api_requests_duration_seconds_count{service="identity"}'
+        values: '0+1000x10'  # 1000 req/min
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: OpenstackKeystoneApiHighLatency
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: OpenstackKeystoneApiCriticalLatency
+        exp_alerts: []
+
+  # OpenstackKeystoneApiCriticalLatency: fires when mean latency > 10s for 2m
+  - name: CriticalLatency fires after 2m above threshold
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_sum{service="identity"}'
+        values: '0+1200x10'  # 20s/req mean (above 10s threshold)
+      - series: 'openstack_watcher_api_requests_duration_seconds_count{service="identity"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: OpenstackKeystoneApiCriticalLatency
+        exp_alerts: []        # not yet — for: 2m
+      - eval_time: 3m
+        alertname: OpenstackKeystoneApiCriticalLatency
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              service: keystone
+              context: latency
+              tier: os
+              support_group: identity
+              dashboard: keystone
+              meta: Keystone API mean response time exceeded 10s
+              playbook: docs/support/playbook/keystone/alerts/keystone-high-latency
+            exp_annotations:
+              description: "Keystone API mean response time is 20s. This matches incident-level degradation — act immediately."
+              summary: "Keystone API response time is critically high"
+
+  # OpenstackKeystoneApiCriticalLatency: does NOT fire below threshold
+  - name: CriticalLatency does not fire below 10s mean
+    interval: 1m
+    input_series:
+      - series: 'openstack_watcher_api_requests_duration_seconds_sum{service="identity"}'
+        values: '0+540x10'   # 9s/req mean (just below 10s threshold)
+      - series: 'openstack_watcher_api_requests_duration_seconds_count{service="identity"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: OpenstackKeystoneApiCriticalLatency
+        exp_alerts: []
