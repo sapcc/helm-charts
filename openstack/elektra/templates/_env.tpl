@@ -21,6 +21,8 @@
 - name: MONSOON_OPENSTACK_AUTH_API_ENDPOINT
   value: {{ include "keystone_url" . | quote }}
 {{- end }}
+- name: MONSOON_OPENSTACK_AUTH_API_PUBLIC_ENDPOINT
+  value: "https://identity-3.{{ .Values.global.region }}.{{ .Values.global.tld }}/v3/auth/tokens"
 - name: MONSOON_OPENSTACK_AUTH_API_USERID
   value: {{ .Values.monsoon_openstack_auth_api_userid | quote }}
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
