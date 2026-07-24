@@ -24,13 +24,25 @@ data:
 {{- if .Values.watcher.enabled }}
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
+{{- end }}
+{{- if .Values.api.metrics.enabled }}
   statsd-exporter.yaml: |
+    mappings:
+      # Per-process WSGI worker state pushed by /scripts/wsgi-sampler.py.
+      # The pid is carried in the metric name and mapped to a Prometheus label.
+      # Prometheus: sum(keystone_wsgi_worker_active_requests) = busy workers;
+      # (processes - busy) = free workers.
+      - match: "{{ .Values.api.metrics.prefix | default "openstack" }}.wsgi.worker.active_requests.*"
+        name: "keystone_wsgi_worker_active_requests"
+        match_metric_type: gauge
+        labels:
+          pid: "$1"
     defaults:
       timer_type: histogram
       buckets: [.025, .1, .25, 1, 2.5]
       match_type: glob
       glob_disable_ordering: false
-      ttl: 0 # metrics do not expire
+      ttl: 30s # worker gauges expire if a process stops reporting
 {{- end }}
   access_rules.json: |
 {{ include (print .Template.BasePath "/etc/_access_rules.json.tpl") . | indent 4 }}
