@@ -93,14 +93,14 @@ groups:
 
   - alert: OpenstackKeystoneApiHighLatency
     expr: >
-      sum(irate(openstack_watcher_api_requests_duration_seconds_sum{service="identity"}[5m]))
-      /
-      sum(irate(openstack_watcher_api_requests_duration_seconds_count{service="identity"}[5m]))
-      > 3
+      histogram_quantile(0.99,
+        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity"}[5m]))
+        by (le)
+      ) > 1
     for: 5m
     labels:
       context: latency
-      meta: Keystone API mean response time exceeded 3s
+      meta: Keystone API p99 response time exceeded 1s
       service: keystone
       severity: warning
       tier: os
@@ -108,19 +108,19 @@ groups:
       dashboard: keystone
       playbook: 'docs/support/playbook/keystone/alerts/keystone-high-latency'
     annotations:
-      description: Keystone API mean response time is {{ $value | humanizeDuration }}. Investigate slow requests.
-      summary: Keystone API response time is high
+      description: Keystone API p99 response time is {{ $value | humanizeDuration }}. Investigate slow requests.
+      summary: Keystone API p99 response time is high
 
   - alert: OpenstackKeystoneApiCriticalLatency
     expr: >
-      sum(irate(openstack_watcher_api_requests_duration_seconds_sum{service="identity"}[5m]))
-      /
-      sum(irate(openstack_watcher_api_requests_duration_seconds_count{service="identity"}[5m]))
-      > 10
+      histogram_quantile(0.99,
+        sum(rate(openstack_watcher_api_requests_duration_seconds_bucket{service="identity"}[5m]))
+        by (le)
+      ) > 3
     for: 2m
     labels:
       context: latency
-      meta: Keystone API mean response time exceeded 10s
+      meta: Keystone API p99 response time exceeded 3s
       service: keystone
       severity: critical
       tier: os
@@ -128,5 +128,5 @@ groups:
       dashboard: keystone
       playbook: 'docs/support/playbook/keystone/alerts/keystone-high-latency'
     annotations:
-      description: Keystone API mean response time is {{ $value | humanizeDuration }}. This matches incident-level degradation — act immediately.
-      summary: Keystone API response time is critically high
+      description: Keystone API p99 response time is {{ $value | humanizeDuration }}. This matches incident-level degradation — act immediately.
+      summary: Keystone API p99 response time is critically high
