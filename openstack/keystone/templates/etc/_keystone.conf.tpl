@@ -194,4 +194,10 @@ allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifie
 [federation]
 remote_id_attribute = HTTP_OIDC_ISS
 trusted_dashboard = https://dashboard.{{ .Values.global.region }}.cloud.sap/verify-auth-token
+{{- if .Values.debug }}
+trusted_dashboard = http://localhost:4001/verify-auth-token
+trusted_dashboard = https://localhost:4001/verify-auth-token
+trusted_dashboard = http://127.0.0.1:4001/verify-auth-token
+trusted_dashboard = https://127.0.0.1:4001/verify-auth-token
+{{- end }}
 {{- end }}
