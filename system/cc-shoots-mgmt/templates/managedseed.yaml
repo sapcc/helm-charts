@@ -58,6 +58,13 @@ spec:
                 namespace: garden
               type: openstack-designate
           settings:
+            {{- if $cluster.verticalPodAutoscaler }}
+            verticalPodAutoscaler:
+              enabled: {{ $cluster.verticalPodAutoscaler.enabled }}
+              {{- if $cluster.verticalPodAutoscaler.maxAllowed }}
+              maxAllowed: {{ toYaml $cluster.verticalPodAutoscaler.maxAllowed | nindent 16 }}
+              {{- end }}
+            {{- end }}
             excessCapacityReservation:
               enabled: false
             dependencyWatchdog:
