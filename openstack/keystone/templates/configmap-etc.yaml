@@ -37,12 +37,13 @@ data:
         match_metric_type: gauge
         labels:
           pid: "$1"
+        ttl: 30s # expire a worker gauge if its process stops reporting
     defaults:
       timer_type: histogram
       buckets: [.025, .1, .25, 1, 2.5, 5, 10, 15, 30]
       match_type: glob
       glob_disable_ordering: false
-      ttl: 30s # worker gauges expire if a process stops reporting
+      ttl: 0
 {{- end }}
   access_rules.json: |
 {{ include (print .Template.BasePath "/etc/_access_rules.json.tpl") . | indent 4 }}
