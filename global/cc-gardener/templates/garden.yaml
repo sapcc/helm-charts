@@ -93,7 +93,10 @@ spec:
       {{- toYaml .Values.garden.runtimeCluster.zones | nindent 6 }}
     settings:
       verticalPodAutoscaler:
-        enabled: false
+        enabled: {{ default false (dig "runtimeCluster" "verticalPodAutoscaler" "enabled" nil .Values.garden) }}
+        {{- if dig "runtimeCluster" "verticalPodAutoscaler" "maxAllowed" nil .Values.garden }}
+        maxAllowed: {{ toYaml .Values.garden.runtimeCluster.verticalPodAutoscaler.maxAllowed | nindent 10 }}
+        {{- end }}
       topologyAwareRouting:
         enabled: false
 {{- if .Values.garden.runtimeCluster.loadBalancerServices }}
