@@ -42,9 +42,9 @@ spec:
 {{- else }}
 {{ tpl ($.Files.Get (printf "bmc_settings/%s" $entry.bmc.settingsFileName)) $ | trim | indent 4 }}
 {{- end }}
-{{- if gt (int $.Values.bmcSettings.RetryPolicy) 0 }}
+{{- with $.Values.bmcSettings.retryPolicy }}
     retryPolicy:
-      maxAttempts: {{ $.Values.bmcSettings.RetryPolicy }}
+{{ toYaml . | indent 6 }}
 {{- end }}
 ---
 {{- end }}
