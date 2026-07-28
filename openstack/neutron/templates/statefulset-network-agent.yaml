@@ -97,7 +97,7 @@ spec:
               - |
                 import json, time
                 try:
-                    with open('/var/run/dhcp-agent-status.json', 'r') as f:
+                    with open('/run/dhcp-agent/status.json', 'r') as f:
                         status = json.load(f)
                         status_age = time.time() - status.get('time', 0)
                         if status_age > 60:
@@ -121,6 +121,8 @@ spec:
           resources:
 {{ toYaml $.Values.pod.resources.dhcp_agent | indent 12 }}
           volumeMounts:
+            - name: network-status
+              mountPath: /run/dhcp-agent
             - name: metadata-proxy
               mountPath: /run/metadata_proxy
             - name: modules
@@ -188,8 +190,8 @@ spec:
           resources:
 {{ toYaml $.Values.pod.resources.agent_checks_exporter | indent 12 }}
           volumeMounts:
-            - name: network-namespace
-              mountPath: /var/run/netns
+            - name: network-status
+              mountPath: /run/dhcp-agent
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
@@ -300,7 +302,7 @@ spec:
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
       volumes:
-        - name: network-namespace
+        - name: network-status
           emptyDir: {}
         - name: metadata-proxy
           hostPath:
