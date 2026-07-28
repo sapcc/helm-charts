@@ -13,7 +13,7 @@ log_config_append = /etc/keystone/logging.conf
 logging_context_format_string = %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
 logging_default_format_string = %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
 logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
-logging_user_identity_format = usr %(user)s prj %(tenant)s dom %(domain)s usr-dom %(user_domain)s prj-dom %(project_domain)s
+logging_user_identity_format = usr %(user)s prj %(project)s dom %(domain)s usr-dom %(user_domain)s prj-dom %(project_domain)s
 
 notification_format = {{ .Values.api.notifications.format | default "cadf" | quote }}
 {{ range $message_type := .Values.api.notifications.opt_out }}
@@ -194,4 +194,10 @@ allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifie
 [federation]
 remote_id_attribute = HTTP_OIDC_ISS
 trusted_dashboard = https://dashboard.{{ .Values.global.region }}.cloud.sap/verify-auth-token
+{{- if .Values.debug }}
+trusted_dashboard = http://localhost:4001/verify-auth-token
+trusted_dashboard = https://localhost:4001/verify-auth-token
+trusted_dashboard = http://127.0.0.1:4001/verify-auth-token
+trusted_dashboard = https://127.0.0.1:4001/verify-auth-token
+{{- end }}
 {{- end }}

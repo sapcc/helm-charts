@@ -66,7 +66,7 @@ spec:
             name: audit-policy-cp
       {{- end }}
     verticalPodAutoscaler:
-      enabled: true # VPA needs to enabled for ManagedSeed
+      enabled: true # VPA needs to be enabled for ManagedSeed
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -139,10 +139,13 @@ spec:
             bgpFilter:
               - name: v4filter
                 exportV4:
+                  {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
+                  {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
+                  {{- end }}
                   {{- end }}
                   {{- if $.Values.networking.overlay }}        
                   - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
