@@ -51,23 +51,3 @@ groups:
       description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
         constantly. This is probably impacting performance, so check if we can increase the number
         of replicas or the resource requests/limits.
-
-  - alert: OpenstackKeystoneApiNginxHighLatency
-    expr: >
-      histogram_quantile(0.95,
-        sum(rate(nginx_ingress_controller_request_duration_seconds_bucket{ingress=~"keystone"}[5m]))
-        by (le)
-      ) > 1
-    for: 5m
-    labels:
-      severity: warning
-      tier: os
-      service: keystone
-      context: latency
-      dashboard: keystone
-      meta: 'Keystone nginx ingress p95 latency exceeded 1s'
-      support_group: identity
-      playbook: 'docs/support/playbook/keystone/alerts/keystone-high-latency'
-    annotations:
-      description: 'Keystone nginx ingress p95 request latency is {{ $value | humanizeDuration }}. Requests are slow at the ingress layer. Normal baseline is 200-300ms.'
-      summary: 'Keystone nginx ingress latency is high'
