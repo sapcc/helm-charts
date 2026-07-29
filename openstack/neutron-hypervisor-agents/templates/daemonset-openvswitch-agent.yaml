@@ -35,6 +35,8 @@ spec:
       hostNetwork: true
       hostPID: true
       hostIPC: true
+      # Enough time for preStop to save flows and gracefully exit ovs-vswitchd.
+      terminationGracePeriodSeconds: 30
       hostAliases:
       {{- range $ip := .Values.rabbitmq.externalIPs }}
       - ip: {{ $ip }}
@@ -119,6 +121,23 @@ spec:
             privileged: true
           command:
           - start-ovs-vswitchd
+          # Save OpenFlow flows and stop ovs-vswitchd gracefully. The next
+          # start-ovs-vswitchd will set flow-restore-wait=true and replay
+          # the flows so the kernel datapath is not wiped.
+          lifecycle:
+            preStop:
+              exec:
+                command: [preStop-ovs-vswitchd]
+          env:
+          # Takeover moves the host's primary IPv4 onto the OVS bridge.
+          # Only enable on nodes where the primary NIC is intended for
+          # instance traffic.
+          - name: OVS_PHYSICAL_BRIDGE_TAKEOVER
+            value: {{ quote (default false .Values.ovs.physicalBridgeTakeover) }}
+          - name: PUBLIC_INTERFACE
+            value: {{ quote (default "" .Values.ovs.publicInterface) }}
+          - name: OVS_PHYSICAL_BRIDGE
+            value: {{ quote (default "br-ovs0" .Values.ovs.physicalBridge) }}
           volumeMounts:
           - mountPath: /run
             name: run
@@ -127,6 +146,15 @@ spec:
             readOnly: true
           - mountPath: /usr/local/bin
             name: bin
+          - mountPath: /usr/local/share/start-ovs-vswitchd
+            name: network-templates
+            readOnly: true
+          # start-ovs-vswitchd writes systemd-networkd drop-ins here.
+          - mountPath: /host/etc/systemd/network
+            name: host-etc-systemd-network
+          - mountPath: /host/usr/lib/systemd/network
+            name: host-usr-lib-systemd-network
+            readOnly: true
 {{- end }}
       dnsConfig:
         searches:
@@ -144,6 +172,17 @@ spec:
       - name: modules
         hostPath:
           path: /lib/modules
+      - name: host-etc-systemd-network
+        hostPath:
+          path: /etc/systemd/network
+          type: DirectoryOrCreate
+      - name: host-usr-lib-systemd-network
+        hostPath:
+          path: /usr/lib/systemd/network
+          type: DirectoryOrCreate
+      - name: network-templates
+        configMap:
+          name: {{ .Release.Name }}-network-templates
       - name: etc-secrets
         secret:
           secretName: {{ .Release.Name }}-etc

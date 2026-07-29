@@ -10,7 +10,9 @@ data:
   start-ovsdb-server: |
     {{- include (print .Template.BasePath "/bin/_start-ovsdb-server.tpl") . | nindent 4 }}
   start-ovs-vswitchd: |
-    {{- include (print .Template.BasePath "/bin/_start-ovs-vswitchd.tpl") . | nindent 4 }}
+    {{- .Files.Get "files/start-ovs-vswitchd.py" | nindent 4 }}
+  preStop-ovs-vswitchd: |
+    {{- .Files.Get "files/preStop-ovs-vswitchd.sh" | nindent 4 }}
   ovn_controller_liveness.sh: |
     {{- include (print .Template.BasePath "/bin/_ovn_controller_liveness.sh.tpl") . | nindent 4 }}
   ovn_controller_readiness.sh: |
