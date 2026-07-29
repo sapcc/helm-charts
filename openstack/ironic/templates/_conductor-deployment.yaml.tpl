@@ -167,11 +167,14 @@ spec:
             containerPort: 443
         volumeMounts:
           - mountPath: /etc/nginx/conf.d/default.conf
-            name: ironic-console-nginxconf
+            name: ironic-console-default
             subPath: default.conf
           - mountPath: /etc/nginx/conf.d/dhparam.pem
             name: ironic-console-dhparam
             subPath: dhparam.pem
+          - mountPath: /etc/nginx/nginx.conf
+            name: ironic-console-nginx
+            subpath: nginx.conf
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
@@ -235,7 +238,10 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
-      - name: ironic-console-nginxconf
+      - name: ironic-console-nginx
+        configMap:
+          name: ironic-console-nginx
+      - name: ironic-console-default
         secret:
           secretName: ironic-console-secret
           items:
