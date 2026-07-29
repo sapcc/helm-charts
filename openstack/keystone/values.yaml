@@ -63,6 +63,40 @@ federation:
     client_id: ""
     client_secret: ""
     crypto_passphrase: ""
+  saml:
+    enabled: false
+    # Ordering safety gate. When enabled=true, keystone-api mounts ConfigMaps
+    # and a Secret produced by the SEPARATE keystone-saml-federation chart
+    # (keystone-saml-shibboleth-config, keystone-saml-federation-saml-tenants,
+    # keystone-saml-idp-metadata, and the SP-key Secret) as non-optional
+    # volumes. If those resources do not exist yet, the pod will not start
+    # (FailedMount). You MUST deploy the keystone-saml-federation chart for
+    # this region first, then set this flag to true to acknowledge you have
+    # done so. The chart refuses to render while enabled=true and this is
+    # false.
+    iHaveAlreadyDeployedFederationChart: false
+    spInit:
+      image: keystone-saml-sp-init
+      imageTag: ""
+      # Three required axes for key lifecycle management.
+      # All three must be set when federation.saml.enabled is true.
+      # See keystone-saml-sp-init for available plugins.
+      keyGeneration: ""   # required: go-crypto | hsm-entropy | hsm-full | tpm-entropy
+      keyWrapping: ""     # required: none | vault-transit | hsm | tpm
+      keyStorage: ""      # required: vault-kv | k8s-secret
+      # Set to true only if keyWrapping=none AND keyStorage=k8s-secret.
+      # This combination stores the plaintext private key in a Kubernetes
+      # Secret and does not meet production security requirements.
+      allowInsecureStorage: false
+    idp:
+      # IdP metadata ConfigMap name. Shipped by the keystone-saml-federation
+      # chart. Per-tenant <tenant>-metadata.xml files live inside.
+      # shibboleth2.xml and the federation-saml.d/*.conf files come from
+      # dedicated ConfigMaps (keystone-saml-shibboleth-config and
+      # keystone-saml-federation-saml-tenants) and are not configurable
+      # via values; they are wired by name in deployment-api.yaml.
+      metadataConfigMap: ""           # IdP metadata files (XML)
+      spKeySecretName: "keystone-saml-sp"  # Per-tenant SP key pairs (from federation chart)
 
 api:
   image: "loci-keystone"
