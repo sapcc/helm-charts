@@ -50,7 +50,8 @@ function start () {
   mkdir -p /var/run/shibboleth /var/cache/shibboleth
   if command -v shibd &> /dev/null; then
     echo "Starting shibd daemon for SAML federation..."
-    shibd -t && shibd -f || echo "WARN: shibd config validation failed or daemon not started, check logs above"
+    shibd -t || { echo "ERR: shibd config test failed"; exit 1; }
+    shibd -f || { echo "ERR: shibd daemon failed to start"; exit 1; }
   fi
   {{- end }}
 
