@@ -22,13 +22,21 @@ spec:
         alert-tier: os
         alert-service: neutron
         ml2-driver: "ovn"
-        # Source for the BUILDING_BLOCK downward-API env.
+        # Source for the BUILDING_BLOCK downward-API env below.
         {{- if .Values.global.buildingBlock }}
         kubernetes.metal.cloud.sap/bb: {{ .Values.global.buildingBlock | quote }}
         {{- end }}
       annotations:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
+{{- if not .Values.ovsOnHost }}
+      # hostNetwork: share OVS control socket with the host / expose tunnel IPs.
+      # hostPID: ovs-appctl signals ovsdb-server by pidfile.
+      hostNetwork: true
+      hostPID: true
+      # Enough time for preStop to save flows and gracefully exit ovs-vswitchd.
+      terminationGracePeriodSeconds: 30
+{{- end }}
       affinity:
         {{- toYaml $hypervisor.pod.affinity | nindent 8 }}
       tolerations:
@@ -41,6 +49,65 @@ spec:
         {{ $k }}: {{ $v }}
       {{- end }}
       initContainers:
+{{- if not .Values.ovsOnHost }}
+        # Native sidecar init containers (restartPolicy=Always, K8s >=1.29):
+        # start first and stay running so init-ovsdb-server below can wait
+        # on them without deadlock.
+        - name: ovsdb-server
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set .imageVersion" }}
+          imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          securityContext:
+            privileged: true
+          command:
+          - start-ovsdb-server
+          env:
+          volumeMounts:
+          - mountPath: /run
+            name: run
+          - mountPath: /usr/local/bin
+            name: bin
+        - name: ovs-vswitchd
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          restartPolicy: Always
+          securityContext:
+            privileged: true
+          command:
+          - start-ovs-vswitchd
+          # Save OpenFlow flows and stop ovs-vswitchd gracefully. The next
+          # start-ovs-vswitchd will set flow-restore-wait=true and replay
+          # the flows so the kernel datapath is not wiped.
+          lifecycle:
+            preStop:
+              exec:
+                command: [preStop-ovs-vswitchd]
+          env:
+          - name: OVS_PHYSICAL_BRIDGE_TAKEOVER
+            value: {{ quote (default false .Values.ovs.physicalBridgeTakeover) }}
+          - name: PUBLIC_INTERFACE
+            value: {{ quote (default "" .Values.ovs.publicInterface) }}
+          - name: OVS_PHYSICAL_BRIDGE
+            value: {{ quote (default "br-ovs0" .Values.ovs.physicalBridge) }}
+          volumeMounts:
+          - mountPath: /run
+            name: run
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+          - mountPath: /usr/local/bin
+            name: bin
+          - mountPath: /usr/local/share/start-ovs-vswitchd
+            name: network-templates
+            readOnly: true
+          # start-ovs-vswitchd writes systemd-networkd drop-ins here to
+          # migrate the DHCP lease from the primary NIC onto br-ovs0.
+          - mountPath: /host/etc/systemd/network
+            name: host-etc-systemd-network
+          - mountPath: /host/usr/lib/systemd/network
+            name: host-usr-lib-systemd-network
+            readOnly: true
+{{- end }}
         - name: init-ovsdb-server
           image: {{ .Values.global.registry | required ".Values.global.registry is missing" }}/cobaltcore-dev/openstack-ovn-controller:{{ .Values.imageVersionOVN | default "latest" }}
           imagePullPolicy: IfNotPresent
@@ -112,7 +179,9 @@ spec:
         - name: var-run-openvswitch
           hostPath:
             path: "/var/run/openvswitch"
-            type: Directory
+            # DirectoryOrCreate: with ovsOnHost=false the sidecars in
+            # this pod are what create /var/run/openvswitch.
+            type: DirectoryOrCreate
         - name: var-run-ovn
           hostPath:
             path: "/var/run/ovn"
@@ -121,3 +190,29 @@ spec:
           configMap:
             name: {{ .Release.Name }}-bin
             defaultMode: 0755
+{{- if not .Values.ovsOnHost }}
+        # Volumes for the in-pod ovsdb-server + ovs-vswitchd sidecars.
+        - name: run
+          hostPath:
+            path: /run
+        - name: modules
+          hostPath:
+            path: /lib/modules
+        - name: host-etc-systemd-network
+          hostPath:
+            path: /etc/systemd/network
+            type: DirectoryOrCreate
+        # Read-only: vendor .network files that match the primary NIC
+        # are shadowed via /dev/null symlinks under /etc, never edited.
+        - name: host-usr-lib-systemd-network
+          hostPath:
+            path: /usr/lib/systemd/network
+            type: DirectoryOrCreate
+        - name: bin
+          configMap:
+            name: {{ .Release.Name }}-bin
+            defaultMode: 0755
+        - name: network-templates
+          configMap:
+            name: {{ .Release.Name }}-network-templates
+{{- end }}

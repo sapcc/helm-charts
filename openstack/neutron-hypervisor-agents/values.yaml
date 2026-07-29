@@ -46,6 +46,17 @@ securitygroup:
   enable_anti_spoofing_rules: False
 
 ovsOnHost: true
+
+# In-pod ovs-vswitchd bridge takeover; only relevant when ovsOnHost=false.
+# See templates/bin/_start-ovs-vswitchd.tpl.
+ovs:
+  # Attach publicInterface to physicalBridge and move the host's primary
+  # IPv4 onto the bridge. Only enable on NICs intended for instance traffic.
+  physicalBridgeTakeover: false
+  # Empty = auto-detect: bond0 if present, else the default-route interface.
+  publicInterface: ""
+  physicalBridge: br-ovs0
+
 agent:
   rootwrap_daemon: false
 osprofiler: {}
