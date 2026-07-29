@@ -1,0 +1,70 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/metal-maintenance-operator-remote
+
+# Disable all upstream chart rendering that the wrapper doesn't need
+metal-maintenance-operator-core:
+  fullnameOverride: metal-maintenance-operator
+  crd:
+    enable: false
+  rbac:
+    namespaced: false
+    helpers:
+      enable: false
+  serviceAccount:
+    enable: true
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+  certManager:
+    enable: false
+  ingress:
+    enable: false
+  serverReadinessNamespaces: []
+  manager:
+    enabled: true
+    image:
+      repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-maintenance-operator-controller-manager
+    args:
+      - "--sanitization-namespace=metal-maintenance-sanitization"
+      - "--sanitization-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/sanitizer@sha256:82f78c3d4c991a3b055415cb649cb371faaf63a64ed1407b7eeadf97680713e7"
+      - "--report-base-url=https://metal-maintenance-operator.garden.<region>.cloud.sap"
+    env:
+      KUBERNETES_SERVICE_HOST: "apiserver-url"
+      KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+    extraVolumeMounts:
+      - name: remote-kubeconfig
+        mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        readOnly: true
+    extraVolumes:
+      - name: remote-kubeconfig
+        secret:
+          secretName: metal-maintenance-operator-remote-kubeconfig
+          items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+    pod:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+  extraObjects:
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: metal-maintenance-operator-remote-kubeconfig
+        labels:
+          resources.gardener.cloud/purpose: token-requestor
+          resources.gardener.cloud/class: shoot
+        annotations:
+          serviceaccount.resources.gardener.cloud/name: metal-maintenance-operator-controller-manager
+          serviceaccount.resources.gardener.cloud/namespace: kube-system
+          serviceaccount.resources.gardener.cloud/inject-ca-bundle: "true"
+      stringData:
+        token: ""
+        bundle.crt: ""

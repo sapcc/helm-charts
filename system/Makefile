@@ -187,6 +187,17 @@ build-boot-operator-remote:
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
+build-metal-maintenance-operator-remote:
+	@helm dep up metal-maintenance-operator-remote
+	@helm template metal-maintenance-operator \
+		metal-maintenance-operator-remote/charts/metal-maintenance-operator*.tgz \
+		-n kube-system \
+		-f metal-maintenance-operator-remote/values-managed-resources.yaml | \
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
+		yq eval 'select(.kind != "Service" and .kind != "Deployment" and .metadata.name != "metal-maintenance-operator-leader-election-role" and .metadata.name != "metal-maintenance-operator-leader-election-rolebinding")' - \
+		> metal-maintenance-operator-remote/managedresources/crds-and-rbac.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml
+
 build-argora-operator:
 	@helm dep up argora-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
