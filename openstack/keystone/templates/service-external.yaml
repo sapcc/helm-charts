@@ -1,0 +1,27 @@
+{{- if .Values.global.keystone_external_ip }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-external
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: keystone
+    type: api-external
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    name: {{ .Release.Name }}-api
+  ports:
+    - name: public
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+  externalIPs:
+    - {{ .Values.global.keystone_external_ip | quote }}
+{{- end }}
