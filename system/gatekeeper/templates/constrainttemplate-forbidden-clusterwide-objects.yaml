@@ -7,6 +7,13 @@ spec:
     spec:
       names:
         kind: GkForbiddenClusterwideObjects
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            kubeSystemReleaseName:
+              type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -50,19 +57,13 @@ spec:
               }
 
               # validating AND mutating webhook: kube-system/cert-manager-webhook
-              {{- if eq .Values.cluster_type "kubernikus" "virtual" "metal" }}
-              kubeSystemReleaseName := "kube-system-{{ .Values.cluster_type }}"
-              {{- else }}
-              kubeSystemReleaseName := "kube-system"
-              {{- end }}
-
               allowed_webhook contains {"name": webhook.name, "reason": "allow-gatekeeper"} if {
                   # NOTE: both kinds are allowed
-                  iro.metadata.name == sprintf("%s-cert-manager-webhook", [kubeSystemReleaseName])
+                  iro.metadata.name == sprintf("%s-cert-manager-webhook", [input.parameters.kubeSystemReleaseName])
 
                   webhook := iro.webhooks[_]
                   webhook.clientConfig.service.namespace == "kube-system"
-                  webhook.clientConfig.service.name == sprintf("%s-cert-manager-webhook", [kubeSystemReleaseName])
+                  webhook.clientConfig.service.name == sprintf("%s-cert-manager-webhook", [input.parameters.kubeSystemReleaseName])
                   [a | a := webhook.rules[_].apiGroups] == [["cert-manager.io", "acme.cert-manager.io"]]
               }
 
