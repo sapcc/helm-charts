@@ -105,7 +105,11 @@ spec:
           zones: {{ toYaml $seedRegion.zones | nindent 12 }}
         settings:
           verticalPodAutoscaler:
-            enabled: false
+            # should be disabled for managed seeds
+            enabled: {{ default false $seedRegion.settings.verticalPodAutoscaler.enabled }}
+            {{- with $seedRegion.settings.verticalPodAutoscaler.maxAllowed }}
+            maxAllowed: {{ toYaml . | nindent 14 }}
+            {{- end }}
           excessCapacityReservation:
             enabled: false
           dependencyWatchdog:
