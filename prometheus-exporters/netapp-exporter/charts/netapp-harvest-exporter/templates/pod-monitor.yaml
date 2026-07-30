@@ -1,0 +1,17 @@
+{{- if eq .Values.global.region "eu-de-3" }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ printf "%s-harvest-pod-monitor" .Release.Name | trunc 63 | trimSuffix "-" }}
+  labels:
+    prometheus: {{ .Values.global.prometheus }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      component: harvest-worker
+  podMetricsEndpoints:
+    - port: metrics
+{{- end }}
