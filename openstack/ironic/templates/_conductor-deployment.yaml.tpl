@@ -80,7 +80,7 @@ spec:
           value: ignore:Unverified HTTPS request
         # workaround for OSSN-0099
         - name: IRONIC_THREAD_STACK_SIZE
-          value: 8388608
+          value: "8388608"
         {{- include "utils.sentry_config" . | indent 8 }}
         - name: PGAPPNAME
           valueFrom:
