@@ -3,7 +3,7 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/metal-maintenance-operator-remote
 
 # Disable all upstream chart rendering that the wrapper doesn't need
-metal-maintenance-operator-core:
+mmo-core:
   fullnameOverride: metal-maintenance-operator
   crd:
     enable: false
@@ -27,8 +27,10 @@ metal-maintenance-operator-core:
     image:
       repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-maintenance-operator-controller-manager
     args:
-      - "--sanitization-namespace=metal-maintenance-sanitization"
       - "--sanitization-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/sanitizer@sha256:82f78c3d4c991a3b055415cb649cb371faaf63a64ed1407b7eeadf97680713e7"
+      # - "--sanitization-namespace=DEFINE_IN_REGION_VALUES"
+      # - "--sanitization-tolerations=DEFINE_IN_REGION_VALUES"
+      # - "--readiness-checks=DEFINE_IN_REGION_VALUES"
       - "--report-base-url=https://metal-maintenance-operator.garden.<region>.cloud.sap"
     env:
       KUBERNETES_SERVICE_HOST: "apiserver-url"
