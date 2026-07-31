@@ -8,107 +8,107 @@ tests:
 # library tests
 
 - name: libtest-add-support-labels
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-libtest-add-support-labels.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/libtest-add-support-labels.yaml
+  template: rendered-chart/templates/constrainttemplate-GkLibtestAddSupportLabels.yaml
+  constraint: rendered-chart/templates/constraint-GkLibtestAddSupportLabels.yaml
   cases:
   - name: support-labels-on-pod-filled
-    object: fixtures/libtest-add-support-labels/pod-filled.yaml
+    object: fixtures/GkLibtestAddSupportLabels/pod-filled.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> test for from_k8s_object\(\)$'
   - name: support-labels-on-pod-missing
-    object: fixtures/libtest-add-support-labels/pod-missing.yaml
+    object: fixtures/GkLibtestAddSupportLabels/pod-missing.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> test for from_k8s_object\(\)$'
   - name: support-labels-on-helm-release-filled
-    object: fixtures/libtest-add-support-labels/helm-release-filled.out.yaml
+    object: fixtures/GkLibtestAddSupportLabels/helm-release-filled.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> test for from_helm_release\(\)$'
   - name: support-labels-on-helm-release-missing
-    object: fixtures/libtest-add-support-labels/helm-release-missing.out.yaml
+    object: fixtures/GkLibtestAddSupportLabels/helm-release-missing.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> test for from_helm_release\(\)$'
 
 - name: libtest-traversal
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-libtest-traversal.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/libtest-traversal.yaml
+  template: rendered-chart/templates/constrainttemplate-GkLibtestTraversal.yaml
+  constraint: rendered-chart/templates/constraint-GkLibtestTraversal.yaml
   cases:
   - name: traversal-for-cronjob
-    object: fixtures/libtest-traversal/cronjob.yaml
+    object: fixtures/GkLibtestTraversal/cronjob.yaml
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "pod in cronjob" and containers "alpine", "init-busybox", "ubuntu"$'
   - name: traversal-for-daemonset
-    object: fixtures/libtest-traversal/daemonset.yaml
+    object: fixtures/GkLibtestTraversal/daemonset.yaml
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "pod in daemonset" and containers "alpine", "init-busybox", "ubuntu"$'
   - name: traversal-for-deployment
-    object: fixtures/libtest-traversal/deployment.yaml
+    object: fixtures/GkLibtestTraversal/deployment.yaml
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "pod in deployment" and containers "alpine", "init-busybox", "ubuntu"$'
   - name: traversal-for-job
-    object: fixtures/libtest-traversal/job.yaml
+    object: fixtures/GkLibtestTraversal/job.yaml
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "pod in job" and containers "alpine", "init-busybox", "ubuntu"$'
   - name: traversal-for-job-in-cronjob
-    object: fixtures/libtest-traversal/job-in-cronjob.yaml
+    object: fixtures/GkLibtestTraversal/job-in-cronjob.yaml
     assertions:
     - violations: 1
       message: '^no relevant pod found$' # suppressed because of owner reference
   - name: traversal-for-pod
-    object: fixtures/libtest-traversal/pod.yaml
+    object: fixtures/GkLibtestTraversal/pod.yaml
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "individual pod" and containers "alpine", "init-busybox", "ubuntu"$'
   - name: traversal-for-pod-minimal
-    object: fixtures/libtest-traversal/pod-minimal.yaml # special case: tests empty `initContainers`
+    object: fixtures/GkLibtestTraversal/pod-minimal.yaml # special case: tests empty `initContainers`
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "minimal pod" and containers "alpine"$'
   - name: traversal-for-pod-in-daemonset
-    object: fixtures/libtest-traversal/pod-in-daemonset.yaml
+    object: fixtures/GkLibtestTraversal/pod-in-daemonset.yaml
     assertions:
     - violations: 1
       message: '^no relevant pod found$' # suppressed because of owner reference
   - name: traversal-for-pod-in-job
-    object: fixtures/libtest-traversal/pod-in-job.yaml
+    object: fixtures/GkLibtestTraversal/pod-in-job.yaml
     assertions:
     - violations: 1
       message: '^no relevant pod found$' # suppressed because of owner reference
   - name: traversal-for-pod-in-replicaset
-    object: fixtures/libtest-traversal/pod-in-replicaset.yaml
+    object: fixtures/GkLibtestTraversal/pod-in-replicaset.yaml
     assertions:
     - violations: 1
       message: '^no relevant pod found$' # suppressed because of owner reference
   - name: traversal-for-pod-in-statefulset
-    object: fixtures/libtest-traversal/pod-in-statefulset.yaml
+    object: fixtures/GkLibtestTraversal/pod-in-statefulset.yaml
     assertions:
     - violations: 1
       message: '^no relevant pod found$' # suppressed because of owner reference
   - name: traversal-for-pod-in-unknown-owner
-    object: fixtures/libtest-traversal/pod-in-unknown-owner.yaml # special case: tests `ownerReferences` pointing to unexpected owner
+    object: fixtures/GkLibtestTraversal/pod-in-unknown-owner.yaml # special case: tests `ownerReferences` pointing to unexpected owner
     assertions:
     - violations: 1
       # because we do not know this owner, we have to report violations on this level
       message: '^found a relevant pod with marker "pod in unknown owner" and containers "alpine", "init-busybox", "ubuntu"$'
   - name: traversal-for-replicaset
-    object: fixtures/libtest-traversal/replicaset.yaml
+    object: fixtures/GkLibtestTraversal/replicaset.yaml
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "pod in replicaset" and containers "alpine", "init-busybox", "ubuntu"$'
   - name: traversal-for-replicaset-in-deployment
-    object: fixtures/libtest-traversal/replicaset-in-deployment.yaml
+    object: fixtures/GkLibtestTraversal/replicaset-in-deployment.yaml
     assertions:
     - violations: 1
       message: '^no relevant pod found$' # suppressed because of owner reference
   - name: traversal-for-statefulset
-    object: fixtures/libtest-traversal/statefulset.yaml
+    object: fixtures/GkLibtestTraversal/statefulset.yaml
     assertions:
     - violations: 1
       message: '^found a relevant pod with marker "pod in statefulset" and containers "alpine", "init-busybox", "ubuntu"$'
@@ -117,41 +117,41 @@ tests:
 # policy tests
 
 - name: deprecated-api-version-k8s1.32
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/deprecated-api-version-k8s1.32.yaml
+  template: rendered-chart/templates/constrainttemplate-GkDeprecatedApiVersion.yaml
+  constraint: rendered-chart/templates/constraint-GkDeprecatedApiVersion.yaml
   cases:
   - name: helm-release-deprecated-api-version-1.32
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.32.out.yaml
+    object: fixtures/GkDeprecatedApiVersion/helm-release-deprecated-1.32.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta3 \(will break in k8s v1.32\)$'
   - name: helm-release-clean
-    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    object: fixtures/GkDeprecatedApiVersion/helm-release-clean.out.yaml
     assertions:
     - violations: no
 
 - name: forbidden-clusterwide-objects
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-forbidden-clusterwide-objects.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/forbidden-clusterwide-objects.yaml
+  template: rendered-chart/templates/constrainttemplate-GkForbiddenClusterwideObjects.yaml
+  constraint: rendered-chart/templates/constraint-GkForbiddenClusterwideObjects.yaml
   cases:
   - name: gatekeeper-validating-webhook-configuration
-    object: fixtures/forbidden-clusterwide-objects/gatekeeper-validating-webhook-configuration.yaml
+    object: fixtures/GkForbiddenClusterwideObjects/gatekeeper-validating-webhook-configuration.yaml
     assertions:
     - violations: no
   - name: cert-manager-mutating-webhook
-    object: fixtures/forbidden-clusterwide-objects/cert-manager-mutating-webhook.yaml
+    object: fixtures/GkForbiddenClusterwideObjects/cert-manager-mutating-webhook.yaml
     assertions:
     # TODO: repair this
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "webhook.cert-manager.io" does not match our allowlist$'
   - name: cert-manager-validating-webhook
-    object: fixtures/forbidden-clusterwide-objects/cert-manager-validating-webhook.yaml
+    object: fixtures/GkForbiddenClusterwideObjects/cert-manager-validating-webhook.yaml
     assertions:
     # TODO: repair this
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "webhook.cert-manager.io" does not match our allowlist$'
   - name: seeder.cloud.sap
-    object: fixtures/forbidden-clusterwide-objects/seeder.cloud.sap.yaml
+    object: fixtures/GkForbiddenClusterwideObjects/seeder.cloud.sap.yaml
     assertions:
     # TODO: repair this
     - violations: 1
@@ -160,68 +160,68 @@ tests:
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "validate-domains.spec.openstack.domains.seeder.cloud.sap" does not match our allowlist$'
 
 - name: high-cpu-requests
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-high-cpu-requests.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/high-cpu-requests.yaml
+  template: rendered-chart/templates/constrainttemplate-GkHighCPURequests.yaml
+  constraint: rendered-chart/templates/constraint-GkHighCPURequests.yaml
   cases:
   - name: pod-failure
-    object: fixtures/high-cpu-requests/pod-failure.yaml
+    object: fixtures/GkHighCPURequests/pod-failure.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> requests 6.064 CPU in total$'
   - name: pod-close-violation
-    object: fixtures/high-cpu-requests/pod-close-violation.yaml
+    object: fixtures/GkHighCPURequests/pod-close-violation.yaml
     assertions:
     - violations: no
   - name: pod-only-one-limit
-    object: fixtures/high-cpu-requests/pod-only-one-limit.yaml
+    object: fixtures/GkHighCPURequests/pod-only-one-limit.yaml
     assertions:
     - violations: no
   - name: pod-no-limits
-    object: fixtures/high-cpu-requests/pod-no-limits.yaml
+    object: fixtures/GkHighCPURequests/pod-no-limits.yaml
     assertions:
     - violations: no
 
 - name: images-from-correct-registry
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-images-from-correct-registry.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/images-from-correct-registry.yaml
+  template: rendered-chart/templates/constrainttemplate-GkImagesFromCorrectRegistry.yaml
+  constraint: rendered-chart/templates/constraint-GkImagesFromCorrectRegistry.yaml
   cases:
   - name: pod-one-image-wrong
-    object: fixtures/images-from-correct-registry/pod-one-image-wrong.yaml
+    object: fixtures/GkImagesFromCorrectRegistry/pod-one-image-wrong.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy-small" uses incorrect regional registry for image: alpine:3$'
   - name: pod-pass
-    object: fixtures/images-from-correct-registry/pod-pass.yaml
+    object: fixtures/GkImagesFromCorrectRegistry/pod-pass.yaml
     assertions:
     - violations: no
 
 - name: images-from-non-keppel
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-images-from-non-keppel.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/images-from-non-keppel.yaml
+  template: rendered-chart/templates/constrainttemplate-GkImagesFromNonKeppel.yaml
+  constraint: rendered-chart/templates/constraint-GkImagesFromNonKeppel.yaml
   cases:
   - name: pod-failure
-    object: fixtures/images-from-non-keppel/pod-failure.yaml
+    object: fixtures/GkImagesFromNonKeppel/pod-failure.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
   - name: pod-one-of-two
-    object: fixtures/images-from-non-keppel/pod-one-of-two.yaml
+    object: fixtures/GkImagesFromNonKeppel/pod-one-of-two.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses an image that is not from a Keppel registry: alpine:3$'
   - name: pod-pass
-    object: fixtures/images-from-non-keppel/pod-pass.yaml
+    object: fixtures/GkImagesFromNonKeppel/pod-pass.yaml
     assertions:
     - violations: no
   # The test suite for this policy is a bit more expansive to check the logic in traversal.find_pod().
   - name: pod-owned
-    object: fixtures/images-from-non-keppel/pod-owned.yaml
+    object: fixtures/GkImagesFromNonKeppel/pod-owned.yaml
     assertions:
     - violations: no
   - name: deployment-mixed
-    object: fixtures/images-from-non-keppel/deployment-mixed.yaml
+    object: fixtures/GkImagesFromNonKeppel/deployment-mixed.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "container-bad" uses an image that is not from a Keppel registry: alpine:3$'
@@ -229,259 +229,245 @@ tests:
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "starter-bad" uses an image that is not from a Keppel registry: alpine:3$'
 
 - name: ingress-annotations-insecure-snippets
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/ingress-annotations-insecure-snippets.yaml
+  template: rendered-chart/templates/constrainttemplate-GkIngressAnnotations.yaml
+  constraint: rendered-chart/templates/constraint-GkIngressAnnotations.yaml
   cases:
   - name: networking-disabled-snippet
-    object: fixtures/ingress-annotations/networking-disabled-snippet.yaml
+    object: fixtures/GkIngressAnnotations/networking-disabled-snippet.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> has disabled annotation: "ingress.kubernetes.io/configuration-snippet" \(disabled due to CVE-2021-25742\)$'
   - name: networking-pass
-    object: fixtures/ingress-annotations/networking-pass.yaml
+    object: fixtures/GkIngressAnnotations/networking-pass.yaml
     assertions:
     - violations: no
 
 - name: ingress-annotations-migration
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations-migration.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/ingress-annotations-migration.yaml
+  template: rendered-chart/templates/constrainttemplate-GkIngressAnnotationsMigration.yaml
+  constraint: rendered-chart/templates/constraint-GkIngressAnnotationsMigration.yaml
   cases:
   - name: fail-mismatch
-    object: fixtures/ingress-annotations-migration/fail-mismatch.yaml
+    object: fixtures/GkIngressAnnotationsMigration/fail-mismatch.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> has not correctly migrated ingress.kubernetes.io/proxy-request-buffering annotation \(value in old annotation is "off", value in new annotation is "on"\)$'
   - name: fail-new-missing
-    object: fixtures/ingress-annotations-migration/fail-new-missing.yaml
+    object: fixtures/GkIngressAnnotationsMigration/fail-new-missing.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> has not correctly migrated ingress.kubernetes.io/proxy-request-buffering annotation \(value in old annotation is "off", value in new annotation is "<unset>"\)$'
   - name: fail-old-missing
-    object: fixtures/ingress-annotations-migration/fail-old-missing.yaml
+    object: fixtures/GkIngressAnnotationsMigration/fail-old-missing.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> has deleted ingress.kubernetes.io/proxy-request-buffering annotation too early \(ingress-nginx is still using the old prefix right now\)'
   - name: pass
-    object: fixtures/ingress-annotations-migration/pass.yaml
-    assertions:
-    - violations: no
-
-- name: ingress-annotations-wrong-prefix
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-ingress-annotations.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/ingress-annotations-wrong-prefix.yaml
-  cases:
-  - name: networking-disabled-snippet
-    object: fixtures/ingress-annotations/networking-wrong-prefix.yaml
-    assertions:
-    - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> has disabled annotation: "nginx.ingress.kubernetes.io/proxy-request-buffering" \(use the prefix "ingress.kubernetes.io/" instead\)$'
-  - name: networking-pass
-    object: fixtures/ingress-annotations/networking-pass.yaml
+    object: fixtures/GkIngressAnnotationsMigration/pass.yaml
     assertions:
     - violations: no
 
 - name: outdated-image-bases
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-outdated-image-bases.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/outdated-image-bases.yaml
+  template: rendered-chart/templates/constrainttemplate-GkOutdatedImageBases.yaml
+  constraint: rendered-chart/templates/constraint-GkOutdatedImageBases.yaml
   cases:
   - name: deployment-old
-    object: fixtures/outdated-image-bases/deployment-old.yaml
+    object: fixtures/GkOutdatedImageBases/deployment-old.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:old for container "dummy" uses a very old base image \(oldest layer is 417 days old\)$'
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:old for container "starter" uses a very old base image \(oldest layer is 417 days old\)$'
   - name: deployment-new
-    object: fixtures/outdated-image-bases/deployment-new.yaml
+    object: fixtures/GkOutdatedImageBases/deployment-new.yaml
     assertions:
     - violations: no
 
 - name: owner-info-on-helm-releases
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-owner-info-on-helm-releases.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/owner-info-on-helm-releases.yaml
+  template: rendered-chart/templates/constrainttemplate-GkOwnerInfoOnHelmReleases.yaml
+  constraint: rendered-chart/templates/constraint-GkOwnerInfoOnHelmReleases.yaml
   cases:
   - name: configmap-no-owner
-    object: fixtures/owner-info-on-helm-releases/configmap-no-owner.out.yaml
+    object: fixtures/GkOwnerInfoOnHelmReleases/configmap-no-owner.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-pending-upgrade
-    object: fixtures/owner-info-on-helm-releases/configmap-no-owner-pending-upgrade.out.yaml
+    object: fixtures/GkOwnerInfoOnHelmReleases/configmap-no-owner-pending-upgrade.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency.$'
   - name: configmap-no-owner-superseded
-    object: fixtures/owner-info-on-helm-releases/configmap-no-owner-superseded.out.yaml
+    object: fixtures/GkOwnerInfoOnHelmReleases/configmap-no-owner-superseded.out.yaml
     assertions:
     - violations: no
   - name: configmap-outdated-chart
-    object: fixtures/owner-info-on-helm-releases/configmap-outdated-chart.out.yaml
+    object: fixtures/GkOwnerInfoOnHelmReleases/configmap-outdated-chart.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> Chart uses outdated owner-info version "0.1.2". Please update to at least "0.2.0".$'
   - name: pod-owner-info
-    object: fixtures/owner-info-on-helm-releases/configmap-no-owner-but-allowlisted.out.yaml
+    object: fixtures/GkOwnerInfoOnHelmReleases/configmap-no-owner-but-allowlisted.out.yaml
     assertions:
     - violations: no
   - name: pod-owner-info
-    object: fixtures/owner-info-on-helm-releases/configmap-pass.out.yaml
+    object: fixtures/GkOwnerInfoOnHelmReleases/configmap-pass.out.yaml
     assertions:
     - violations: no
 
 - name: pci-forbidden-images
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-pci-forbidden-images.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/pci-forbidden-images.yaml
+  template: rendered-chart/templates/constrainttemplate-GkPCIForbiddenImages.yaml
+  constraint: rendered-chart/templates/constraint-GkPCIForbiddenImages.yaml
   cases:
   - name: pod-forbidden-image
-    object: fixtures/pci-forbidden-images/pod-with-forbidden-image.yaml
+    object: fixtures/GkPCIForbiddenImages/pod-with-forbidden-image.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> container "dummy" uses forbidden image: bogus-pattern-for-testing:3$'
   - name: pod-pass
-    object: fixtures/pci-forbidden-images/pod-pass.yaml
+    object: fixtures/GkPCIForbiddenImages/pod-pass.yaml
     assertions:
     - violations: no
 
 - name: pod-labels
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-pod-labels.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/pod-labels.yaml
+  template: rendered-chart/templates/constrainttemplate-GkPodLabels.yaml
+  constraint: rendered-chart/templates/constraint-GkPodLabels.yaml
   cases:
   - name: pod-invalid-labels
-    object: fixtures/pod-labels/pod-invalid-labels.yaml
+    object: fixtures/GkPodLabels/pod-invalid-labels.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"gatekeeper","service":"containers"\} >> pod has an unacceptable label value: ccloud/support-group="gatekeeper"$'
   - name: pod-no-labels
-    object: fixtures/pod-labels/pod-no-labels.yaml
+    object: fixtures/GkPodLabels/pod-no-labels.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod does not have the required label: ccloud/support-group$'
   - name: deployment-labels
-    object: fixtures/pod-labels/deployment-labels.yaml
+    object: fixtures/GkPodLabels/deployment-labels.yaml
     assertions:
     - violations: no
   - name: pod-labels
-    object: fixtures/pod-labels/pod-labels.yaml
+    object: fixtures/GkPodLabels/pod-labels.yaml
     assertions:
     - violations: no
 
 - name: pod-security-v2
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-pod-security-v2.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/pod-security-v2.yaml
+  template: rendered-chart/templates/constrainttemplate-GkPodSecurityV2.yaml
+  constraint: rendered-chart/templates/constraint-GkPodSecurityV2.yaml
   cases:
   - name: pod-security-v2-reject-host-network
-    object: fixtures/pod-security-v2/host-network-reject.yaml
+    object: fixtures/GkPodSecurityV2/host-network-reject.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostNetwork = true$'
   - name: pod-security-v2-no-rule-for-host-network
-    object: fixtures/pod-security-v2/host-network-no-rule.yaml
+    object: fixtures/GkPodSecurityV2/host-network-no-rule.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostNetwork = true$'
   - name: pod-security-v2-allow-host-network
-    object: fixtures/pod-security-v2/host-network-allow.yaml
+    object: fixtures/GkPodSecurityV2/host-network-allow.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-reject-host-pid
-    object: fixtures/pod-security-v2/host-pid-reject.yaml
+    object: fixtures/GkPodSecurityV2/host-pid-reject.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostPID = true$'
   - name: pod-security-v2-no-rule-for-host-pid
-    object: fixtures/pod-security-v2/host-pid-no-rule.yaml
+    object: fixtures/GkPodSecurityV2/host-pid-no-rule.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostPID = true$'
   - name: pod-security-v2-allow-host-pid
-    object: fixtures/pod-security-v2/host-pid-allow.yaml
+    object: fixtures/GkPodSecurityV2/host-pid-allow.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-reject-privilege-escalation
-    object: fixtures/pod-security-v2/privilege-escalation-reject.yaml
+    object: fixtures/GkPodSecurityV2/privilege-escalation-reject.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-privilege-escalation
-    object: fixtures/pod-security-v2/privilege-escalation-no-rule.yaml
+    object: fixtures/GkPodSecurityV2/privilege-escalation-no-rule.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-privilege-escalation
-    object: fixtures/pod-security-v2/privilege-escalation-allow.yaml
+    object: fixtures/GkPodSecurityV2/privilege-escalation-allow.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-reject-privileged
-    object: fixtures/pod-security-v2/is-privileged-reject.yaml
+    object: fixtures/GkPodSecurityV2/is-privileged-reject.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-privileged
-    object: fixtures/pod-security-v2/is-privileged-no-rule.yaml
+    object: fixtures/GkPodSecurityV2/is-privileged-no-rule.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-privileged
-    object: fixtures/pod-security-v2/is-privileged-allow.yaml
+    object: fixtures/GkPodSecurityV2/is-privileged-allow.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-reject-capabilities
-    object: fixtures/pod-security-v2/capabilities-reject.yaml
+    object: fixtures/GkPodSecurityV2/capabilities-reject.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["SYS_ADMIN"] \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-capabilities
-    object: fixtures/pod-security-v2/capabilities-no-rule.yaml
+    object: fixtures/GkPodSecurityV2/capabilities-no-rule.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["FOO"] \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-capabilities
-    object: fixtures/pod-security-v2/capabilities-allow.yaml
+    object: fixtures/GkPodSecurityV2/capabilities-allow.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-reject-host-path-volumes-r
-    object: fixtures/pod-security-v2/host-path-volumes-reject-r.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-reject-r.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\) \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-reject-host-path-volumes-rw
-    object: fixtures/pod-security-v2/host-path-volumes-reject-rw.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-reject-rw.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\) \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-reject-host-path-volumes-w
-    object: fixtures/pod-security-v2/host-path-volumes-reject-w.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-reject-w.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\) \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-host-path-volumes-r
-    object: fixtures/pod-security-v2/host-path-volumes-no-rule-r.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-no-rule-r.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\) \(image = "other/unknown"\)$'
   - name: pod-security-v2-no-rule-for-host-path-volumes-w
-    object: fixtures/pod-security-v2/host-path-volumes-no-rule-w.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-no-rule-w.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\) \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-host-path-volumes-r
-    object: fixtures/pod-security-v2/host-path-volumes-allow-r.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-allow-r.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-allow-host-path-volumes-rw
-    object: fixtures/pod-security-v2/host-path-volumes-allow-rw.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-allow-rw.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-allow-host-path-volumes-w
-    object: fixtures/pod-security-v2/host-path-volumes-allow-w.yaml
+    object: fixtures/GkPodSecurityV2/host-path-volumes-allow-w.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-check-image-repo-parsing
-    object: fixtures/pod-security-v2/image-repo-parsing.yaml
+    object: fixtures/GkPodSecurityV2/image-repo-parsing.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-reject-security-nightmare
-    object: fixtures/pod-security-v2/invalid.yaml
+    object: fixtures/GkPodSecurityV2/invalid.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostNetwork = true$'
@@ -498,124 +484,124 @@ tests:
 
 
 - name: prometheus-scrape-annotations
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-prometheus-scrape-annotations.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/prometheus-scrape-annotations.yaml
+  template: rendered-chart/templates/constrainttemplate-GkPrometheusScrapeAnnotations.yaml
+  constraint: rendered-chart/templates/constraint-GkPrometheusScrapeAnnotations.yaml
   cases:
   - name: pod-missing-target
-    object: fixtures/prometheus-scrape-annotations/pod-missing-target.yaml
+    object: fixtures/GkPrometheusScrapeAnnotations/pod-missing-target.yaml
     inventory:
-    - fixtures/prometheus-scrape-annotations/inventory.yaml
+    - fixtures/GkPrometheusScrapeAnnotations/inventory.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> has prometheus.io/scrape annotation, but prometheus.io/targets annotation is missing or does not have a valid value \(got: \[""\], valid: \["openstack"\]\)$'
   - name: pod-pass
-    object: fixtures/prometheus-scrape-annotations/pod-pass.yaml
+    object: fixtures/GkPrometheusScrapeAnnotations/pod-pass.yaml
     inventory:
-    - fixtures/prometheus-scrape-annotations/inventory.yaml
+    - fixtures/GkPrometheusScrapeAnnotations/inventory.yaml
     assertions:
     - violations: no
 
 - name: prometheusrule-alert-labels
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-prometheusrule-alert-labels.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/prometheusrule-alert-labels.yaml
+  template: rendered-chart/templates/constrainttemplate-GkPrometheusruleAlertLabels.yaml
+  constraint: rendered-chart/templates/constraint-GkPrometheusruleAlertLabels.yaml
   cases:
   - name: prometheus-rule-no-label
-    object: fixtures/prometheusrule-alert-labels/prometheus-rule-no-label.yaml
+    object: fixtures/GkPrometheusruleAlertLabels/prometheus-rule-no-label.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning", "info" or "none"\)$'
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have labels.support_group$'
   - name: prometheus-rule-only-severity
-    object: fixtures/prometheusrule-alert-labels/prometheus-rule-only-severity.yaml
+    object: fixtures/GkPrometheusruleAlertLabels/prometheus-rule-only-severity.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.playbook \(required for critical alerts\)$'
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have labels.support_group$'
   - name: prometheus-rule-pass
-    object: fixtures/prometheusrule-alert-labels/prometheus-rule-pass.yaml
+    object: fixtures/GkPrometheusruleAlertLabels/prometheus-rule-pass.yaml
     assertions:
     - violations: no
 
 - name: region-value-mismatch
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-region-value-mismatch.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/region-value-mismatch.yaml
+  template: rendered-chart/templates/constrainttemplate-GkRegionValueMismatch.yaml
+  constraint: rendered-chart/templates/constraint-GkRegionValueMismatch.yaml
   cases:
   - name: helm-release-region-mismatch
-    object: fixtures/region-value-mismatch/helm-release-region-mismatch.out.yaml
+    object: fixtures/GkRegionValueMismatch/helm-release-region-mismatch.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> .Values.global.region does not match the deployed region: expected qa-de-1, but found "qa-de-9"$'
   - name: helm-release-global-mismatch
-    object: fixtures/region-value-mismatch/helm-release-global-mismatch.out.yaml
+    object: fixtures/GkRegionValueMismatch/helm-release-global-mismatch.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> .Values.global.db_region does not match the deployed region: expected qa-de-1, but found "qa-de-9"$'
   - name: helm-release-global-pass
-    object: fixtures/region-value-mismatch/helm-release-global-pass.out.yaml
+    object: fixtures/GkRegionValueMismatch/helm-release-global-pass.out.yaml
     assertions:
     - violations: no
   - name: helm-release-no-region
-    object: fixtures/region-value-mismatch/helm-release-no-region.out.yaml
+    object: fixtures/GkRegionValueMismatch/helm-release-no-region.out.yaml
     assertions:
     - violations: no
   - name: helm-release-invalid-region
-    object: fixtures/region-value-mismatch/helm-release-invalid-region.out.yaml
+    object: fixtures/GkRegionValueMismatch/helm-release-invalid-region.out.yaml
     assertions:
     - violations: no
   - name: helm-release-pass
-    object: fixtures/region-value-mismatch/helm-release-pass.out.yaml
+    object: fixtures/GkRegionValueMismatch/helm-release-pass.out.yaml
     assertions:
     - violations: no
 
 - name: region-value-missing
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-region-value-missing.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/region-value-missing.yaml
+  template: rendered-chart/templates/constrainttemplate-GkRegionValueMissing.yaml
+  constraint: rendered-chart/templates/constraint-GkRegionValueMissing.yaml
   cases:
   - name: helm-release-no-region
-    object: fixtures/region-value-missing/helm-release-no-region.out.yaml
+    object: fixtures/GkRegionValueMissing/helm-release-no-region.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> missing or invalid .Values.global.region value$'
   - name: helm-release-global-no-db-region
-    object: fixtures/region-value-missing/helm-release-global-no-db-region.out.yaml
+    object: fixtures/GkRegionValueMissing/helm-release-global-no-db-region.out.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> missing or invalid .Values.global.db_region value$'
   - name: helm-release-global-region-pass
-    object: fixtures/region-value-missing/helm-release-global-region-pass.out.yaml
+    object: fixtures/GkRegionValueMissing/helm-release-global-region-pass.out.yaml
     assertions:
     - violations: no
   - name: helm-release-pass
-    object: fixtures/region-value-missing/helm-release-pass.out.yaml
+    object: fixtures/GkRegionValueMissing/helm-release-pass.out.yaml
     assertions:
     - violations: no
 
 - name: unmanaged-pods
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-unmanaged-pods.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/unmanaged-pods.yaml
+  template: rendered-chart/templates/constrainttemplate-GkUnmanagedPods.yaml
+  constraint: rendered-chart/templates/constraint-GkUnmanagedPods.yaml
   cases:
   - name: pod-without-owner
-    object: fixtures/unmanaged-pods/pod-without-owner.yaml
+    object: fixtures/GkUnmanagedPods/pod-without-owner.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not owned by a managing construct$'
   - name: pod-in-deployment
-    object: fixtures/unmanaged-pods/pod-in-deployment.yaml
+    object: fixtures/GkUnmanagedPods/pod-in-deployment.yaml
     assertions:
     - violations: no
   - name: pv-recycler-pod
-    object: fixtures/unmanaged-pods/pv-recycler-pod.yaml
+    object: fixtures/GkUnmanagedPods/pv-recycler-pod.yaml
     assertions:
     - violations: no
 
 - name: vulnerable-images-on-pod-owner
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/vulnerable-images-on-pod-owner.yaml
+  template: rendered-chart/templates/constrainttemplate-GkVulnerableImages.yaml
+  constraint: rendered-chart/templates/constraint-GkVulnerableImages.yaml
   cases:
-  - name: pod-vulnerable
-    object: fixtures/vulnerable-images/deployment-vulnerable.yaml
+  - name: deployment-vulnerable
+    object: fixtures/GkVulnerableImages/deployment-vulnerable.yaml
     assertions:
     - violations: 1
       message: '^\{"status":"Low","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
@@ -623,22 +609,17 @@ tests:
       message: '^\{"status":"Medium","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
     - violations: 1
       message: '^\{"status":"High","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
-  - name: pod-unclear
-    object: fixtures/vulnerable-images/deployment-unclear.yaml
+  - name: deployment-unclear
+    object: fixtures/GkVulnerableImages/deployment-unclear.yaml
     assertions:
     - violations: 1
       message: '^\{"status":"Unclear","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
-  - name: pod-clean
-    object: fixtures/vulnerable-images/deployment-clean.yaml
+  - name: deployment-clean
+    object: fixtures/GkVulnerableImages/deployment-clean.yaml
     assertions:
     - violations: no
-
-- name: vulnerable-images-on-pod
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-vulnerable-images.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/vulnerable-images-on-pod.yaml
-  cases:
   - name: pod-vulnerable
-    object: fixtures/vulnerable-images/pod-vulnerable.yaml
+    object: fixtures/GkVulnerableImages/pod-vulnerable.yaml
     assertions:
     - violations: 1
       message: '^\{"status":"Low","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
@@ -647,40 +628,40 @@ tests:
     - violations: 1
       message: '^\{"status":"High","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-vulnerable-in-linkerd
-    object: fixtures/vulnerable-images/pod-vulnerable-in-linkerd.yaml
+    object: fixtures/GkVulnerableImages/pod-vulnerable-in-linkerd.yaml
     assertions:
     - violations: 1
       message: '^\{"status":"Low","support_group":"containers","service":"linkerd"\} >> image keppel.example.com/ccloud/servicemesh/proxy:low for container "linkerd-proxy" has "X-Keppel-Vulnerability-Status: Low"$'
     - violations: 1
       message: '^\{"status":"High","support_group":"containers","service":"linkerd"\} >> image keppel.example.com/ccloud/servicemesh/proxy-init:high for container "linkerd-init" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-unclear
-    object: fixtures/vulnerable-images/pod-unclear.yaml
+    object: fixtures/GkVulnerableImages/pod-unclear.yaml
     assertions:
     - violations: 1
       message: '^\{"status":"Unclear","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
   - name: pod-clean
-    object: fixtures/vulnerable-images/pod-clean.yaml
+    object: fixtures/GkVulnerableImages/pod-clean.yaml
     assertions:
     - violations: no
 
 - name: restrict-monsoon3-releases
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-restrict-monsoon3-namespace.yaml
-  constraint: ../rendered-chart/gatekeeper/constraints/restrict-monsoon3-namespace.yaml
+  template: rendered-chart/templates/constrainttemplate-GkRestrictMonsoon3Namespace.yaml
+  constraint: rendered-chart/templates/constraint-GkRestrictMonsoon3Namespace.yaml
   cases:
   - name: configmap-forbidden-name
-    object: fixtures/restrict-monsoon3-namespace/configmap-forbidden-name.out.yaml
+    object: fixtures/GkRestrictMonsoon3Namespace/configmap-forbidden-name.out.yaml
     assertions:
     - violations: 1
       message: 'helm release "forbidden-name" is not allowed in namespace "monsoon3"'
   - name: configmap-pass
-    object: fixtures/restrict-monsoon3-namespace/configmap-pass.out.yaml
+    object: fixtures/GkRestrictMonsoon3Namespace/configmap-pass.out.yaml
     assertions:
     - violations: no
   - name: configmap-pass-different-namespace
-    object: fixtures/restrict-monsoon3-namespace/configmap-pass-different-namespace.out.yaml
+    object: fixtures/GkRestrictMonsoon3Namespace/configmap-pass-different-namespace.out.yaml
     assertions:
     - violations: no
   - name: not-a-helm-release
-    object: fixtures/restrict-monsoon3-namespace/generic-secret.yaml
+    object: fixtures/GkRestrictMonsoon3Namespace/generic-secret.yaml
     assertions:
     - violations: no
