@@ -58,6 +58,15 @@ logstash:
   debug: false
   swift: true
   audit: true
+  # Octobus HTTP audit forwarding.
+  # On by default so existing regions keep their current behavior. Override to
+  # false in region secrets for regions that must not ship audit events to
+  # Octobus (e.g. eu-de-1, eu-de-3 — Fortlogs SIEM via the kafka output below
+  # remains the audit sink for those regions).
+  # Gates only the Octobus http output; the audit filter chain and the kafka
+  # (Fortlogs) output are independent.
+  octobus:
+    enabled: true
   # Kafka output mirroring the Octobus audit filter.
   # Off by default; enable per-region. Public CA, no client credentials.
   # global.forwarding.kafka.bootstrap_servers must be set in region secrets
