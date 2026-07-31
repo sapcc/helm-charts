@@ -61,6 +61,8 @@ build-provider-helm:
 build-provider-ipam:
 	$(call build-chart,provider-ipam,https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/default,$(PROVIDER_IPAM_VERSION))
 	$(call fix-crds,provider-ipam)
+	@# Label CRDs so clusterctl move discovers them
+	@find provider-ipam/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@find provider-ipam/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@find provider-ipam/templates -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-ipam/values.yaml
@@ -136,6 +138,7 @@ build-baremetal-operator:
 	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
+
 build-metal-operator:
 	@helm dep up metal-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator/Chart.yaml
