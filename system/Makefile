@@ -23,6 +23,10 @@ build-cluster-api-core:
 	@find cluster-api-core/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#/{{ include "cluster-api-core.fullname" . }}-system/#/#g' {} \;
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
+	@# Label CRDs so clusterctl move discovers them (the core Cluster/Machine/
+	@# KubeadmControlPlane graph is the root of the ownerRef chain clusterctl walks;
+	@# without this label a non-clusterctl-init install is invisible to `clusterctl move`)
+	@find cluster-api-core/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
 
@@ -37,6 +41,9 @@ build-controlplane-kubeadm:
 	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#/{{ include "controlplane-kubeadm.fullname" . }}-system/#/#g' {} \;
 	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-control-plane-system.#.#g' {} \;
 	@$(SED) -i 's/10240/30720/g' controlplane-kubeadm/crds/*
+	@# Label CRDs so clusterctl move discovers them (KubeadmControlPlane is in the
+	@# Cluster ownerRef chain clusterctl walks)
+	@find controlplane-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
 
@@ -48,6 +55,9 @@ build-bootstrap-kubeadm:
 	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#/{{ include "bootstrap-kubeadm.fullname" . }}-system/#/#g' {} \;
 	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-bootstrap-system.#.#g' {} \;
 	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/*
+	@# Label CRDs so clusterctl move discovers them (KubeadmConfig is owned by the
+	@# Machines in the Cluster ownerRef chain clusterctl walks)
+	@find bootstrap-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
 
