@@ -1,0 +1,60 @@
+# Override values for the first-stage installation (step 2.3 of Installation.md).
+# Pass this file last: helm install cc-gardener . -f custom-values.yaml -f values.initial.yaml
+#
+# After the first install succeeds, proceed with the follow-up upgrade steps
+# (2.4 managedresources, 2.6 openstack, 2.7 gardenlet) per Installation.md.
+
+global:
+  registry: keppel.eu-de-1.cloud.sap/ccloud
+  cluster: ""   # e.g. rt-qa-de-1
+  region: ""    # e.g. qa-de-1
+
+garden:
+  # externalIP: "" # enable in step 2.4
+  managedresources: false # enable in step 2.4
+  backup:
+    provider: aws  # aws or openstack
+    # AWS — all fields required when provider=aws:
+    accessKeyID: ""
+    secretAccessKey: ""
+    region: ""      # e.g. eu-de-1
+    bucket: ""      # e.g. cc-etcd-backup-virtual-garden-rt-qa-de-1
+    # OpenStack — all fields required when provider=openstack:
+    # applicationCredentialID: ""
+    # applicationCredentialName: ""
+    # applicationCredentialSecret: ""
+    # authURL: ""
+    # domainName: ""
+    # tenantName: ""
+    # region: ""
+    # bucket: ""
+  runtimeCluster:
+    zones: []
+    # - "qa-de-1a"
+    networking:
+      nodes: []       # from GlobalInclusterIPPool, e.g. ["10.245.234.0/26"]
+      pods: []        # from KubeadmControlPlane podSubnet, e.g. ["100.66.0.0/16"]
+      services: []    # from KubeadmControlPlane serviceSubnet, e.g. ["100.74.0.0/16"]
+  virtualCluster:
+    networking:
+      services: []    # e.g. ["100.75.0.0/16"]
+  dashboard:
+    enabled: false
+    oidc:
+      enabled: false
+
+extensions:
+  calico:
+    enabled: false
+  gardenlinux:
+    enabled: false
+  openstack:
+    enabled: false  # enable in step 2.6 after managedresources is on
+  metal:
+    enabled: false
+  auditing:
+    enabled: false
+  # aws has no enabled flag — it is always deployed when backup.provider=aws
+
+gardenlet:
+  enabled: false  # enable in step 2.7
