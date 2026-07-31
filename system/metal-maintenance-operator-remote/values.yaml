@@ -32,9 +32,12 @@ mmo-core:
       # - "--sanitization-tolerations=DEFINE_IN_REGION_VALUES"
       # - "--readiness-checks=DEFINE_IN_REGION_VALUES"
       - "--report-base-url=https://metal-maintenance-operator.garden.<region>.cloud.sap"
+    # list format required — upstream mmo chart uses kubebuilder-generated template ([]v1.EnvVar), unlike boot-operator-remote
     env:
-      KUBERNETES_SERVICE_HOST: "apiserver-url"
-      KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      - name: KUBERNETES_SERVICE_HOST
+        value: "apiserver-url"
+      - name: KUBERNETES_CLUSTER_DOMAIN
+        value: "cluster.local"
     extraVolumeMounts:
       - name: remote-kubeconfig
         mountPath: /var/run/secrets/kubernetes.io/serviceaccount
