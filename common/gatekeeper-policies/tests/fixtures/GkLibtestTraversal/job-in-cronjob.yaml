@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dummy
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: CronJob
+    name: dummy
+    uid: 72aa456e-c3aa-4de7-bbb0-bb547cfaac7d
+spec:
+  template:
+    metadata:
+      labels:
+        marker: 'pod in job in cronjob'
+    spec:
+      containers:
+      - name: alpine
+        image: alpine:3
+      - name: ubuntu
+        image: ubuntu:rolling
+      initContainers:
+      - name: init-busybox
+        image: busybox:latest

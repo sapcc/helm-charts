@@ -63,3 +63,45 @@ spec:
             {{- end }}
             rego: {{ quote $policy_code }}
 {{- end -}}
+
+
+{{- define "gatekeeper-policies.render-constraint-for-testing" -}}
+  {{- $ctx  := index . 0 -}}
+  {{- $kind := index . 1 -}}
+
+  {{- $policy_code := tuple $ctx $kind | include "gatekeeper-policies.get-policy-code" -}}
+  {{- $this_chart := index $ctx.Subcharts "gatekeeper-policies" | required "subchart \"gatekeeper-policies\" may not be declared with an alias" -}}
+  {{- $decl := $this_chart.Files.Get (printf "files/parameters/%s.yaml" $kind) | fromYaml -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: {{ $kind }}
+metadata:
+  name: {{ lower $kind }}
+spec:
+  enforcementAction: dryrun
+
+  # for simplicity, this just lists all kinds that occur in the test fixtures across all policies
+  # (only Helm releases need special handling because some tests require a specific labelSelector)
+  {{- if and ($policy_code | contains "import data.lib.helm_release") ($kind | contains "Libtest" | not) }}
+  match: {{ include "gatekeeper-policies.match-active-helm-releases" $ctx | indent 4 }}
+  {{- else }}
+  match:
+    kinds:
+      - apiGroups: [ "" ]
+        kinds: [ Pod, Secret ]
+      - apiGroups: [ admissionregistration.k8s.io ]
+        kinds: [ MutatingWebhookConfiguration, ValidatingWebhookConfiguration ]
+      - apiGroups: [ apps ]
+        kinds: [ DaemonSet, Deployment, ReplicaSet, StatefulSet ]
+      - apiGroups: [ batch ]
+        kinds: [ CronJob, Job ]
+      - apiGroups: [ monitoring.coreos.com ]
+        kinds: [ Prometheus, PrometheusRule ]
+      - apiGroups: [ networking.k8s.io ]
+        kinds: [ Ingress ]
+  {{- end }}
+
+  {{- if hasKey $decl "testValues" }}
+  parameters: {{ index $decl "testValues" | toYaml | nindent 4 }}
+  {{- end }}
+{{- end -}}
