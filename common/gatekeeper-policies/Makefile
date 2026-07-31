@@ -9,12 +9,12 @@ prepare: FORCE
 	@if ! hash helm-manifest-parser 2>/dev/null; then printf "\e[1;36m>> Installing helm-manifest-parser (this may take a while)...\e[0m\n"; go install github.com/sapcc/gatekeeper-addons/helm-manifest-parser@latest; fi
 
 check: FORCE $(GENERATED_FIXTURES) prepare
-	./tests/run.sh
+	bash ./tests/run.sh
 
 trace: FORCE $(GENERATED_FIXTURES) prepare
 	@# Warning: This produces *a lot* of output. The traces can help in debugging Rego-level issues,
 	@# but the trace output should not be enabled by default (e.g. in CI).
-	./tests/run.sh --trace
+	bash ./tests/run.sh --trace
 
 %.out.yaml: %.in.yaml prepare
 	helm-manifest-generator < $< > $@
