@@ -19,34 +19,12 @@ metadata:
     severity: 'debug'
 spec:
   enforcementAction: {{ if eq .Values.cluster_layer "prod" }}deny{{ else }}dryrun{{ end }}
-  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+  match: {{ include "gatekeeper-policies.match-pods-and-pod-owners" . | indent 4 }}
   parameters:
     allowlist:
 
-      ##########################################################################
-      # Rules used by unit tests (also documents which keys are available)
-
-      {{- if eq .Values.cluster_type "test" }}
-      - matchNamespace: foo
-        matchRepository: test-app/unprivileged
-        justification: |
-          This rule is used in unit tests only.
-          If represents a pod that requests hardly any special privileges.
-        mayUseCapabilities: [ FOO ]
-
-      - matchNamespace: foo
-        matchRepository: test-app/highly-privileged
-        justification: |
-          This rule is used in unit tests only.
-          It represents a pod that requests every possible type of privilege.
-        mayUseHostNetwork: true
-        mayUseHostPID: true
-        mayUsePrivilegeEscalation: true
-        mayBePrivileged: true
-        mayUseCapabilities: [ FOO, SYS_ADMIN ]
-        mayReadHostPathVolumes: [ / ]
-        mayWriteHostPathVolumes: [ / ]
-      {{- end }}
+      # NOTE: For reference on how allowlist entries must be formatted and which keys are allowed, please refer to
+      #       <https://github.com/sapcc/helm-charts/blob/master/common/gatekeeper-policies/files/parameters/GkPodSecurityV2.yaml>
 
       ##########################################################################
       # Global rules
