@@ -177,7 +177,7 @@ spec:
             subPath: dhparam.pem
           - mountPath: /etc/nginx/nginx.conf
             name: ironic-console-nginx
-            subpath: nginx.conf
+            subPath: nginx.conf
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
