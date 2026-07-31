@@ -23,8 +23,6 @@ spec:
               type: string
             vulnStatusHeader:
               type: string
-            reportingLevel: # either "pod" or "pod-owner"
-              type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -49,14 +47,14 @@ spec:
               checks := __run_image_check(phase)
 
               __run_image_check(phase) := result if {
-                  input.parameters.reportingLevel == "pod"
+                  iro.kind == "Pod"
                   phase != "Succeeded"
                   phase != "Failed"
                   result = image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
               }
 
               __run_image_check(phase) := result if {
-                  input.parameters.reportingLevel == "pod"
+                  iro.kind == "Pod"
 
                   # ignore pods that have already finished running, but still exist
                   # as a k8s object (e.g. leftovers of completed or failed jobs)
@@ -65,13 +63,13 @@ spec:
               }
 
               __run_image_check(phase) := result if {
-                  input.parameters.reportingLevel == "pod-owner"
+                  iro.kind != "Pod"
                   pod.isFound
                   result = image_check.for_pod_template(pod, input.parameters.doopImageCheckerURL)
               }
 
               __run_image_check(phase) := result if {
-                  input.parameters.reportingLevel == "pod-owner"
+                  iro.kind != "Pod"
                   not pod.isFound
 
                   # ignore pod owners that are suppressed, e.g. ReplicaSets within Deployments
