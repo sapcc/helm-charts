@@ -14,18 +14,28 @@
 
 Listen 0.0.0.0:5000
 
+{{- /* mod_wsgi request/queue/script timestamps (microsecond epoch), exposed as
+       Apache env vars by WSGIServerMetrics. Downstream: queue_wait = script_start
+       - queue_start. Logged as strings so unset ("-") stays valid JSON. Only
+       emitted when metrics (and thus WSGIServerMetrics On) are enabled. */ -}}
+{{- $wsgiJson := "" -}}
+{{- $wsgiPlain := "" -}}
+{{- if .Values.api.metrics.enabled -}}
+{{- $wsgiJson = ",\\\"wsgi_request_start\\\":\\\"%{mod_wsgi.request_start}e\\\",\\\"wsgi_queue_start\\\":\\\"%{mod_wsgi.queue_start}e\\\",\\\"wsgi_script_start\\\":\\\"%{mod_wsgi.script_start}e\\\"" -}}
+{{- $wsgiPlain = " wsgi_request_start=%{mod_wsgi.request_start}e wsgi_queue_start=%{mod_wsgi.queue_start}e wsgi_script_start=%{mod_wsgi.script_start}e" -}}
+{{- end -}}
 {{- if .Values.use_json }}
 ErrorLog /dev/stdout
 ErrorLogFormat "%M"
-LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%a\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"}" json_combined
-LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%{X-Forwarded-For}i\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"}" json_proxy
+LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%a\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"{{ $wsgiJson }}}" json_combined
+LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%{X-Forwarded-For}i\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"{{ $wsgiJson }}}" json_proxy
 SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 CustomLog /dev/stdout json_combined env=!forwarded
 CustomLog /dev/stdout json_proxy env=forwarded
 {{- else }}
 ErrorLog /dev/stdout
-LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %h %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" combined
-LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %{X-Forwarded-For}i %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" proxy
+LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %h %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"{{ $wsgiPlain }}" combined
+LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %{X-Forwarded-For}i %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"{{ $wsgiPlain }}" proxy
 SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 CustomLog /dev/stdout combined env=!forwarded
 CustomLog /dev/stdout proxy env=forwarded
@@ -57,9 +67,20 @@ CustomLog /dev/stdout proxy env=forwarded
 
 {{- end }}
 
+{{- if .Values.api.metrics.enabled }}
+# Enable mod_wsgi request/process metrics so the per-process worker sampler
+# (loaded via WSGIImportScript below) can read mod_wsgi.process_metrics().
+WSGIServerMetrics On
+{{- end }}
+
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    {{- if .Values.api.metrics.enabled }}
+    # Load the worker-pool sampler into every keystone-public daemon process.
+    # It reports each process's active_requests to statsd for Prometheus.
+    WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
+    {{- end }}
     WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}
