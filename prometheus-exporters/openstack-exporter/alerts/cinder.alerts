@@ -1,6 +1,20 @@
 groups:
 - name: cinder
   rules:
+  - alert: CinderBackendPoolsDown
+    expr: something
+    for: 15m
+    labels:
+      severity: critical
+      tier: vmware
+      service: cinder
+      support_group: compute
+      context: "openstack-exporter"
+      meta: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity because all pools are down."
+      playbook: docs/support/playbook/cinder/cinder-storage-profile-empty
+    annotations:
+      description: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity because all pools are down."
+      summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no storage capacity because all pools are down."
   - alert: CinderBackendStorageEmpty
     expr: >
       sum(cinder_free_capacity_gib == 0) by (region, shard, backend) or sum(cinder_total_capacity_gib == 0) by (region, shard, backend)
