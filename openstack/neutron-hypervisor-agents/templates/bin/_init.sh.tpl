@@ -39,7 +39,7 @@ ovs-vsctl set open . external-ids:system-id=${HASH:0:8}-${HASH:8:4}-${HASH:12:4}
 ovs-vsctl set open . external-ids:hostname=${HOSTNAME}
 ovs-vsctl set open . external-ids:ovn-encap-ip=${HOST_IP}
 
-ovs-vsctl set open . external-ids:ovn-bridge-mappings=${BUILDING_BLOCK}:{{ default "br-ex" .Values.ovn.external_bridge }}
+ovs-vsctl set open . external-ids:ovn-bridge-mappings=${HOSTNAME/*-}:{{ default "br-ex" .Values.ovn.external_bridge }}
 ovs-vsctl set open . external-ids:ovn-bridge={{ default "br-int" .Values.ovn.integration_bridge }}
 ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw,availability-zones=${AVAILABILITY_ZONE}"
 

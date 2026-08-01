@@ -52,9 +52,17 @@ spec:
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
-          command:
-          - neutron-openvswitch-agent
+          command: ["dumb-init", "/bin/bash", "-c"]
+          args:
+            - |
+              set -xe
+              export OS_OVS__BRIDGE_MAPPINGS="${HOSTNAME/*-}:br-ex"
+              exec neutron-openvswitch-agent
           env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: BUILDING_BLOCK
               valueFrom:
                 fieldRef:
