@@ -30,11 +30,6 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 rpc_ping_enabled = {{ .Values.rpc_ping_enabled }}
 
-{{- if not .Values.api.use_uwsgi }}
-osapi_volume_workers = {{ .Values.osapi_volume_workers | default .Values.api.workers }}
-wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-{{- end }}
-
 # all default quotas are 0 to enforce usage of the Resource Management tool in Elektra
 quota_volumes = 0
 quota_snapshots = 0

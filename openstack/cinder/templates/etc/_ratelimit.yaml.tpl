@@ -1,8 +1,7 @@
-{{ if .Values.api_rate_limit.enabled -}}
-{{ if .Values.api_rate_limit.project_whitelist -}}
+{{- $conf := . -}}
+{{ if $conf.rate_limit.project_whitelist -}}
 # List of whitelisted scopes keys (domainName/projectName).
-whitelist: {{ .Values.api_rate_limit.project_whitelist }}
-{{- end }}
+whitelist: {{ $conf.rate_limit.project_whitelist }}
 {{- end }}
 
 # Override default ratelimit response.
