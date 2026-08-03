@@ -1,6 +1,7 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
 {{- $seedShootName := printf "%s%s" $key ($cluster.landscapeName | substr 0 1) }}
 {{- $seedIngressDomain := printf "ingress.%s.garden.external.%s.persephone.%s.cloud.sap" $seedShootName $cluster.landscapeName $cluster.region }}
+{{- $seedCommonName := printf "%s.%s.persephone.%s.cloud.sap" $seedShootName $cluster.landscapeName $cluster.region }}
 {{- if $cluster.wildcardCertificate }}
 {{- if $cluster.wildcardCertificate.enabled }}
 ---
@@ -10,7 +11,7 @@ metadata:
   name: wildcard-ingress-{{ $seedShootName }}
   namespace: garden
 spec:
-  commonName: "*.{{ $seedIngressDomain }}"
+  commonName: "*.{{ $seedCommonName }}" 
   dnsNames:
     - "*.{{ $seedIngressDomain }}"
     - "{{ $seedIngressDomain }}"
