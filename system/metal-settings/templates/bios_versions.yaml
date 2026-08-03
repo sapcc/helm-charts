@@ -1,4 +1,5 @@
 {{- if .Values.biosVersions.enabled }}
+{{- $usedNames := dict }}
 {{- range $vendor, $vendorConfig := .Values.machines }}
 {{- if $vendorConfig }}
 
@@ -6,7 +7,7 @@
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosVersions.filters.vendors) }}
 {{- $processedModels := dict }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if $entry.bios }}
+{{- if and $entry.bios $entry.bios.imageURI }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
@@ -24,6 +25,10 @@ kind: BIOSVersionSet
 metadata:
   {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
   {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  {{- if hasKey $usedNames $resourceName }}
+  {{- fail (printf "metal-settings: duplicate BIOSVersionSet name %q (entry %q, model %q). Two machines.<vendor>.models entries produced the same name with differing bios.version/imageURI. Only one entry per model should define bios.version/imageURI, or set a unique bios.versionParams.setMetadataName on the others." $resourceName $entryName $model) }}
+  {{- end }}
+  {{- $_ := set $usedNames $resourceName true }}
   name: {{ $resourceName }}
 spec:
   serverSelector:

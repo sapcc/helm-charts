@@ -377,13 +377,22 @@ machines:
             cc-ironcore,
           ]
         bios:
+          # version is kept (required by BIOSSettingsTemplate.version to describe
+          # the BIOS version these settings apply to), but imageURI is intentionally
+          # omitted here: BIOSVersionSet is generated per model (clusterTypes are
+          # ignored for it), so exactly ONE entry per model may define imageURI -
+          # see proliant-dl560-gen11-kvm above, which is the canonical firmware
+          # upgrade target for this model. Defining imageURI here too would render
+          # a second BIOSVersionSet with the same metadata.name
+          # ("hpe-proliant-dl560-gen11"), which the template now rejects with a
+          # hard failure.
           version: "U59 v2.50 (04/22/2025)"
           settingsFileName: hpe-dl560-gen11-sci.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/U59_2.50_04_22_2025.fwpkg"
         bmc:
+          # Same reasoning as bios above: version kept for BMCSettingsTemplate,
+          # imageURI omitted to avoid a duplicate BMCVersionSet.
           version: "iLO 6 v1.68"
           settingsFileName: hpe-default.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_168.fwpkg"
 
       # Models with firmware only (no biosSettings)
       proliant-dl320-gen11:
