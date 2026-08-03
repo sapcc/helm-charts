@@ -1,0 +1,19 @@
+groups:
+- name: openstack-barbican-kubernetes.alerts
+  rules:
+  - alert: OpenstackBarbicanApiPodNotReady
+    expr: (kube_pod_status_phase_normalized{namespace="monsoon3",phase="Running"} * on(pod, node, namespace) kube_pod_status_ready_normalized{condition="false"} * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1) * on(pod, namespace) group_left(label_application, label_component) (max without(uid) (kube_pod_labels{label_application="barbican",label_component="api"}))
+    for: 15m
+    labels:
+      context: availability
+      dashboard: barbican
+      meta: 'barbican-api pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready'
+      service: barbican
+      severity: warning
+      support_group: identity
+      tier: os
+      playbook: 'docs/support/playbook/barbican/alerts/cc3test-alert-api/'
+      no_alert_on_absence: "true"
+    annotations:
+      description: 'barbican-api pod {{ $labels.pod }} not ready; recreate pod. See playbook.'
+      summary: 'barbican-api pod not ready'
