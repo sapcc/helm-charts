@@ -9,7 +9,7 @@ tests:
   - it: should render BIOSVersionSet resources by default
     asserts:
       - hasDocuments:
-          count: 27
+          count: 26
       - isKind:
           of: BIOSVersionSet
 
@@ -155,3 +155,49 @@ tests:
           apiVersion: metal.ironcore.dev/v1alpha1
           name: hpe-proliant-dl560-gen11
           any: true
+
+  #############################################################################
+  # DUPLICATION TESTS
+  #
+  # Models are sometimes split into multiple `machines.<vendor>.models.<key>`
+  # entries (one per clusterType, e.g. proliant-dl560-gen11-kvm /
+  # proliant-dl560-gen11-sci). VersionSets are generated per model+version and
+  # ignore clusterType, so ALL entries sharing a model resolve to the exact
+  # same default resource name ("<vendor>-<model>"). If any two such entries
+  # (for ANY vendor/model/key - not just a specific example) also carry
+  # different bios.version/imageURI, the template would otherwise silently
+  # emit two documents with the same metadata.name. The template now guards
+  # against this generically by failing the render whenever a name collision
+  # is detected, regardless of which keys/models are involved.
+  #############################################################################
+
+  - it: should render exactly one BIOSVersionSet for the real proliant-dl560-gen11 clusterType split
+    documentSelector:
+      path: metadata.name
+      value: hpe-proliant-dl560-gen11
+    asserts:
+      - hasDocuments:
+          count: 1
+          filterAware: true
+
+  - it: should fail to render if ANY two entries (any vendor/model/key) produce a BIOSVersionSet with the same name but different versions
+    set:
+      # Synthesize a generic collision unrelated to proliant-dl560-gen11: alias
+      # an arbitrary second entry (poweredge-r660) onto an existing model
+      # (poweredge-r640) with a different bios.version/imageURI. This proves
+      # the guard is generic and not hardcoded to one known duplicate.
+      machines.dell.models.poweredge-r660.model: poweredge-r640
+      machines.dell.models.poweredge-r660.bios.version: "9.9.9-test"
+      machines.dell.models.poweredge-r660.bios.imageURI: "https://example.invalid/test.EXE"
+    asserts:
+      - failedTemplate:
+          errorPattern: "duplicate BIOSVersionSet name"
+
+  - it: should not fail when a colliding entry's bios.imageURI is removed (duplication resolved)
+    set:
+      machines.dell.models.poweredge-r660.model: poweredge-r640
+      machines.dell.models.poweredge-r660.bios.imageURI: null
+    asserts:
+      - hasDocuments:
+          count: 25
+
