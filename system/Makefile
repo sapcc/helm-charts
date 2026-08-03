@@ -64,6 +64,9 @@ build-bootstrap-kubeadm:
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
 	$(call fix-crds,provider-helm)
+	@# Label CRDs so clusterctl move discovers them (HelmChartProxy/HelmReleaseProxy
+	@# are in the Cluster ownerRef chain clusterctl walks)
+	@find provider-helm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@find provider-helm/templates -type f -exec $(SED) -i -e 's#webhook-server-cert#caaph-webhook-server-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
 	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
@@ -108,6 +111,9 @@ build-provider-metal3:
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
 	@# fix for "no matches for kind "IPClaim"
 	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
+	@# Label CRDs so clusterctl move discovers them (Metal3Cluster/Metal3Machine are
+	@# in the Cluster ownerRef chain clusterctl walks)
+	@find provider-metal3/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
 	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
 
@@ -131,6 +137,9 @@ build-provider-kubernikus:
 		   provider-kubernikus/templates/manager-clusterrole.yaml; \
 	fi
 	@find provider-kubernikus/templates -type f -exec $(SED) -i -e 's#-cluster-api-control-plane-provider-kubernikus#-manager-role#g' {} \;
+	@# Label CRDs so clusterctl move discovers them (KubernikusControlPlane is in the
+	@# Cluster ownerRef chain clusterctl walks)
+	@find provider-kubernikus/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
 
