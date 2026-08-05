@@ -1,0 +1,30 @@
+{{- if and (.Values.tls).enabled .Values.global.barbican_external_ip }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-external
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: api-external
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+    projectcalico.org/loadBalancerIPs: '["{{ .Values.global.barbican_external_ip }}"]'
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    name: barbican-api
+  ports:
+    - name: public
+      protocol: TCP
+      port: {{ .Values.tls.httpsPort }}
+      targetPort: {{ .Values.tls.httpsPort }}
+  externalIPs:
+    - {{ .Values.global.barbican_external_ip | quote }}
+{{- end }}

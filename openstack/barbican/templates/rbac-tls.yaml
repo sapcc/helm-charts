@@ -1,0 +1,77 @@
+{{- if .Values.tls.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-tls-manager
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-manager
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-tls-manager
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-manager
+rules:
+  # Read and mutate the specific TLS secret (resourceNames restricts to it)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "watch", "update", "patch", "delete"]
+    resourceNames: ["{{ .Release.Name }}-tls"]
+  # create and list cannot use resourceNames (resource doesn't exist yet / no name filter)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "list"]
+  
+  # Trigger rolling restart of deployment (via annotation patch)
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+    resourceNames: ["barbican-api"]
+  
+  # Create and manage CertificateRequest resources (cert-manager)
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificaterequests"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  
+  # Access custom certificate issuers (e.g., ClusterDigicertIssuer)
+  - apiGroups: ["certmanager.cloud.sap"]
+    resources: ["clusterdigicertissuers"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-tls-manager
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Release.Name }}-tls-manager
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-tls-manager
+    namespace: {{ .Release.Namespace }}
+{{- end }}
