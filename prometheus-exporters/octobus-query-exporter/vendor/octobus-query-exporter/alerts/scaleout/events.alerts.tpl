@@ -81,7 +81,7 @@ groups:
           support_group: compute
           no_alert_on_absence: "true"
           meta: "Alert for NFSLocked issue"
-          playbook: docs/compute/playbooks/vcenter/#NFSlockedError
+          playbook: docs/compute/playbooks/vcenter/#nfslockederror
         annotations:
           summary: "ESXi host detected NFSv4 lock error (NFS4ERR_LOCKED)"
           description: "ESXi host {{`{{ $labels.hostsystem }}`}} reported an NFSv4 lock error (NFS4ERR_LOCKED), it indicates that a file lock could not be obtained on the NFS datastore, which may impact VM operations such as disk access, snapshots, or migrations"
@@ -90,7 +90,7 @@ groups:
         expr: >
             elasticsearch_octobus_FCDObjectNotFound_issue_hostsystem_doc_count
         labels:
-          severity: warning
+          severity: critical
           service: compute
           tier: vmware
           support_group: compute
@@ -99,5 +99,5 @@ groups:
           playbook: docs/compute/playbooks/vcenter/#fcdobjectnotfound
         annotations:
           summary: "Error for FCD Object Storage Not Found "
-          description: "vCenter {{`{{ $labels.hostsystem }}`}} reported FCD Ojbect Not found, please follow the playbook to fix it"
+          description: "vCenter {{`{{ $labels.hostsystem }}`}} reported FCD Object Not Found, please follow the playbook to fix it"
 
