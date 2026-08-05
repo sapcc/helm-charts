@@ -44,7 +44,6 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
-        {{- /* WP-1197: Linkerd mTLS Enforcement - Skip inbound port 443 for TLS passthrough */}}
         {{- if .Values.tls.enabled }}
         config.linkerd.io/skip-inbound-ports: "{{ .Values.tls.httpsPort }}"
         {{- end }}
@@ -61,7 +60,6 @@ spec:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
-          # WP-1187: Migrate to Apache+mod_wsgi (Keystone-style startup script)
           command:
             - /scripts/barbican-api.sh
             - start
@@ -112,7 +110,6 @@ spec:
             - name: barbican-api
               containerPort: {{.Values.api_port_internal}}
             {{- if .Values.tls.enabled }}
-            # WP-1188: HTTPS port for TLS termination at Apache
             - name: barbican-https
               containerPort: {{ .Values.tls.httpsPort }}
             {{- end }}
@@ -138,26 +135,21 @@ spec:
             - mountPath: /etc/barbican/barbican.conf.d
               name: barbican-etc-confd
               readOnly: true
-            # WP-1187: Apache WSGI configuration
             - name: barbican-etc
               mountPath: /etc/apache2/conf-enabled/wsgi-barbican.conf
               subPath: wsgi-barbican.conf
               readOnly: true
             {{- if .Values.tls.enabled }}
-            # WP-1196: TLS hardening configuration
             - name: barbican-etc
               mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
               subPath: tls-hardening.conf
               readOnly: true
-            # WP-1188: TLS certificate and key
             - name: tls-certs
               mountPath: /etc/barbican/tls
               readOnly: true
             {{- end }}
-            # WSGI script directory (Keystone-style path)
             - name: wsgi-barbican
               mountPath: /var/www/cgi-bin/barbican
-            # Startup scripts
             - name: barbican-bin
               mountPath: /scripts
             {{- if .Values.watcher.enabled }}
@@ -287,16 +279,13 @@ spec:
               path: secrets.conf
         - name: etcbarbican
           emptyDir: {}
-        # WP-1187: WSGI script directory (Keystone-style path)
         - name: wsgi-barbican
           emptyDir: {}
-        # Startup scripts (like Keystone's keystone-bin)
         - name: barbican-bin
           configMap:
             name: barbican-bin
             defaultMode: 0555
         {{- if .Values.tls.enabled }}
-        # WP-1188: TLS certificates from TLS bootstrap job
         - name: tls-certs
           secret:
             secretName: {{ .Release.Name }}-tls

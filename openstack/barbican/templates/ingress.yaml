@@ -14,7 +14,6 @@ metadata:
     component: barbican
   annotations:
   {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-    # WP-1189: TLS Passthrough mode - TLS terminates at Apache, not ingress
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     disco: "true"
@@ -25,8 +24,6 @@ metadata:
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-  # WP-1189: TLS Passthrough - no TLS termination at ingress level
-  # Traffic passes through encrypted to the backend (Apache)
   ingressClassName: nginx
   rules:
     - host: {{include "barbican_api_endpoint_host_public" .}}

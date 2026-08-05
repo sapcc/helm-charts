@@ -1,9 +1,5 @@
-# RBAC for TLS Lifecycle Manager
-# Required for WP-1194 (TLS Bootstrap Job) and WP-1195 (TLS Rotation CronJob)
-
 {{- if .Values.tls.enabled }}
 ---
-# ServiceAccount for TLS manager jobs
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -18,7 +14,6 @@ metadata:
     type: tls-manager
 
 ---
-# Role for TLS manager operations
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -32,14 +27,15 @@ metadata:
     component: barbican
     type: tls-manager
 rules:
-  # Manage TLS secrets
+  # Read and mutate the specific TLS secret (resourceNames restricts to it)
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    verbs: ["get", "watch", "update", "patch", "delete"]
     resourceNames: ["{{ .Release.Name }}-tls"]
+  # create and list cannot use resourceNames (resource doesn't exist yet / no name filter)
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["create"]
+    verbs: ["create", "list"]
   
   # Trigger rolling restart of deployment (via annotation patch)
   - apiGroups: ["apps"]
@@ -58,7 +54,6 @@ rules:
     verbs: ["get", "list"]
 
 ---
-# RoleBinding for TLS manager
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:

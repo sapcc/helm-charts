@@ -1,8 +1,3 @@
-# TLS Bootstrap Job for Barbican
-# WP-1194: TLS Bootstrap Job (Helm hook)
-# This job runs as a pre-install/pre-upgrade hook to provision TLS certificates
-# before the Barbican API deployment starts.
-
 {{- if .Values.tls.enabled }}
 apiVersion: batch/v1
 kind: Job
@@ -17,14 +12,10 @@ metadata:
     component: barbican
     type: tls-bootstrap
   annotations:
-    # Run before deployment (pre-install, pre-upgrade)
     "helm.sh/hook": pre-install,pre-upgrade
-    # Run before other hooks (weight -5)
     "helm.sh/hook-weight": "-5"
-    # Delete job after successful completion
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
-  # Fail-closed: deployment should not proceed if certificate provisioning fails
   backoffLimit: 3
   activeDeadlineSeconds: 300
   template:
@@ -40,7 +31,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: tls-bootstrap
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.tls.lifecycleManager.image }}:{{ .Values.tls.lifecycleManager.imageTag }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.tls.lifecycleManager.image is missing" .Values.tls.lifecycleManager.image }}:{{ required ".Values.tls.lifecycleManager.imageTag is missing" .Values.tls.lifecycleManager.imageTag }}
           imagePullPolicy: IfNotPresent
           args:
             - --mode=bootstrap

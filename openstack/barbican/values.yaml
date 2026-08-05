@@ -12,7 +12,7 @@ global:
     skip_hcm_domain: false
   linkerd_requested: false
 
-# BSI TLS Configuration (WP-1187, WP-1188, WP-1189, WP-1194, WP-1195, WP-1196, WP-1197)
+# TLS configuration for BSI-compliant end-to-end encryption
 tls:
   # Enable end-to-end TLS termination at Apache (instead of ingress)
   enabled: false
@@ -31,23 +31,15 @@ tls:
   # TLS Lifecycle Manager image
   lifecycleManager:
     image: tls-lifecycle-manager
-    imageTag: latest
-  # Certificate rotation settings (WP-1195)
+    imageTag: ""
   rotation:
     enabled: true
-    # CronJob schedule (weekly on Sunday at 2am)
     schedule: "0 2 * * 0"
-    # Renew certificate if expiring within this many days
     renewalThresholdDays: 30
-  # TLS Protocol Hardening (WP-1196)
   hardening:
-    # Minimum TLS version (TLSv1.2 or TLSv1.3)
     minVersion: "TLSv1.2"
-    # TLS 1.3 cipher suites (BSI TR-02102-2 compliant per SF.Eco.4)
     cipherSuitesTLS13: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
-    # TLS 1.2 cipher suites (BSI TR-02102-2 compliant per SF.Eco.4, OpenSSL names)
     cipherSuitesTLS12: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256"
-    # ECDHE curve preference order (BSI TR-02102-2 compliant per SF.Eco.3)
     ecdheCurves: "brainpoolP256r1:brainpoolP384r1:prime256v1:secp384r1"
 
 owner-info:
@@ -75,9 +67,8 @@ debug: "True"
 api:
   # Number of replicas
   replicas: 2
-  # Apache mod_wsgi processes (WP-1187)
+  # Apache mod_wsgi processes and threads
   processes: 4
-  # Apache mod_wsgi threads per process
   threads: 1
   # Resource limits
   resources:
