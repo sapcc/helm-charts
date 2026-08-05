@@ -11,12 +11,36 @@ global:
   domain_seeds:
     skip_hcm_domain: false
   linkerd_requested: false
+  # Set to a Calico-managed IP to expose Barbican directly via BGP (LoadBalancer service)
+  # Required when tls.enabled=true for end-to-end TLS without ingress passthrough
+  barbican_external_ip: ""
 
 rbac:
   enabled: true
 
 # TLS configuration for BSI-compliant end-to-end encryption
+# When enabled, Apache terminates TLS and traffic is exposed via a
+# LoadBalancer service using Calico BGP (set global.barbican_external_ip)
 tls:
+  enabled: false
+  httpsPort: 443
+  issuer:
+    name: digicert-issuer
+    kind: ClusterDigicertIssuer
+    group: certmanager.cloud.sap
+  envelopeEncryption: none
+  lifecycleManager:
+    image: tls-lifecycle-manager
+    imageTag: ""
+  rotation:
+    enabled: true
+    schedule: "0 2 * * 0"
+    renewalThresholdDays: 30
+  hardening:
+    minVersion: "TLSv1.2"
+    cipherSuitesTLS13: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
+    cipherSuitesTLS12: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256"
+    ecdheCurves: "brainpoolP256r1:brainpoolP384r1:prime256v1:secp384r1"
 
 owner-info:
   support-group: identity

@@ -13,11 +13,7 @@ metadata:
     type: api
     component: barbican
   annotations:
-  {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    disco: "true"
-  {{- else if .Values.tlsacme }}
+  {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
     disco: "true"
   {{- end }}
@@ -29,21 +25,6 @@ metadata:
     nginx.ingress.kubernetes.io/limit-connections: {{ .Values.ingress.limitConnections | quote }}
   {{- end }}
 spec:
-  {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-  ingressClassName: nginx
-  rules:
-    - host: {{include "barbican_api_endpoint_host_public" .}}
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: barbican-api
-              port:
-                number: {{ .Values.tls.httpsPort }}
-  {{- else }}
-  # Standard TLS termination at ingress
   tls:
      - secretName: tls-{{ include "barbican_api_endpoint_host_public" . | replace "." "-" }}
        hosts: [{{include "barbican_api_endpoint_host_public" .}}]
@@ -58,4 +39,3 @@ spec:
               name: barbican-api
               port:
                 number: {{.Values.api_port_internal}}
-  {{- end }}
