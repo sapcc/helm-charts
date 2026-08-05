@@ -48,6 +48,9 @@ spec:
         config.linkerd.io/skip-inbound-ports: "{{ .Values.tls.httpsPort }}"
         {{- end }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       {{- tuple . (dict "name" "barbican-api") | include "utils.topology.constraints" | indent 6 }}
@@ -60,6 +63,9 @@ spec:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
           command:
             - /scripts/barbican-api.sh
             - start
@@ -116,6 +122,10 @@ spec:
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican
+            - name: barbican-tmp
+              mountPath: /tmp
+            - name: barbican-run
+              mountPath: /run
             - name: barbican-etc
               mountPath: /etc/barbican/barbican.conf
               subPath: barbican.conf
@@ -169,6 +179,10 @@ spec:
               mountPath: /etc/barbican/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
+            - name: ratelimit-backend-secret
+              mountPath: /etc/barbican/ratelimit-backend-secret.conf
+              subPath: password
+              readOnly: true
             {{- end }}
             {{- if .Values.hsm.utimaco_hsm.enabled }}
             - name: utimaco-volume
@@ -184,12 +198,16 @@ spec:
         {{- end }}
         - name: lunaclient
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: ChrystokiConfigurationPath
               value: "/thales/safenet/lunaclient/config"
-          command: [ "/bin/bash", "-c", "--" ]
-          args: [ "while true; do sleep 30; done;" ]
+          command: [ "bash", "-lc" ]
+          args:
+            - |
+              set -e
+              /scripts/barbican_lunaclient.sh
+              exec sleep infinity
           {{- if .Values.hsm.resources.enabled }}
           resources:
             limits:
@@ -199,10 +217,6 @@ spec:
               cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
               memory: {{ .Values.hsm.resources.requests.memory | quote }}
           {{- end }}
-          lifecycle:
-            postStart:
-              exec:
-                command: [ "/bin/bash", "/scripts/barbican_lunaclient.sh" ]
           volumeMounts:
             - name: hsm
               mountPath: /scripts/barbican_lunaclient.sh
@@ -279,6 +293,10 @@ spec:
               path: secrets.conf
         - name: etcbarbican
           emptyDir: {}
+        - name: barbican-tmp
+          emptyDir: {}
+        - name: barbican-run
+          emptyDir: {}
         - name: wsgi-barbican
           emptyDir: {}
         - name: barbican-bin
@@ -312,6 +330,14 @@ spec:
               path: barbican_utimaco.sh
         - name: utimaco-volume
           emptyDir: {}
+        {{- end }}
+        {{- if .Values.sapcc_rate_limit.enabled }}
+        - name: ratelimit-backend-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+            items:
+            - key: password
+              path: password
         {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

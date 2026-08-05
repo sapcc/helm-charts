@@ -4,6 +4,9 @@
 # name: value
 network_agents: []
 
+rbac:
+  enabled: true
+
 # osprofiler
 osprofiler:
   enabled: false
@@ -18,10 +21,14 @@ global:
   domain_seeds:
     skip_hcm_domain: false
   linkerd_requested: false
+  agent_liveness_probe_enabled: true
 
 api_workers: 12
 rpc_workers: 5
 rpc_state_workers: 5
+
+# Define max # of static routes per router
+max_routes: 512
 
 owner-info:
   support-group: network-api
@@ -132,6 +139,13 @@ pod:
       limits:
         cpu: "2000m"
         memory: "1Gi"
+    agent_checks_exporter:
+      requests:
+        cpu: "20m"
+        memory: "64Mi"
+      limits:
+        cpu: "50m"
+        memory: "128Mi"
     nsxv3_agent:
       requests:
         cpu: "128m"
@@ -307,13 +321,14 @@ hypervisors_vmware: []
 
 # SFTP-swift bridge (e.g. for nsx-t backups in control-plane)
 sftp:
-  enabled: false
   server_key:
   externalIPs: []
   user: db_backup
   logins:
     db_backup: nsx-t-backup
     vcsa_backup: vcsa-backups
+  swift:
+    enabled: true
 
 drivers:
   nsxv3:
@@ -341,7 +356,7 @@ drivers:
 nsxv3_pw_user: m3apiuser0
 nsxv3_managed_service_users: false
 
-#ToDo - Remove this migrated to the new sentry logger
+# ToDo - Remove this migrated to the new sentry logger
 logging:
   formatters:
     context:
@@ -751,6 +766,40 @@ mysql_metrics:
       - availability_zone
       values:
       - count
+    - help: Neutron DHCP agent ports
+      labels:
+      - network_host
+      - subnet_id
+      - subnet_name
+      - network_id
+      - bridge
+      - network_name
+      - ip_address
+      name: openstack_subnets_with_dhcp_enabled
+      query: |
+        SELECT
+          a.host as network_host,
+          s.id as subnet_id,
+          s.name as subnet_name,
+          n.id as network_id,
+          LEFT(n.id, 11) as bridge,
+          n.name as network_name,
+          s.enable_dhcp as dhcp_enabled
+        FROM
+          networks n
+        INNER JOIN
+          networkdhcpagentbindings nabs ON n.id = nabs.network_id
+        INNER JOIN
+          agents a ON nabs.dhcp_agent_id = a.id
+        INNER JOIN
+          subnets s ON nabs.network_id = s.network_id
+        WHERE
+          a.agent_type="DHCP agent"
+          and a.admin_state_up = 1
+          and n.admin_state_up = 1
+          and n.status = "ACTIVE";
+      values:
+      - dhcp_enabled
 
 max_pool_size: 20
 max_overflow: 5
@@ -1013,3 +1062,5 @@ customdns:
 statsd:
   image: 'shared-app-images/statsd-exporter'
   imageTag: '0.28.0-latest'
+
+k8s_bb_label_name: "kubernetes.cloud.sap/apod"

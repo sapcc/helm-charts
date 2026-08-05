@@ -1,7 +1,22 @@
+{{- if .Values.cpShoots -}}
+{{- range $key, $cluster := .Values.cpShoots }}
+{{- $cmName := printf "sci-k8s-controlplane-auth-%s" $key }}
+{{- if not (lookup "v1" "ConfigMap" $.Release.Namespace $cmName) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: authentication-config-cp
+  name: {{ $cmName }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    # We need this configmap to be present early because it is references in Shoot spec.
+    # Further management of structured auth configmap is done by shoot-grafter.
+    # Since CI runs helm upgrade --install, we need pre-upgrade hook.
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: "before-hook-creation"
+    helm.sh/hook-weight: "1"
 data:
   config.yaml: |
 {{- toYaml $.Values.authenticationConfig | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

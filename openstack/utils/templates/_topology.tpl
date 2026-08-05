@@ -44,7 +44,7 @@ release_revision: "{{ .Release.Revision }}"
 {{- $labels := index . 1 }}
   {{- if gt (len $envAll.Values.global.availability_zones) 1  }}
 - maxSkew: 1
-  topologyKey: "{{ $envAll.Values.global.topology_key | default "failure-domain.beta.kubernetes.io/zone" }}"
+  topologyKey: "{{ $envAll.Values.global.topology_key | default "topology.kubernetes.io/zone" }}"
   whenUnsatisfiable: ScheduleAnyway
   labelSelector:
     matchLabels:

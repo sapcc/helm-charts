@@ -59,10 +59,10 @@ template: |
       datastore_hagroup_regex = {= datastore_hagroup_regex | quote =}
       {%- endif %}
       image_as_template = {{ .Values.compute.defaults.enable_image_as_template | default "False" }}
-      {{- if .Values.vspc.nodeIP }}
+      {{- if .Values.vspc.enabled }}
       serial_port_service_uri = vmware-vspc
-      serial_port_proxy_uri = telnet://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.telnet.portExternal }}
-      serial_log_uri = http://{{ .Values.vspc.nodeIP }}:{{ .Values.vspc.web.portExternal }}
+      serial_port_proxy_uri = telnet://{{ required "vspc.nodeIP is required when vspc.enabled is true" .Values.vspc.nodeIP }}:{{ .Values.vspc.telnet.portExternal }}
+      serial_log_uri = http://{{ required "vspc.nodeIP is required when vspc.enabled is true" .Values.vspc.nodeIP }}:{{ .Values.vspc.web.portExternal }}
       {{- end }}
       hostgroup_reservations_json_file = /etc/nova/hostgroup-reservations.json
 

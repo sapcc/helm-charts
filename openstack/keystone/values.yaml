@@ -1,6 +1,7 @@
 # Default values for keystone.
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
+imageVersionKubernetesEntrypoint: latest
 # name: value
 
 global:
@@ -23,6 +24,7 @@ owner-info:
 
 debug: false
 insecure_debug: false
+use_json: false
 # max_db_limit: 1000
 
 # run a db_sync to migrate the db schema ?
@@ -39,6 +41,21 @@ nodeAffinity: {}
 # osprofiler
 osprofiler:
   enabled: false
+  redis:
+    enabled: false
+
+osprofiler-redis:
+  persistence:
+    enabled: false
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  alerts:
+    support_group: identity
 
 federation:
   oidc:
@@ -47,10 +64,44 @@ federation:
     client_id: ""
     client_secret: ""
     crypto_passphrase: ""
+  saml:
+    enabled: false
+    # Ordering safety gate. When enabled=true, keystone-api mounts ConfigMaps
+    # and a Secret produced by the SEPARATE keystone-saml-federation chart
+    # (keystone-saml-shibboleth-config, keystone-saml-federation-saml-tenants,
+    # keystone-saml-idp-metadata, and the SP-key Secret) as non-optional
+    # volumes. If those resources do not exist yet, the pod will not start
+    # (FailedMount). You MUST deploy the keystone-saml-federation chart for
+    # this region first, then set this flag to true to acknowledge you have
+    # done so. The chart refuses to render while enabled=true and this is
+    # false.
+    iHaveAlreadyDeployedFederationChart: false
+    spInit:
+      image: keystone-saml-sp-init
+      imageTag: ""
+      # Three required axes for key lifecycle management.
+      # All three must be set when federation.saml.enabled is true.
+      # See keystone-saml-sp-init for available plugins.
+      keyGeneration: ""   # required: go-crypto | hsm-entropy | hsm-full | tpm-entropy
+      keyWrapping: ""     # required: none | vault-transit | hsm | tpm
+      keyStorage: ""      # required: vault-kv | k8s-secret
+      # Set to true only if keyWrapping=none AND keyStorage=k8s-secret.
+      # This combination stores the plaintext private key in a Kubernetes
+      # Secret and does not meet production security requirements.
+      allowInsecureStorage: false
+    idp:
+      # IdP metadata ConfigMap name. Shipped by the keystone-saml-federation
+      # chart. Per-tenant <tenant>-metadata.xml files live inside.
+      # shibboleth2.xml and the federation-saml.d/*.conf files come from
+      # dedicated ConfigMaps (keystone-saml-shibboleth-config and
+      # keystone-saml-federation-saml-tenants) and are not configurable
+      # via values; they are wired by name in deployment-api.yaml.
+      metadataConfigMap: ""           # IdP metadata files (XML)
+      spKeySecretName: "keystone-saml-sp"  # Per-tenant SP key pairs (from federation chart)
 
 api:
   image: "loci-keystone"
-  #imageTag: latest
+  # imageTag: latest
 
   ## Specify a imagePullPolicy
   ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -129,7 +180,7 @@ api:
 
   identity:
     # Maximum number of entities that will be returned in an identity collection. 0 disables the limit
-    list_limit: 1500
+    list_limit: 0 # disabled until keystone LDAP marker pagination is fixed (sapcc/keystone#57)
 
   metrics:
     enabled: true
@@ -153,7 +204,7 @@ api:
   resources:
     requests:
       memory: 2Gi
-      cpu: 3000m
+      cpu: 1500m
     limits:
       memory: 3Gi
 
@@ -171,7 +222,7 @@ api:
 
 cron:
   image: "loci-keystone"
-  #imageTag: latest
+  # imageTag: latest
 
   cronSchedule: "0 * * * *"
 
@@ -213,8 +264,8 @@ sentry:
   #     exclude_unauthorized:
   #       exception_type: "Unauthorized"
   #       rate_limit: # only report max 5 occurrences within 300 seconds
-  #         max_occurrences: 5 
-  #         time_window: 300 
+  #         max_occurrences: 5
+  #         time_window: 300
   #     invalid_credentials:
   #       message_pattern: ".*length.*exceeded.*" # python regex match in the error message
   #     ignore_jaeger_client:
@@ -240,21 +291,21 @@ services:
     x509:
       # ca: <your ca certificate>
       issuer_attribute: HTTP_SSL_CLIENT_I_DN
-      #trusted_issuer: CN=SSO_CA,O=SAP-AG,C=DE
+      # trusted_issuer: CN=SSO_CA,O=SAP-AG,C=DE
 
     disco: false
 
   public:
     scheme: http
     host: identity-3
-    #tlsCertificate:
-    #tlsKey:
+    # tlsCertificate:
+    # tlsKey:
 
   admin:
     scheme: http
     host: identity-3
-    #tlsCertificate:
-    #tlsKey:
+    # tlsCertificate:
+    # tlsKey:
 
 audit:
   central_service:
@@ -290,7 +341,7 @@ percona_cluster:
   db_name: keystone
   db_user: keystone
   alerts:
-    support_group: identity
+    support_group: coredns
 
 dbName: keystone
 
@@ -359,7 +410,7 @@ mysql_metrics:
   enabled: true
   db_name: keystone
   db_user: root
-  #db_password: DEFINED-IN-REGION-CHART
+  # db_password: DEFINED-IN-REGION-CHART
   nodeAffinity: {}
   customMetrics:
     - name: openstack_roles_total
@@ -557,7 +608,7 @@ report_invalid_password_hash:
 2fa:
   enabled: false
   replicaCount: 3
-  pollInterval: 1m #how often do we list projects
+  pollInterval: 1m # how often do we list projects
   image: 2faproxy
   imageTag: latest
   imagePullPolicy: IfNotPresent

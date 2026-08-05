@@ -1,0 +1,77 @@
+suite: selfsigned issuer
+templates:
+  - disco-selfsigned-issuer.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should render exactly one Issuer
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Issuer
+
+  - it: should be named disco-selfsigned-issuer
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-selfsigned-issuer
+
+  - it: should be self-signed
+    asserts:
+      - isNotNull:
+          path: spec.selfSigned
+---
+suite: serving certificate
+templates:
+  - disco-serving-cert.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should render exactly one Certificate
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Certificate
+
+  - it: should be named disco-serving-cert
+    asserts:
+      - equal:
+          path: metadata.name
+          value: disco-serving-cert
+
+  - it: should reference the self-signed issuer
+    asserts:
+      - equal:
+          path: spec.issuerRef.name
+          value: disco-selfsigned-issuer
+      - equal:
+          path: spec.issuerRef.kind
+          value: Issuer
+
+  - it: should use tls-disco-webhook-service secret
+    asserts:
+      - equal:
+          path: spec.secretName
+          value: tls-disco-webhook-service
+---
+suite: certmanager disabled
+templates:
+  - disco-selfsigned-issuer.yaml
+  - disco-serving-cert.yaml
+tests:
+  - it: should not render cert-manager resources when certManager.enabled is false
+    set:
+      certManager.enabled: false
+    asserts:
+      - template: disco-selfsigned-issuer.yaml
+        hasDocuments:
+          count: 0
+      - template: disco-serving-cert.yaml
+        hasDocuments:
+          count: 0

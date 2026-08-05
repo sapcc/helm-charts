@@ -11,6 +11,9 @@ spec:
     metadata:
       {{- tuple . "db-migrate" | include "job_metadata" | indent 6 }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
       initContainers:

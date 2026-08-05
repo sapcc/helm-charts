@@ -7,9 +7,58 @@ groups:
     labels:
       context: availability
       service: archer
+      severity: critical
+      tier: os
+      support_group: containers
+      playbook: docs/support/playbook/archer/alerts/archer-failed-pending-sync
+    annotations:
+      description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
+      summary: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
+
+  - alert: archer-agent-stale
+    expr: archer_agents_heartbeat_age_seconds{enabled="true"} > 300
+    for: 5m
+    labels:
+      context: availability
+      service: archer
       severity: warning
       tier: os
       support_group: containers
     annotations:
-      description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
-      summary: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
+      description: 'Archer agent {{ $labels.host }} has not sent a heartbeat for more than 5 minutes.'
+      summary: 'Archer agent {{ $labels.host }} is stale.'
+
+  - alert: archer-health-scrape-failures
+    expr: sum by (cloud_sap_host)(rate(archer_job_processed{name="HealthScrapeLoop",outcome="fail"}[5m])) > 0
+    for: 5m
+    labels:
+      context: availability
+      service: archer
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed health scrape loops > 5m.'
+      summary: 'Archer agent for {{ $labels.cloud_sap_host }} has health scrape failures.'
+
+  # SLO: availability >= 99.90% (error budget 0.10%).
+  # Page when the 1h error rate burns the budget more than 2x faster than allowed,
+  # i.e. error rate > 2 * 0.001 = 0.002 (0.2%) sustained over 1h.
+  - alert: archer-slo-error-budget-burn
+    expr: |
+      (
+        sum(rate(http_requests_total{ccloud_service="archer",code=~"5.."}[1h]))
+        /
+        sum(rate(http_requests_total{ccloud_service="archer"}[1h]))
+      ) > (2 * 0.001)
+    for: 5m
+    labels:
+      context: api
+      service: archer
+      severity: critical
+      tier: os
+      support_group: containers
+      playbook: docs/support/playbook/archer/alerts/archer-slo-error-budget-burn
+    annotations:
+      description: 'Archer API is burning its 99.90% availability SLO error budget at more than 2x the allowed rate over the last 1h.'
+      summary: 'Archer SLO error budget burn rate > 2x over 1h.'

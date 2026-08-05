@@ -1,0 +1,29 @@
+{{/*
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.permissionmanager.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: permission-manager
+  namespace: greenhouse
+spec:
+  pluginDefinitionRef:
+    name: permission-manager
+    kind: ClusterPluginDefinition
+  releaseNamespace: greenhouse
+  releaseName: permission-manager
+  optionValues:
+    - name: providers.kubernetes
+      value: "true"
+    - name: providers.github
+      value: "false"
+    - name: rbac.namespaced
+      value: false
+    - name: metrics.enabled
+      value: false
+    - name: metrics.secure
+      value: false
+{{ end }}

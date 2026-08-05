@@ -12,35 +12,11 @@ global:
     skip_hcm_domain: false
   linkerd_requested: false
 
+rbac:
+  enabled: true
+
 # TLS configuration for BSI-compliant end-to-end encryption
 tls:
-  # Enable end-to-end TLS termination at Apache (instead of ingress)
-  enabled: false
-  # Enable TLS passthrough mode on ingress (required when tls.enabled=true)
-  passthrough: false
-  # HTTPS port for external traffic (when TLS is enabled)
-  httpsPort: 443
-  # Certificate configuration for TLS lifecycle manager
-  issuer:
-    name: digicert-issuer
-    kind: ClusterDigicertIssuer
-    group: certmanager.cloud.sap
-  # Envelope encryption for private keys (none, vault-transit)
-  # Note: TPM support deferred per WP-1203
-  envelopeEncryption: none
-  # TLS Lifecycle Manager image
-  lifecycleManager:
-    image: tls-lifecycle-manager
-    imageTag: ""
-  rotation:
-    enabled: true
-    schedule: "0 2 * * 0"
-    renewalThresholdDays: 30
-  hardening:
-    minVersion: "TLSv1.2"
-    cipherSuitesTLS13: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
-    cipherSuitesTLS12: "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256"
-    ecdheCurves: "brainpoolP256r1:brainpoolP384r1:prime256v1:secp384r1"
 
 owner-info:
   support-group: identity
@@ -149,6 +125,9 @@ pxc_db:
       enabled: true
 
 mysql_metrics:
+  resources:
+    limits:
+      memory: 512Mi
   db_name: barbican
   db_user: barbican
   customMetrics:
@@ -484,11 +463,11 @@ logging:
     barbican:
       handlers: stdout, sentry
       level: INFO
-    eventlet.wsgi.server:
-      handlers: stdout, sentry
-      level: INFO
     sqlalchemy.engine.base.Engine:
       handlers: stdout, sentry
+      level: WARNING
+    datadog.dogstatsd:
+      handlers: "null"
       level: WARNING
 
 sentry:
@@ -496,9 +475,27 @@ sentry:
 
 tlsacme: true
 
+# SCIBPL-209: Ingress hardening — request size cap and connection limiting.
+# These annotations are applied to the nginx ingress controller.
+# Keystone middleware already enforces authentication; these settings add a
+# first line of defence at the edge against oversized payloads and
+# connection floods before traffic reaches the Barbican API process.
+ingress:
+  # Cap the maximum allowed request body size (secrets/payloads).
+  # Requests exceeding this limit are rejected with HTTP 413.
+  enableRequestSizeLimit: true
+  maxRequestBodySize: "1m"
+  # Limit simultaneous connections per source IP.
+  # Helps mitigate connection-flood DoS attempts.
+  # NOTE: if callers arrive from a shared NAT gateway or single-IP proxy,
+  # all their traffic counts against one IP — tune before enabling in prod.
+  enableConnectionsLimit: true
+  limitConnections: 20
+
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
+  backend_secret_file: /etc/barbican/ratelimit-backend-secret.conf
 
 api-ratelimit-redis:
   persistence:
@@ -524,11 +521,22 @@ alerts:
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
 
+# SimpleCrypto plugin configuration (software-based encryption)
+# Used as fallback when HSM is not available or for testing
+simple_crypto:
+  # Fernet Key-Encryption Keys (KEK) for SimpleCrypto plugin
+  # Multiple keys can be specified for key rotation (first key is used for new encryptions)
+  # Generate a key with: python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
+  # IMPORTANT: Must be configured in region-specific values or secrets when multistore is enabled
+  kek: []
+  # Optional: Custom plugin name displayed in the UI
+  # plugin_name: "Software Only Crypto"
+
 # HSM-Barbican lunaclient
 hsm:
   enabled: false
   luna:
-    image: lunaclient-r9.1
+    image: lunaclient-r9.2
   multistore:
     enabled: false
   ha:
@@ -559,3 +567,13 @@ barbican_nanny:
   interval: 1
   db_secret_move:
     enabled: false
+
+# SCIBPL-218: restrict kubectl exec / port-forward / attach on the
+# barbican-api pods via a ValidatingAdmissionPolicy (K8s >= 1.30).
+# See templates/validating-admission-policy.yaml.
+restrictPodsExec:
+  enabled: true
+  # Kubernetes groups whose members bypass the policy (break-glass).
+  # Override per-cluster in the secrets repo if needed.
+  breakGlassGroups:
+    - system:masters

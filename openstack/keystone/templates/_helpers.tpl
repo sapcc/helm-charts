@@ -63,6 +63,41 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
   {{- end }}
 {{- end }}
 
+{{- define "keystone.job_dependencies" }}
+  {{- if .Release.IsInstall }}
+    {{- printf "%s,%s" (tuple . "job-migration" | include "job_name") (tuple . "job-bootstrap" | include "job_name") }}
+  {{- else if .Values.run_db_migration }}
+    {{- tuple . "job-migration" | include "job_name" }}
+  {{- end }}
+{{- end }}
+
+{{/*
+kubernetes-entrypoint init container using the sapcc fork from ghcrIoMirrorAlternateRegion.
+Usage: tuple . (dict "SERVICE" "svc1,svc2" "JOBS" "job1") | include "keystone.kubernetes_entrypoint_init_container" | indent N
+Empty values are skipped so callers may pass "" for optional dependencies.
+*/}}
+{{- define "keystone.kubernetes_entrypoint_init_container" }}
+  {{- $envAll := index . 0 }}
+  {{- $params := index . 1 }}
+- name: kubernetes-entrypoint
+  image: {{ $envAll.Values.global.ghcrIoMirrorAlternateRegion | required ".Values.global.ghcrIoMirrorAlternateRegion unset " }}/sapcc/kubernetes-entrypoint:{{ $envAll.Values.imageVersionKubernetesEntrypoint | required ".Values.imageVersionKubernetesEntrypoint is unset" }}
+  command:
+  - kubernetes-entrypoint
+  env:
+  - name: COMMAND
+    value: "true"
+  - name: POD_NAME
+    valueFrom: {fieldRef: {fieldPath: metadata.name}}
+  - name: NAMESPACE
+    valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+  {{- range $k, $v := $params }}
+  {{- if $v }}
+  - name: DEPENDENCY_{{ $k | upper }}
+    value: {{ $v }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+
 {{- define "prodel_url" }}
     {{- if not (empty .Values.prodel.url) -}}
         {{- .Values.prodel.url -}}

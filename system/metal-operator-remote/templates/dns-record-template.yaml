@@ -1,0 +1,23 @@
+{{- $dnsRecordTemplate := .Values.controllerManager.dnsRecordTemplate | default dict }}
+{{- if $dnsRecordTemplate.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns-record-template
+  namespace: {{ .Release.Namespace }}
+data:
+  bmc_dns.yaml: |
+    apiVersion: disco.stable.sap.cc/v1
+    kind: Record
+    metadata:
+      name: {{ "{{ .Hostname }}" }}
+      namespace: {{ "{{ .Namespace }}" }}
+    spec:
+      type: A
+      record: {{ "{{ .IP }}" }}
+      {{- if $dnsRecordTemplate.zone }}
+      zoneName: {{ $dnsRecordTemplate.zone }}
+      {{- end }}
+      hosts:
+        - {{ "{{ .Hostname }}" }}
+{{- end }}

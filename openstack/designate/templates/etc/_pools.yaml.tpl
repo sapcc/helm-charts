@@ -1,6 +1,9 @@
 {{- range $pool := .Values.bind_pools }}
 - name: {{ $pool.name }}
   description: Bind9 Pool
+  {{- with $pool.domain_id }}
+  domain_id: {{ . }}
+  {{- end }}
   {{- if $pool.attributes}}
   attributes:
    {{- range $attr := $pool.attributes}}
@@ -41,6 +44,9 @@
 {{- range $pool := .Values.catz_pools }}
 - name: {{ $pool.name }}
   description: Catz Pool
+  {{- with $pool.domain_id }}
+  domain_id: {{ . }}
+  {{- end }}
   {{- if $pool.attributes}}
   attributes:
    {{- range $attr := $pool.attributes}}
@@ -57,15 +63,9 @@
     - host: {{ $srv.ip }}
       port: 53
     {{- end}}
-  also_notifies:
-    {{- range $prio, $srv := $pool.nameservers}}
-    - host: {{ $srv.ip }}
-      port: 53
-    {{- end}}
   targets:
     {{- range $idx, $srv := $pool.nameservers}}
-    - type: fake
-      description: Dummy Server {{ add1 $idx }}
+    - type: bind9
       masters:
         - host: {{ $.Values.global.designate_mdns_external_ip }}
           port: 5354

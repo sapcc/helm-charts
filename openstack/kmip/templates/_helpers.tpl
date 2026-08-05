@@ -61,6 +61,14 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+{{- define "kmip.corename" -}}
+{{- printf "%s-core" (include "kmip.fullname" .) }}
+{{- end -}}
+
+{{- define "kmip.restapiname" -}}
+{{- printf "%s-restapi" (include "kmip.fullname" .) }}
+{{- end -}}
+
 {{- define "kmip.db_host" -}}
 {{ include "utils.db_host" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
 {{- end -}}

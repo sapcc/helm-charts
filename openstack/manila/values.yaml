@@ -8,6 +8,9 @@ owner-info:
     - Dmitry Galkin
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/manila
 
+rbac:
+  enabled: true
+
 global:
   dbUser: manila
   master_password: null
@@ -27,6 +30,7 @@ rpc_ping_enabled: true
 
 # manager config options
 server_migration_driver_continue_update_interval: 300
+share_service_concurrency: 10
 
 # better debugging experience; enable it only in QA
 pyreloader_enabled: false
@@ -756,6 +760,7 @@ rabbitmq:
 sentry:
   enabled: true
 seeds:
+  requires_swift: true
   all_enabled: true
   service_type: share
   endpoint_prefix: ""
@@ -763,6 +768,8 @@ seeds:
     enabled: false
     username: manilabackup
     password: null
+  integration_test_user:
+    enabled: true
 
 share_ensure:
   enabled: true
@@ -771,8 +778,10 @@ share_type_extra_specs:
   compression: "<is> True"
   create_share_from_snapshot_support: "True"
   dedupe: "<is> True"
+  mount_point_name_support: "<is> True"
   replication_type: "readable"
   revert_to_snapshot_support: "True"
+  capabilities:netapp_is_home: "True"
   netapp:hide_snapdir: "True"
   netapp:max_files_multiplier: "4.813"  # 33.6925 / 7 -> roughly 1 inode per 7 KB
   netapp:snapshot_policy: "none"
@@ -799,15 +808,16 @@ share_types:
       provisioning:max_share_extend_size: "65536" # keep this in sync with castellum
   hypervisor_storage_hana_qa:
     enabled: false
-    extra_specs:
+    extra_specs:  # is a flexgroup share type, where capability 'netapp_is_home' is not reported
+      capabilities:netapp_is_home: "__skip__"  # opt-out sentinel: filtered out at render time
       provisioning:min_share_size: "2048"
       provisioning:max_share_size: "40960"
   hypervisor_storage:
     enabled: false
   hypervisor_storage_hanalytics:
-    enabeld: false
+    enabled: false
   hypervisor_storage_vim:
-    enabeld: false
+    enabled: false
   btp_backup:
     enabled: false
 
@@ -834,6 +844,12 @@ netapp:
 #      reserved_share_percentage: 0
 
 use_tls_acme: true
+
+designate:
+  enabled: false
+  ttl: 300
+  endpoint_type: publicURL
+  region_name: null
 
 audit:
   enabled: true

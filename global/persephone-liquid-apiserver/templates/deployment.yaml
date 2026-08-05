@@ -1,0 +1,112 @@
+{{/*
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company
+
+SPDX-License-Identifier: Apache-2.0
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "persephone-liquid-apiserver.fullname" . }}
+  labels:
+    {{- include "persephone-liquid-apiserver.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "persephone-liquid-apiserver.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "persephone-liquid-apiserver.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "persephone-liquid-apiserver.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["/usr/bin/persephone-liquid-apiserver"]
+        args:
+        - --region={{ required "region is required" .Values.region }}
+        - --listen=:8080
+        env:
+        - name: REGION
+          value: {{ required "region is required" .Values.region | quote }}
+        - name: LANDSCAPE
+          value: {{ required "landscape is required" .Values.landscape | quote }}
+        # Virtual Garden API configuration
+        - name: KUBERNETES_SERVICE_HOST
+          value: {{ required "virtualGarden.apiServerURL is required" .Values.virtualGarden.apiServerURL | trimPrefix "https://" | quote }}
+        - name: KUBERNETES_SERVICE_PORT
+          value: "443"
+        # OpenStack Keystone configuration
+        - name: OS_AUTH_URL
+          value: {{ required "openstack.authURL is required" .Values.openstack.authURL | quote }}
+        # Liquid policy configuration
+        - name: LIQUID_POLICY_PATH
+          value: "/etc/liquid/policy.json"
+        {{- with .Values.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+          readOnly: true
+        - name: policy
+          mountPath: "/etc/liquid"
+          readOnly: true
+        {{- with .Values.volumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      volumes:
+      - name: kubeconfig
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: token
+              expirationSeconds: 3600
+              audience: {{ .Values.virtualGarden.oidc.audience }}
+      - name: policy
+        configMap:
+          name: {{ include "persephone-liquid-apiserver.fullname" . }}-policy
+      {{- with .Values.volumes }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

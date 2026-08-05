@@ -14,6 +14,10 @@ metadata:
     tier: kubernetes
     type: alerting-rules
     {{ $target.type | required (printf "$values.alerts.prometheus.[%v].type missing" $i) }}: {{ $target.name | required (printf "$values.alerts.prometheus.[%v].name missing" $i) }}
+    {{- if eq $target.type "thanos-ruler" }}
+    # Disable absent-metrics-operator (AMO) for Thanos-Ruler alerts.
+    absent-metrics-operator/disable: "true"
+    {{- end }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}

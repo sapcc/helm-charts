@@ -1,0 +1,500 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Dashboard for monitoring Project Calico's Typha, the fan-out proxy between the Kubernetes API and Felix agents.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "panels": [],
+      "title": "Cluster-wide",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Number of Typha replicas currently up and being scraped.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 0, "y": 1},
+      "id": 101,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "count(up{job=~\".*typha.*\"} == 1)",
+          "legendFormat": "Replicas up",
+          "refId": "A"
+        }
+      ],
+      "title": "Typha replicas up",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Sum of active Felix-to-Typha client connections across all Typha replicas.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 8, "y": 1},
+      "id": 102,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "sum(typha_connections_active)",
+          "legendFormat": "Total active connections",
+          "refId": "A"
+        }
+      ],
+      "title": "Total active Felix connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Total Felix clients connected divided by number of Typha replicas — should be roughly even when load is balanced.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 16, "y": 1},
+      "id": 103,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "sum(typha_connections_active) / count(typha_connections_active)",
+          "legendFormat": "Average clients per replica",
+          "refId": "A"
+        }
+      ],
+      "title": "Average clients per Typha replica",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 8},
+      "id": 200,
+      "panels": [],
+      "title": "Client connections (per replica)",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Active client connections per Typha replica.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9},
+      "id": 201,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, typha_connections_active)",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Active connections (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Rate of newly accepted client connections per Typha replica. Spikes after a Typha restart or Felix rollout are normal.",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
+      "id": 202,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_connections_accepted[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Connections accepted/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Connections forcibly closed by Typha (e.g., slow consumer falling behind). Sustained non-zero usually indicates Felix-side backpressure.",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 17},
+      "id": 203,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_connections_dropped[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Connections dropped/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Connections used the grace period before being closed. Indicates Typha is shedding load.",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 17},
+      "id": 204,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_connections_grace_used[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Connections using grace period/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25},
+      "id": 300,
+      "panels": [],
+      "title": "Latency",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Ping round-trip latency between Typha and clients (Felix agents). High values indicate network or Typha processing delays.",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+      "id": 301,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, typha_ping_latency{quantile=\"0.99\"})",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "99%ile ping latency (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Time between consecutive datastore breadcrumbs (snapshot publications) reaching clients.",
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "id": 302,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, histogram_quantile(0.99, sum by (le, instance) (rate(typha_next_breadcrumb_latency_seconds_bucket[$__rate_interval]))))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "99%ile breadcrumb latency (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34},
+      "id": 400,
+      "panels": [],
+      "title": "Datastore sync",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Rate of new snapshots generated by Typha (one per datastore change batch).",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 35},
+      "id": 401,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_snapshots_generated[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Snapshots generated/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Rate of updates received from the datastore and forwarded to clients.",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 35},
+      "id": 402,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_updates_total[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Datastore updates/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Updates that Typha dropped or coalesced before sending to clients.",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 43},
+      "id": 403,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_updates_skipped[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Updates skipped/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Number of key-value pairs Typha is holding for connected clients.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 43},
+      "id": 404,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, typha_kvs_per_client)",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "KVs per client (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 51},
+      "id": 500,
+      "panels": [],
+      "title": "Errors & warnings",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Rate of error-level log lines emitted by Typha. Sustained non-zero warrants investigation.",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 52},
+      "id": 501,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_log_errors[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Log errors/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Rate of warning-level log lines emitted by Typha.",
+      "fieldConfig": {"defaults": {"unit": "cps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 52},
+      "id": 502,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(typha_log_warnings[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Log warnings/sec (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 60},
+      "id": 600,
+      "panels": [],
+      "title": "Process metrics",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Typha process restarts per hour. Non-zero indicates pod crashes or rollouts.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 61},
+      "id": 601,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, changes(process_start_time_seconds{job=~\".*typha.*\"}[1h])) > 0",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Typha restarts/hr (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "CPU seconds used per second by the Typha process.",
+      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 61},
+      "id": 602,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(process_cpu_seconds_total{job=~\".*typha.*\"}[$__rate_interval]))",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU usage (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Resident set size (memory) of the Typha process.",
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 69},
+      "id": 603,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, process_resident_memory_bytes{job=~\".*typha.*\"})",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Process memory (RSS) (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Open file descriptors. Watch for a runaway upward trend, which can indicate a leak.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 69},
+      "id": 604,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, process_open_fds{job=~\".*typha.*\"})",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Open file descriptors (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Go garbage collections per minute.",
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 77},
+      "id": 605,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, rate(go_gc_duration_seconds_count{job=~\".*typha.*\"}[$__rate_interval])) * 60",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Runtime GC rate/min (top $top_n)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "$datasource"},
+      "description": "Go runtime next-GC target heap size.",
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 77},
+      "id": 606,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "$datasource"},
+          "expr": "topk($top_n, go_memstats_next_gc_bytes{job=~\".*typha.*\"})",
+          "legendFormat": "$instance_label",
+          "refId": "A"
+        }
+      ],
+      "title": "Runtime GC target heap size (top $top_n)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 27,
+  "tags": ["kubernetes", "calico", "typha"],
+  "templating": {
+    "list": [
+      {
+        "current": {"text": "Prometheus", "value": "Prometheus"},
+        "label": "Datasource",
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      },
+      {
+        "current": {"text": "10", "value": "10"},
+        "description": "",
+        "label": "Top N limit",
+        "name": "top_n",
+        "options": [
+          {"selected": true, "text": "10", "value": "10"},
+          {"selected": false, "text": "5", "value": "5"},
+          {"selected": false, "text": "20", "value": "20"},
+          {"selected": false, "text": "50", "value": "50"},
+          {"selected": false, "text": "100", "value": "100"}
+        ],
+        "query": "10,5,20,50,100",
+        "type": "custom"
+      },
+      {
+        "current": {"text": "{{pod}}", "value": "{{pod}}"},
+        "description": "Label expression used in legends. Default is {{pod}}; change to {{instance}} or {{node}} if your scrape config uses different labels.",
+        "hide": 0,
+        "label": "Instance label",
+        "name": "instance_label",
+        "query": "{{pod}}",
+        "skipUrlSync": true,
+        "type": "constant"
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Calico: Typha",
+  "uid": "calico-typha",
+  "version": 1
+}

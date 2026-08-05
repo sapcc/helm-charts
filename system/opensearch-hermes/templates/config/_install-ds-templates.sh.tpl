@@ -36,7 +36,16 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    for e in ${DATA_STREAMS}; do
      export FILEPATH=/scripts
      export TMPPATH=/tmp
-     export DS_TEMPLATE=audit_ds.json
+     # Per-datastream index template. Each datastream has its own
+     # ds-${name}.json with the field mappings appropriate for that data
+     # type (CADF cloud-audit fields differ from OpenSearch security-audit
+     # fields, etc.). The legacy "audit_ds.json" name is kept as a fallback
+     # so this refactor doesn't break charts that haven't migrated yet.
+     export DS_TEMPLATE=ds-${e}.json
+     if [ ! -f "/${FILEPATH}/${DS_TEMPLATE}" ]; then
+       echo "Per-datastream template ${DS_TEMPLATE} not found, falling back to legacy audit_ds.json"
+       export DS_TEMPLATE=audit_ds.json
+     fi
 
      echo "creating file FILE=${TMPPATH}/${e}"
      cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"

@@ -1,22 +1,27 @@
+{{- $host := .Values.ingress.host | default (printf "dashboard-aurora.%s.%s" .Values.global.region .Values.global.tld) -}}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
 metadata:
   name: aurora
   annotations:
+    # ssl cert
     kubernetes.io/tls-acme: "true"
+    # create dns CNAME record for dashboard
+    disco: "true"
 spec:
   tls:
     - secretName: aurora-ingress-tls
-      hosts: [{{ .Values.ingress.host }}]
+      # prettier-ignore
+      hosts: ["{{ $host }}"]
   rules:
-  - host: "{{ .Values.ingress.host }}"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: aurora
-            port:
-              number: 3000
+    - host: "{{ $host }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aurora
+                port:
+                  number: 3000

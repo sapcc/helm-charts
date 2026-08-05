@@ -516,6 +516,22 @@ spec:
                 - kubernetes
                 - type
                 type: object
+              garbageCollection:
+                description: GarbageCollection contains configuration for automated
+                  garbage collection
+                properties:
+                  enabled:
+                    description: Enabled toggles garbage collection for this resource.
+                    type: boolean
+                  maxAge:
+                    description: |-
+                      MaxAge defines the maximum age for images to keep. Images older than
+                      now - MaxAge are eligible for deletion.
+                    type: string
+                    x-kubernetes-validations:
+                    - message: maxAge must not be negative
+                      rule: duration(self) >= duration('0s')
+                type: object
               machineImageUpdates:
                 description: MachineImageUpdates contains the source and provider
                   information to automate machine images.
@@ -694,6 +710,13 @@ rules:
   - watch
   - create
   - delete
+- apiGroups: ["core.gardener.cloud"]
+  resources:
+  - shoots
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups: ["coordination.k8s.io"]
   resources:
   - leases

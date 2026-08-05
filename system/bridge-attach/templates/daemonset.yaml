@@ -1,0 +1,76 @@
+{{- if .Values.enabled }}
+{{- if and .Values.global .Values.global.apods }}
+{{- $root := . }}
+{{- range $azLong, $apods := .Values.global.apods }}
+{{- range $apods }}
+{{- $apod := . }}
+{{- $cfg := index $root.Values.apodConfig $apod | default dict }}
+{{- $iface := $cfg.interface | default $root.Values.interface }}
+{{- $bridge := $cfg.bridge | default $root.Values.bridge }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: bridge-attach-{{ $apod }}
+  labels:
+    app.kubernetes.io/name: bridge-attach
+    apod: {{ $apod }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bridge-attach
+      apod: {{ $apod }}
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bridge-attach
+        apod: {{ $apod }}
+    spec:
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      terminationGracePeriodSeconds: 5
+      nodeSelector:
+        topology.kubernetes.io/zone: {{ $azLong }}
+        {{ $root.Values.apodLabel }}: {{ $apod }}
+      containers:
+        - name: bridge-attach
+          image: {{ include "shared-app-images.ref" (tuple $root "alpine-iproute2" "3.23") }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+            - |
+              bash /scripts/add-iface-to-bridge.sh "$IFACE" "$BRIDGE"
+              echo "Sleeping forever to keep pod Running."
+              sleep infinity
+          env:
+            - name: IFACE
+              value: {{ $iface | quote }}
+            - name: BRIDGE
+              value: {{ $bridge | quote }}
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          resources:
+{{ toYaml $root.Values.resources | indent 12 }}
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: bridge-attach-script
+            defaultMode: 0755
+      {{- with $root.Values.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

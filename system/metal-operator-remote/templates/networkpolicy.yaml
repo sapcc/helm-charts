@@ -16,8 +16,7 @@ spec:
       protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: metal-operator-remote
-      app.kubernetes.io/name: metal-operator-core
+      {{- include "chart.selectorLabels" . | nindent 6 }}
       control-plane: controller-manager
   policyTypes:
   - Ingress
@@ -44,8 +43,91 @@ spec:
           kubernetes.io/metadata.name: ingress-nginx
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: metal-operator-remote
-      app.kubernetes.io/name: metal-operator-core
+      {{- include "chart.selectorLabels" . | nindent 6 }}
       control-plane: controller-manager
   policyTypes:
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-from-kube-apiserver-9443
+spec:
+  ingress:
+  - ports:
+    - port: 9443
+      protocol: TCP
+    from:
+    - podSelector:
+        matchLabels:
+          app: kubernetes
+          role: apiserver
+  podSelector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-apiserver-egress-to-metalapi
+spec:
+  egress:
+  - ports:
+    - port: 9443
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          {{- include "chart.selectorLabels" . | nindent 10 }}
+          control-plane: controller-manager
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  policyTypes:
+  - Egress
+---
+# Required for JWKS fetch from gardener discovery endpoint , which are needed for new metal api infra (CCM & MCM) auth flow
+{{- if .Values.virtualGardenLBIP }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-apiserver-egress-to-virtual-garden-lb
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - ipBlock:
+          cidr: {{ .Values.virtualGardenLBIP }}/32
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: virtual-garden-istio-ingress
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-from-kube-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 8082
+    from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-monitoring
+  policyTypes:
+  - Ingress
