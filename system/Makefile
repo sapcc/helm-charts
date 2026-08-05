@@ -164,27 +164,52 @@ build-metal-operator:
 
 build-metal-operator-remote:
 	@helm dep up metal-operator-remote
-	# Merge upstream controllerManager defaults with our overrides into values.yaml
+	# Merge upstream manager defaults with our overrides into values.yaml
 	@yq eval-all \
-		'select(fileIndex == 0).controllerManager * select(fileIndex == 1).controllerManager | {"controllerManager": .}' \
+		'select(fileIndex == 0).manager * select(fileIndex == 1).manager | {"manager": .}' \
 		<(tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/values.yaml) \
 		metal-operator-remote/values-overrides.yaml | \
 		yq eval -i '. *= load("/dev/stdin")' metal-operator-remote/values.yaml
-	# Render CRDs and RBAC into managed resources for the shoot cluster
+	@yq eval -i ".metaldata.image.tag = \"$$(tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/values.yaml | yq eval '.metaldata.image.tag' -)\"" metal-operator-remote/values.yaml
+	# Render CRDs, essential RBAC and metaldata for the shoot; manager Deployment is excluded (runs directly in this release).
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml | \
-		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - \
 		> metal-operator-remote/managedresources/crds-and-rbac.yaml
-	# Extract upstream Deployment template and inject webhook-injector as native sidecar (initContainer)
+	# Patch upstream's Deployment: add webhook-injector sidecar, restore dns-record-template/ignition volumes (macdb unused, omitted), fix its extraVolume* nindent bug, and localize named-template includes.
 	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml | \
 		$(SED) \
 			-e '/namespace: {{ .Release.Namespace }}/d' \
+			-e 's/include "metal-operator\./include "chart./g' \
+			-e '/^          {{- if \.Values\.manager\.extraVolumeMounts }}$$/,/^          {{- end }}$$/c\          {{- range .Values.manager.extraVolumeMounts }}\n          {{- if not (and $$.Values.certManager.enable (eq .name "webhook-certs")) }}\n          {{- toYaml (list .) | nindent 8 }}\n          {{- end }}\n          {{- end }}' \
+			-e '/^        {{- if \.Values\.manager\.extraVolumes }}$$/,/^        {{- end }}$$/c\      {{- range .Values.manager.extraVolumes }}\n      {{- if not (and $$.Values.certManager.enable (eq .name "webhook-certs")) }}\n      {{- toYaml (list .) | nindent 6 }}\n      {{- end }}\n      {{- end }}' \
+			-e '/^        volumeMounts:$$/a\        {{- if .Values.manager.dnsRecordTemplate.enabled }}\n        - mountPath: /etc/metal-operator/dns\n          name: dns-record-template\n        {{- end }}\n        {{- if .Values.ignition.override }}\n        - name: ignition-template\n          mountPath: /etc/metal-operator\n          readOnly: true\n        {{- end }}' \
+			-e '/^      volumes:$$/a\      {{- if .Values.manager.dnsRecordTemplate.enabled }}\n      - name: dns-record-template\n        configMap:\n          name: dns-record-template\n      {{- end }}\n      {{- if .Values.ignition.override }}\n      - name: ignition-template\n        configMap:\n          name: {{ include "chart.name" . }}-ignition-template\n      {{- end }}' \
 			-e '/^      containers:/i\      initContainers:\n      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}'\
 		> metal-operator-remote/templates/controller-manager.yaml
+	@grep -q 'mountPath: /etc/metal-operator/dns' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q -- '- name: dns-record-template' metal-operator-remote/templates/controller-manager.yaml && \
+		[ "$$(grep -c -- '- name: ignition-template' metal-operator-remote/templates/controller-manager.yaml)" -ge 2 ] && \
+		grep -q 'initContainers:' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q 'include "chart.webhook-injector-sidecar"' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q 'path: /healthz' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q 'path: /readyz' metal-operator-remote/templates/controller-manager.yaml || \
+		{ echo "ERROR: sed insertion anchors not found in controller-manager.yaml (dns-record-template/ignition-template volumes, webhook-injector-sidecar initContainers, or liveness/readiness probe paths) - upstream manager.yaml layout likely changed, update the sed anchors."; exit 1; }
+	@echo "NOTE: controller-manager.yaml sed pipeline is best-effort - verify with 'helm lint'/'helm template' after regenerating."
+	# Vendor the metaldata DaemonSet locally; it must run directly here too since the seed itself may be bare-metal.
+	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/extras/metaldata.yaml | \
+		$(SED) \
+			-e '/namespace: {{ .Release.Namespace }}/d' \
+			-e 's/include "metal-operator\./include "chart./g' \
+			-e 's/\.Values\.metaldata\.image\.tag | default \.Chart\.AppVersion/required "metaldata.image.tag is required" .Values.metaldata.image.tag/' \
+			-e '1i\# Vendored copy of metal-operator-core'"'"'s templates/extras/metaldata.yaml; must run directly here since the seed itself may be bare-metal.' \
+		> metal-operator-remote/templates/metaldata.yaml
+	@grep -q 'required "metaldata.image.tag is required" .Values.metaldata.image.tag' metal-operator-remote/templates/metaldata.yaml || \
+		{ echo "ERROR: metaldata.image.tag required-guard substitution not found in metaldata.yaml - upstream extras/metaldata.yaml layout likely changed, update the sed anchor."; exit 1; }
+	# templates/metaldata-rbac.yaml is hand-maintained (mirrors upstream's rbac/metaldata*.yaml, simplified) - update by hand if upstream changes.
 	# Render webhook configurations and rewrite service refs to URL-based
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 	  -n kube-system \
@@ -193,6 +218,7 @@ build-metal-operator-remote:
 		> metal-operator-remote/webhooks.yaml
 	# Bump patch version
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+
 
 build-boot-operator:
 	@helm dep up boot-operator

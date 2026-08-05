@@ -1,0 +1,76 @@
+# Vendored copy of metal-operator-core's templates/extras/metaldata.yaml; must run directly here since the seed itself may be bare-metal.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: metaldata
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ include "chart.resourceName" (dict "suffix" "metaldata" "context" $) }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: metaldata
+      app.kubernetes.io/name: {{ include "chart.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: metaldata
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        {{- with .Values.metaldata.additionalLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+      - command:
+        - /metaldata
+        image: "{{ .Values.metaldata.image.repository }}:{{ required "metaldata.image.tag is required" .Values.metaldata.image.tag }}"
+        {{- with .Values.metaldata.image.pullPolicy }}
+        imagePullPolicy: {{ . }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: metaldata
+        ports:
+        - containerPort: 10002
+          name: http
+          protocol: TCP
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: {{ include "chart.resourceName" (dict "suffix" "metaldata" "context" $) }}
+      terminationGracePeriodSeconds: 10
