@@ -2,6 +2,7 @@
 whitelist:
   - Default/service
   - monsoon3/cc-demo
+  - tempest/performance-testing
 
 whitelist_users:
   - TS4_S4_SMTP_01
