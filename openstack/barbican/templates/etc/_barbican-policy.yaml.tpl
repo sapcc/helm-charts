@@ -8,8 +8,8 @@
 "context_is_key_admin": "rule:context_is_admin or rule:key_admin"
 "context_is_editor": "rule:context_is_key_admin"
 "context_is_viewer": "rule:context_is_editor or rule:viewer"
-"context_is_key_admin_and_project_member": "rule:context_is_admin or (rule:key_admin and project_id:%(project_id)s)"
-"context_is_viewer_and_project_member": "rule:context_is_key_admin_and_project_member or (rule:viewer and project_id:%(project_id)s)"
+"context_is_key_admin_and_project_member": "rule:context_is_admin or rule:key_admin"
+"context_is_viewer_and_project_member": "rule:context_is_key_admin_and_project_member or rule:viewer"
 
 "secret_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read"
 "secret_decrypt_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read"
