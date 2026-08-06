@@ -30,7 +30,13 @@ spec:
   # applyOrder: SeedFirst is MANDATORY — see PREREQUISITES above.
   applyOrder: SeedFirst
 
-  shootNamespace: kube-system
+  # shootNamespace is the Helm --namespace for the shoot render: namespaced shoot
+  # objects without an explicit metadata.namespace land here. The upstream
+  # metal-operator subchart deploys its namespaced objects (SA, leader-election
+  # Role/RoleBinding) into this namespace. On rt-qa-de-1 (0.6.31) the canonical
+  # value is metal-operator-system. Do NOT use kube-system — the upstream subchart
+  # would place its SA and leader-election RBAC there, conflicting with system objects.
+  shootNamespace: metal-operator-system
 
   shootAccess:
     secretName: metal-operator-remote-kubeconfig
