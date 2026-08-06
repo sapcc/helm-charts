@@ -116,9 +116,11 @@ make docker-push  IMG=$IMG    # docker push $IMG
 >    attestation layer): `... does not satisfy validation rule: 'source_repository' in labels
 >    || layers.exists(...)`.
 >
-> The target builds with `docker buildx --builder default --load` (the plain docker driver +
-> containerd image store cross-loads amd64 fast). A `docker-container` builder makes `--load`
-> crawl on the tarball round-trip; the `--builder default` pin avoids that.
+> The target builds with `docker buildx --builder $(BUILDX_BUILDER) --load` (default
+> `BUILDX_BUILDER=desktop-linux` — the plain docker driver + containerd image store
+> cross-loads amd64 fast). A `docker-container` builder makes `--load` crawl on the tarball
+> round-trip; the builder pin avoids that. Override `BUILDX_BUILDER=...` if `desktop-linux`
+> is absent (`docker buildx ls` to check).
 
 ### 2b. Install the operator chart on the seed — INTO the shoot CP namespace
 Install into the shoot CP namespace **`shoot--cp--test-qa-de-1`** (NOT a standalone
