@@ -63,7 +63,9 @@
 - name:  KEPPEL_DRIVER_STORAGE
   {{- if eq .Values.keppel.driver "ceph" }}
   value: '{"type":"swift","params":{"apply_workarounds_for_ceph":true,"service_type":"object-store-ceph","use_service_user_project":true}}'
-  {{- else }}{{/* TODO: if eq .Values.keppel.driver "multi", use that driver once it exists */}}
+  {{- else if eq .Values.keppel.driver "multi" }}
+  value: '{"type":"multi","params":{"old":{"type":"swift"},"new":{"type":"swift","params":{"apply_workarounds_for_ceph":true,"service_type":"object-store-ceph","use_service_user_project":true}},"phase":"copy"}}'
+  {{- else }}
   value: '{"type":"swift"}'
   {{- end }}
 - name:  KEPPEL_FEDERATION_OS_AUTH_URL
