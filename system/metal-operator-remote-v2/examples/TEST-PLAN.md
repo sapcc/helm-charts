@@ -99,21 +99,30 @@ cd <dual-deployment-operator>
 git checkout feature/deployment-chart-helm
 git log --oneline -1          # confirm the branch includes patch render-scoping (>= c37a676)
 export IMG=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator:<tag>
-make docker-build IMG=$IMG    # stamps the source_repository label Keppel's policy requires
+make docker-build IMG=$IMG    # linux/amd64 image, stamps the source_repository label Keppel requires
 make docker-push  IMG=$IMG    # docker push $IMG
 ```
 (Use a registry the seed can pull from; keppel dev repo mirrors the metal images.)
 
-> Keppel's `cloud-infrastructure-dev` account enforces a manifest policy that rejects any
-> push lacking a `source_repository` OCI label (or an in-toto attestation layer). The
-> `docker-build` target already sets that label (`--set SOURCE_REPO=...` to override the
-> default repo URL), so `make docker-build`/`make docker-push` satisfy the policy out of the
-> box. A plain `docker build -t $IMG .` does NOT — its push fails at the manifest step with
-> `... does not satisfy validation rule: 'source_repository' in labels || layers.exists(...)`.
+> **Two things the `docker-build` target handles for you** (a plain `docker build -t $IMG .`
+> does NOT — use `make`):
+> 1. **Platform** — builds `linux/amd64` (`PLATFORM ?= linux/amd64`; override with
+>    `make docker-build PLATFORM=...`). The seeds are amd64, so on an arm64 dev machine a
+>    plain `docker build` produces an arm64 image the seed CANNOT pull
+>    (`no matching manifest for linux/amd64`).
+> 2. **Registry policy** — stamps the `source_repository` OCI label
+>    (`SOURCE_REPO ?=` default; override with `make docker-build SOURCE_REPO=...`). Keppel's
+>    `cloud-infrastructure-dev` account rejects any push lacking that label (or an in-toto
+>    attestation layer): `... does not satisfy validation rule: 'source_repository' in labels
+>    || layers.exists(...)`.
+>
+> The target builds with `docker buildx --builder default --load` (the plain docker driver +
+> containerd image store cross-loads amd64 fast). A `docker-container` builder makes `--load`
+> crawl on the tarball round-trip; the `--builder default` pin avoids that.
 
 ### 2b. Install the operator chart on the seed — INTO the shoot CP namespace
 Install into the shoot CP namespace **`shoot--cp--test-qa-de-1`** (NOT a standalone
-`dual-deployment-operator-system`), **always via `u8s helm3`** so it targets the right
+`dual-deployment-operator-system`), **always via the u8s alias layer (`ukc` + `uhup`)** so it targets the right
 cluster (u8s owns the kubeconfig + auth for `rt-qa-de-1`).
 
 > **Why the shoot CP namespace, not a dedicated one:**
@@ -129,19 +138,33 @@ cluster (u8s owns the kubeconfig + auth for `rt-qa-de-1`).
 >   namespace; co-locating operator + CR + Secret + seed-render objects in one namespace
 >   keeps the flow coherent.
 >
-> **`u8s helm3` takes the context via the `U8S_CONTEXT` env var — NOT a `--context` flag**
-> (`u8s helm3 --context ...` fails with "unknown flag"). `u8s kubectl` DOES take `--context`.
+> Install via the u8s oh-my-zsh alias layer: `ukc` sets the session context, then the
+> `uh*` helm aliases inherit it. `uhup` = `u8s helm -- upgrade`, `uh` = `u8s helm --`.
+> (`u8s helm` cannot take a `--context` flag, so the context is set on the session via `ukc`.)
 ```bash
 cd <dual-deployment-operator>/chart
-U8S_CONTEXT=rt-qa-de-1 u8s helm3 upgrade --install dual-deployment-operator . \
+ukc rt-qa-de-1                       # set session context to the seed (u8s set --context)
+uhup --install dual-deployment-operator . \
   --namespace shoot--cp--test-qa-de-1 \
   --set manager.image.repository=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator \
-  --set manager.image.tag=<tag>
+  --set manager.image.tag=<tag> \
+  --set manager.envOverrides.ENABLE_WEBHOOKS=false
 # The CP namespace already exists (Gardener-managed) — no --create-namespace.
 # CRD is installed by the chart (crd.enabled=true, crd.keep=true).
 # rbac.namespaced=false (default) → ClusterRole/Binding so the operator can SSA-apply
 # cluster-scoped shoot objects (VWC, ClusterRoles, Namespace) — keep it false.
 ```
+> **`ENABLE_WEBHOOKS=false` is REQUIRED with `certManager.enabled=false` (the default).**
+> The operator binary enables its own validating-admission webhook unless
+> `ENABLE_WEBHOOKS=false` (`cmd/main.go:208`), and the webhook server needs a TLS cert at
+> `/tmp/k8s-webhook-server/serving-certs/tls.crt`. With cert-manager off, no cert is
+> mounted → the manager exits with `open .../tls.crt: no such file or directory` →
+> **CrashLoopBackOff**. The operator's own admission webhook is just CR validation and is
+> not needed to test dual-deployment rendering, so disable it. (Alternative: install
+> cert-manager and `--set certManager.enabled=true` — only if you specifically want the
+> admission webhook.)
+> Fallback without the alias plugin: `U8S_CONTEXT=rt-qa-de-1 u8s helm3 upgrade --install
+> dual-deployment-operator . --namespace shoot--cp--test-qa-de-1 --set ...`
 
 **Verify:**
 ```bash
@@ -149,7 +172,7 @@ u8s kubectl --context rt-qa-de-1 get crd | grep dualdeployment
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 get deploy,pod -l app.kubernetes.io/name=dual-deployment-operator
 # controller pod Running/Ready; egress pod-labels present; scratch volume mounted; no DNS/egress errors
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 logs deploy/dual-deployment-operator-controller-manager | tail -20
-U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n shoot--cp--test-qa-de-1 status dual-deployment-operator
+uh -n shoot--cp--test-qa-de-1 status dual-deployment-operator   # uh = u8s helm --
 ```
 
 **Gate:** CRD `dualdeploymentoperators.dual-deployment-operator.cc.sap` present; controller
@@ -255,7 +278,7 @@ $H get validatingwebhookconfiguration metal-operator-validating-webhook-configur
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 delete dualdeploymentoperator <name>
 # 2. Confirm seed + shoot objects are gone.
 # 3. Uninstall the operator (optional if the seed is disposable):
-#    U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n shoot--cp--test-qa-de-1 uninstall dual-deployment-operator
+#    uhun -n shoot--cp--test-qa-de-1 dual-deployment-operator   # uhun = u8s helm -- uninstall (ukc rt-qa-de-1 first)
 #    (CRD is kept by default: crd.keep=true — delete it manually if you want a clean slate.)
 # 4. Delete the test shoot from the Gardener dashboard (g-qa-de-1 / garden / test-qa-de-1).
 # 5. Optional: remove the pushed chart version + operator image if they were throwaway.
