@@ -144,6 +144,9 @@ cluster (u8s owns the kubeconfig + auth for `rt-qa-de-1`).
 ```bash
 cd <dual-deployment-operator>/chart
 ukc rt-qa-de-1                       # set session context to the seed (u8s set --context)
+# If a prior install left a crashlooping release (e.g. installed without
+# ENABLE_WEBHOOKS=false), remove it first for a clean slate:
+#   uhun -n shoot--cp--test-qa-de-1 dual-deployment-operator   # CRD is kept (crd.keep=true)
 uhup --install dual-deployment-operator . \
   --namespace shoot--cp--test-qa-de-1 \
   --set manager.image.repository=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator \
