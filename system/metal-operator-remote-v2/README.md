@@ -102,7 +102,11 @@ A chart is "operator-native" when it obeys the following contract (source:
 
 6. **The operator does not:** create the shoot namespace for itself, bootstrap its own
    shoot RBAC (a minimal GRM-seeded ServiceAccount + apply ClusterRole must pre-exist),
-   generate/rotate TLS certs, or manage its own Deployment. These stay outside the chart.
+   generate/rotate TLS certs, or manage its own Deployment. These stay outside the operator
+   render. The shoot-RBAC bootstrap ships in THIS chart as `templates/shoot-rbac-bootstrap.yaml`
+   (guarded to render only on direct helm install — `mode` unset — not inside an operator
+   render), enabled via `shootRbacBootstrap.enabled`; helm+GRM deliver it to the shoot ahead
+   of the operator.
 
 ---
 
