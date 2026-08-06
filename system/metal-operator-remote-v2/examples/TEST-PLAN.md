@@ -16,7 +16,7 @@
 | Test shoot apiserver | `https://api.test-qa-de-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap` |
 | Seed | `rt-qa-de-1` |
 | Test shoot CP namespace (on seed) | `shoot--cp--test-qa-de-1` (exists) |
-| Operator install namespace | `dual-deployment-operator-system` (from `config/default` kustomize) |
+| Operator install namespace | `shoot--cp--test-qa-de-1` (the shoot CP namespace — see §2b for why, not a standalone ns) |
 | secrets-injector on seed | present (`secrets-injector` ns) — resolves macdb `vault+kvv2://` |
 | operator patch-render-scoping | must be ≥ `c37a676` (built into the image below) |
 
@@ -111,17 +111,33 @@ make docker-push  IMG=$IMG    # docker push $IMG
 > box. A plain `docker build -t $IMG .` does NOT — its push fails at the manifest step with
 > `... does not satisfy validation rule: 'source_repository' in labels || layers.exists(...)`.
 
-### 2b. Install the operator chart on the seed
-Install into a dedicated namespace on the seed `rt-qa-de-1`, **always via `u8s helm3`** so
-it targets the right cluster (u8s owns the kubeconfig + auth for `rt-qa-de-1`).
+### 2b. Install the operator chart on the seed — INTO the shoot CP namespace
+Install into the shoot CP namespace **`shoot--cp--test-qa-de-1`** (NOT a standalone
+`dual-deployment-operator-system`), **always via `u8s helm3`** so it targets the right
+cluster (u8s owns the kubeconfig + auth for `rt-qa-de-1`).
+
+> **Why the shoot CP namespace, not a dedicated one:**
+> - This mirrors production: `metal-operator-remote` runs per-shoot in `shoot--cp--m-<region>`
+>   on the seed. The operator is meant to run in the same CP namespace it manages.
+> - **NetworkPolicy egress only works there.** The CP namespace has a `deny-all` policy plus
+>   Gardener label-gated allow policies (`allow-to-dns`, `allow-to-public-networks`,
+>   `allow-to-private-networks`). The operator chart's pod labels
+>   (`networking.gardener.cloud/to-dns|to-public-networks|to-private-networks: allowed`)
+>   are designed to match exactly those — so its OCI pulls + DNS succeed. A standalone
+>   namespace has none of those allow policies.
+> - The `shootAccess` Secret `metal-operator-remote-kubeconfig` is read from the CR's
+>   namespace; co-locating operator + CR + Secret + seed-render objects in one namespace
+>   keeps the flow coherent.
+>
 > **`u8s helm3` takes the context via the `U8S_CONTEXT` env var — NOT a `--context` flag**
 > (`u8s helm3 --context ...` fails with "unknown flag"). `u8s kubectl` DOES take `--context`.
 ```bash
 cd <dual-deployment-operator>/chart
 U8S_CONTEXT=rt-qa-de-1 u8s helm3 upgrade --install dual-deployment-operator . \
-  --namespace dual-deployment-operator-system --create-namespace \
+  --namespace shoot--cp--test-qa-de-1 \
   --set manager.image.repository=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator \
   --set manager.image.tag=<tag>
+# The CP namespace already exists (Gardener-managed) — no --create-namespace.
 # CRD is installed by the chart (crd.enabled=true, crd.keep=true).
 # rbac.namespaced=false (default) → ClusterRole/Binding so the operator can SSA-apply
 # cluster-scoped shoot objects (VWC, ClusterRoles, Namespace) — keep it false.
@@ -130,14 +146,15 @@ U8S_CONTEXT=rt-qa-de-1 u8s helm3 upgrade --install dual-deployment-operator . \
 **Verify:**
 ```bash
 u8s kubectl --context rt-qa-de-1 get crd | grep dualdeployment
-u8s kubectl --context rt-qa-de-1 -n dual-deployment-operator-system get deploy,pod
-# controller pod Running/Ready; egress pod-labels present; scratch volume mounted
-u8s kubectl --context rt-qa-de-1 -n dual-deployment-operator-system logs deploy/dual-deployment-operator-controller-manager | tail -20
-U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n dual-deployment-operator-system status dual-deployment-operator
+u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 get deploy,pod -l app.kubernetes.io/name=dual-deployment-operator
+# controller pod Running/Ready; egress pod-labels present; scratch volume mounted; no DNS/egress errors
+u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 logs deploy/dual-deployment-operator-controller-manager | tail -20
+U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n shoot--cp--test-qa-de-1 status dual-deployment-operator
 ```
 
 **Gate:** CRD `dualdeploymentoperators.dual-deployment-operator.cc.sap` present; controller
-Running (no crashloop, no egress/DNS errors in logs); ClusterRole present (rbac.namespaced=false).
+Running in `shoot--cp--test-qa-de-1` (no crashloop, no egress/DNS errors in logs); ClusterRole
+present (rbac.namespaced=false).
 
 ---
 
@@ -169,7 +186,7 @@ If the registry needs auth, add `spec.source.helm.authSecretRef` + create that S
 ```bash
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 apply -f dualdeploymentoperator-test-qa-de-1.yaml
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 get dualdeploymentoperator -w
-u8s kubectl --context rt-qa-de-1 -n dual-deployment-operator-system logs -f deploy/dual-deployment-operator-controller-manager
+u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 logs -f deploy/dual-deployment-operator-controller-manager
 ```
 
 ---
@@ -238,7 +255,7 @@ $H get validatingwebhookconfiguration metal-operator-validating-webhook-configur
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 delete dualdeploymentoperator <name>
 # 2. Confirm seed + shoot objects are gone.
 # 3. Uninstall the operator (optional if the seed is disposable):
-#    U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n dual-deployment-operator-system uninstall dual-deployment-operator
+#    U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n shoot--cp--test-qa-de-1 uninstall dual-deployment-operator
 #    (CRD is kept by default: crd.keep=true — delete it manually if you want a clean slate.)
 # 4. Delete the test shoot from the Gardener dashboard (g-qa-de-1 / garden / test-qa-de-1).
 # 5. Optional: remove the pushed chart version + operator image if they were throwaway.
