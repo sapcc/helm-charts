@@ -99,18 +99,26 @@ cd <dual-deployment-operator>
 git checkout feature/deployment-chart-helm
 git log --oneline -1          # confirm the branch includes patch render-scoping (>= c37a676)
 export IMG=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator:<tag>
-make docker-build IMG=$IMG    # docker build -t $IMG .
+make docker-build IMG=$IMG    # stamps the source_repository label Keppel's policy requires
 make docker-push  IMG=$IMG    # docker push $IMG
 ```
 (Use a registry the seed can pull from; keppel dev repo mirrors the metal images.)
 
+> Keppel's `cloud-infrastructure-dev` account enforces a manifest policy that rejects any
+> push lacking a `source_repository` OCI label (or an in-toto attestation layer). The
+> `docker-build` target already sets that label (`--set SOURCE_REPO=...` to override the
+> default repo URL), so `make docker-build`/`make docker-push` satisfy the policy out of the
+> box. A plain `docker build -t $IMG .` does NOT — its push fails at the manifest step with
+> `... does not satisfy validation rule: 'source_repository' in labels || layers.exists(...)`.
+
 ### 2b. Install the operator chart on the seed
-Install into a dedicated namespace on the seed `rt-qa-de-1`. Point helm at the seed
-kubeconfig/context (u8s reaches `rt-qa-de-1`).
+Install into a dedicated namespace on the seed `rt-qa-de-1`, **always via `u8s helm3`** so
+it targets the right cluster (u8s owns the kubeconfig + auth for `rt-qa-de-1`).
+> **`u8s helm3` takes the context via the `U8S_CONTEXT` env var — NOT a `--context` flag**
+> (`u8s helm3 --context ...` fails with "unknown flag"). `u8s kubectl` DOES take `--context`.
 ```bash
 cd <dual-deployment-operator>/chart
-helm upgrade --install dual-deployment-operator . \
-  --kube-context rt-qa-de-1 \
+U8S_CONTEXT=rt-qa-de-1 u8s helm3 upgrade --install dual-deployment-operator . \
   --namespace dual-deployment-operator-system --create-namespace \
   --set manager.image.repository=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator \
   --set manager.image.tag=<tag>
@@ -118,8 +126,6 @@ helm upgrade --install dual-deployment-operator . \
 # rbac.namespaced=false (default) → ClusterRole/Binding so the operator can SSA-apply
 # cluster-scoped shoot objects (VWC, ClusterRoles, Namespace) — keep it false.
 ```
-> If `helm --kube-context rt-qa-de-1` isn't wired, export the seed kubeconfig first:
-> `KUBECONFIG=$(u8s env | sed -n 's/^export U8S_KUBECONFIG=//p') helm --kube-context rt-qa-de-1 ...`
 
 **Verify:**
 ```bash
@@ -127,7 +133,7 @@ u8s kubectl --context rt-qa-de-1 get crd | grep dualdeployment
 u8s kubectl --context rt-qa-de-1 -n dual-deployment-operator-system get deploy,pod
 # controller pod Running/Ready; egress pod-labels present; scratch volume mounted
 u8s kubectl --context rt-qa-de-1 -n dual-deployment-operator-system logs deploy/dual-deployment-operator-controller-manager | tail -20
-helm --kube-context rt-qa-de-1 -n dual-deployment-operator-system status dual-deployment-operator
+U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n dual-deployment-operator-system status dual-deployment-operator
 ```
 
 **Gate:** CRD `dualdeploymentoperators.dual-deployment-operator.cc.sap` present; controller
@@ -232,7 +238,7 @@ $H get validatingwebhookconfiguration metal-operator-validating-webhook-configur
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 delete dualdeploymentoperator <name>
 # 2. Confirm seed + shoot objects are gone.
 # 3. Uninstall the operator (optional if the seed is disposable):
-#    helm --kube-context rt-qa-de-1 -n dual-deployment-operator-system uninstall dual-deployment-operator
+#    U8S_CONTEXT=rt-qa-de-1 u8s helm3 -n dual-deployment-operator-system uninstall dual-deployment-operator
 #    (CRD is kept by default: crd.keep=true — delete it manually if you want a clean slate.)
 # 4. Delete the test shoot from the Gardener dashboard (g-qa-de-1 / garden / test-qa-de-1).
 # 5. Optional: remove the pushed chart version + operator image if they were throwaway.
@@ -247,8 +253,9 @@ u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 delete dualdeploymen
 3. **`virtualGardenLBIP`** for the test seed — read the real value.
 4. **Registry auth:** if the chart registry is private, create the `authSecretRef` Secret in
    `shoot--cp--test-qa-de-1`.
-5. **Does helm reach `rt-qa-de-1`?** Use `helm --kube-context rt-qa-de-1`, or export the
-   u8s seed kubeconfig (`KUBECONFIG=$(u8s env | sed -n 's/^export U8S_KUBECONFIG=//p')`).
+5. **Seed access = always u8s.** Target `rt-qa-de-1` via `u8s kubectl --context rt-qa-de-1`
+   and `U8S_CONTEXT=rt-qa-de-1 u8s helm3 ...` (helm3 takes context via env var, not `--context`).
+   Never use a raw `helm`/`kubectl` — u8s owns the seed kubeconfig + auth.
 6. **Test-shoot access:** `u8s` does NOT know `test-qa-de-1` (not registry-enrolled). Reach it
    via a Gardener admin kubeconfig from `g-qa-de-1`:
    ```bash
