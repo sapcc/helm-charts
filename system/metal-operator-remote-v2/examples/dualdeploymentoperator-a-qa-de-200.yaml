@@ -54,32 +54,66 @@ spec:
         controllerManager:
           manager:
             env:
-              KUBERNETES_SERVICE_HOST: "<shoot-apiserver-ip>"   # <replace>
+              # Shoot apiserver reachable from the seed CP namespace.
+              # Format: api.<shoot>.cp.external.<seed>.soil-garden.<region>.cloud.sap
+              KUBERNETES_SERVICE_HOST: api.m-qa-de-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap   # <replace for the test shoot>
               KUBERNETES_CLUSTER_DOMAIN: cluster.local
               KUBECONFIG: /var/run/remote-kubeconfig/kubeconfig
             args:
               - --mac-prefixes-file=/etc/macdb/macdb.yaml
-              - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
-              - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+              - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.6.0
+              - --probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux-sci:2150.6.0-baremetal-capi-amd64-2150-6-0-297ce257
+              - --manager-namespace=metal-servers
+              - --dns-record-template-path=/etc/metal-operator/dns/bmc_dns.yaml
               - --insecure=false
-              - --registry-url=http://<registry-ip>:30010         # <replace>
-              - --manager-namespace=metal-operator-system
-              - --enforce-server-registration=true
+              - --registry-url=https://metal-operator-remote.runtime.qa-de-1.cloud.sap
+              - --enforce-first-boot
+              - --enforce-power-off
 
         dnsRecordTemplate:
           enabled: true
-          zone: internal.qa-de-1                               # <replace with actual zone>
+          zone: cc.qa-de-1.cloud.sap
 
-        virtualGardenLBIP: "<virtual-garden-lb-ip>"           # <replace>
+        virtualGardenLBIP: 10.245.234.16                       # <replace for the test seed>
 
         # BMC credentials: MUST stay as vault+kvv2:// references.
         # secrets-injector resolves these in-cluster on the seed.
+        # defaultCredentials is a LIST; one entry per prefix. Shape mirrors the
+        # live kube-secrets overlay (values/helm/runtime/qa-de-1/rt-qa-de-1/).
         macdb:
           macPrefixes:
-            - macPrefix: ""                                    # <fill per cluster>
+            - macPrefix: c4cbe1b1
+              manufacturer: Dell
+              protocol: Redfish
+              port: 443
+              type: bmc
               defaultCredentials:
-                username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/username" }}'
-                password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/password" }}'
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
+            - macPrefix: d08e79
+              manufacturer: Dell
+              protocol: Redfish
+              port: 443
+              type: bmc
+              defaultCredentials:
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
+            - macPrefix: 0894ef
+              manufacturer: Lenovo
+              protocol: Redfish
+              port: 443
+              type: bmc
+              defaultCredentials:
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
+            - macPrefix: 5ced8c
+              manufacturer: HPE
+              protocol: Redfish
+              port: 443
+              type: bmc
+              defaultCredentials:
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
 
       # Seed-mode subchart flags: all disabled — this chart owns the Deployment.
       # NEVER set metal-operator-core.controllerManager.enable: true here;
