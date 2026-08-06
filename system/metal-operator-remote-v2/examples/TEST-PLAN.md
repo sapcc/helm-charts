@@ -82,44 +82,56 @@ committed to git (gitignored); it only lives inside the pushed artifact.
 **Where:** operator image build on a workstation with docker + registry push; install
 targets the **seed `rt-qa-de-1`**.
 
+> **Install via the operator's Helm chart** (branch `feature/deployment-chart-helm`,
+> path `chart/`). Prefer this over the raw `make deploy`/kustomize path — the chart
+> already encodes the two things a seed CP-namespace deployment REQUIRES:
+> 1. **Gardener egress pod labels** (`networking.gardener.cloud/to-dns`,
+>    `to-public-networks`, `to-private-networks`) — without these the seed's deny-all
+>    NetworkPolicy blocks the operator's OCI pulls + DNS.
+> 2. **A writable scratch emptyDir** at `--source-scratch-dir=/var/run/ddo-source`
+>    (root FS is read-only) for the chart/source loader.
+
 ### 2a. Build + push the image
-The operator has no helm chart — it installs via **kustomize** (`config/default`), and the
-image defaults to the placeholder `controller:latest`. Build and push a real image:
+The chart image defaults to `ghcr.io/SAP-cloud-infrastructure/dual-deployment-operator`
+(tag = Chart appVersion). Build a real image the seed can pull:
 ```bash
 cd <dual-deployment-operator>
-git log --oneline -1          # confirm HEAD >= c37a676 (patch render-scoping shipped)
+git checkout feature/deployment-chart-helm
+git log --oneline -1          # confirm the branch includes patch render-scoping (>= c37a676)
 export IMG=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator:<tag>
 make docker-build IMG=$IMG    # docker build -t $IMG .
 make docker-push  IMG=$IMG    # docker push $IMG
 ```
-(Use whatever registry the seed can pull from; keppel dev repo mirrors the metal images.)
+(Use a registry the seed can pull from; keppel dev repo mirrors the metal images.)
 
-### 2b. Install CRD + controller on the seed
-`make deploy` sets the image, builds `config/default`, and applies it via the current
-kubectl context. Point kubectl at the seed first.
+### 2b. Install the operator chart on the seed
+Install into a dedicated namespace on the seed `rt-qa-de-1`. Point helm at the seed
+kubeconfig/context (u8s reaches `rt-qa-de-1`).
 ```bash
-# Make u8s' kubeconfig the active context for these commands, or use --context.
-make install IMG=$IMG          # applies the DualDeploymentOperator CRD (config/crd)
-make deploy  IMG=$IMG          # applies CRD + RBAC + manager Deployment into
-                               # namespace dual-deployment-operator-system
+cd <dual-deployment-operator>/chart
+helm upgrade --install dual-deployment-operator . \
+  --kube-context rt-qa-de-1 \
+  --namespace dual-deployment-operator-system --create-namespace \
+  --set manager.image.repository=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator \
+  --set manager.image.tag=<tag>
+# CRD is installed by the chart (crd.enabled=true, crd.keep=true).
+# rbac.namespaced=false (default) → ClusterRole/Binding so the operator can SSA-apply
+# cluster-scoped shoot objects (VWC, ClusterRoles, Namespace) — keep it false.
 ```
-> If `make deploy` can't target `rt-qa-de-1` directly (it uses `kubectl` default context),
-> render and apply explicitly:
-> ```bash
-> make build-installer IMG=$IMG          # writes dist/install.yaml
-> u8s kubectl --context rt-qa-de-1 apply -f dist/install.yaml
-> ```
+> If `helm --kube-context rt-qa-de-1` isn't wired, export the seed kubeconfig first:
+> `KUBECONFIG=$(u8s env | sed -n 's/^export U8S_KUBECONFIG=//p') helm --kube-context rt-qa-de-1 ...`
 
 **Verify:**
 ```bash
 u8s kubectl --context rt-qa-de-1 get crd | grep dualdeployment
 u8s kubectl --context rt-qa-de-1 -n dual-deployment-operator-system get deploy,pod
-# controller pod Running/Ready 1/1; logs show no crashloop
+# controller pod Running/Ready; egress pod-labels present; scratch volume mounted
 u8s kubectl --context rt-qa-de-1 -n dual-deployment-operator-system logs deploy/dual-deployment-operator-controller-manager | tail -20
+helm --kube-context rt-qa-de-1 -n dual-deployment-operator-system status dual-deployment-operator
 ```
 
 **Gate:** CRD `dualdeploymentoperators.dual-deployment-operator.cc.sap` present; controller
-Running; operator ServiceAccount has cluster access on the seed (SSA + ForceOwnership).
+Running (no crashloop, no egress/DNS errors in logs); ClusterRole present (rbac.namespaced=false).
 
 ---
 
@@ -176,7 +188,7 @@ $S get cm remote-kubeconfig
 ## 5. Verify — shoot render (on the test shoot `test-qa-de-1`)
 
 ```bash
-H="u8s kubectl --context test-qa-de-1"    # (add the shoot context to u8s if needed)
+H="kubectl --kubeconfig test-qa-de-1.kubeconfig"    # u8s can't reach the shoot; see open item 6
 $H get crd | grep metal.ironcore.dev                       # upstream CRDs
 $H get validatingwebhookconfiguration metal-operator-validating-webhook-configuration -o yaml \
   | grep -E 'url:|caBundle:|labels:' | head                # url rewritten to metal-operator-remote-webhook-service:443
@@ -220,7 +232,8 @@ $H get validatingwebhookconfiguration metal-operator-validating-webhook-configur
 u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 delete dualdeploymentoperator <name>
 # 2. Confirm seed + shoot objects are gone.
 # 3. Uninstall the operator (optional if the seed is disposable):
-#    make undeploy IMG=$IMG   (or: u8s kubectl --context rt-qa-de-1 delete -f dist/install.yaml)
+#    helm --kube-context rt-qa-de-1 -n dual-deployment-operator-system uninstall dual-deployment-operator
+#    (CRD is kept by default: crd.keep=true — delete it manually if you want a clean slate.)
 # 4. Delete the test shoot from the Gardener dashboard (g-qa-de-1 / garden / test-qa-de-1).
 # 5. Optional: remove the pushed chart version + operator image if they were throwaway.
 ```
@@ -234,5 +247,16 @@ u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 delete dualdeploymen
 3. **`virtualGardenLBIP`** for the test seed — read the real value.
 4. **Registry auth:** if the chart registry is private, create the `authSecretRef` Secret in
    `shoot--cp--test-qa-de-1`.
-5. **Does `make deploy` reach `rt-qa-de-1`?** If kubectl context ≠ seed, use the
-   `build-installer` + explicit `u8s kubectl --context rt-qa-de-1 apply` path.
+5. **Does helm reach `rt-qa-de-1`?** Use `helm --kube-context rt-qa-de-1`, or export the
+   u8s seed kubeconfig (`KUBECONFIG=$(u8s env | sed -n 's/^export U8S_KUBECONFIG=//p')`).
+6. **Test-shoot access:** `u8s` does NOT know `test-qa-de-1` (not registry-enrolled). Reach it
+   via a Gardener admin kubeconfig from `g-qa-de-1`:
+   ```bash
+   printf '%s' '{"apiVersion":"authentication.gardener.cloud/v1alpha1","kind":"AdminKubeconfigRequest","spec":{"expirationSeconds":3600}}' \
+     | u8s kubectl --context g-qa-de-1 create -f - \
+       --raw /apis/core.gardener.cloud/v1beta1/namespaces/garden/shoots/test-qa-de-1/adminkubeconfig \
+     | yq -r '.status.kubeconfig' | base64 -d > test-qa-de-1.kubeconfig
+   # then: kubectl --kubeconfig test-qa-de-1.kubeconfig get ns
+   ```
+   Use this kubeconfig for the §5 shoot-render checks (the operator itself reaches the shoot
+   via its own Gardener token-requestor `shootAccess`, independent of this).
