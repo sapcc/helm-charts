@@ -7,12 +7,5 @@ metadata:
     severity: 'info'
 spec:
   enforcementAction: {{ .Values.policies.outdatedMirrors.enforcementAction }}
-  match:
-    kinds:
-      - apiGroups: [""]
-        kinds: ["Pod"]
-      - apiGroups: ["apps"]
-        kinds: ["DaemonSet", "Deployment", "ReplicaSet", "StatefulSet"]
-      - apiGroups: ["batch"]
-        kinds: ["CronJob", "Job"]
+  match: {{ include "gatekeeper-policies.match-pods-and-pod-owners" . | indent 4 }}
 {{- end }}

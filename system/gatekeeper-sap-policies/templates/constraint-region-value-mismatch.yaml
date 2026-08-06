@@ -7,14 +7,7 @@ metadata:
     severity: 'error'
 spec:
   enforcementAction: {{ .Values.policies.regionValueMismatch.enforcementAction }}
-  match:
-    kinds:
-      - apiGroups: [""]
-        kinds: ["Secret"]
-    labelSelector:
-      matchExpressions:
-        - { key: "owner", operator: "In", values: [ "helm" ] }
-        - { key: "status", operator: "In", values: [ "pending-install", "pending-upgrade", "deployed" ] }
+  match: {{ include "gatekeeper-policies.match-active-helm-releases" . | indent 4 }}
   parameters:
     helmManifestParserURL: {{ required "policies.regionValueMismatch.helmManifestParserURL is required when policies.regionValueMismatch.enabled=true" .Values.policies.regionValueMismatch.helmManifestParserURL | quote }}
     region: {{ required "cluster.region is required when policies.regionValueMismatch.enabled=true" .Values.cluster.region | quote }}
