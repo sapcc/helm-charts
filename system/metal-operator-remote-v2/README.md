@@ -1,10 +1,30 @@
 # metal-operator-remote-v2 — Operator-Native Chart Redesign
 
-> **Status: design report / handoff. No chart files exist here yet.**
-> This document is the specification for redesigning `system/metal-operator-remote`
-> into a thin, operator-native Helm chart driven by the
-> [`dual-deployment-operator`](https://github.com/SAP-cloud-infrastructure/dual-deployment-operator).
-> A follow-up session working in **this** repo should implement the chart per this spec.
+> **Status: IMPLEMENTED.** Chart files are present. The design notes below are retained
+> for context. See `examples/` for an annotated `DualDeploymentOperator` CR.
+
+---
+
+## Subchart vendoring model
+
+This chart declares the upstream `metal-operator` chart as an OCI dependency in
+`Chart.yaml` and commits only `Chart.lock` — **not** `charts/*.tgz`.
+
+```
+Chart.yaml     ← declares dep: oci://ghcr.io/ironcore-dev/charts/metal-operator 0.6.2-crds
+Chart.lock     ← committed — locks the digest
+charts/*.tgz   ← gitignored — NOT committed
+```
+
+The publish workflow (`helm dependency update → helm package → helm push`) bundles
+the subchart tarball into the published chart artifact. The operator pulls the
+**complete artifact** from the OCI registry; it does not resolve dependencies at
+apply time.
+
+See the operator documentation:
+[`docs/subchart-dependency-resolution.md`](https://github.com/SAP-cloud-infrastructure/dual-deployment-operator/blob/main/docs/subchart-dependency-resolution.md)
+
+> **DO NOT** commit `charts/*.tgz` — it is gitignored by the root `.gitignore`.
 
 ---
 

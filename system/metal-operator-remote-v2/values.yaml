@@ -1,0 +1,196 @@
+# =============================================================================
+# metal-operator-remote-v2 values
+# =============================================================================
+#
+# MODE CONTRACT (DO NOT SET mode HERE):
+#   The dual-deployment-operator injects .Values.mode = "seed" | "shoot" at
+#   render time. The chart MUST NOT declare a default for `mode` — the operator
+#   rejects any render whose user values contain `mode`.
+#
+#   Per-mode subchart flags are supplied via the DualDeploymentOperator CR:
+#     spec.source.helm.seedValues:
+#       metal-operator-core:
+#         controllerManager: { enable: false }   # chart owns the Deployment
+#         crd:               { enable: false }
+#         rbac:              { enable: false }
+#         webhook:           { enable: false }
+#         certmanager:       { enable: false }
+#         networkPolicy:     { enable: false }
+#     spec.source.helm.shootValues:
+#       metal-operator-core:
+#         controllerManager: { enable: false }   # chart owns the Deployment
+#         crd:               { enable: true }
+#         rbac:              { enable: true }
+#         webhook:           { enable: true }
+#         certmanager:       { enable: false }
+#         networkPolicy:     { enable: false }
+#
+# =============================================================================
+
+# load-bearing: helm fullname template yields "metal-operator" for all objects
+fullnameOverride: metal-operator
+
+# ---------------------------------------------------------------------------
+# Upstream subchart — ALL flags OFF by default.
+# The CR's seedValues/shootValues drive these per mode (see MODE CONTRACT above).
+# NEVER set controllerManager.enable=true here — this chart owns the Deployment.
+# ---------------------------------------------------------------------------
+metal-operator-core:
+  controllerManager:
+    enable: false
+  crd:
+    enable: false
+  rbac:
+    enable: false
+  webhook:
+    enable: false
+  certmanager:
+    enable: false
+  networkPolicy:
+    enable: false
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+
+# ---------------------------------------------------------------------------
+# webhook-injector sidecar (r7 target-patch mode)
+# Image pinned to the r7 target-patch build; move to a released tag at cutover.
+# ---------------------------------------------------------------------------
+webhookInjector:
+  repository: keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/webhook-injector
+  tag: "20c495f"
+
+# ---------------------------------------------------------------------------
+# controller-manager (seed render only; guarded by mode=seed in the template)
+# ---------------------------------------------------------------------------
+controllerManager:
+  replicas: 1
+  strategy:
+    type: Recreate
+  manager:
+    image:
+      repository: ghcr.io/ironcore-dev/metal-operator-controller-manager
+      tag: sha-23966a7
+    args:
+      - --mac-prefixes-file=/etc/macdb/macdb.yaml
+    env:
+      KUBERNETES_SERVICE_HOST: ""   # REQUIRED — set in CR values per cluster
+      KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      KUBECONFIG: "/var/run/remote-kubeconfig/kubeconfig"
+    resources:
+      limits:
+        cpu: "5000m"
+        memory: "5120Mi"
+      requests:
+        cpu: 300m
+        memory: 50Mi
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      httpGet:
+        path: /healthz
+        port: 8081
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      httpGet:
+        path: /readyz
+        port: 8081
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - "ALL"
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    runAsUser: 65532
+    runAsGroup: 65532
+  terminationGracePeriodSeconds: 10
+  serviceAccountName: metal-operator-webhook-injector
+  hostNetwork: false
+  pod:
+    labels:
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-runtime-apiserver: allowed
+      networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+      networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+
+# ---------------------------------------------------------------------------
+# macdb — BMC credential placeholders.
+# Values MUST stay as vault+kvv2:// references; secrets-injector resolves them
+# in-cluster on the seed. Do NOT inline real credentials.
+# Set via CR values per cluster, e.g.:
+#   macdb:
+#     macPrefixes:
+#       - macPrefix: "aa:bb:cc"
+#         defaultCredentials:
+#           username: '{{ resolve "vault+kvv2:///secrets/..." }}'
+#           password: '{{ resolve "vault+kvv2:///secrets/..." }}'
+# ---------------------------------------------------------------------------
+macdb: {}
+
+# ---------------------------------------------------------------------------
+# metal-registry Service (seed)
+# ---------------------------------------------------------------------------
+metalRegistryService:
+  ports:
+    - port: 10000
+      protocol: TCP
+      targetPort: 10000
+  type: ClusterIP
+
+# ---------------------------------------------------------------------------
+# Global values — per-cluster, supplied via CR values
+# ---------------------------------------------------------------------------
+global:
+  region: ""
+  clusterType: ""
+  tld: ""
+  linkerd_enabled: false
+  linkerd_requested: false
+
+# ---------------------------------------------------------------------------
+# Ingress / networking
+# ---------------------------------------------------------------------------
+hostNetwork: false
+virtualGardenLBIP: ""
+
+# ---------------------------------------------------------------------------
+# DNS record template ConfigMap (seed, when enabled)
+# ---------------------------------------------------------------------------
+dnsRecordTemplate:
+  enabled: false
+  zone: ""
+
+# ---------------------------------------------------------------------------
+# LDAP admin users (shoot, optional)
+# ---------------------------------------------------------------------------
+adminLDAPUsers: []
+
+# ---------------------------------------------------------------------------
+# DualDeploymentOperator CR template (direct-install only; disabled by default)
+# Rendered ONLY when mode is unset (direct helm install) AND enabled=true.
+# The operator is the sole injector of .Values.mode — this gate ensures the CR
+# never appears inside an operator render.
+# ---------------------------------------------------------------------------
+dualDeploymentOperatorCR:
+  enabled: false
+  namespace: ""
+  source:
+    repo: ""
+    name: ""
+    version: ""
+  values: {}
+  seedValues: {}
+  shootValues: {}
+  shootAccess:
+    secretName: ""
+    server: ""
+  shootNamespace: ""
+  applyOrder: SeedFirst   # bootstrap: shootAccess Secret is seed-rendered; SeedFirst prevents deadlock
+  transformations: []

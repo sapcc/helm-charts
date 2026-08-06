@@ -1,0 +1,145 @@
+# Example DualDeploymentOperator CR for a-qa-de-200 (qa-de-1 landscape)
+#
+# PREREQUISITES:
+#   - dual-deployment-operator on main at or after commit c37a676
+#     (patch render-scoping / no-op-on-zero-match, archived change
+#     2026-08-05-patch-render-scoping). The label `patch` transform below
+#     stamps the shoot VWC and silently no-ops on the seed render; on a
+#     pre-c37a676 operator this CR would fail with SeedTransformFailed.
+#
+#   - spec.applyOrder: SeedFirst is MANDATORY here. The shootAccess Secret
+#     (metal-operator-remote-kubeconfig) is rendered by the SEED. The operator
+#     defaults to shoot-first and reads shootAccess BEFORE the seed is applied;
+#     without SeedFirst the first deploy deadlocks (Secret missing → seed skipped
+#     → Secret never created). See dualdeploymentoperator_controller.go:165,331.
+#
+#   - token-rotate: decommissioned upstream (PR #12502, WorkloadIdentity). No
+#     token-rotate Secret or RBAC is emitted by this chart.
+#
+# NOTE: Replace placeholder values (marked <...>) with real per-cluster values
+#       before deploying. The macdb vault+kvv2 refs are resolved in-cluster by
+#       the secrets-injector webhook on the seed.
+#
+# API VERSION: verify the exact apiVersion from the operator's installed CRD.
+apiVersion: dualdeployment.cc.sap.com/v1alpha1
+kind: DualDeploymentOperator
+metadata:
+  name: metal-operator-remote-v2
+  namespace: shoot--cp--m-qa-de-1
+spec:
+  # applyOrder: SeedFirst is MANDATORY — see PREREQUISITES above.
+  applyOrder: SeedFirst
+
+  shootNamespace: kube-system
+
+  shootAccess:
+    secretName: metal-operator-remote-kubeconfig
+    server: https://api.a-qa-de-200.m.qa-de-1.internal   # <replace with real shoot apiserver URL>
+
+  source:
+    helm:
+      repo: oci://ghcr.io/sapcc/helm-charts
+      name: metal-operator-remote-v2
+      version: 0.1.0   # <replace with actual chart version>
+
+      # Common values (injected into both seed and shoot renders)
+      values:
+        global:
+          region: qa-de-1
+          clusterType: metal
+          tld: internal
+          linkerd_enabled: false
+          linkerd_requested: false
+
+        controllerManager:
+          manager:
+            env:
+              KUBERNETES_SERVICE_HOST: "<shoot-apiserver-ip>"   # <replace>
+              KUBERNETES_CLUSTER_DOMAIN: cluster.local
+              KUBECONFIG: /var/run/remote-kubeconfig/kubeconfig
+            args:
+              - --mac-prefixes-file=/etc/macdb/macdb.yaml
+              - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
+              - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+              - --insecure=false
+              - --registry-url=http://<registry-ip>:30010         # <replace>
+              - --manager-namespace=metal-operator-system
+              - --enforce-server-registration=true
+
+        dnsRecordTemplate:
+          enabled: true
+          zone: internal.qa-de-1                               # <replace with actual zone>
+
+        virtualGardenLBIP: "<virtual-garden-lb-ip>"           # <replace>
+
+        # BMC credentials: MUST stay as vault+kvv2:// references.
+        # secrets-injector resolves these in-cluster on the seed.
+        macdb:
+          macPrefixes:
+            - macPrefix: ""                                    # <fill per cluster>
+              defaultCredentials:
+                username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/username" }}'
+                password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/password" }}'
+
+      # Seed-mode subchart flags: all disabled — this chart owns the Deployment.
+      # NEVER set metal-operator-core.controllerManager.enable: true here;
+      # the chart's controller-manager.yaml (mode=seed) owns the sole Deployment.
+      seedValues:
+        metal-operator-core:
+          controllerManager:
+            enable: false
+          crd:
+            enable: false
+          rbac:
+            enable: false
+          webhook:
+            enable: false
+          certmanager:
+            enable: false
+          networkPolicy:
+            enable: false
+          metrics:
+            enable: false
+          prometheus:
+            enable: false
+
+      # Shoot-mode subchart flags: crd/rbac/webhook enabled so the upstream
+      # subchart emits CRDs, RBAC, and the ValidatingWebhookConfiguration.
+      # The VWC is left service-form; the transformations below rewrite it.
+      shootValues:
+        metal-operator-core:
+          controllerManager:
+            enable: false
+          crd:
+            enable: true
+          rbac:
+            enable: true
+          webhook:
+            enable: true
+          certmanager:
+            enable: false
+          networkPolicy:
+            enable: false
+          metrics:
+            enable: false
+          prometheus:
+            enable: false
+
+  transformations:
+    # 1. Rewrite the VWC clientConfig from in-cluster service reference to
+    #    the remote URL served by the seed webhook service. Equivalent to the
+    #    old Makefile `yq` step.
+    - rewriteWebhookURL:
+        urlPrefix: https://metal-operator-remote-webhook-service:443
+
+    # 2. Stamp the injector target-label on the shoot VWC so the
+    #    webhook-injector sidecar (target-patch mode) can find and patch
+    #    the caBundle. Requires operator >= c37a676 for silent no-op on seed
+    #    render (see PREREQUISITES).
+    - patch:
+        target:
+          kind: ValidatingWebhookConfiguration
+        strategicMerge:
+          metadata:
+            labels:
+              dual-deployment-operator.cc.sap/webhook-injector: metal-operator
