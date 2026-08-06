@@ -47,17 +47,31 @@ cd system/metal-operator-remote-v2
 helm dependency update .                       # pulls metal-operator 0.6.2-crds into charts/
 helm package .                                 # -> metal-operator-remote-v2-0.1.0.tgz (bundles subchart)
 # ghcr:
-helm push metal-operator-remote-v2-0.1.0.tgz oci://ghcr.io/sapcc/helm-charts/
+helm push metal-operator-remote-v2-0.1.0.tgz oci://ghcr.io/sapcc/helm-charts
 # OR keppel:
-# helm push metal-operator-remote-v2-0.1.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+# helm push metal-operator-remote-v2-0.1.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm
 ```
+
+> **`helm push` URL = registry + NAMESPACE ONLY. Do NOT append the chart name or a `:tag`.**
+> Helm derives BOTH the repo name and the tag from the `.tgz`'s own `Chart.yaml`
+> (`name: metal-operator-remote-v2`, `version: 0.1.0`). So the command above pushes to
+> `.../ccloud-helm/metal-operator-remote-v2:0.1.0` automatically.
+> - ❌ `oci://.../ccloud-helm/metal-operator-remote-v2:0.0.1` → **"invalid tag"** (a tag in the
+>   URL is illegal here) AND it would double the name (`.../metal-operator-remote-v2/metal-operator-remote-v2`).
+> - The pushed tag is ALWAYS the chart `version` (`0.1.0`); any tag you type is ignored/rejected.
+> - To publish a different version, bump `version:` in `Chart.yaml` and re-`helm package` —
+>   not via the push URL.
 
 **Verify:**
 ```bash
-helm show chart oci://<registry>/metal-operator-remote-v2 --version 0.1.0   # exit 0, correct metadata
+# repo = registry/namespace/<chart-name>; version = chart version (0.1.0)
+helm show chart oci://<registry>/<namespace>/metal-operator-remote-v2 --version 0.1.0   # exit 0
+# e.g. keppel: oci://keppel.eu-de-1.cloud.sap/ccloud-helm/metal-operator-remote-v2
 ```
 
-**Gate:** chart pullable from the registry the CR references. `charts/*.tgz` must NOT be
+**Gate:** chart pullable from the registry the CR references. The CR's
+`spec.source.helm` must then be: `repo: oci://<registry>/<namespace>` (NO chart name),
+`name: metal-operator-remote-v2`, `version: 0.1.0`. `charts/*.tgz` must NOT be
 committed to git (gitignored); it only lives inside the pushed artifact.
 
 ---
