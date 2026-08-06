@@ -9,6 +9,28 @@ This directory contains example `DualDeploymentOperator` CRs for operating the
 | File | Cluster | Purpose |
 |------|---------|---------|
 | `dualdeploymentoperator-a-qa-de-200.yaml` | a-qa-de-200 (qa-de-1) | QA reference CR, vault+kvv2 macdb refs, both transforms |
+| `shoot-m-test-1.yaml` | m-test-1 (qa-de-1) | Throwaway workerless metalapi Shoot for testing, modeled on prod `m-qa-de-1` |
+
+## Testing on a throwaway shoot (do NOT touch prod `m-qa-de-1`)
+
+`metal-operator-remote` is a per-region singleton: the controller runs in the seed
+CP namespace `shoot--cp--m-<region>` (on seed `rt-<region>`) and manages the region's
+single metalapi shoot `m-<region>` remotely. To test `-v2` without disrupting the live
+`m-qa-de-1`, create a separate workerless shoot and point a test CR at it.
+
+1. **Create the shoot**: apply `shoot-m-test-1.yaml` in the garden cluster
+   (`g-qa-de-1`, project `cp`, namespace `garden`) via the dashboard YAML editor or
+   `u8s kubectl --context g-qa-de-1 -n garden apply -f shoot-m-test-1.yaml`.
+2. **Read the assigned apiserver host** after it goes healthy:
+   `u8s kubectl --context g-qa-de-1 -n garden get shoot m-test-1 -o jsonpath='{.spec.dns.domain}'`
+   → `api.m-test-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap`.
+3. **Copy the a-qa-de-200 CR** and swap the three cluster-identity fields for the test shoot:
+   - `metadata.namespace` → `shoot--cp--m-test-1` (the seed CP namespace)
+   - `shootAccess.server` and `values.controllerManager.manager.env.KUBERNETES_SERVICE_HOST`
+     → `https://<the apiserver host from step 2>`
+   - `virtualGardenLBIP` → the test seed's LB IP
+4. **Teardown order**: delete the operator CR on the seed FIRST (lets the operator tear
+   down what it applied), THEN delete the shoot from the dashboard.
 
 ## Prerequisites
 
