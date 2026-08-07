@@ -283,6 +283,32 @@ $H get validatingwebhookconfiguration metal-operator-validating-webhook-configur
 
 ---
 
+## 6a. Mutation / reconcile tests (executed live on test-qa-de-1, 2026-08)
+
+All passed. Trigger an operator re-apply between steps by annotating the CR
+(`u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 annotate ddo metal-operator-remote-v2 x=$(date +%s) --overwrite`).
+
+| # | Test | Method | Result |
+|---|------|--------|--------|
+| 1 | **CR update re-render** | flip `values.dnsRecordTemplate.enabled` true→false→true | ✅ CM pruned on false, re-created on true |
+| 2 | **Drift correction** | delete an operator-applied shoot ClusterRole (`metal-api-viewer`) | ✅ recreated on next reconcile (fresh creationTimestamp) |
+| 3 | **caBundle no-clobber** | clear VWC `caBundle`, then operator re-apply | ✅ injector re-stamps caBundle; operator re-apply does NOT clobber it (disjoint SSA: operator owns url/labels, injector owns caBundle) |
+| 4 | **macdb self-heal** | overwrite resolved `macdb` Secret `.data` with garbage | ✅ operator re-applies the `vault+kvv2://` stringData template; secrets-injector re-resolves; 0 leaked refs |
+| 5 | **Transform change** | change the `patch` transform's injector-label value in the CR | ✅ new label re-applied to the shoot VWC; reverts cleanly |
+
+> **⚠️ Reconcile timing — prune/re-render lags the CR change by ONE reconcile cycle.**
+> A CR value change re-renders immediately, but pruning the now-absent object (or applying
+> a changed transform) lands on the *next* reconcile pass. Do NOT read the one-cycle window
+> as a failure — wait ≥1 resync (or annotate to force a reconcile) before asserting.
+
+> **⚠️ Operator caches OCI chart resolution in-pod** (`registry.ClientOptEnableCache(true)`).
+> Re-pushing the SAME chart version to keppel after a change requires an operator pod
+> restart (`kubectl rollout restart deploy/dual-deployment-operator-controller-manager`)
+> to clear the stale resolution — otherwise the operator reports `SeedRenderFailed: oci
+> pull ... not found` even though the chart is present. (Bumping the version avoids this.)
+
+---
+
 ## 7. Teardown (ORDER MATTERS)
 
 ```bash
