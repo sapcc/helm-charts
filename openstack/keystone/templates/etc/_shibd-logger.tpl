@@ -18,7 +18,7 @@ log4j.ownAppenders.XMLTooling.Signature.Debugger=true
 
 # the tran log blocks the "default" appender(s) at runtime
 # Level should be left at INFO for this category
-log4j.category.Shibboleth-TRANSACTION=INFO, tran_log
+log4j.category.Shibboleth-TRANSACTION=INFO, tran_log, tran_stdout
 log4j.additivity.Shibboleth-TRANSACTION=false
 log4j.ownAppenders.Shibboleth-TRANSACTION=true
 
@@ -43,6 +43,14 @@ log4j.appender.warn_log.fileName=/proc/1/fd/1
 log4j.appender.warn_log.layout=org.apache.log4j.PatternLayout
 log4j.appender.warn_log.layout.ConversionPattern=%d{%Y-%m-%d %H:%M:%S} %p %c %x: %m%n
 log4j.appender.warn_log.threshold=WARN
+
+# [AC3] Route all SAML transaction log entries to container stdout.
+#   Every auth decision (success and failure) reaches Fluent Bit → OpenSearch
+#   via Apache stdout. Satisfies BSI SF.Fas.6 / SF.Log.1.
+log4j.appender.tran_stdout=org.apache.log4j.FileAppender
+log4j.appender.tran_stdout.fileName=/proc/1/fd/1
+log4j.appender.tran_stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.tran_stdout.layout.ConversionPattern=%d{%Y-%m-%dT%H:%M:%S}|transaction|%c|%m%n
 
 # [FIX L-01] maxFileSize increased from 1 MB to 10 MB.
 #   Transaction log is the SAML audit trail -- must not rotate prematurely.
