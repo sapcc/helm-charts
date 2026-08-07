@@ -154,11 +154,21 @@ uhup --install dual-deployment-operator . \
   --namespace shoot--cp--test-qa-de-1 \
   --set manager.image.repository=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator \
   --set manager.image.tag=<tag> \
-  --set manager.envOverrides.ENABLE_WEBHOOKS=false
+  --set manager.envOverrides.ENABLE_WEBHOOKS=false \
+  --set shootRbac.enabled=true \
+  --set shootRbac.serviceAccountName=metal-operator-controller-manager \
+  --set shootRbac.serviceAccountNamespace=kube-system
 # The CP namespace already exists (Gardener-managed) — no --create-namespace.
 # CRD is installed by the chart (crd.enabled=true, crd.keep=true).
 # rbac.namespaced=false (default) → ClusterRole/Binding so the operator can SSA-apply
 # cluster-scoped shoot objects (VWC, ClusterRoles, Namespace) — keep it false.
+# shootRbac.enabled=true → the operator chart provisions (via GRM ManagedResource):
+#   - the shoot token-requestor Secret dual-deployment-operator-shoot-access
+#     (spec.shootAccess.secretName in the CR must match this name), and
+#   - the shoot-applier ClusterRole+binding for the SA below.
+# serviceAccountName/serviceAccountNamespace = the shoot SA the operator applies as
+# (metal-operator-controller-manager / kube-system). Without shootRbac.enabled the
+# operator has no shoot credentials and no apply RBAC — shoot applies fail forbidden.
 ```
 > **`ENABLE_WEBHOOKS=false` is REQUIRED with `certManager.enabled=false` (the default).**
 > The operator binary enables its own validating-admission webhook unless
