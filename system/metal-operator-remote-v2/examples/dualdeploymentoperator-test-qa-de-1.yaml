@@ -18,9 +18,9 @@
 #   4. dual-deployment-operator on feature/deployment-chart-helm includes patch
 #      render-scoping (>= c37a676): the label `patch` transform silently no-ops on
 #      the seed render; on an older operator it would fail with SeedTransformFailed.
-#   5. spec.applyOrder: SeedFirst is MANDATORY — the shootAccess Secret
-#      (metal-operator-remote-kubeconfig) is rendered by the SEED; without SeedFirst
-#      the first deploy deadlocks (Secret missing → seed skipped → never created).
+#   5. shootAccess.secretName (dual-deployment-operator-shoot-access) is provisioned
+#      by the dual-deployment-operator install chart (shootRbac.enabled), not by this
+#      chart. spec.applyOrder: SeedFirst is kept as the safe default ordering.
 #
 # SHOOT ACCESS (u8s does not know test-qa-de-1 — not registry-enrolled):
 #   printf '%s' '{"apiVersion":"authentication.gardener.cloud/v1alpha1","kind":"AdminKubeconfigRequest","spec":{"expirationSeconds":3600}}' \
@@ -39,7 +39,7 @@ spec:
   shootNamespace: kube-system
 
   shootAccess:
-    secretName: metal-operator-remote-kubeconfig
+    secretName: dual-deployment-operator-shoot-access
     server: https://api.test-qa-de-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap
 
   source:

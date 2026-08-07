@@ -189,24 +189,8 @@ dualDeploymentOperatorCR:
   seedValues: {}
   shootValues: {}
   shootAccess:
-    secretName: ""
+    secretName: dual-deployment-operator-shoot-access
     server: ""
   shootNamespace: ""
   applyOrder: SeedFirst   # bootstrap: shootAccess Secret is seed-rendered; SeedFirst prevents deadlock
   transformations: []
-
-# ---------------------------------------------------------------------------
-# Shoot-RBAC bootstrap (design.md 3.6.7; README 2.6).
-# A GRM-seeded ManagedResource that grants the operator's shoot token-requestor
-# ServiceAccount the apply-scoped RBAC it needs on the shoot (the operator cannot
-# grant itself RBAC — privilege-escalation prevention). Rendered ONLY on direct
-# helm install (mode unset) AND enabled — never inside an operator render.
-# serviceAccountName/Namespace MUST match the token-requestor Secret's
-# serviceaccount.resources.gardener.cloud/{name,namespace} annotations
-# (see remote-kubeconfig.yaml: metal-operator-controller-manager / kube-system).
-# ---------------------------------------------------------------------------
-shootRbacBootstrap:
-  enabled: false
-  namespace: ""
-  serviceAccountName: metal-operator-controller-manager
-  serviceAccountNamespace: kube-system

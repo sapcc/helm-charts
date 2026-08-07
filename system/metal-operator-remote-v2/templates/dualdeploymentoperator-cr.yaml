@@ -8,10 +8,11 @@ CARVE-OUT: renders ONLY when BOTH conditions are met:
   2. .Values.dualDeploymentOperatorCR.enabled == true (default false).
 
 spec.applyOrder is FIXED to SeedFirst. The shootAccess Secret
-(metal-operator-remote-kubeconfig) is produced by the SEED render. The operator
-defaults to shoot-first and reads shootAccess BEFORE the seed is applied; without
-SeedFirst the first deploy deadlocks (Secret missing → seed skipped → never created).
-See dualdeploymentoperator_controller.go:165,331.
+(dualDeploymentOperatorCR.shootAccess.secretName, default
+dual-deployment-operator-shoot-access) is provisioned by the dual-deployment-operator
+install chart (shootRbac.enabled), NOT by this chart. The operator defaults to
+shoot-first and reads shootAccess BEFORE the seed is applied; SeedFirst avoids a
+first-deploy ordering surprise. See dualdeploymentoperator_controller.go:165,331.
 
 metadata.namespace: sourced from dualDeploymentOperatorCR.namespace if set,
 otherwise falls back to .Release.Namespace (which on a per-shoot direct install IS

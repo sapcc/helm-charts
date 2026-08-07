@@ -103,10 +103,10 @@ A chart is "operator-native" when it obeys the following contract (source:
 6. **The operator does not:** create the shoot namespace for itself, bootstrap its own
    shoot RBAC (a minimal GRM-seeded ServiceAccount + apply ClusterRole must pre-exist),
    generate/rotate TLS certs, or manage its own Deployment. These stay outside the operator
-   render. The shoot-RBAC bootstrap ships in THIS chart as `templates/shoot-rbac-bootstrap.yaml`
-   (guarded to render only on direct helm install — `mode` unset — not inside an operator
-   render), enabled via `shootRbacBootstrap.enabled`; helm+GRM deliver it to the shoot ahead
-   of the operator.
+   render. The shoot-RBAC applier bootstrap ships in the `dual-deployment-operator` install
+   chart (chart 1), delivered via GRM ManagedResource and gated by its `shootRbac.enabled`
+   — not in this chart. The webhook-injector shoot RBAC stays here
+   (`templates/webhook-injector-rbac.yaml`).
 
 ---
 
@@ -128,7 +128,6 @@ system/metal-operator-remote-v2/
     ├── networkpolicy.yaml         # mode=seed
     ├── macdb.yaml                 # mode=seed  (Secret; SEE §5 — value source open)
     ├── remote-kubeconfig-configmap.yaml   # mode=seed
-    ├── remote-kubeconfig.yaml     # mode=seed  (token-requestor Secret)
     ├── rotate-kubeconfig.yaml     # mode=seed  (token-rotate token-requestor Secret)
     ├── token-rotate-rbac.yaml     # mode=shoot (SA/Role/RB/CR/CRB)
     ├── oidc-ias-rbac.yaml         # mode=shoot (region-gated ClusterRoleBindings + viewer roles)
@@ -152,9 +151,11 @@ system/metal-operator-remote-v2/
 
 - **seed render (`mode=seed`)** — the things that run *in the seed* control-plane namespace:
   controller-manager Deployment (± webhook-injector initContainer), metal-registry Service,
-  Ingress, NetworkPolicies, macdb Secret, remote-kubeconfig ConfigMap, the two
-  token-requestor Secrets (`metal-operator-remote-kubeconfig`, `metal-token-rotate-kubeconfig`),
-  webhook-config ConfigMap, dns-record-template ConfigMap.
+  Ingress, NetworkPolicies, macdb Secret, remote-kubeconfig ConfigMap, the
+  `metal-token-rotate-kubeconfig` token-requestor Secret,
+  webhook-config ConfigMap, dns-record-template ConfigMap. (The operator's own
+  `shootAccess` token-requestor Secret, `dual-deployment-operator-shoot-access`, is
+  provisioned by the dual-deployment-operator install chart, not by this render.)
 - **shoot render (`mode=shoot`)** — the operator's domain objects served in the virtual
   cluster: upstream CRDs + RBAC + webhooks (from the subchart), plus sapcc additions
   (webhook-injector RBAC/SA, token-rotate RBAC/SA, oidc-ias ClusterRoleBindings,

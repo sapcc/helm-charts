@@ -136,7 +136,8 @@ cluster (u8s owns the kubeconfig + auth for `rt-qa-de-1`).
 >   (`networking.gardener.cloud/to-dns|to-public-networks|to-private-networks: allowed`)
 >   are designed to match exactly those — so its OCI pulls + DNS succeed. A standalone
 >   namespace has none of those allow policies.
-> - The `shootAccess` Secret `metal-operator-remote-kubeconfig` is read from the CR's
+> - The `shootAccess` Secret `dual-deployment-operator-shoot-access` (provisioned by the
+>   dual-deployment-operator install chart) is read from the CR's
 >   namespace; co-locating operator + CR + Secret + seed-render objects in one namespace
 >   keeps the flow coherent.
 >
@@ -226,7 +227,7 @@ S="u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1"
 $S get deploy metal-operator-controller-manager           # 1/1, sidecar present
 $S get deploy metal-operator-controller-manager -o yaml | grep -A2 initContainers   # webhook-injector
 $S get secret macdb -o jsonpath='{.data.macdb\.yaml}' | base64 -d | grep -c vault+kvv2   # 0 = resolved by secrets-injector (creds present, no vault refs left)
-$S get secret metal-operator-remote-kubeconfig -o jsonpath='{.data.token}' | wc -c       # >0 = Gardener minted the token
+$S get secret dual-deployment-operator-shoot-access -o jsonpath='{.data.token}' | wc -c       # >0 = Gardener minted the token
 $S get svc metal-operator-remote-webhook-service metal-operator-metal-registry-service
 $S get ingress metal-operator-metal-registry-ingress
 $S get networkpolicy | wc -l                              # 6 (+header)
@@ -266,8 +267,8 @@ $H get validatingwebhookconfiguration metal-operator-validating-webhook-configur
 
 ## 6. Adversarial / negative checks
 
-- **applyOrder bootstrap:** confirm the seed render applied first (the `metal-operator-remote-kubeconfig`
-  Secret existed before the operator read shootAccess). If it deadlocked, `applyOrder` is wrong.
+- **applyOrder bootstrap:** confirm the `dual-deployment-operator-shoot-access` Secret
+  (provisioned by the dual-deployment-operator install chart) existed before the operator read shootAccess. If it deadlocked, check the install chart shipped it (`shootRbac.enabled`).
 - **No prod impact:** `u8s kubectl --context rt-qa-de-1 -n shoot--cp--m-qa-de-1 get deploy metal-operator-controller-manager`
   still the live v55 release, untouched; `m-qa-de-1` VWC/Servers unchanged.
 - **macdb self-heal:** delete the resolved macdb Secret; operator re-applies stringData;
