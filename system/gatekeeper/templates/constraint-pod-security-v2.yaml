@@ -1025,23 +1025,33 @@ spec:
       - matchNamespace: archer
         matchRepository: ccloud/archer
         justification: |
-          Archer network agents need host networking and
-          CAP_NET_ADMIN to manage network namespaces and
-          interfaces for private endpoint connectivity across
-          OpenStack networks.
-        mayBePrivileged: true
+          The archer-ni-agent manages network namespaces, veth
+          pairs and interfaces for private endpoint connectivity,
+          and runs HAProxy inside an isolated namespace. It no
+          longer runs privileged; these scoped capabilities are
+          the minimal set it needs.
+        mayUseCapabilities:
+        - KILL
+        - NET_ADMIN
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETUID
+        - SYS_ADMIN
+        - SYS_CHROOT
 
       - matchNamespace: archer
         matchRepository: ccloud/loci-neutron
         justification: |
-          Archer network agents need host neutron network agents and
-          CAP_NET_ADMIN to manage network namespaces and
+          Archer network agents need the neutron linuxbridge agent
+          and CAP_NET_ADMIN to manage network namespaces and
           interfaces for private endpoint connectivity across
-          OpenStack networks.
+          OpenStack networks. SETPCAP is required by neutron's
+          oslo.privsep daemon.
         mayUseCapabilities:
         - DAC_OVERRIDE
         - DAC_READ_SEARCH
         - NET_ADMIN
+        - SETPCAP
         - SYS_ADMIN
         - SYS_PTRACE
       {{- end }}
