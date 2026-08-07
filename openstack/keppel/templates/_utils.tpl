@@ -64,7 +64,7 @@
   {{- if eq .Values.keppel.driver "ceph" }}
   value: '{"type":"swift","params":{"apply_workarounds_for_ceph":true,"service_type":"object-store-ceph","use_service_user_project":true}}'
   {{- else if eq .Values.keppel.driver "both" }}
-  value: '{"type":"multi","params":{"old":{"type":"swift"},"new":{"type":"swift","params":{"apply_workarounds_for_ceph":true,"service_type":"object-store-ceph","use_service_user_project":true}},"phase":"copy"}}'
+  value: '{"type":"multi","params":{"old":{"type":"swift"},"new":{"type":"swift","params":{"apply_workarounds_for_ceph":true,"service_type":"object-store-ceph","use_service_user_project":true}},"phase":"{{.Values.keppel.migration_phase}}"}}'
   {{- else }}
   value: '{"type":"swift"}'
   {{- end }}
