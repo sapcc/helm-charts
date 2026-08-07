@@ -1,0 +1,153 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+    ports:
+    - port: 10000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-egress-to-ingress-nginx-controller-tcp-443
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+          app.kubernetes.io/component: controller
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+  podSelector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-from-kube-apiserver-9443
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  ingress:
+  - ports:
+    - port: 9443
+      protocol: TCP
+    from:
+    - podSelector:
+        matchLabels:
+          app: kubernetes
+          role: apiserver
+  podSelector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-apiserver-egress-to-metalapi
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  egress:
+  - ports:
+    - port: 9443
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          {{- include "chart.selectorLabels" . | nindent 10 }}
+          control-plane: controller-manager
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  policyTypes:
+  - Egress
+---
+# Required for JWKS fetch from gardener discovery endpoint (new metal api infra auth flow)
+{{- if .Values.virtualGardenLBIP }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-apiserver-egress-to-virtual-garden-lb
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - ipBlock:
+          cidr: {{ .Values.virtualGardenLBIP }}/32
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: virtual-garden-istio-ingress
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-from-kube-monitoring
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 8082
+    from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-monitoring
+  policyTypes:
+  - Ingress
+{{- end }}
