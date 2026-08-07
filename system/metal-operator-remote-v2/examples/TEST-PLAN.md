@@ -155,9 +155,7 @@ uhup --install dual-deployment-operator . \
   --set manager.image.repository=keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/dual-deployment-operator \
   --set manager.image.tag=<tag> \
   --set manager.envOverrides.ENABLE_WEBHOOKS=false \
-  --set shootRbac.enabled=true \
-  --set shootRbac.serviceAccountName=metal-operator-controller-manager \
-  --set shootRbac.serviceAccountNamespace=kube-system
+  --set shootRbac.enabled=true
 # The CP namespace already exists (Gardener-managed) — no --create-namespace.
 # CRD is installed by the chart (crd.enabled=true, crd.keep=true).
 # rbac.namespaced=false (default) → ClusterRole/Binding so the operator can SSA-apply
@@ -165,10 +163,13 @@ uhup --install dual-deployment-operator . \
 # shootRbac.enabled=true → the operator chart provisions (via GRM ManagedResource):
 #   - the shoot token-requestor Secret dual-deployment-operator-shoot-access
 #     (spec.shootAccess.secretName in the CR must match this name), and
-#   - the shoot-applier ClusterRole+binding for the SA below.
-# serviceAccountName/serviceAccountNamespace = the shoot SA the operator applies as
-# (metal-operator-controller-manager / kube-system). Without shootRbac.enabled the
-# operator has no shoot credentials and no apply RBAC — shoot applies fail forbidden.
+#   - the shoot-applier ServiceAccount + ClusterRole + binding.
+# Do NOT override shootRbac.serviceAccountName: it defaults to the DEDICATED operator SA
+# dual-deployment-operator-shoot-applier. Pointing it at the workload SA
+# (metal-operator-controller-manager) re-couples the operator's auth identity to the
+# workload teardown set → self-deauthentication finalizer deadlock on CR delete.
+# The workload's own shoot credential (metal-operator-remote-kubeconfig, minted for
+# metal-operator-controller-manager) is provisioned separately by the -v2 seed render.
 ```
 > **`ENABLE_WEBHOOKS=false` is REQUIRED with `certManager.enabled=false` (the default).**
 > The operator binary enables its own validating-admission webhook unless
