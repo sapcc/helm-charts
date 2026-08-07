@@ -42,10 +42,11 @@ Before deploying any example CR:
    (patch render-scoping / silent no-op on zero matches). The label `patch` transform
    requires this to avoid `SeedTransformFailed` on the seed render.
 
-2. **`applyOrder: SeedFirst`** is set in all examples as the safe default ordering. The
-   `dual-deployment-operator-shoot-access` shootAccess Secret is provisioned by the
-   dual-deployment-operator install chart (`shootRbac.enabled`), not by this chart, and
-   must exist before the operator reads it.
+2. **`applyOrder: ShootFirst`** is set in the example (the operator CRD default). Because
+   the `dual-deployment-operator-shoot-access` shootAccess Secret is provisioned by the
+   dual-deployment-operator install chart (`shootRbac.enabled`) — independent of either
+   render — ShootFirst no longer deadlocks (the old bootstrap reason for forcing SeedFirst
+   is gone). SeedFirst remains available if a workload needs strict seed-before-shoot ordering.
 
 3. **Replace placeholders** — values marked `<...>` must be filled with real per-cluster
    values before deploying (KUBERNETES_SERVICE_HOST, shoot server URL, registry URL, etc.).

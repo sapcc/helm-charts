@@ -211,7 +211,7 @@ fields for `test-qa-de-1`:
 | `spec.source.helm.version` | `0.1.0` |
 | `virtualGardenLBIP` | the test seed's virtual-garden LB IP (read from the seed) |
 | `spec.shootNamespace` | `kube-system` (unchanged — load-bearing) |
-| `spec.applyOrder` | `SeedFirst` (unchanged — mandatory) |
+| `spec.applyOrder` | `ShootFirst` (operator CRD default; SeedFirst also valid — the bootstrap coupling that forced SeedFirst is gone since shoot creds are install-chart-provisioned) |
 
 Keep `macdb` as `vault+kvv2://` refs (secrets-injector resolves on the seed).
 If the registry needs auth, add `spec.source.helm.authSecretRef` + create that Secret in

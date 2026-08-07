@@ -20,7 +20,11 @@
 #      the seed render; on an older operator it would fail with SeedTransformFailed.
 #   5. shootAccess.secretName (dual-deployment-operator-shoot-access) is provisioned
 #      by the dual-deployment-operator install chart (shootRbac.enabled), not by this
-#      chart. spec.applyOrder: SeedFirst is kept as the safe default ordering.
+#      chart. Because the shoot creds are now install-chart-provisioned (independent of
+#      either render), applyOrder: ShootFirst no longer deadlocks — the old bootstrap
+#      reason for forcing SeedFirst is gone. ShootFirst is the operator CRD default and
+#      is validated end-to-end here; SeedFirst remains available for stricter
+#      seed-before-shoot ordering if a workload needs it.
 #
 # SHOOT ACCESS (u8s does not know test-qa-de-1 — not registry-enrolled):
 #   printf '%s' '{"apiVersion":"authentication.gardener.cloud/v1alpha1","kind":"AdminKubeconfigRequest","spec":{"expirationSeconds":3600}}' \
@@ -34,7 +38,7 @@ metadata:
   name: metal-operator-remote-v2
   namespace: shoot--cp--test-qa-de-1
 spec:
-  applyOrder: SeedFirst
+  applyOrder: ShootFirst
 
   shootNamespace: kube-system
 
