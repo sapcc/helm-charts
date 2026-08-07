@@ -241,3 +241,60 @@ groups:
     annotations:
       description: "OIDC authentication through OpenStack API for {{`{{ $labels.service }}`}} is failing. CLI and SDK users cannot authenticate using OIDC tokens and automated workflows are broken."
       summary: "OIDC authentication using OpenStack api failed"
+
+  - alert: SAMLFederationAuthFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML federation authentication test failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML federation authentication test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Tenant users may be unable to authenticate via their IdP."
+      summary: "SAML federation authentication test failing"
+
+  - alert: SAMLBypassProtectionFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_(unauthenticated_redirect|header_injection_rejected)", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML bypass protection test failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML bypass protection test {{`{{ $labels.name }}`}} is failing. The unauthenticated redirect or header injection guard may be misconfigured — a BSI security control is not being enforced."
+      summary: "SAML bypass protection test failing"
+
+  - alert: SAMLTokenFederationInfoMissing
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_token_contains_federation_info", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML token missing OS-FEDERATION fields"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "The SAML token payload for {{`{{ $labels.service }}`}} is missing required OS-FEDERATION fields (identity_provider, protocol, groups). Token mapping or Keystone federation config may be broken."
+      summary: "SAML token missing OS-FEDERATION fields"
