@@ -4,7 +4,9 @@
 > twice (seed + shoot) and applies both renders correctly, using a **throwaway
 > workerless shoot** so the production metal shoot `m-qa-de-1` is never touched.
 >
-> **Status:** planning. Nothing below has been executed.
+> **Status:** executed end-to-end on `test-qa-de-1` (2026-08). Seed+shoot apply verified
+> (Ready=True, VWC caBundle patched); CR-delete teardown validated after the shoot-applier
+> SA decoupling fix. Commands below reflect the working flow. **Default registry: keppel.**
 
 ---
 
@@ -20,59 +22,52 @@
 | secrets-injector on seed | present (`secrets-injector` ns) — resolves macdb `vault+kvv2://` |
 | operator patch-render-scoping | must be ≥ `c37a676` (built into the image below) |
 
-**Registry note (resolve before step 1):** the chart publish workflow
-(`.github/workflows/helm-push-from-input.yaml`) pushes to **`ghcr.io/sapcc/helm-charts`**,
-and the example CR points there. The task text says "push to keppel". Pick ONE and keep
-the CR `spec.source.helm.repo` consistent with wherever the chart actually lands.
-Options:
-- **ghcr** (matches the repo workflow + example CR as-is): `oci://ghcr.io/sapcc/helm-charts`.
-- **keppel** (manual): push to e.g. `oci://keppel.eu-de-1.cloud.sap/ccloud-helm` and
-  set the CR repo to match. If keppel needs auth, the CR needs a `source.helm.authSecretRef`
-  (a Secret with `username`/`password`/`token` in the CR's namespace).
+**Registry: keppel (default).** The chart is published to
+`oci://keppel.eu-de-1.cloud.sap/ccloud-helm` and the example CR's `spec.source.helm.repo`
+points there. (The GitHub workflow `helm-push-from-input.yaml` publishes to
+`ghcr.io/sapcc/helm-charts` instead — only use that path if you deliberately switch the CR
+repo to ghcr. Keep the CR repo and the push target consistent.)
 
 ---
 
-## 1. Publish the `metal-operator-remote-v2` chart
+## 1. Publish the `metal-operator-remote-v2` chart to keppel
 
-**Where:** local workstation (has helm + registry creds) or the GitHub workflow.
-**Target:** the OCI registry the CR will pull from (see Registry note).
+**Where:** local workstation (has helm + keppel creds).
+**Target:** `oci://keppel.eu-de-1.cloud.sap/ccloud-helm` (the registry the CR pulls from).
 
-### Option A — GitHub workflow (ghcr, no manual creds)
-Trigger `helm-push-from-input.yaml` (workflow_dispatch) with `chartDir=system/metal-operator-remote-v2`.
-It runs `helm dependency update → helm package → helm push` and bundles the subchart tarball.
-
-### Option B — manual push (keppel or ghcr)
 ```bash
 cd system/metal-operator-remote-v2
 helm dependency update .                       # pulls metal-operator 0.6.2-crds into charts/
-helm package .                                 # -> metal-operator-remote-v2-0.1.0.tgz (bundles subchart)
-# ghcr:
-helm push metal-operator-remote-v2-0.1.0.tgz oci://ghcr.io/sapcc/helm-charts
-# OR keppel:
-# helm push metal-operator-remote-v2-0.1.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+helm package . -d .                            # -> metal-operator-remote-v2-0.1.0.tgz (bundles subchart)
+helm push metal-operator-remote-v2-0.1.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm
 ```
 
 > **`helm push` URL = registry + NAMESPACE ONLY. Do NOT append the chart name or a `:tag`.**
 > Helm derives BOTH the repo name and the tag from the `.tgz`'s own `Chart.yaml`
-> (`name: metal-operator-remote-v2`, `version: 0.1.0`). So the command above pushes to
+> (`name: metal-operator-remote-v2`, `version: 0.1.0`), pushing to
 > `.../ccloud-helm/metal-operator-remote-v2:0.1.0` automatically.
-> - ❌ `oci://.../ccloud-helm/metal-operator-remote-v2:0.0.1` → **"invalid tag"** (a tag in the
->   URL is illegal here) AND it would double the name (`.../metal-operator-remote-v2/metal-operator-remote-v2`).
-> - The pushed tag is ALWAYS the chart `version` (`0.1.0`); any tag you type is ignored/rejected.
-> - To publish a different version, bump `version:` in `Chart.yaml` and re-`helm package` —
->   not via the push URL.
+> - ❌ `oci://.../ccloud-helm/metal-operator-remote-v2:0.1.0` → **"invalid tag"** (a tag in the
+>   URL is illegal) AND it doubles the name.
+> - The pushed tag is ALWAYS the chart `version`.
+
+> **keppel tag-protection — re-pushing an existing version 409s.** keppel `ccloud-helm`
+> protects existing tags: `helm push` of an already-present `0.1.0` fails with
+> `409 denied: cannot overwrite tag "0.1.0" as it is protected by a tag_policy`. To
+> re-push the SAME version after a chart change, delete `0.1.0` upstream on keppel first,
+> then push. (Alternatively bump `Chart.yaml` `version:` — but then update the CR + this
+> plan to the new version.)
 
 **Verify:**
 ```bash
-# repo = registry/namespace/<chart-name>; version = chart version (0.1.0)
-helm show chart oci://<registry>/<namespace>/metal-operator-remote-v2 --version 0.1.0   # exit 0
-# e.g. keppel: oci://keppel.eu-de-1.cloud.sap/ccloud-helm/metal-operator-remote-v2
+helm show chart oci://keppel.eu-de-1.cloud.sap/ccloud-helm/metal-operator-remote-v2 --version 0.1.0
+# exit 0; name: metal-operator-remote-v2, version: 0.1.0
 ```
 
-**Gate:** chart pullable from the registry the CR references. The CR's
-`spec.source.helm` must then be: `repo: oci://<registry>/<namespace>` (NO chart name),
-`name: metal-operator-remote-v2`, `version: 0.1.0`. `charts/*.tgz` must NOT be
-committed to git (gitignored); it only lives inside the pushed artifact.
+**Gate:** chart pullable from keppel. The CR's `spec.source.helm` is:
+`repo: oci://keppel.eu-de-1.cloud.sap/ccloud-helm` (NO chart name in the repo),
+`name: metal-operator-remote-v2`, `version: 0.1.0`. `charts/*.tgz` must NOT be committed
+to git (gitignored); it only lives inside the pushed artifact. Delete the local
+`.tgz` after pushing.
 
 ---
 
