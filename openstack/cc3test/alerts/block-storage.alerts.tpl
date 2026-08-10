@@ -107,9 +107,12 @@ groups:
 
   - alert: OpenstackCinderKVMVolumeAttachFailed
     expr: |
-        last_over_time(cc3test_status{service="nova_kvm", 
-        name=~"TestComputeKVMServer_attach_server.+",phase="call"}[1h]) == 0
-    for: 2h
+        count_over_time(cc3test_status{service="nova_kvm",
+        name=~"TestComputeKVMServer_attach_server.+",phase="call"}[3h] == 0) >= 3
+        and on(name, availability_zone, host, region)
+        last_over_time(cc3test_status{service="nova_kvm",
+        name=~"TestComputeKVMServer_attach_server.+",phase="setup"}[1h]) == 1
+    for: 0m
     labels:
       severity: critical
       support_group: compute-storage-api
