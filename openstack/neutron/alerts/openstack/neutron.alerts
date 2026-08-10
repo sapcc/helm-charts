@@ -54,17 +54,17 @@ groups:
 
   - alert: OpenstackNeutronNetworkOutOfSync
     expr: |
-      (sum by (network_id) (
-        sum by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
-        unless on (network_id, network_host)
-        sum by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
-      )
-      or on (network_id)
-      sum by (network_id) (
-        sum by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
+      count by (network_id) (
+        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
         unless on (bridge, network_host)
-        sum by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
-      )) == 1
+        group by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
+      ) == 1
+      or
+      count by (network_id) (
+       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled)
+       unless on (network_id, network_host)
+       group by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
+      ) == 1
     for: 5m
     labels:
       severity: warning
@@ -78,20 +78,19 @@ groups:
       description: 'Network {{ $labels.network_id }} is only synced to one agent'
       summary: Openstack Neutron Linuxbridge/DHCP Agent lost one private networks
 
-
   - alert: OpenstackNeutronNetworkNotHostedOnAnyAgent
     expr: |
-      (sum by (network_id) (
-        sum by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
-        unless on (network_id, network_host)
-        sum by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
-      )
-      or on (network_id)
-      sum by (network_id) (
-        sum by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
+      count by (network_id) (
+        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
         unless on (bridge, network_host)
-        sum by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
-      )) >= 2
+        group by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
+      ) >= 2
+      or
+      count by (network_id) (
+       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled)
+       unless on (network_id, network_host)
+       group by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
+      ) >= 2
     for: 5m
     labels:
       severity: critical
