@@ -55,13 +55,13 @@ groups:
   - alert: OpenstackNeutronNetworkOutOfSync
     expr: |
       count by (network_id) (
-        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
+        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled > 0)
         unless on (bridge, network_host)
         group by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
       ) == 1
       or
       count by (network_id) (
-       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled)
+       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled > 0)
        unless on (network_id, network_host)
        group by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
       ) == 1
@@ -81,13 +81,13 @@ groups:
   - alert: OpenstackNeutronNetworkNotHostedOnAnyAgent
     expr: |
       count by (network_id) (
-        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled)
+        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled > 0)
         unless on (bridge, network_host)
         group by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
       ) >= 2
       or
       count by (network_id) (
-       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled)
+       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled > 0)
        unless on (network_id, network_host)
        group by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
       ) >= 2
