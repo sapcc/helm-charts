@@ -62,6 +62,13 @@ spec:
 
         controllerManager:
           manager:
+            # The seed CP namespace has NO egress to ghcr.io (deny-all + label-gated
+            # allow policies reach keppel only). Pull the controller image from the
+            # keppel ghcr mirror — same prefix as the --probe-image args below. The
+            # upstream chart default is ghcr.io/... which ImagePullBackOffs on the seed.
+            image:
+              repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-operator-controller-manager
+              tag: sha-23966a7
             env:
               KUBERNETES_SERVICE_HOST: api.test-qa-de-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap
               KUBERNETES_CLUSTER_DOMAIN: cluster.local
