@@ -148,13 +148,15 @@ rates:
     schemas/*:
       - action: read
         limit: 1000r/m
+      - action: read/list
+        limit: 1000r/m
 
     # --- Discovery/Info APIs ---
     info/import:
       - action: read
         limit: 300r/m
     info/stores:
-      - action: read
+      - action: read/list
         limit: 300r/m
     info/usage:
       - action: read
@@ -162,9 +164,7 @@ rates:
 
     # --- Metadef Namespaces ---
     metadefs/namespaces:
-      - action: read
-        limit: 300r/m
-      - action: list
+      - action: read/list
         limit: 300r/m
       - action: create
         limit: 50r/m
@@ -181,7 +181,7 @@ rates:
     metadefs/namespaces/namespace/properties:
       - action: read
         limit: 300r/m
-      - action: list
+      - action: read/list
         limit: 300r/m
       - action: create
         limit: 50r/m
@@ -192,7 +192,7 @@ rates:
     metadefs/namespaces/namespace/objects:
       - action: read
         limit: 300r/m
-      - action: list
+      - action: read/list
         limit: 300r/m
       - action: create
         limit: 50r/m
@@ -201,9 +201,7 @@ rates:
 
     # --- Metadef Tags ---
     metadefs/namespaces/namespace/tags:
-      - action: read
-        limit: 300r/m
-      - action: list
+      - action: read/list
         limit: 300r/m
       - action: create
         limit: 50r/m
@@ -214,11 +212,13 @@ rates:
     metadefs/resource_types:
       - action: read
         limit: 300r/m
-      - action: list
+      - action: read/list
         limit: 300r/m
 
     metadefs/namespaces/namespace/resource_types:
       - action: read
+        limit: 300r/m
+      - action: read/list
         limit: 300r/m
       - action: create
         limit: 50r/m
@@ -241,3 +241,4 @@ rates:
     stores/store/image:
       - action: delete
         limit: 50r/m
+
