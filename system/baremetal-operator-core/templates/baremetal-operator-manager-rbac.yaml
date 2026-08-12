@@ -11,20 +11,30 @@ rules:
   - events
   verbs:
   - create
-  - get
-  - list
   - patch
   - update
-  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
   - secrets
   verbs:
-  - delete
   - get
   - list
   - update
+  - watch
+- apiGroups:
+  - ironic.metal3.io
+  resources:
+  - ironics
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - metal3.io
@@ -34,6 +44,7 @@ rules:
   - dataimages
   - firmwareschemas
   - hardwaredata
+  - hostclaims
   - hostfirmwarecomponents
   - hostfirmwaresettings
   - preprovisioningimages
@@ -51,6 +62,7 @@ rules:
   - baremetalhosts/finalizers
   - dataimages/finalizers
   - hardware/finalizers
+  - hostclaims/finalizers
   - hostfirmwarecomponents/finalizers
   verbs:
   - update
@@ -61,6 +73,7 @@ rules:
   - bmceventsubscriptions/status
   - dataimages/status
   - firmwareschemas/status
+  - hostclaims/status
   - hostfirmwarecomponents/status
   - hostfirmwaresettings/status
   - preprovisioningimages/status
@@ -68,6 +81,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - metal3.io
+  resources:
+  - hostdeploypolicies
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - metal3.io
   resources:
@@ -90,5 +111,5 @@ roleRef:
   name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-manager-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-controller-manager'
+  name: '{{ include "baremetal-operator-core.serviceAccountName" . }}'
   namespace: '{{ .Release.Namespace }}'

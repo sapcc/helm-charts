@@ -9,7 +9,7 @@ metadata:
     component: nova
 data:
   nova-compute.conf: |
-    {{ include (print .Template.BasePath "/etc/_nova-compute.conf.tpl") . | nindent 4 }}
+    {{- include (print .Template.BasePath "/etc/_nova-compute.conf.tpl") . | nindent 4 }}
   libvirtd.conf: |
     listen_tcp = 1
     listen_tls = 0

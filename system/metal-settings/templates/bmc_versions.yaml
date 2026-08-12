@@ -1,4 +1,5 @@
 {{- if .Values.bmcVersions.enabled }}
+{{- $usedNames := dict }}
 {{- range $vendor, $vendorConfig := .Values.machines }}
 {{- if $vendorConfig }}
 
@@ -6,7 +7,7 @@
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcVersions.filters.vendors) }}
 {{- $processedModels := dict }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if $entry.bmc }}
+{{- if and $entry.bmc $entry.bmc.imageURI }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
@@ -24,6 +25,10 @@ kind: BMCVersionSet
 metadata:
   {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
   {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  {{- if hasKey $usedNames $resourceName }}
+  {{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (entry %q, model %q). Two machines.<vendor>.models entries produced the same name with differing bmc.version/imageURI. Only one entry per model should define bmc.version/imageURI, or set a unique bmc.versionParams.setMetadataName on the others." $resourceName $entryName $model) }}
+  {{- end }}
+  {{- $_ := set $usedNames $resourceName true }}
   name: {{ $resourceName }}
 spec:
   bmcSelector:
@@ -39,6 +44,10 @@ spec:
     image:
       URI: {{ $entry.bmc.imageURI | quote }}
       transferProtocol: "HTTPS"
+{{- with $.Values.bmcVersions.retryPolicy }}
+    retryPolicy:
+{{ toYaml . | indent 6 }}
+{{- end }}
 ---
 {{- end }}
 {{- end }}

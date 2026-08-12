@@ -41,6 +41,20 @@ function start () {
     rm -f "$APACHE_PID_FILE"
   fi
 
+  {{- if .Values.federation.saml.enabled }}
+  # The Shibboleth SP config (shibboleth2.xml) and per-tenant Apache
+  # configuration (federation-saml.d/*.conf) are mounted read-only from
+  # ConfigMaps shipped by the keystone-saml-federation chart. No runtime
+  # generation. Just make sure the writable runtime directories exist
+  # before shibd starts.
+  mkdir -p /var/run/shibboleth /var/cache/shibboleth
+  if command -v shibd &> /dev/null; then
+    echo "Starting shibd daemon for SAML federation..."
+    shibd -t || { echo "ERR: shibd config test failed"; exit 1; }
+    shibd -f || { echo "ERR: shibd daemon failed to start"; exit 1; }
+  fi
+  {{- end }}
+
   # Start Apache2
   exec apache2 -DFOREGROUND
 }

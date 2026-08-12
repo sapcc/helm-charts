@@ -15,7 +15,7 @@ spec:
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  credentialsBindingName: metal-{{ $cluster.region | default $.Values.global.region }}
+  credentialsBindingName: metal-wi-{{ $cluster.region | default $.Values.global.region }}
   region: {{ $cluster.region | default $.Values.global.region }}
   {{- if $cluster.seedSelector }}
   seedSelector: {{- toYaml $cluster.seedSelector | nindent 4 }}
@@ -31,7 +31,11 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
+      {{- if $.Values.networking.overlay }}
+      vethMTU: "8930"
+      {{- else }}
       vethMTU: "8950"
+      {{- end }}
       ipam:
         type: host-local
         cidr: usePodCIDR
@@ -134,10 +138,13 @@ spec:
             bgpFilter:
               - name: v4filter
                 exportV4:
+                  {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
+                  {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
+                  {{- end }}
                   {{- end }}
                   {{- if $.Values.networking.overlay }}
                   - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}

@@ -11,10 +11,12 @@ spec:
       {{- include "netapp-credential-rotator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        secret.reloader.stakater.com/reload: "vault-secrets"
+        deployment.reloader.stakater.com/pause-period: "60s"
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "netapp-credential-rotator.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
