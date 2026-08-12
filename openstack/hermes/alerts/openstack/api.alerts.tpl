@@ -185,6 +185,23 @@ groups:
       description: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
       summary: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
 
+  - alert: OpenstackHermesLogstashKafkaFailure
+    expr: sum(rate(logstash_node_plugin_failures_total{namespace=~"hermes",plugin="kafka"}[10m])) > 0
+    for: 5m
+    labels:
+      context: logstash
+      severity: warning
+      tier: os
+      support_group: observability
+      service: hermes
+      dashboard: hermes-logstash-metrics
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
+      meta: "Hermes logstash Kafka output plugin is failing to deliver audit events"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Hermes logstash Kafka output plugin is failing to deliver audit events to the SIEM broker"
+      summary: "Hermes logstash Kafka output plugin is failing"
+
   - alert: OpenstackHermesLogstashPluginsJDBCStaticFailure
     expr: sum(rate(logstash_node_plugin_failures_total{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
     labels:
