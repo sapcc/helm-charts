@@ -11,6 +11,7 @@ groups:
           support_group: observability
           meta: "OpenSearch logs dashboard down"
           dashboard: opensearch-logshipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/opensearch-overview?var-cluster=opensearch-logs"
           playbook: 'docs/support/playbook/opensearch/generic'
         annotations:
           description: "OpenSearchLogs dashboard is down"
@@ -25,6 +26,7 @@ groups:
           support_group: observability
           meta: "OpenSearch-Logs client nodes down"
           dashboard: opensearch-logshipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/opensearch-overview?var-cluster=opensearch-logs"
           playbook: 'docs/support/playbook/opensearch/generic'
         annotations:
           description: "OpenSearch Logs client nodes are down"
