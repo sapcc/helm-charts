@@ -1,0 +1,21 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: openstack-user-seed
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-default-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
+
+  domains:
+  - name: {{ .Values.name }}
+    users:
+    - name: {{ .Values.glance.users.name | quote }}
+      description: 'Read-only access to Glance images'
+      password: {{ .Values.glance.users.password | quote }}
+      role_assignments:
+      {{- range .Values.glance.users.roleAssignment }}
+      - project: {{ .project | quote }}
+        role: {{ .role | quote }}
+      {{- end }}
