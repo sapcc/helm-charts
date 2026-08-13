@@ -1,5 +1,6 @@
 groups:
 - name: apicexporter-spine-capacity.alerts
+  rules:
   - alert: SpinePortCapacity
     expr: |
       sum by (region, pod_id) (network_apic_free_port_count{job="apic-exporter"}) < 7 > 2
