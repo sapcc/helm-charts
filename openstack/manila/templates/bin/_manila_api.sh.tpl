@@ -20,9 +20,23 @@ COMMAND="${@:-start}"
 
 function start () {
 
-  for MANILA_WSGI_SCRIPT in manila-wsgi; do
-    cp -a $(type -p ${MANILA_WSGI_SCRIPT}) /var/www/cgi-bin/manila/
-  done
+  if type -p manila-wsgi > /dev/null; then
+    cp -a $(type -p manila-wsgi) /var/www/cgi-bin/manila/manila-wsgi
+  else
+    cat > /var/www/cgi-bin/manila/manila-wsgi <<'WSGI'
+import threading
+_app = None
+_lock = threading.Lock()
+with _lock:
+    if _app is None:
+        from oslo_config import cfg
+        cfg.CONF.reset()
+        from manila.wsgi.wsgi import initialize_application
+        _app = initialize_application()
+application = _app
+WSGI
+    chmod 755 /var/www/cgi-bin/manila/manila-wsgi
+  fi
 
   a2dismod status
 
