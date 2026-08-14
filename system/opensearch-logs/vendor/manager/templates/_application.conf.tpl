@@ -36,7 +36,7 @@ hosts = [
       password = "{{.Values.global.users.admin2.password}}"
     }
   },
-{{- if or (eq .Values.region "qa-de-1") (eq .Values.region "eu-de-1") }}
+{{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "eu-de-1") }}
   {
     host = "https://audit-api.fortlogs.qa-de-1.cloud.sap"
     name = "{{ .Values.global.cluster }} Fortlogs Audit"
