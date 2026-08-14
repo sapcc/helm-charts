@@ -1,0 +1,27 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: kmip
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "kmip.corename" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: backend
+    component: kmip
+spec:
+  type: {{ .Values.service.type }}
+  externalIPs:
+    - {{ .Values.service.externalIPs }}
+  sessionAffinity: None
+  externalTrafficPolicy: Local
+  selector:
+    app: {{ include "kmip.corename" . }}
+  ports:
+    - name: kmip
+      port: {{ .Values.service.ports.port }}
+      targetPort: 5696
+      protocol: TCP

@@ -54,9 +54,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "provider-metal3.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "provider-metal3.fullname" .) .Values.serviceAccount.name }}
+{{- $default := (include "provider-metal3.fullname" .) }}
+{{- with .Values.serviceAccount }}
+{{- if .create }}
+{{- default $default .name }}
 {{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- default "default" .name }}
+{{- end }}
 {{- end }}
 {{- end }}

@@ -1,0 +1,455 @@
+---
+# Source: metal-maintenance-operator/templates/rbac/controller-manager.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: metal-maintenance-operator
+    helm.sh/chart: metal-maintenance-operator-0.0.1-20260721080039-86549d3-crds
+    app.kubernetes.io/instance: metal-maintenance-operator
+  name: metal-maintenance-operator-controller-manager
+  namespace: kube-system
+---
+# Source: metal-maintenance-operator/templates/crd/consoles.vendorconsole.metal.ironcore.dev.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: consoles.vendorconsole.metal.ironcore.dev
+spec:
+  group: vendorconsole.metal.ironcore.dev
+  names:
+    kind: Console
+    listKind: ConsoleList
+    plural: consoles
+    singular: console
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Console is the Schema for the consoles API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ConsoleSpec defines the desired state of Console.
+              properties:
+                bmcCredentialSecretRef:
+                  description: BMCCredentialSecretRef references the secret containing BMC credentials.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                consoleURL:
+                  description: ConsoleURL is the URL of the server management console.
+                  type: string
+                manufacturer:
+                  description: Manufacturer is the manufacturer of the server management console (e.g., "Dell", "HPE", "Lenovo").
+                  type: string
+                serverSelector:
+                  description: ServerSelector specifies a label selector to identify the servers that are to be selected.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                      items:
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      type: object
+                  type: object
+                  x-kubernetes-map-type: atomic
+              required:
+                - consoleURL
+                - manufacturer
+                - serverSelector
+              type: object
+            status:
+              description: ConsoleStatus defines the observed state of Console.
+              properties:
+                managedServers:
+                  description: ManagedServers number of managed servers.
+                  format: int32
+                  type: integer
+                pendingOperations:
+                  description: PendingOperations tracks in-flight vendor operations.
+                  items:
+                    description: PendingOperation tracks an in-flight vendor operation.
+                    properties:
+                      hostname:
+                        description: Hostname is the DNS name used for the server in the vendor console.
+                        type: string
+                      ip:
+                        description: IP is the BMC IP address of the server.
+                        type: string
+                      jobId:
+                        description: JobID is the vendor-specific job identifier for tracking.
+                        type: string
+                      lastChecked:
+                        description: LastChecked is when the job status was last polled.
+                        format: date-time
+                        type: string
+                      message:
+                        description: Message provides human-readable status information.
+                        type: string
+                      operationType:
+                        description: OperationType is the type of operation (Import or Remove).
+                        type: string
+                      retryCount:
+                        description: RetryCount tracks how many times the operation has been retried.
+                        format: int32
+                        type: integer
+                      serverName:
+                        description: ServerName is the name of the Server resource.
+                        type: string
+                      startTime:
+                        description: StartTime is when the operation was initiated.
+                        format: date-time
+                        type: string
+                      status:
+                        description: Status is the current status of the operation.
+                        type: string
+                    required:
+                      - hostname
+                      - ip
+                      - operationType
+                      - serverName
+                      - startTime
+                      - status
+                    type: object
+                  type: array
+                totalServers:
+                  description: TotalServers total number of servers.
+                  format: int32
+                  type: integer
+                unmanagedServers:
+                  description: UnmanagedServers number of unmanaged servers.
+                  format: int32
+                  type: integer
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+# Source: metal-maintenance-operator/templates/crd/serverwirings.readiness.metal.ironcore.dev.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: serverwirings.readiness.metal.ironcore.dev
+spec:
+  group: readiness.metal.ironcore.dev
+  names:
+    kind: ServerWiring
+    listKind: ServerWiringList
+    plural: serverwirings
+    singular: serverwiring
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: ServerWiring is the Schema for the serverwirings API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ServerWiringSpec defines the desired state of ServerWiring.
+              properties:
+                network:
+                  description: Network defines the expected network wiring for the server.
+                  properties:
+                    interfaces:
+                      description: Interfaces is the list of expected network interfaces, keyed by MAC address.
+                      items:
+                        description: ExpectedInterface defines the expected state of a server network interface.
+                        properties:
+                          carrierStatus:
+                            description: |-
+                              CarrierStatus is the expected operational carrier status (e.g. "up").
+                              If omitted, carrier status is not checked.
+                            type: string
+                          macAddress:
+                            description: MACAddress is the MAC address of the interface and acts as the primary key.
+                            type: string
+                          neighbors:
+                            description: |-
+                              Neighbors lists the LLDP neighbors that must all be present on this interface.
+                              If omitted or empty, neighbor presence is not checked.
+                            items:
+                              description: ExpectedNeighbor defines an expected LLDP neighbor on a network interface.
+                              properties:
+                                portID:
+                                  description: PortID is the LLDP port identifier of the expected neighbor.
+                                  type: string
+                                systemName:
+                                  description: SystemName is the LLDP system name of the expected neighbor (e.g. switch hostname).
+                                  type: string
+                              required:
+                                - portID
+                                - systemName
+                              type: object
+                            type: array
+                        required:
+                          - macAddress
+                        type: object
+                      type: array
+                  type: object
+                serverRef:
+                  description: ServerRef references the cluster-scoped Server to validate.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                  x-kubernetes-validations:
+                    - message: serverRef.name must not be empty
+                      rule: self.name != ''
+              required:
+                - serverRef
+              type: object
+            status:
+              description: ServerWiringStatus defines the observed state of ServerWiring.
+              properties:
+                mismatches:
+                  description: Mismatches lists validation failures for the server.
+                  items:
+                    description: InterfaceMismatch describes a single wiring validation failure on a network interface.
+                    properties:
+                      macAddress:
+                        description: MACAddress is the MAC address of the interface that failed validation.
+                        type: string
+                      message:
+                        description: Message describes the mismatch.
+                        type: string
+                      reason:
+                        description: Reason is a machine-readable token identifying the failure type.
+                        type: string
+                    required:
+                      - macAddress
+                      - message
+                    type: object
+                  type: array
+                ready:
+                  default: false
+                  description: Ready is true when all expected interfaces and neighbors were found.
+                  type: boolean
+              required:
+                - ready
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+# Source: metal-maintenance-operator/templates/rbac/manager-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metal-maintenance-operator-manager-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - vendorconsole.metal.ironcore.dev
+    resources:
+      - consoles
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - vendorconsole.metal.ironcore.dev
+    resources:
+      - consoles/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - vendorconsole.metal.ironcore.dev
+    resources:
+      - consoles/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcs
+      - bmcsecrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - servers
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverclaims
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - servers/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - readiness.metal.ironcore.dev
+    resources:
+      - serverwirings
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - readiness.metal.ironcore.dev
+    resources:
+      - serverwirings/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - readiness.metal.ironcore.dev
+    resources:
+      - serverwirings/status
+    verbs:
+      - get
+      - patch
+      - update
+---
+# Source: metal-maintenance-operator/templates/rbac/manager-rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: metal-maintenance-operator
+    helm.sh/chart: metal-maintenance-operator-0.0.1-20260721080039-86549d3-crds
+    app.kubernetes.io/instance: metal-maintenance-operator
+  name: metal-maintenance-operator-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-maintenance-operator-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: metal-maintenance-operator-controller-manager
+    namespace: kube-system

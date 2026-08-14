@@ -20,13 +20,13 @@ function cleanup_tempest_leftovers() {
 
   for service in $(openstack service list | grep -E 'tempest-service' | awk '{ print $2 }'); do openstack service delete ${service}; done
   for region in $(openstack region list | grep -E 'tempest-region' | awk '{ print $2 }'); do openstack region delete ${region}; done
-  for domain in $(openstack domain list | grep -E 'tempest-test_domain' | awk '{ print $2 }'); do openstack domain set --disable ${domain}; openstack domain delete ${domain}; done
+  for domain in $(openstack domain list | grep -E 'tempest-' | awk '{ print $2 }'); do openstack domain set --disable ${domain}; openstack domain delete ${domain}; done
   for project in $(openstack project list --domain tempest | grep -oP "tempest-\w*[A-Z]+\S+"); do openstack --os-username=admin --os-user-domain-name=tempest --os-domain-name=tempest project delete ${project}; done
   for user in $(openstack user list --domain tempest | grep -oP "tempest-\w*[A-Z]+\S+"); do echo "Deleting user ${user}"; openstack --os-username=admin --os-user-domain-name=tempest --os-domain-name=tempest user delete --domain tempest ${user}; done
 
   # Reset tempestuser passwords after tests (sometimes it doesn't work from tempest code)
-  openstack user set tempestuser1 --domain tempest --password={{ .Values.tempestAdminPassword | quote }}
-  openstack user set tempestuser2 --domain tempest --password={{ .Values.tempestAdminPassword | quote }}
+  openstack user set tempestuser1 --domain tempest --password=$OS_PASSWORD
+  openstack user set tempestuser2 --domain tempest --password=$OS_PASSWORD
 }
 
 {{- include "tempest-base.function_main" . }}

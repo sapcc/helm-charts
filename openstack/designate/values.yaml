@@ -75,6 +75,9 @@ rndc_keys:
 db_name: designate
 pool_id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
 scheduler_filters: attribute, pool_id_attribute, in_doubt_default_pool, fallback
+scheduler_filters_shared_pools: attribute, pool_id_attribute, domain_id
+shared_pools_enabled: false
+
 sink_enabled: False
 
 quota_api_export_size: 100000
@@ -244,19 +247,39 @@ mysql_metrics:
     - name: openstack_designate_records
       help: "records count grouped by status"
       labels:
-        - "status"
         - "zone_id"
+        - "project_id"
+        - "status"
       values:
         - "count_gauge"
       query:  |
               SELECT
                 zone_id,
+                tenant_id AS project_id,
                 status,
                 count(id) AS count_gauge
               FROM records
               GROUP BY
                 zone_id,
+                project_id,
                 status
+
+    - name: openstack_designate_recordsets
+      help: "recordsets count grouped by project and zone id"
+      labels:
+        - "zone_id"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                zone_id,
+                tenant_id AS project_id,
+                count(id) AS count_gauge
+              FROM recordsets
+              GROUP BY
+                zone_id,
+                project_id
 
 cors:
   enabled: false
@@ -344,6 +367,10 @@ rabbitmq:
       enabled: false
     enableDetailedMetrics: true
     enablePerObjectMetrics: true
+
+  # backward compatibility with the existing deployments
+  # using the older rabbitmq helm chart which defaulted to SSL disabled
+  enableSsl: false
 
 rabbitmq_notifications:
   use_alternate_registry: true
@@ -523,3 +550,8 @@ rate_limit:
 statsd:
   image: 'shared-app-images/statsd-exporter'
   imageTag: '0.28.0-latest'
+
+# if true, the mdns load balancer service will be created using calico annotations
+# see templates/mdns-service.yaml
+# https://github.com/projectcalico/calico/issues/11815
+calicoLoadBalancer: false

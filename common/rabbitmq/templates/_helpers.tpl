@@ -34,19 +34,31 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- end }}
 {{- end }}
 
+{{- define "rabbitmq.svc_dns_domain" -}}
+{{ $.Release.Namespace }}.svc.{{ $.Values.global.clusterDNSSearchDomain | required "missing value for .Values.global.clusterDNSSearchDomain" }}
+{{- end -}}
+
 {{- define "rabbitmq.serviceName" -}}
-"{{ template "fullname" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+"{{ template "fullname" . }}.{{ include "rabbitmq.svc_dns_domain" . }}"
+{{- end }}
+
+{{/*
+A lame attempt at making the service name shorter, which is needed for TLS common names.
+Will strip "svc." if clusterDNSSearchDomain is something like "cluster.local"
+Will strip "svc.kubernetes." if clusterDNSSearchDomain is something like "kubernetes.region.tld"
+*/}}
+{{- define "rabbitmq.shortServiceName" -}}
+{{ include "rabbitmq.serviceName" . | replace "svc." "" | replace "kubernetes." "" }}
 {{- end }}
 
 {{/* By default, the name is the dns name, but that may be too long, so we might to have to shorten it.
      If the actual value matters to you, set it directly. */}}
 {{- define "rabbitmq.defaultCommonName" -}}
 {{- $serviceName := include "rabbitmq.serviceName" . }}
-  {{- if le (len $serviceName) 64 }}
-    {{- $serviceName }}
-  {{- else -}}
-    "{{ template "fullname" . }}.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+  {{- if gt (len $serviceName) 64 }}
+     {{- $serviceName = include "rabbitmq.shortServiceName" . }}
   {{- end }}
+  {{- $serviceName }}
 {{- end }}
 
 {{/* Generate the service label for the templated Prometheus alerts. */}}

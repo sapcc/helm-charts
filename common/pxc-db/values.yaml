@@ -79,7 +79,7 @@ job:
     # @default -- operator image
     image:
       name: percona/percona-xtrabackup
-      tag: 8.0.35-34.1
+      tag: 8.0.35-34.1  # use 8.4.0-5.1 for PXC 8.4
     # -- Set default character set in init.sql
     character_set_server: utf8mb4
     # -- Set default collation in init.sql
@@ -151,7 +151,7 @@ pause: false
 initContainer:
   image:
     name: percona-xtradb-cluster-operator
-    tag: 1.18.0
+    tag: 1.19.0
     override: null
   resources:
     requests:
@@ -170,9 +170,11 @@ metrics:
     - collect.info_schema.processlist
     - collect.info_schema.query_response_time
     - collect.info_schema.innodb_tablespaces
+    - collect.info_schema.userstats
+    - collect.mysql.user
   image:
     name: prom/mysqld-exporter
-    tag: v0.17.2
+    tag: v0.18.0
     override: null
 
 # -- Percona XtraDB Cluster statefulset configuration
@@ -180,7 +182,7 @@ pxc:
   size: 3
   image:
     name: percona/percona-xtradb-cluster
-    tag: 8.0.42-33.1
+    tag: 8.0.44-35.1  # use 8.4.7-7.1 for PXC 8.4
     override: null
   imagePullPolicy: IfNotPresent
   annotations: {}
@@ -333,7 +335,7 @@ haproxy:
   size: 2
   image:
     name: percona/haproxy
-    tag: 2.8.15
+    tag: 2.8.17
     override: null
   imagePullPolicy: Always
   annotations: {}

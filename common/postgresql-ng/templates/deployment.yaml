@@ -27,7 +27,9 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: postgres
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
-        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        {{- if or (not (hasKey .Values.global "linkerd_enabled")) (not (hasKey .Values.global "linkerd_requested")) }}
+          {{- fail "global.linkerd_enabled plus global.linkerd_requested must be defined and the linkerd-support Helm chart must be added as chart dependency" }}
+        {{- else if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
     spec:
@@ -50,10 +52,14 @@ spec:
       tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
 
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+
       initContainers:
       - name: generate-secrets
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:latest-latest"
-        imagePullPolicy: "Always"
+        image: "{{ include "postgresql-ng.shared-app-images.ref" (tuple . "alpine-kubectl" "latest") }}"
+        imagePullPolicy: "IfNotPresent"
         env:
         - name: DEBUG
           value: {{ quote .Values.debug }}
@@ -75,10 +81,14 @@ spec:
         image: "{{ include "preferredRegistry" . }}/postgres-ng:{{ .Values.imageTag }}"
         imagePullPolicy: "IfNotPresent"
         env:
+        - name: DATABASES
+          value: {{ .Values.databases | keys | sortAlpha | join " " | quote }}
         - name: DEBUG
           value: {{ .Values.debug | quote }}
         - name: PERSISTENCE_ENABLED
           value: {{ .Values.persistence.enabled | quote }}
+        - name: BACKUP_ON_UPDATE
+          value: {{ .Values.backupOnUpdate | quote }}
         - name: PGBACKUP_HOST
           value: '{{ .Release.Name }}-pgbackup.{{ .Release.Namespace }}.svc'
         - name: PGBIN
@@ -133,7 +143,7 @@ spec:
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
         resources:
           limits: {{ toYaml .Values.resources.limits | nindent 12 }}
-          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
+          {{- if not (.Values.global.region | required ".Values.global.region missing" | regexMatch "^qa-de-[2-6]$") }}
           requests: {{ toYaml .Values.resources.requests | nindent 12 }}
           {{- end }}
         volumeMounts:
@@ -149,8 +159,8 @@ spec:
         {{- end }}
       {{- if .Values.crontab }}
       - name: cron
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.22-latest"
-        imagePullPolicy: "Always"
+        image: "{{ include "postgresql-ng.shared-app-images.ref" (tuple . "alpine-psql" "latest") }}"
+        imagePullPolicy: "IfNotPresent"
         command:
           - /bin/sh
           - -c

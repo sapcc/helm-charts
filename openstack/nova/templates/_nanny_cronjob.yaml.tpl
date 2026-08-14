@@ -24,6 +24,9 @@ spec:
         metadata:
           {{- tuple . (print "nanny-" $name) "nanny" | include "job_metadata" | indent 10 }}
         spec:
+          {{- if .Values.rbac.enabled }}
+          serviceAccountName: {{ .Release.Name }}
+          {{- end }}
           restartPolicy: OnFailure
           volumes:
           - name: container-init
@@ -49,9 +52,9 @@ spec:
                   items:
                   - key: api-db.conf
                     path: nova.conf.d/api-db.conf
-                  {{- if $values.add_cell1_conf }}
-                  - key: cell1.conf
-                    path: nova.conf.d/cell1.conf
+                  {{- if $values.add_cell0_conf }}
+                  - key: cell0.conf
+                    path: nova.conf.d/cell0.conf
                   {{- end }}
           initContainers:
           {{- tuple . (dict "service" (include "nova.helpers.database_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 10 }}

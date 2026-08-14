@@ -13,6 +13,9 @@ owner-info:
 api_port_internal: 9876
 api_backdoor: false
 
+rbac:
+  enabled: true
+
 global:
   imageNamespace: monsoon
   dbUser: octavia
@@ -353,7 +356,11 @@ unchecked_mode: false
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  prometheus:
+    - name: openstack
+      type: prometheus
+    - name: kubernetes
+      type: prometheus
 
 sentry:
   enabled: true
@@ -424,11 +431,6 @@ logging:
 utils:
   trust_bundle:
     enable: true
-vpa:
-  # https://github.com/sapcc/vpa_butler
-  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
-  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
-  set_main_container: true
 
 
 # openstack-rate-limit

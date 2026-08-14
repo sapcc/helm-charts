@@ -1,7 +1,6 @@
 controllerManager:
   manager:
     args:
-      - --metrics-bind-address=:8443
       - --leader-elect
       - --health-probe-bind-address=:8081
     containerSecurityContext:
@@ -13,7 +12,7 @@ controllerManager:
       runAsUser: 65532
     image:
       repository: controller
-      tag: 3c311063d94fe0ce7f229877a9370fb101b32bb2
+      tag: cf12acd520aa203db28f21a326a61fddc9720b95
     resources:
       limits:
         cpu: 500m
@@ -21,13 +20,16 @@ controllerManager:
       requests:
         cpu: 10m
         memory: 64Mi
+  nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
-  serviceAccount:
-    annotations: {}
+  strategy:
+    type: Recreate
+  tolerations: []
+  topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
 metrics:
   ports:
@@ -36,4 +38,9 @@ metrics:
       protocol: TCP
       targetPort: 8443
   type: ClusterIP
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
 fullnameOverride: provider-metal

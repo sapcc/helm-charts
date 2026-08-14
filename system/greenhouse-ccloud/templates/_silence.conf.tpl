@@ -183,9 +183,9 @@
     alertname: "CephOSDDownHigh"
     support_group: "storage"
     service: "ceph"
-    severity: "high"
   editable_labels:
     - region
+    - cluster
 - status: "active"
   title: "CEPH - The following OSD host are offline"
   description: "CEPH OSD host down related alert suppression"
@@ -193,9 +193,9 @@
     alertname: "CephOSDHostDown"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
     - region
+    - cluster
 - status: "active"
   title: "CEPH - an OSD has been marked down"
   description: "CEPH OSD down related alert suppression"
@@ -203,9 +203,9 @@
     alertname: "CephOSDDown"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
-    - region  
+    - region
+    - cluster
 - status: "active"
   title: "CEPH - One or more monitors down"
   description: "CEPH Monitor down related alert suppression"
@@ -213,9 +213,39 @@
     alertname: "CephMonDown"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
     - region
+    - cluster
+- status: "active"
+  title: "CEPH - kubernetes deployment has not matched the expected number of replicas"
+  description: "CEPH - deployment `kube-system/absent-metrics-operator` has not matched the expected number of replicas for longer than 10 minutes"
+  fixed_labels:
+    alertname: "KubernetesDeploymentReplicasMismatch"
+    support_group: "storage"
+    service: "ceph"
+  editable_labels:
+    - region
+    - cluster
+- status: "active"
+  title: "CEPH - cluster is in the WARNING state"
+  description: "CEPH - cluster state has been HEALTH_WARN"
+  fixed_labels:
+    alertname: "CephHealthWarning"
+    support_group: "storage"
+    service: "ceph"
+  editable_labels:
+    - region
+    - cluster
+- status: "active"
+  title: "CEPH - Ceph Node Root Filesystem Full"
+  description: "CEPH - root volume is full alert silence"
+  fixed_labels:
+    alertname: "CephNodeRootFilesystemFull"
+    support_group: "storage"
+    service: "ceph"
+  editable_labels:
+    - region
+    - cluster
 - status: "active"
   title: "NetApp Storage - Maintenance Mode "
   description: "Set NetApp storage cluster in Maintenance Mode"

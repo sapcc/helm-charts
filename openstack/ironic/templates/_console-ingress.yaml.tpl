@@ -16,6 +16,7 @@ metadata:
     component: ironic
   annotations:
     kubernetes.io/tls-acme: "true"
+    disco: "true"
     ingress.kubernetes.io/backend-protocol: HTTPS
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     ingress.kubernetes.io/ssl-passthrough: "true"

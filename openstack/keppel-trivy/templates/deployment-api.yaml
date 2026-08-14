@@ -9,7 +9,7 @@ metadata:
 spec:
   revisionHistoryLimit: 5
   # When running the Trivy client against a server, lots of computations are
-  # still performed on the clide side, i.e. in these pods. Therefore we have
+  # still performed on the client side, i.e. in these pods. Therefore we have
   # this scaled up more than the server itself.
   replicas: {{ $.Values.trivy.api.replicas }}
   strategy:
@@ -34,7 +34,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: [ "keppel", "server", "trivy-proxy" ]
           env:
-            - name:  KEPPEL_API_LISTEN_ADDRESS
+            - name:  KEPPEL_TRIVY_LISTEN_ADDRESS
               value: ":80"
             - name: KEPPEL_TRIVY_DB_MIRROR_PREFIX
               value: {{ $.Values.global.ghcrIoMirror }}
@@ -44,7 +44,7 @@ spec:
                   name: trivy-secret
                   key: trivy_token
             - name:  KEPPEL_TRIVY_URL
-              value: "http://trivy-server.trivy.svc:8080"
+              value: "http://trivy-server.{{ $.Release.Namespace }}.svc:8080"
           securityContext:
             runAsNonRoot: true
           livenessProbe:

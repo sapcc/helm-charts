@@ -1,0 +1,58 @@
+{{- if .Values.bmcSettings.enabled }}
+{{- range $vendor, $vendorConfig := .Values.machines }}
+{{- if $vendorConfig }}
+
+{{/* Vendor filtering */}}
+{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcSettings.filters.vendors) }}
+{{- range $entryName, $entry := $vendorConfig.models }}
+{{- if and $entry.clusterTypes $entry.bmc (or $entry.bmc.settingsFileName $entry.bmc.settingsContent) }}
+{{- $model := $entry.model }}
+{{- $version := $entry.bmc.version }}
+{{- $settingsParams := (get $entry.bmc "settingsParams") | default dict }}
+{{- $serverFilters := (get $settingsParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
+
+{{/* Model and Version filtering */}}
+{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcSettings.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcSettings.filters.versions)) }}
+{{- range $clusterType := $entry.clusterTypes }}
+
+{{/* ClusterType filtering */}}
+{{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.bmcSettings.filters.clusterTypes) }}
+{{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
+{{- $explicitName := (get $settingsParams "setMetadataName") }}
+{{- $withCluster := printf "%s-%s" $explicitName (lower $clusterType) }}
+{{- $resourceName := ternary $withCluster $defaultName (ne $explicitName "") }}
+apiVersion: {{ $.Values.apiVersions.bmcSettingsSet }}
+kind: BMCSettingsSet
+metadata:
+  name: {{ $resourceName }}
+spec:
+  bmcSelector:
+    matchLabels:
+      {{ $.Values.labelKeys.type }}: {{ $model }}
+      {{ $.Values.labelKeys.clusterType }}: {{ $clusterType }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters "labelKey" $.Values.labelKeys.serverName) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
+{{- end }}
+  bmcSettingsTemplate:
+    serverMaintenancePolicy: OwnerApproval
+    version: {{ $version | quote }}
+{{- if $entry.bmc.settingsContent }}
+{{ $entry.bmc.settingsContent | trim | indent 4 }}
+{{- else }}
+{{ tpl ($.Files.Get (printf "bmc_settings/%s" $entry.bmc.settingsFileName)) $ | trim | indent 4 }}
+{{- end }}
+{{- with $.Values.bmcSettings.retryPolicy }}
+    retryPolicy:
+{{ toYaml . | indent 6 }}
+{{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,4 +1,6 @@
 #!/bin/bash
+# shellcheck shell=bash
+# shellcheck disable=SC2292,SC2250,SC2086,SC2312,SC2244,SC2027,SC2166
 
 write_password_file() {
     if [[ -n "${MYSQL_ROOT_PASSWORD:+x}" ]]; then
@@ -178,4 +180,16 @@ update_users() {
 
         FLUSH PRIVILEGES ;
 EOSQL
+
+    if [ "$MYSQL_USER" -a "$MYSQL_PASSWORD" ]; then
+        echo "CREATE USER IF NOT EXISTS '"$MYSQL_USER"'@'%' IDENTIFIED BY '"$MYSQL_PASSWORD"' ;" | "${mysql[@]}"
+        echo "ALTER USER '"$MYSQL_USER"'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}' ;" | "${mysql[@]}"
+
+        if [ "$MYSQL_DATABASE" ]; then
+            echo "GRANT ALL ON \`"$MYSQL_DATABASE"\`.* TO '"$MYSQL_USER"'@'%' ;" | "${mysql[@]}"
+        fi
+
+        echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
+    fi
+
 }

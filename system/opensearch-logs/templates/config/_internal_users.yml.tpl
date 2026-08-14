@@ -147,19 +147,8 @@ storage2:
   backend_roles:
   - "storage"
 
+
 {{- if .Values.qalogs.enabled }}
-otel:
-  hash: "{{ .Values.users.otel.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
-
-otel2:
-  hash: "{{ .Values.users.otel2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
-
 ronly:
   hash: "{{ .Values.users.ronly.nohash }}"
   reserved: true
@@ -171,4 +160,10 @@ ronly2:
   reserved: true
   backend_roles:
   - "promuser"
+{{- end }}
+
+{{- if eq .Values.global.region "qa-de-1" }}
+securityanalytics:
+  hash: "{{ .Values.users.securityanalytics.nohash }}"
+  reserved: true
 {{- end }}

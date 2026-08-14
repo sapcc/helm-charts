@@ -1,0 +1,20 @@
+# Test values for image cascading fallback issue from explanation.md
+# Simulates cluster-specific values where:
+# - values.image.repository is set to a custom repository (cluster override)
+# - runtimeClusterValues.image is explicitly null (no cluster override)
+# Expected: runtimeClusterValues should use values.image.repository from cluster, not defaults from chart
+
+extensions:
+  aws:
+    enabled: true
+    version: v1.68.3
+    values:
+      image:
+        repository: custom-cluster-repo/aws-provider
+        tag: v1.0.0
+    runtimeClusterValues:
+      image: null
+      replicaCount: 2
+    helm:
+      ociRepository:
+        repository: keppel.example.com/aws-chart

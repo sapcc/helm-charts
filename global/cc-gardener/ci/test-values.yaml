@@ -2,10 +2,18 @@ global:
   registry: example.com
   region: qa-de-1
   cluster: some-cluster
+  clusterIdentity: local
 garden:
   name: garden
   dns:
     region: dns-1
+  dashboard:
+    enabled: true
+    enableTokenLogin: true
+    oidc:
+      enabled: true
+      clientIDPublic: foo
+      issuerURL: bar
   backup:
     accessKeyID: "access"
     secretAccessKey: "bla"
@@ -26,6 +34,8 @@ garden:
       a: b
     adminUsers: ["blup"]
     publicDomain: nase.example.com
+    gardenerResourceManager:
+      additionalTargetNamespaces: ["namespace1", "namespace2"]
   externalIP: 1.1.1.1
 secretsInjector:
   image:
@@ -38,6 +48,9 @@ cloudProfileSync:
   enabled: true
 extensions:
   kubernetesVersions: []
+  storage:
+    provisioner: csi.foobar
+    className: mystorageclass
   openstack:
     enabled: true
     regions:
@@ -53,12 +66,35 @@ extensions:
     enabled: false
   auditing:
     enabled: true
+    url: "https://auditing.example.com/audit"
+    additionalNamespaces: ["garden-compute", "garden-storage"]
 gardenlet:
   enabled: true
-  additionalSeedRegions:
+  namePrefix: test
+  seedRegions:
   - name: "ab-cd-1"
+    taints:
+    - key: dont.schedule/here
+    backup:
+      provider: aws
+      region: eu-central-1
+    networks:
+      nodes: 1.2.3.0/26
+      pods: 1.2.3.0/16
+      services: 1.2.3.0/16
+    zones:
+    - "ab-cd-1a"
+    - "ab-cd-1b"
   - name: "ef-gh-2"
     altRegion: "ab-cd-2"
+    backup:
+      provider: openstack
+    networks:
+      nodes: 1.2.3.0/26
+      pods: 1.2.3.0/16
+      services: 1.2.3.0/16
+    zones:
+    - "ab-cd-2a"
   loadBalancerServices:
     annotations:
       foo: bar

@@ -74,4 +74,19 @@
 {{- end }}
 - name:  TENSO_WORKER_LISTEN_ADDRESS
   value: ':80'
+- name: TENSO_HELM_DEPLOYMENT_CLUSTER_REGEX
+  valueFrom:
+    configMapKeyRef:
+      name: tenso-auto
+      key: helm_deployment_cluster_regex
+- name: TENSO_REGION_REGEX
+  valueFrom:
+    configMapKeyRef:
+      name: tenso-auto
+      key: region_regex
+- name: TENSO_AWX_WORKFLOW_AZ_REGEX
+  valueFrom:
+    configMapKeyRef:
+      name: tenso-auto
+      key: awx_workflow_az_regex
 {{- end -}}

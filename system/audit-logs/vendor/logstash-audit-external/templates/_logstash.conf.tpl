@@ -18,7 +18,7 @@ input {
     tags => ["audit"]
     user => '${AUDIT_HTTP_USER}'
     password => '${AUDIT_HTTP_PWD}'
-{{ if eq .Values.global.clusterType "metal" -}}
+{{ if ne .Values.global.clusterType "scaleout" -}}
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
@@ -117,14 +117,22 @@ filter {
   }
 
 # Change type of audit relevant HSM syslogs
-  if [syslog_hostname] and [syslog_hostname] == "hsm01" {
+  if [syslog_hostname] and [syslog_hostname] =~ /hsm/ {
+    mutate {
+        replace => { "type" => "audit" }
+        add_field => { "[sap][cc][audit][source]" => "hsm" }
+    }
+  }
+  if [hostname] and [hostname] =~ /hsm/ {
     mutate {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
   }
   if [type] == "syslog" {
-    drop{}
+    mutate {
+      add_tag => ["dropped_syslog"]
+    }
   }
  }
  {{- end }}
@@ -217,6 +225,7 @@ filter {
             add_field => { "[sap][cc][audit][source]" => "kube-api"}
             add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
           }
+          # ---- flatten items ----
           ruby {
                  code => '
                       event.get("items").each { |k, v|
@@ -225,6 +234,41 @@ filter {
                           event.remove("items")
                 '
          }
+
+          # ---- remove managedFields entirely (contains dot-only keys that ES rejects) ----
+          # Must be AFTER items flatten so the field paths are correct
+          mutate {
+            remove_field => [
+              "[requestObject][metadata][managedFields]",
+              "[responseObject][metadata][managedFields]"
+            ]
+          }
+
+          # ---- fix responseObject.status type conflict ----
+          # When responseObject is a K8s Status (error response), the "status" field
+          # is a string ("Failure"/"Success") which conflicts with the object mapping
+          # from Shoot resources where status is a complex object.
+          if [responseObject][kind] == "Status" {
+            mutate {
+              rename => { "[responseObject][status]" => "[responseObject][statusText]" }
+            }
+          }
+          if [responseStatus][status] {
+            mutate {
+              rename => { "[responseStatus][status]" => "[responseStatus][statusText]" }
+            }
+          }
+
+          # ---- use API server timestamp for correct event ordering ----
+          # requestReceivedTimestamp is when the API server received the request,
+          # which is the authoritative "when did this happen" time.
+          # Without this, @timestamp reflects batching/forwarding time which
+          # causes events from different API servers to appear out of order.
+          date {
+            match => ["requestReceivedTimestamp", "ISO8601"]
+            target => "@timestamp"
+            tag_on_failure => ["_dateparsefailure_requestReceivedTimestamp"]
+          }
         }
       }
 
@@ -261,6 +305,12 @@ output {
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
       http_method => "post"
+    }
+  } else if "dropped_syslog" in [tags] {
+    file {
+      id => "output_dropped_syslog"
+      path => "/dev/stdout"
+      codec => json_lines
     }
   }
 }

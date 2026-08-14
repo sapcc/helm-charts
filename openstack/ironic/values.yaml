@@ -12,13 +12,15 @@ owner-info:
     - Jens Sandmann
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/ironic
 
+rbac:
+  enabled: true
+
 global:
   ironicApiPortInternal: "6385"
-  #ironic_tftp_ip: null
+  # ironic_tftp_ip: null
   ironicServiceUser: ironic
   ironictftpPortPublic: "69"
   ironic_pxe_port_public: "69"
-  osprofiler: {}
   dbUser: ironic
   fernetRouter:
     image: "monsoon/fernet-router:latest"
@@ -77,10 +79,9 @@ osprofiler:
   enabled: false
 
 statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
   port: 9102
-  image:
-    repository: prom/statsd-exporter
-    tag: v0.8.1
 
 hpa:
   enabled: false
@@ -216,8 +217,10 @@ conductor:
     conductor:
       conductor_always_validates_images: false # We only use the direct interface, so leave it to the agent
       permitted_image_formats: 'raw,qcow2,iso,vmdk'
-      # HDA has a parallelism of 50 nodes, we give a buffer of 10
-      max_concurrent_clean: 60
+      # HDA has a parallelism of 50 nodes, but with deleting they ran into the limit of 60, so increasing to 90. The network in the biggest
+      # region only has a /25 (126) & /26 (62) so ~188 useable IPs but each node uses 2, so enough for ~94 nodes. But we need some for the router
+      # as well and want a small puffer so 90 it is.
+      max_concurrent_clean: 90
 
 agent:
   deploy_logs:
@@ -227,6 +230,7 @@ agent:
 
 console:
   ssh_loglevel: error
+  nginx_workers: 5
 
 tftp_ip: null
 tftp_files:
@@ -235,14 +239,14 @@ tftp_files:
 
 portmetrics: "9102"
 
-#network_management_uuid: null
-#network_cleaning_uuid: null
+# network_management_uuid: null
+# network_cleaning_uuid: null
 neutron_url_timeout: 210
 neutron_port_setup_delay: 0
 neutron_connect_retries: 3
 
-#swift_account: null
-#swift_tempurl: null
+# swift_account: null
+# swift_tempurl: null
 
 mysql_metrics:
   enabled: true
@@ -423,12 +427,9 @@ pxc_db:
       enabled: true
 
 dbName: ironic
-#dbPassword: null
+# dbPassword: null
 max_pool_size: 1
 max_overflow: 50
-
-sentry:
-  enabled: true
 
 rabbitmq:
   name: ironic
@@ -446,6 +447,10 @@ rabbitmq:
     sidecar:
       enabled: false
 
+# use sentry via openstack/utils
+sentry:
+  enabled: true
+
 logging:
   formatters:
     context:
@@ -455,22 +460,26 @@ logging:
       class: StreamHandler
       args: "(sys.stdout,)"
       formatter: context
-    sentry:
-      class: raven.handlers.logging.SentryHandler
+    sentry_events:
+      class: "sapcc_sentrylogger.handler.EventHandler"
       level: ERROR
+      args: "()"
+    sentry_breadcrumbs:
+      class: "sapcc_sentrylogger.handler.BreadcrumbHandler"
+      level: INFO
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: WARNING
     ironic:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
     auditmiddleware:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
 
 memcached:
@@ -515,3 +524,7 @@ alerts:
 utils:
   trust_bundle:
     enabled: true
+
+nginx:
+  image: 'shared-app-images/alpine-nginx'
+  imageTag: 'mainline-slim-latest'

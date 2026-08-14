@@ -55,8 +55,11 @@ spec:
 {{- end }}
   plugin:
     displayName: Thanos
-    pluginDefinition: thanos
+    pluginDefinitionRef:
+      kind: PluginDefinition
+      name:  thanos
     releaseNamespace: kube-monitoring
+    deletionPolicy: Retain
     optionValues:
     {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
     - name: thanos.image.repository
@@ -66,6 +69,13 @@ spec:
     - name: testFramework.image.registry
       value: {{ .Values.global.ghcrIoMirror }}
     {{- end }}
+    - name: thanos.query.additionalArgs
+      value:
+      - --query.promql-engine=thanos
+    - name: thanos.query.replicas
+      value: 10
+    - name: thanos.store.replicas
+      value: 10
     - name: thanos.ruler.enabled
       value: false
     - name: thanos.ruler.alertmanagers.enabled

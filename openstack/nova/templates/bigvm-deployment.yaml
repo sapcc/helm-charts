@@ -15,13 +15,14 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  {{- $strategy := dig "bigvm" "podReplacementStrategy" .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy .Values.pod.lifecycle.upgrades.deployments.overrides }}
   strategy:
-    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
-    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    type: {{ $strategy }}
+    {{- if eq $strategy "RollingUpdate" }}
     rollingUpdate:
       maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
-    {{ end }}
+    {{- end }}
   selector:
     matchLabels:
       name: nova-bigvm
@@ -41,12 +42,15 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . "nova" "bigvm" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-bigvm
       initContainers:
-      {{- tuple . (dict "service" (include "nova.helpers.all_cell_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.database_and_rabbitmq_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
@@ -104,8 +108,10 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: cell1.conf
-                path: nova.conf.d/cell1.conf
+              - key: api-rpc.conf
+                path: nova.conf.d/api-rpc.conf
+              - key:  cell0.conf
+                path: nova.conf.d/cell0.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.osprofiler.enabled }}

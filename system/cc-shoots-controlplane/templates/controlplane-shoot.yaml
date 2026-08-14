@@ -4,11 +4,17 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $key }}
+  labels:
+    cluster-type: sci-k8s-controlplane
+    greenhouse.sap/owned-by: containers
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ $key }}
 spec:
+  purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  credentialsBindingName: metal-{{ $key }}
+  credentialsBindingName: metal-wi-{{ $key }}
   seedName: mgmt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -19,26 +25,38 @@ spec:
     providerConfig:
       apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
       kind: NetworkConfig
+      {{- if not $.Values.networking.overlay }}
       backend: bird
+      {{- end }}
+      {{- if $.Values.networking.overlay }}
+      vethMTU: "8930"
+      {{- else }}
       vethMTU: "8950"
+      {{- end }}
       ipam:
         type: host-local
         cidr: usePodCIDR
+      {{- if $.Values.networking.overlay }}
+      overlay:
+        enabled: true
+      {{- else }}
       overlay:
         enabled: false
         createPodRoutes: true
+      {{- end }}
       birdExporter:
         enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
       multus:
         enabled: {{ default true (($cluster.networking.multus).enabled) }}
         installCNIPlugins: {{ default true (($cluster.networking.multus).installCNIPlugins) }}
+      serviceLoopPrevention: Disabled
   kubernetes:
     version: {{ default $.Values.kubernetes.version $cluster.version }}
     kubeAPIServer:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
-        configMapName: authentication-config-cp
+        configMapName: {{ printf "sci-k8s-controlplane-auth-%s" $key }}
       {{- if $cluster.auditing.enabled }}
       auditConfig:
         auditPolicy:
@@ -46,7 +64,13 @@ spec:
             name: audit-policy-cp
       {{- end }}
     verticalPodAutoscaler:
-      enabled: true # VPA needs to enabled for ManagedSeed
+      enabled: true
+      targetCPUPercentile: 0.75
+      targetMemoryPercentile: 0.85
+      recommendationMarginFraction: 0.05
+      {{- with dig "verticalPodAutoscaler" "maxAllowed" nil $cluster }}
+      maxAllowed: {{ toYaml . | nindent 8 }}
+      {{- end }}
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -115,12 +139,24 @@ spec:
             bgpFilter:
               - name: v4filter
                 exportV4:
+                  {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
+                  {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
+                  {{- end }}
+                  {{- if $.Values.networking.overlay }}        
+                  - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
+                    matchOperator: In
+                    action: Reject
+                  {{- end }}
+            {{- if $.Values.networking.overlay }}
+            nodeToNodeMeshEnabled: true
+            {{- else }}
             nodeToNodeMeshEnabled: false
+            {{- end }}
             serviceLoadBalancerIPs:
             {{- range $cluster.networking.externalServices }}
             - {{ .cidr }}
@@ -135,6 +171,8 @@ spec:
             name: gardenlinux
             version: {{ default $.Values.imageVersion $cluster.imageVersion }}
           type: baremetal
+        labels:
+          cloud.sap/maintenance-profile: metal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
         maxSurge: 0
@@ -144,7 +182,7 @@ spec:
         machineControllerManager:
           machineCreationTimeout: 1h30m0s
           machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: 1h30m0s
+          machineDrainTimeout: 240h0m0s
         providerConfig:
           apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
           kind: WorkerConfig

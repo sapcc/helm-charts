@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kmip.restapiname" . }}
+  labels:
+    {{- include "kmip.labels" . | nindent 4 }}
+    app: {{ include "kmip.restapiname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: kmip
+  annotations:
+    secret.reloader.stakater.com/reload: "kmip-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{- if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "kmip.restapiname" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "kmip.labels" . | nindent 8 }}
+        app: {{ include "kmip.restapiname" . }}
+        name: {{ include "kmip.restapiname" . }}
+        alert-tier: os
+        alert-service: kmip
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        secrets-etc-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5005"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
+      containers:
+        - name: kmip-restapi
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{ required "Values.kmip.pykmipRestApiImageVersion is missing" .Values.kmip.pykmipRestApiImageVersion }}
+          imagePullPolicy: {{ .Values.kmip.pullPolicy }}
+          env:
+            - name: KMIP_MARIADB_SERVICE_HOST
+              value: "kmip-mariadb"
+            - name: KMIP_MARIADB_SERVICE_PORT
+              value: "3306"
+            - name: KMIP_MARIADB_SERVICE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: mariadb_user
+            - name: KMIP_MARIADB_SERVICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: mariadb_password
+            - name: KMIP_MARIADB_NAME
+              value: "kmip"
+            - name: BARBICAN_MARIADB_SERVICE_HOST
+              value: "barbican-mariadb"
+            - name: BARBICAN_MARIADB_SERVICE_PORT
+              value: "3306"
+            - name: BARBICAN_MARIADB_SERVICE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: barbican_mariadb_service_user
+            - name: BARBICAN_MARIADB_SERVICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: barbican_mariadb_service_password
+            - name: BARBICAN_MARIADB_NAME
+              value: "barbican"
+            - name: keystone_url
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: kmip-barbican.DSN.python
+            {{- end }}
+          ports:
+            - name: restapi
+              containerPort: 5005
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5005
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: 0
+              cpu: 0

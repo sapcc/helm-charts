@@ -47,7 +47,59 @@ groups:
       context: '{{ $labels.host }}'
       dashboard: asr1k-driver-dashboard
       meta: Asr1k driver for agent {{ $labels.host }} cannot reach device `{{ $labels.device }}` via netconf-yang.
-      playbook: docs/devops/alert/network/router#OpenstackNeutronAsr1KDriverNetconfUnreachable
+      playbook: docs/network/playbooks/router#OpenstackNeutronAsr1KDriverNetconfUnreachable
     annotations:
       description: Asr1k driver for agent {{ $labels.host }} cannot reach device `{{ $labels.device }}` via netconf-yang.
       summary: Asr1k driver cannot reach device
+
+  - alert: OpenstackNeutronNetworkOutOfSync
+    expr: |
+      count by (network_id) (
+        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled > 0)
+        unless on (bridge, network_host)
+        group by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
+      ) == 1
+      or
+      count by (network_id) (
+       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled > 0)
+       unless on (network_id, network_host)
+       group by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
+      ) == 1
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.network_id }}'
+      meta: 'Network {{ $labels.network_id }} is only synced to one agent'
+      playbook: docs/support/playbook/neutron/dhcp_down
+    annotations:
+      description: 'Network {{ $labels.network_id }} is only synced to one agent'
+      summary: Openstack Neutron Linuxbridge/DHCP Agent lost one private networks
+
+  - alert: OpenstackNeutronNetworkNotHostedOnAnyAgent
+    expr: |
+      count by (network_id) (
+        group by (network_id, bridge, network_host) (openstack_subnets_with_dhcp_enabled > 0)
+        unless on (bridge, network_host)
+        group by (bridge, network_host) (openstack_neutron_agent_check_linux_bridge_present)
+      ) >= 2
+      or
+      count by (network_id) (
+       group by (network_id, network_host) (openstack_subnets_with_dhcp_enabled > 0)
+       unless on (network_id, network_host)
+       group by (network_id, network_host) (openstack_neutron_agent_check_netns_present)
+      ) >= 2
+    for: 5m
+    labels:
+      severity: critical
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.network_id }}'
+      meta: 'Network {{ $labels.network_id }} is not synced on any agent'
+      playbook: docs/support/playbook/neutron/dhcp_down
+    annotations:
+      description: 'Network {{ $labels.network_id }} is not hosted on any agent'
+      summary: Openstack Neutron Linuxbridge/DHCP Agent lost all private networks

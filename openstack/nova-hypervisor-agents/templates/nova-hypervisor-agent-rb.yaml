@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
+roleRef:
+  kind: Role
+  name: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}

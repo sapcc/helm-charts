@@ -26,7 +26,8 @@ spec:
       restartPolicy: Never
       containers:
       - name: install-security-config
-        image: "{{ .Values.global.registry }}/opensearch-tools:20240815102459"
+        image: {{ .Values.global.registry }}/opensearch-tools:{{ .Values.global.opensearchTools.tag }}
+        imagePullPolicy: Always
         command: ["/bin/bash","/scripts/install-security-config.sh"]
         volumeMounts:
         - mountPath: /usr/share/opensearch/config/opensearch-security/action_groups.yml
@@ -44,6 +45,9 @@ spec:
         - mountPath: /usr/share/opensearch/config/opensearch-security/roles_mapping.yml
           name: security-config
           subPath: roles_mapping.yml
+        - mountPath: /usr/share/opensearch/config/opensearch-security/audit.yml
+          name: security-config
+          subPath: audit.yml
         - mountPath: /scripts/install-security-config.sh
           name: security-config
           subPath: install-security-config.sh
@@ -52,9 +56,10 @@ spec:
           subPath: tenants.yml
         - mountPath: /usr/share/opensearch/config/certs/admin
           name: admin-cert
-        - mountPath: /usr/share/opensearch/config/certs/tenant/ca.crt
+        - mountPath: /usr/share/opensearch/config/certs/ca
           name: ca-cert
-          subPath: ca.crt
+        - mountPath: /usr/share/opensearch/config/certs/rest
+          name: rest-cert
       volumes:
       - name: admin-cert
         secret:
@@ -63,7 +68,11 @@ spec:
       - name: ca-cert
         secret:
           defaultMode: 420
-          secretName: certs
+          secretName: opensearch-hermes-ca-secret
+      - name: rest-cert
+        secret:
+          defaultMode: 420
+          secretName: rest-cert
       - name: security-config
         secret:
           defaultMode: 420

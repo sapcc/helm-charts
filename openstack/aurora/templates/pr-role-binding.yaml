@@ -1,0 +1,20 @@
+{{- if .Values.prPreview.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    gitops.sap/deployer: "containers"
+  name: aurora:argocd:pr-preview
+  namespace: aurora-preview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: aurora:argocd:pr-preview
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: argocd:system:serviceaccount:containers:argocd-application-controller
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: argocd:system:serviceaccount:containers:argocd-server
+{{- end }}

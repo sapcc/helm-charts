@@ -1,0 +1,28 @@
+{{- if .Values.snmp_exporter.utimaco.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: snmp-exporter-alerts-snmp-utimaco.alerts
+  labels:
+    app: snmp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.utimaco.alerts.prometheus missing" .Values.snmp_exporter.utimaco.alerts.prometheus }}
+spec:
+  groups:
+  - name: snmp-utimaco.alerts
+    rules:
+    - alert: utimacoCHSMCapacityWarning
+      expr: sum(snmp_utimaco_cHSMValid{cHSMMode="OPERATIONAL"})by(site) >= 25
+      for: 12h
+      labels:
+        severity: warning
+        service: barbican
+        context: utimaco
+        meta: "Site {{`{{ $labels.site }}`}} has {{`{{ $value }}`}} cHSMs in OPERATIONAL state - only 10% capacity remaining"
+        dashboard: utimaco
+        no_alert_on_absence: "true"
+        support_group: identity
+      annotations:
+        description: "Site {{`{{ $labels.site }}`}} has {{`{{ $value }}`}} out of 31 cHSMs in OPERATIONAL state. Only ~10% (6 or fewer) cHSMs are available for new allocations."
+        summary: "Site {{`{{ $labels.site }}`}} cHSM capacity low - {{`{{ $value }}`}}/31 in OPERATIONAL state"
+{{- end }}

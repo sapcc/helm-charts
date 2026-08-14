@@ -21,6 +21,7 @@ spec:
     - name: cloud_registry_admin
     - name: cloud_registry_viewer
     - name: registry_admin
+    - name: registry_pusher
     - name: registry_viewer
 
   domains:
@@ -32,8 +33,6 @@ spec:
           role_assignments:
             - project: service
               role:    service
-            - project: service
-              role:    admin          # for keppel-health-monitor (creating a Keppel account includes creating role assignments)
             - project: service
               role:    registry_admin # for keppel-health-monitor
         {{- if eq $region "qa-de-1" }}
@@ -54,6 +53,12 @@ spec:
           role_assignments:
             - project: service
               role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        - name: keppel-greenhouse-ci
+          description: Keppel Access User for Greenhouse CI
+          password: {{ printf "%s/%s/keppel/keystone-user/greenhouse-ci/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
         - name: keppel-github-actions
           description: Keppel Access User for GitHub Actions
           password: {{ printf "%s/%s/keppel/keystone-user/github-actions/password" $vbase $region | quote }}
@@ -61,6 +66,23 @@ spec:
             - project: service
               role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
         {{- end }}
+      {{- if ne .Values.keppel.driver "swift" }}
+      projects:
+        - name: keppel-payloads # NOTE: in buildup, there is _probably_ a Limes dependency here, because the Ceph account for this project is probably only created once Limes assigns quota to it
+          role_assignments:
+            - user: keppel@Default
+              role: service           # to validate users' Keystone tokens
+            - user: keppel@Default
+              role: objectstore_admin # to read/write objects (blobs, manifests, reports) in this project's Ceph account
+            {{- if eq .Values.keppel.driver "both" }}
+            - user: keppel@Default
+              role: cloud_objectstore_admin # to read/write objects (blobs, manifests, reports) in customers' Swift accounts
+            {{- end }}
+            - group: CCADMIN_CLOUD_ADMINS@ccadmin
+              role: objectstore_viewer # to allow inspection by cloud admins into this project's Ceph account
+            - group: CCADMIN_CLOUD_ADMINS@ccadmin
+              role: objectstore_admin # TODO: remove once <https://github.com/cobaltcore-dev/cloud-storage/issues/468> is resolved and the above role assignment can be used instead
+      {{- end }}
 
     - name: ccadmin
       groups:
@@ -84,17 +106,19 @@ spec:
         - name: CCADMIN_KEPPEL_IMAGE_PUSHERS
           role_assignments:
             - project: master
-              role: registry_admin
+              role: registry_pusher
             - project: master
               role: registry_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
         {{- end }}
       projects:
         - name: cloud_admin
+          {{- if ne .Values.keppel.driver "ceph" }}
           role_assignments:
             - user: keppel@Default
               role: service       # to validate users' Keystone tokens
             - user: keppel@Default
               role: cloud_objectstore_admin # to read/write blobs and manifests from/into customer's Swift accounts
+          {{- end }}
         - name: master
           role_assignments:
             - user: keppel@Default

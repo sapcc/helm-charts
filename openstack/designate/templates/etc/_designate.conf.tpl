@@ -109,7 +109,8 @@ default_pool_id = '794ccc2c-d751-44fe-b57f-8894c9f5c842'
 managed_resource_tenant_id = {{ .Values.managed_resource_tenant_id | default "00000000-0000-0000-0000-000000000000" }}
 # What filters to use. They are applied in order listed in the option, from
 # left to right
-scheduler_filters = {{ .Values.scheduler_filters }}
+
+scheduler_filters = {{ if .Values.shared_pools_enabled }}{{ .Values.scheduler_filters_shared_pools }}{{ else }}{{ .Values.scheduler_filters }}{{ end }}
 
 #-----------------------
 # API Service
@@ -231,7 +232,7 @@ region_name = {{.Values.global.region}}
 {{- if .Values.global.is_global_region }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- else }}
-memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = {{.Release.Name}}-memcached.{{ include "svc_fqdn" . }}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
 {{- if .Values.global.is_global_region }}
 insecure = False

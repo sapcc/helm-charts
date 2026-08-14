@@ -44,7 +44,7 @@ spec:
         - name: LISTEN_PORT
           value: "{{ required "listen_port needs to be defined in resfish_exporter values" $values.listen_port }}"
         - name: TIMEOUT
-          value: "5"
+          value: "{{ $values.timeout | default 10 }}"
         {{- if $values.users.redfish_cp_username }}
         - name: REDFISH_CP_USERNAME
           valueFrom:
@@ -92,6 +92,30 @@ spec:
             secretKeyRef:
               name: {{ include "fullName" . }}
               key: redfish_perf_password
+        {{- end }}
+        {{- if $values.users.redfish_bios_username }}
+        - name: REDFISH_BIOS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_bios_username
+        - name: REDFISH_BIOS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_bios_password
+        {{- end }}
+        {{- if $values.users.redfish_sensors_username }}
+        - name: REDFISH_SENSORS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_sensors_username
+        - name: REDFISH_SENSORS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: redfish_sensors_password
         {{- end }}
         resources:
 {{ toYaml $values.resources | indent 10 }}

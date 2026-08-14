@@ -14,13 +14,14 @@ metadata:
 spec:
   replicas: {{ if not .Values.pod.debug.api }}{{ .Values.pod.replicas.api }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  {{- $strategy := dig "api" "podReplacementStrategy" .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy .Values.pod.lifecycle.upgrades.deployments.overrides }}
   strategy:
-    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
-    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    type: {{ $strategy }}
+    {{- if eq $strategy "RollingUpdate" }}
     rollingUpdate:
       maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
-    {{ end }}
+    {{- end }}
   selector:
     matchLabels:
       name: nova-api
@@ -41,6 +42,9 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       {{- tuple . (dict "name" "nova-api") | include "utils.topology.constraints" | indent 6 }}
       {{- if .Values.pod.debug.api }}
@@ -51,7 +55,7 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       hostname: nova-api
       initContainers:
-      {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.api_services" .) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api.config_file.DEFAULT.osapi_compute_workers | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
@@ -170,8 +174,10 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: cell1.conf
-                path: nova.conf.d/cell1.conf
+              - key: api-rpc.conf
+                path: nova.conf.d/api-rpc.conf
+              - key: cell0.conf
+                path: nova.conf.d/cell0.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.audit.enabled }}

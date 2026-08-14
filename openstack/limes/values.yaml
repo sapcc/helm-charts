@@ -55,6 +55,9 @@ limes:
       with_snapshot_subresources: true
       ignore_public_volume_types: "tempest.+"
       manage_private_volume_types: "kvm-pilot"
+      category_display_names:
+        vmware: "Premium SSD"
+        standard_hdd: "Standard HDD"
 
     ironic:
       with_subcapacities: true
@@ -72,10 +75,15 @@ limes:
       prometheus_api_for_netapp_metrics:
         url: http://prometheus-storage.infra-monitoring.svc:9090
       share_types: [] # see regional values.yaml
+      category_display_names:
+        default: "Premium SSD"
+        hypervisor_storage: "Hypervisor Storage"
+        premium: "KVM Premium SSD"
 
     nova:
       with_subcapacities: true
       with_subresources: true
+      with_hw_version_resources: true # TODO: remove when Cortex integration goes live
       flavor_selection:
         required_extra_specs: { "vmware:hv_enabled" : "True" } # consider only VMware flavors
       hypervisor_selection:
@@ -89,6 +97,19 @@ limes:
         score_ignores_disk: true
         score_ignores_ram: true
       ignored_traits: [ CUSTOM_HW_SAPPHIRE_RAPIDS ]
+      category_for_split_flavor:
+        - { key: 'instances_hana_.+_v2', value: {name: 'per_flavor_hana_sapphire_rapids', display_name: 'HANA Flavors (Sapphire Rapids)'} }
+        - { key: 'instances_hana_.+', value: {name: 'per_flavor_hana_cascade_lake', display_name: 'HANA Flavors (Cascade Lake)'} }
+
+    designate:
+      prometheus_config:
+        api:
+          url: http://prometheus-openstack.prometheus-openstack.svc:9090
+        queries:
+          zones: count(openstack_designate_zones{project_id="{{.ProjectUUID}}",status!="DELETED"})
+          recordsets_per_zone: max(openstack_designate_recordsets{project_id="{{.ProjectUUID}}"})
+
+    swift: {}
 
   # Map with entries like:
   #
@@ -97,6 +118,11 @@ limes:
   #     rabbitmq_user: hare
   #     rabbitmq_password: blowfish
   passwords: DEFINED_IN_VALUES_FILE
+
+  # Values for the $LIMES_API_DOMAIN_NAME_{V1,V2} environment variables. Must be supplied in regional values.
+  api_domain_names:
+    v1: null
+    v2: null
 
   # This section of the YAML must be identical to the "clusters" section of the
   # Limes configuration file.
@@ -114,6 +140,11 @@ limes:
   resources:
     enabled: false
 
+  # May contain the `spec` section of an OpenstackSeed object.
+  # Intended for giving specialized role assignments to customers as part of support tickets
+  # (esp. cross-domain role assignments that are difficult to set up without cloud-admin access).
+  customer_seed: null
+
 postgresql:
   postgresVersion: 18
   persistence:
@@ -124,6 +155,8 @@ postgresql:
   users:
     limes: {}
   sharedMemoryLimit: 128Mi
+
+  priorityClassName: important-payload
 
   config:
     log_min_duration_statement: 250
@@ -195,7 +228,7 @@ pgmetrics:
             FROM project_az_resources pazr
             JOIN az_resources azr ON azr.id = pazr.az_resource_id
             JOIN resources r ON r.id = azr.resource_id
-            WHERE azr.az = 'total' 
+            WHERE azr.az = 'total'
               AND pazr.usage > pazr.quota
               AND NOT (r.path = 'swift/capacity' AND pazr.usage < pazr.quota + 1099511627776)
           metrics:
@@ -210,24 +243,6 @@ pgmetrics:
             - count:
                 usage: "GAUGE"
                 description: "Number of projects in the Limes DB"
-
-        limes_project_resources_by_type:
-          query: >
-            SELECT s.type AS service, r.name AS resource, COUNT(*) AS count
-            FROM project_resources pr
-            JOIN resources r ON r.id = pr.resource_id
-            JOIN services s ON s.id = r.service_id
-            GROUP BY s.type, r.name
-          metrics:
-            - service:
-                usage: "LABEL"
-                description: "Service type"
-            - resource:
-                usage: "LABEL"
-                description: "Resource name"
-            - count:
-                usage: "GAUGE"
-                description: "Number of projects that have a project_resources entry for this service and resource"
 
         # This metric is federated into prometheus-kubernetes for alerting in
         # Kubernikus. (Low free Swift quota means Kubernikus might become unable to

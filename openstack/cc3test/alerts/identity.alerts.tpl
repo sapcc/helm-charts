@@ -1,0 +1,243 @@
+groups:
+- name: cc3test-identity.alerts
+  rules:
+  - alert: OpenstackKeystoneApiDown
+    expr: |
+        cc3test_status{type="api",
+            name=~"TestIdentityApi_.+",
+            phase="call"
+        } == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "Openstack Keystone API is down"
+      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-api/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "Openstack Keystone API is down"
+      summary: "Openstack Keystone API is down"
+
+  - alert: OpenstackKeystoneApiFlapping
+    expr: |
+        changes(cc3test_status{type="api",
+            name=~"TestIdentityApi_.+",
+            phase="call"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "Openstack Keystone API is flapping"
+      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-api/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "Openstack Keystone API is flapping"
+      summary: "Openstack Keystone API is flapping"
+
+  - alert: ActiveDirectoryNodeDown
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_host_datapath.+",
+            phase="call"
+        } == 0
+    for: 15m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "active_dir"
+      context: "active_dir"
+      meta: "An ActiveDirectory node {{`{{ $labels.name }}`}} is down"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "An ActiveDirectory node {{`{{ $labels.name }}`}} is not accepting connections. The remaining node should continue service."
+      summary: "An ActiveDirectory node {{`{{ $labels.name }}`}} is down"
+
+  - alert: ActiveDirectoryConnectFailed
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_url_datapath.+",
+            phase="call"
+        } == 0
+    for: 15m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "active_dir"
+      context: "active_dir"
+      meta: "ldap.global.cloud.sap is down"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "The LDAP-LB endpoint (active directory) is not accepting connections."
+      summary: "ldap.global.cloud.sap is down"
+
+  - alert: ActiveDirectorySearchUsersFailed
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_search_user.+",
+            phase="call"
+        } == 0
+    for: 20m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "active_dir"
+      context: "active_dir"
+      meta: "LDAP user searches fail"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "LDAP (active directory) user searches fail"
+      summary: "LDAP user searches fail"
+
+  - alert: ActiveDirectorySearchGroupsFailed
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_search_group.+",
+            phase="call"
+        } == 0
+    for: 20m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "active_dir"
+      context: "active_dir"
+      meta: "LDAP group searches fail"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "LDAP (active directory) group searches fail"
+      summary: "LDAP group searches fail"
+
+  - alert: ExchangeWebServiceDown
+    expr: |
+        cc3test_status{type="datapath",
+            name=~"TestLdap_ews_datapath.+",
+            phase="call"
+        } == 0
+    for: 15m
+    labels:
+      severity: info
+      support_group: identity
+      service: "active_dir"
+      context: "active_dir"
+      meta: "SAP https://autodiscover.sap.com/ews/healthcheck.htm reports down"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAP Exchange webservice is not healthy. Usually due to lacking internet connectivity. Password updates will fail."
+      summary: "SAP https://autodiscover.sap.com/ews/healthcheck.htm reports down"
+
+  - alert: OidcDiscoveryDown
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_oidc_discovery",phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "OIDC discovery endpoint down"
+      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "OIDC discovery endpoint for {{`{{ $labels.service }}`}} cannot be reached. Federated authentication and SSO logins may be degraded or unavailable."
+      summary: "OIDC discovery endpoint down"
+
+  - alert: OIDCTokenValidatonFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_token_validation", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "OpenStack OIDC token validation failed"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "OIDC token validation for {{`{{ $labels.service }}`}} is failing. Users with OIDC tokens cannot authenticate to OpenStack services and federated authentication workflow is broken."
+      summary: "OIDC token Validation Failed"
+
+  - alert: KeystoneFederationAuthFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_keystone_federation_auth", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "Keystone federated authentication failed"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "Keystone federated authentication for {{`{{ $labels.service }}`}} is failing. Users cannot authenticate using federated identity providers and SSO workflows are broken."
+      summary: "Keystone federated authentication failed"
+
+  - alert: OIDCAuthenticationCacheFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_authentication_with_cache", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "OIDC Authentication failed with caching"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "OIDC authentication with caching for {{`{{ $labels.service }}`}} is failing. This may cause performance degradation and increased load on the OIDC provider due to repeated validation requests."
+      summary: "OIDC Authentication failed with caching"
+
+  - alert: OIDCAuthOpenstackAPIFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestOIDCAuthIntegration_oidc_auth_with_openstack_api", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "OIDC authentication using OpenStack api failed"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "OIDC authentication through OpenStack API for {{`{{ $labels.service }}`}} is failing. CLI and SDK users cannot authenticate using OIDC tokens and automated workflows are broken."
+      summary: "OIDC authentication using OpenStack api failed"

@@ -54,9 +54,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "cluster-api-core.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "cluster-api-core.fullname" .) .Values.serviceAccount.name }}
+{{- $default := (include "cluster-api-core.fullname" .) }}
+{{- with .Values.serviceAccount }}
+{{- if .create }}
+{{- default $default .name }}
 {{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- default "default" .name }}
+{{- end }}
 {{- end }}
 {{- end }}

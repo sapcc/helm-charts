@@ -16,13 +16,14 @@ metadata:
 spec:
   replicas: {{ .Values.pod.replicas.metadata }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  {{- $strategy := dig "metadata" "podReplacementStrategy" .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy .Values.pod.lifecycle.upgrades.deployments.overrides }}
   strategy:
-    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
-    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    type: {{ $strategy }}
+    {{- if eq $strategy "RollingUpdate" }}
     rollingUpdate:
       maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
-    {{ end }}
+    {{- end }}
   selector:
     matchLabels:
       name: nova-api-metadata
@@ -43,13 +44,16 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "name" "nova-api-metadata") | include "utils.topology.constraints" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
       initContainers:
-      {{- tuple . (dict "service" (include "nova.helpers.api_db" .) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.db_service" (tuple . "api")) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
@@ -129,8 +133,8 @@ spec:
               items:
               - key:  nova.conf
                 path: nova.conf
-              - key:  nova-api.conf
-                path: nova-api-metadata.conf
+              - key:  nova-api-metadata.conf
+                path: nova-api.conf
               - key:  api-paste.ini
                 path: api-paste.ini
               - key:  policy.yaml
@@ -156,8 +160,8 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: cell1.conf
-                path: nova.conf.d/cell1.conf
+              - key: cell0.conf
+                path: nova.conf.d/cell0.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.osprofiler.enabled }}

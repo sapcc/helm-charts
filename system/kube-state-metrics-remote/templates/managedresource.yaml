@@ -16,6 +16,8 @@ apiVersion: resources.gardener.cloud/v1alpha1
 kind: ManagedResource
 metadata:
   name: {{ template "mrname" $obj }}
+  labels:
+  {{- include "kube-state-metrics-remote.labels" $ | nindent 4 }}
 spec:
   secretRefs:
   - name: {{ template "mrname" $obj }}
@@ -24,6 +26,8 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ template "mrname" $obj }}
+  labels:
+  {{- include "kube-state-metrics-remote.labels" $ | nindent 4 }}
 type: Opaque
 data:
   objects.yaml: {{ $doc | b64enc }}

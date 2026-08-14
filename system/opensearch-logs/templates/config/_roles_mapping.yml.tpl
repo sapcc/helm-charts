@@ -114,10 +114,21 @@ storage:
   - "storage"
   - "storage2"
 
-{{- if .Values.qalogs.enabled }}
-otel:
+{{- if eq .Values.global.region "qa-de-1" }}
+security_analytics_full_access:
   reserved: false
   users:
-  - "otel"
-  - "otel2"
+  - "securityanalytics"
+  backend_roles:
+  - VAULT_QA_ROLE_CYBER-SECURITY_METADATA_READ
+
+alerting_full_access:
+  reserved: false
+  users:
+  - "securityanalytics"
+
+siem_terraform_operator:
+  reserved: false
+  users:
+  - "securityanalytics"
 {{- end }}

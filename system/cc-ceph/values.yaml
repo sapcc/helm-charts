@@ -1,5 +1,6 @@
 owner-info:
   support-group: containers
+  service: ceph
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/cc-ceph
 
 rook-ceph:
@@ -45,11 +46,13 @@ clusterName: ceph-cluster
 mon:
   count: 5
   nodeRole: ceph-mon
+  allowMultiplePerNode: false
+# failureDomainLabel: topology.kubernetes.io/zone
 
 resources:
   osd:
     limits:
-      memory: 8192Mi #no limits for osds leads to osd taking all available memory
+      memory: 8192Mi          # no limits for osds leads to osd taking all available memory
     requests:
       memory: 8192Mi
 
@@ -71,6 +74,9 @@ pool:
 
 mgr:
   nodeRole: ceph-mon
+
+monitoring:
+  interval: 30s
 
 storage:
   useAllNodes: false
@@ -99,7 +105,7 @@ dashboard:
 objectstore:
   enabled: true
   name: objectstore
-  enabledAPIs: [] # empty - all enabled. See: https://docs.ceph.com/en/reef/radosgw/config-ref/#confval-rgw_enable_apis
+  enabledAPIs: []                # empty - all enabled. See: https://docs.ceph.com/en/reef/radosgw/config-ref/#confval-rgw_enable_apis
   gateway:
     # Here we can set RGW config options without restarting RGW daemon
     # Listed options will be set to mon config db to not restart daemon
@@ -139,6 +145,7 @@ objectstore:
   service:
     name: ceph-objectstore-external
     port: 443
+    targetPort: 443
     externalIPs:
       - 10.0.0.1
     public:
@@ -261,6 +268,20 @@ objectstore:
           TRACK_LATENCY_BY_USER: "true"
           TRACK_LATENCY_BY_BUCKET: "true"
           TRACK_LATENCY_BY_TENANT: "true"
+          # --- Audit trail (RabbitMQ) — OFF by default ---
+          # Non-sensitive settings only. To enable, set AUDIT_ENABLED "true",
+          # set the URL/queue below, and populate `secret:` further down.
+          AUDIT_ENABLED: "false"
+          # AUDIT_RABBITMQ_URL: "amqp://rabbitmq-host:5672/"    # host only, NO credentials
+          # AUDIT_QUEUE_NAME: "keystone.notifications.info"
+
+        # --- Audit credentials (Secret via *vault) — OFF by default ---
+        # Empty `secret` => no Secret rendered, no sidecar-env-secret annotation.
+        # To enable, set the two *vault refs (and AUDIT_ENABLED "true" above).
+        secretName: "prysm-sidecar-secret"
+        secret: {}
+        #   AUDIT_RABBITMQ_USERNAME: "*vault(secret/rabbitmq/audit, field: username)"
+        #   AUDIT_RABBITMQ_PASSWORD: "*vault(secret/rabbitmq/audit, field: password)"
 
   prysmDiskHealth:
     repository:
@@ -270,7 +291,7 @@ objectstore:
 
 rgwTargetPlacements:
   #  enabled: false deprecate rgwTargetPlacements.enabled because it is true on all envs
-  useRookCRD: false # !!!WARNING set 'true' only for new clusters. Upgrade will not work now.
+  useRookCRD: false               # !!!WARNING set 'true' only for new clusters. Upgrade will not work now.
 
 blockrbdpool:
   enabled: false

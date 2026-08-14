@@ -1,18 +1,20 @@
 {{- $values := .Values.alerts }}
 {{- if $values.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "apic-exporter-%s" $path | replace "/" "-" }}
+  name: {{ printf "apic-exporter-%s" $path | replace "/" "-" | trimSuffix ".tpl" }}
   labels:
     app: apic-exporter
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+{{- with $ }}
+{{ tpl (printf "%s" $bytes) . | indent 2 }}
+{{- end }}
 
 {{- end }}
 {{- end }}

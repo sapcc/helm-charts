@@ -10,12 +10,12 @@ api_paste_config = /etc/neutron/api-paste.ini
 
 pagination_max_limit = 500
 max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
-max_routes = {{.Values.max_routes | default 256}}
+max_routes = {{.Values.max_routes }}
 
 allow_overlapping_ips = true
 core_plugin = ml2
 
-service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}},flavors{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}{{- if .Values.vpnaas.enabled }},vpnaas{{- end }}
+service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}},flavors{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}{{- if .Values.vpnaas.enabled }},asr1k-vpnaas{{- end }}
 
 default_router_type = {{required "A valid .Values.default_router_type required!" .Values.default_router_type}}
 router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver required!" .Values.router_scheduler_driver}}
@@ -182,6 +182,9 @@ disconnected_subnets_mode = true
 
 [customdns]
 enabled = true
+{{- if .Values.customdns.matches }}
+config_file = /etc/neutron/customdns.yaml
+{{- else }}
 {{- if .Values.customdns.upstream_dns_servers }}
 upstream_dns_servers = {{ join "," .Values.customdns.upstream_dns_servers }}
 {{- end }}
@@ -190,5 +193,6 @@ project_ids = {{ join "," .Values.customdns.project_ids }}
 {{- end }}
 {{- if .Values.customdns.domain_name_prefixes }}
 domain_name_prefixes = {{ join "," .Values.customdns.domain_name_prefixes }}
+{{- end }}
 {{- end }}
 {{- end }}

@@ -1,0 +1,69 @@
+schema:
+  type: object
+  properties:
+    allowlist:
+      type: array
+      items:
+        description: positive allowlist entry
+        type: object
+        properties:
+          # matchers
+          matchNamespace:
+            type: string
+          matchRepository:
+            type: string
+          # documentation
+          justification:
+            type: string
+          # pod-level properties
+          mayUseHostNetwork:
+            type: boolean
+          mayUseHostPID:
+            type: boolean
+          # container-level properties
+          mayUsePrivilegeEscalation:
+            type: boolean
+          mayBePrivileged:
+            type: boolean
+          mayUseCapabilities:
+            type: array
+            items:
+              description: capability
+              type: string
+            minItems: 0
+          # volume-level properties
+          mayReadHostPathVolumes:
+            type: array
+            items:
+              description: host path of the volume
+              type: string
+            minItems: 0
+          mayWriteHostPathVolumes:
+            type: array
+            items:
+              description: host path of the volume
+              type: string
+            minItems: 0
+        minItems: 0
+
+testValues:
+  allowlist:
+    - matchNamespace: foo
+      matchRepository: test-app/unprivileged
+      justification: |
+        This rule is used in unit tests only.
+        If represents a pod that requests hardly any special privileges.
+      mayUseCapabilities: [ FOO ]
+
+    - matchNamespace: foo
+      matchRepository: test-app/highly-privileged
+      justification: |
+        This rule is used in unit tests only.
+        It represents a pod that requests every possible type of privilege.
+      mayUseHostNetwork: true
+      mayUseHostPID: true
+      mayUsePrivilegeEscalation: true
+      mayBePrivileged: true
+      mayUseCapabilities: [ FOO, SYS_ADMIN ]
+      mayReadHostPathVolumes: [ / ]
+      mayWriteHostPathVolumes: [ / ]

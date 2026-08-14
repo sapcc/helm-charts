@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -17,13 +17,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: biossettings.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -31,6 +33,8 @@ spec:
     kind: BIOSSettings
     listKind: BIOSSettingsList
     plural: biossettings
+    shortNames:
+      - bioss
     singular: biossettings
   scope: Cluster
   versions:
@@ -78,36 +82,37 @@ spec:
             spec:
               description: BIOSSettingsSpec defines the desired state of BIOSSettings.
               properties:
+                retryPolicy:
+                  description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                  properties:
+                    maxAttempts:
+                      description: |-
+                        MaxAttempts is the maximum number of automatic retry attempts after failure.
+                        0 means no automatic retries. Must be between 0 and 10 inclusive.
+                        If not set, the operator-level default is used.
+                      format: int32
+                      maximum: 10
+                      minimum: 0
+                      type: integer
+                  type: object
                 serverMaintenancePolicy:
                   description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                   type: string
                 serverMaintenanceRef:
-                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BiosSetting has requested for the referred server.
+                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BIOSSettings has requested for the referred server.
                   properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
                     name:
                       description: Name is the name of the referenced object.
                       type: string
                     namespace:
                       description: Namespace is the namespace of the referenced object.
                       type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
                   required:
-                    - apiVersion
-                    - kind
                     - name
                     - namespace
-                    - uid
                   type: object
                 serverRef:
-                  description: ServerRef is a reference to a specific server to apply bios setting on.
+                  description: ServerRef is a reference to a specific server to apply the BIOS settings on.
                   properties:
                     name:
                       default: ""
@@ -124,18 +129,16 @@ spec:
                     - message: serverRef is immutable
                       rule: self == oldSelf
                 settingsFlow:
-                  description: SettingsFlow contains BIOS settings sequence to apply on the BIOS in given order
+                  description: SettingsFlow contains the BIOS settings sequence to apply in the given order.
                   items:
                     properties:
                       name:
-                        description: Name is the name of the flow item
+                        description: Name is the name of the flow item.
                         maxLength: 1000
                         minLength: 1
                         type: string
                       priority:
-                        description: |-
-                          Priority defines the order of applying the settings
-                          any int greater than 0. lower number have higher Priority (ie; lower number is applied first)
+                        description: Priority defines the order of applying the settings. Lower numbers have higher priority (i.e. lower numbers are applied first).
                         format: int32
                         maximum: 2147483645
                         minimum: 1
@@ -143,7 +146,7 @@ spec:
                       settings:
                         additionalProperties:
                           type: string
-                        description: 'Settings contains software (eg: BIOS, BMC) settings as map'
+                        description: Settings contains software (e.g. BIOS, BMC) settings as a map.
                         type: object
                     required:
                       - name
@@ -151,7 +154,7 @@ spec:
                     type: object
                   type: array
                 version:
-                  description: 'Version contains software (eg: BIOS, BMC) version this settings applies to'
+                  description: Version specifies the software version (e.g. BIOS, BMC) these settings apply to.
                   type: string
               required:
                 - version
@@ -215,7 +218,12 @@ spec:
                       - type
                     type: object
                   type: array
+                failedAttempts:
+                  description: FailedAttempts is the number of automatic retry attempts made after failure.
+                  format: int32
+                  type: integer
                 flowState:
+                  description: FlowState is a list of individual BIOSSettings operation flows.
                   items:
                     properties:
                       conditions:
@@ -275,17 +283,17 @@ spec:
                           type: object
                         type: array
                       flowState:
-                        description: State represents the current state of the bios configuration task for current priority.
+                        description: State represents the current state of the BIOS settings update for the current priority.
                         type: string
                       lastAppliedTime:
                         description: LastAppliedTime represents the timestamp when the last setting was successfully applied.
                         format: date-time
                         type: string
                       name:
-                        description: Name identifies current priority settings from the Spec
+                        description: Name identifies the current priority settings from the spec.
                         type: string
                       priority:
-                        description: Priority identifies the settings priority from the Spec
+                        description: Priority identifies the settings priority from the spec.
                         format: int32
                         type: integer
                     type: object
@@ -294,8 +302,12 @@ spec:
                   description: LastAppliedTime represents the timestamp when the last setting was successfully applied.
                   format: date-time
                   type: string
+                observedGeneration:
+                  description: ObservedGeneration is the most recent generation observed by the controller.
+                  format: int64
+                  type: integer
                 state:
-                  description: State represents the current state of the bios configuration task.
+                  description: State represents the current state of the BIOS settings update.
                   type: string
               type: object
           type: object
@@ -309,13 +321,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: biossettingssets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -323,6 +337,8 @@ spec:
     kind: BIOSSettingsSet
     listKind: BIOSSettingsSetList
     plural: biossettingssets
+    shortNames:
+      - biosss
     singular: biossettingsset
   scope: Cluster
   versions:
@@ -377,49 +393,35 @@ spec:
               description: BIOSSettingsSetSpec defines the desired state of BIOSSettingsSet.
               properties:
                 biosSettingsTemplate:
-                  description: BiosSettingsTemplate defines the template for the BIOSSettings Resource to be applied to the servers.
+                  description: BIOSSettingsTemplate defines the template for the BIOSSettings resource to be applied to the servers.
                   properties:
+                    retryPolicy:
+                      description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                      properties:
+                        maxAttempts:
+                          description: |-
+                            MaxAttempts is the maximum number of automatic retry attempts after failure.
+                            0 means no automatic retries. Must be between 0 and 10 inclusive.
+                            If not set, the operator-level default is used.
+                          format: int32
+                          maximum: 10
+                          minimum: 0
+                          type: integer
+                      type: object
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                       type: string
-                    serverMaintenanceRef:
-                      description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BiosSetting has requested for the referred server.
-                      properties:
-                        apiVersion:
-                          description: APIVersion is the API version of the referenced object.
-                          type: string
-                        kind:
-                          description: Kind is the kind of the referenced object.
-                          type: string
-                        name:
-                          description: Name is the name of the referenced object.
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of the referenced object.
-                          type: string
-                        uid:
-                          description: UID is the uid of the referenced object.
-                          type: string
-                      required:
-                        - apiVersion
-                        - kind
-                        - name
-                        - namespace
-                        - uid
-                      type: object
                     settingsFlow:
-                      description: SettingsFlow contains BIOS settings sequence to apply on the BIOS in given order
+                      description: SettingsFlow contains the BIOS settings sequence to apply in the given order.
                       items:
                         properties:
                           name:
-                            description: Name is the name of the flow item
+                            description: Name is the name of the flow item.
                             maxLength: 1000
                             minLength: 1
                             type: string
                           priority:
-                            description: |-
-                              Priority defines the order of applying the settings
-                              any int greater than 0. lower number have higher Priority (ie; lower number is applied first)
+                            description: Priority defines the order of applying the settings. Lower numbers have higher priority (i.e. lower numbers are applied first).
                             format: int32
                             maximum: 2147483645
                             minimum: 1
@@ -427,7 +429,7 @@ spec:
                           settings:
                             additionalProperties:
                               type: string
-                            description: 'Settings contains software (eg: BIOS, BMC) settings as map'
+                            description: Settings contains software (e.g. BIOS, BMC) settings as a map.
                             type: object
                         required:
                           - name
@@ -435,7 +437,7 @@ spec:
                         type: object
                       type: array
                     version:
-                      description: 'Version contains software (eg: BIOS, BMC) version this settings applies to'
+                      description: Version specifies the software version (e.g. BIOS, BMC) these settings apply to.
                       type: string
                   required:
                     - version
@@ -491,27 +493,27 @@ spec:
               description: BIOSSettingsSetStatus defines the observed state of BIOSSettingsSet.
               properties:
                 availableBIOSSettings:
-                  description: AvailableBIOSVersion is the number of Settings current created by the set.
+                  description: AvailableBIOSSettings is the number of BIOSSettings currently created by the set.
                   format: int32
                   type: integer
                 completedBIOSSettings:
-                  description: CompletedBIOSSettings is the total number of completed server in the set.
+                  description: CompletedBIOSSettings is the total number of completed BIOSSettings in the set.
                   format: int32
                   type: integer
                 failedBIOSSettings:
-                  description: FailedBIOSSettings is the total number of failed server in the set.
+                  description: FailedBIOSSettings is the total number of failed BIOSSettings in the set.
                   format: int32
                   type: integer
                 fullyLabeledServers:
-                  description: FullyLabeledServers is the number of server in the set.
+                  description: FullyLabeledServers is the number of servers in the set.
                   format: int32
                   type: integer
                 inProgressBIOSSettings:
-                  description: InProgressBIOSSettings is the total number of server in the set that are currently in InProgress.
+                  description: InProgressBIOSSettings is the total number of BIOSSettings in the set that are currently in progress.
                   format: int32
                   type: integer
                 pendingBIOSSettings:
-                  description: PendingBIOSSettings is the total number of pending server in the set.
+                  description: PendingBIOSSettings is the total number of pending BIOSSettings in the set.
                   format: int32
                   type: integer
               type: object
@@ -526,13 +528,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: biosversions.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -540,6 +544,8 @@ spec:
     kind: BIOSVersion
     listKind: BIOSVersionList
     plural: biosversions
+    shortNames:
+      - biosv
     singular: biosversion
   scope: Cluster
   versions:
@@ -547,8 +553,8 @@ spec:
         - jsonPath: .spec.version
           name: BIOSVersion
           type: string
-        - jsonPath: .spec.updateType
-          name: ForceUpdate
+        - jsonPath: .spec.updatePolicy
+          name: UpdatePolicy
           type: string
         - jsonPath: .spec.serverRef.name
           name: ServerRef
@@ -597,15 +603,13 @@ spec:
               description: BIOSVersionSpec defines the desired state of BIOSVersion.
               properties:
                 image:
-                  description: details regarding the image to use to upgrade to given BIOS version
+                  description: Image specifies the image to use to upgrade to the given BIOS version.
                   properties:
                     URI:
-                      description: The URI of the software image to update/install."
+                      description: URI is the URI of the software image to install.
                       type: string
                     secretRef:
-                      description: |-
-                        ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                        to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
+                      description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
                       properties:
                         name:
                           description: name is unique within a namespace to reference a secret resource.
@@ -616,41 +620,42 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     transferProtocol:
-                      description: The network protocol that the server's update service uses to retrieve 'ImageURI'
+                      description: TransferProtocol is the network protocol used to retrieve the image URI.
                       type: string
                   required:
                     - URI
+                  type: object
+                retryPolicy:
+                  description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                  properties:
+                    maxAttempts:
+                      description: |-
+                        MaxAttempts is the maximum number of automatic retry attempts after failure.
+                        0 means no automatic retries. Must be between 0 and 10 inclusive.
+                        If not set, the operator-level default is used.
+                      format: int32
+                      maximum: 10
+                      minimum: 0
+                      type: integer
                   type: object
                 serverMaintenancePolicy:
                   description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                   type: string
                 serverMaintenanceRef:
-                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that that Controller has requested for the referred server.
+                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the controller has requested for the referred server.
                   properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
                     name:
                       description: Name is the name of the referenced object.
                       type: string
                     namespace:
                       description: Namespace is the namespace of the referenced object.
                       type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
                   required:
-                    - apiVersion
-                    - kind
                     - name
                     - namespace
-                    - uid
                   type: object
                 serverRef:
-                  description: ServerRef is a reference to a specific server to apply bios upgrade on.
+                  description: ServerRef is a reference to a specific server to apply the BIOS upgrade on.
                   properties:
                     name:
                       default: ""
@@ -667,10 +672,10 @@ spec:
                     - message: serverRef is immutable
                       rule: self == oldSelf
                 updatePolicy:
-                  description: UpdatePolicy An indication of whether the server's upgrade service should bypass vendor update policies
+                  description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                   type: string
                 version:
-                  description: Version contains a BIOS version to upgrade to
+                  description: Version specifies the BIOS version to upgrade to.
                   type: string
               required:
                 - image
@@ -680,7 +685,7 @@ spec:
               description: BIOSVersionStatus defines the observed state of BIOSVersion.
               properties:
                 conditions:
-                  description: Conditions represents the latest available observations of the Bios version upgrade state.
+                  description: Conditions represents the latest available observations of the BIOS version upgrade state.
                   items:
                     description: Condition contains details for one aspect of the current state of this API Resource.
                     properties:
@@ -735,8 +740,16 @@ spec:
                       - type
                     type: object
                   type: array
+                failedAttempts:
+                  description: FailedAttempts is the number of automatic retry attempts made after failure.
+                  format: int32
+                  type: integer
+                observedGeneration:
+                  description: ObservedGeneration is the most recent generation observed by the controller.
+                  format: int64
+                  type: integer
                 state:
-                  description: State represents the current state of the bios configuration task.
+                  description: State represents the current state of the BIOS upgrade task.
                   type: string
                 upgradeTask:
                   description: UpgradeTask contains the state of the Upgrade Task created by the BMC
@@ -767,13 +780,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: biosversionsets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -781,6 +796,8 @@ spec:
     kind: BIOSVersionSet
     listKind: BIOSVersionSetList
     plural: biosversionsets
+    shortNames:
+      - biosvs
     singular: biosversionset
   scope: Cluster
   versions:
@@ -835,18 +852,16 @@ spec:
               description: BIOSVersionSetSpec defines the desired state of BIOSVersionSet.
               properties:
                 biosVersionTemplate:
-                  description: BIOSVersionTemplate defines the template for the BIOSversion Resource to be applied to the servers.
+                  description: BIOSVersionTemplate defines the template for the BIOSVersion resource to be applied to the servers.
                   properties:
                     image:
-                      description: details regarding the image to use to upgrade to given BIOS version
+                      description: Image specifies the image to use to upgrade to the given BIOS version.
                       properties:
                         URI:
-                          description: The URI of the software image to update/install."
+                          description: URI is the URI of the software image to install.
                           type: string
                         secretRef:
-                          description: |-
-                            ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                            to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
+                          description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
                           properties:
                             name:
                               description: name is unique within a namespace to reference a secret resource.
@@ -857,44 +872,32 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         transferProtocol:
-                          description: The network protocol that the server's update service uses to retrieve 'ImageURI'
+                          description: TransferProtocol is the network protocol used to retrieve the image URI.
                           type: string
                       required:
                         - URI
                       type: object
+                    retryPolicy:
+                      description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                      properties:
+                        maxAttempts:
+                          description: |-
+                            MaxAttempts is the maximum number of automatic retry attempts after failure.
+                            0 means no automatic retries. Must be between 0 and 10 inclusive.
+                            If not set, the operator-level default is used.
+                          format: int32
+                          maximum: 10
+                          minimum: 0
+                          type: integer
+                      type: object
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                       type: string
-                    serverMaintenanceRef:
-                      description: ServerMaintenanceRef is a reference to a ServerMaintenance object that that Controller has requested for the referred server.
-                      properties:
-                        apiVersion:
-                          description: APIVersion is the API version of the referenced object.
-                          type: string
-                        kind:
-                          description: Kind is the kind of the referenced object.
-                          type: string
-                        name:
-                          description: Name is the name of the referenced object.
-                          type: string
-                        namespace:
-                          description: Namespace is the namespace of the referenced object.
-                          type: string
-                        uid:
-                          description: UID is the uid of the referenced object.
-                          type: string
-                      required:
-                        - apiVersion
-                        - kind
-                        - name
-                        - namespace
-                        - uid
-                      type: object
                     updatePolicy:
-                      description: UpdatePolicy An indication of whether the server's upgrade service should bypass vendor update policies
+                      description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                       type: string
                     version:
-                      description: Version contains a BIOS version to upgrade to
+                      description: Version specifies the BIOS version to upgrade to.
                       type: string
                   required:
                     - image
@@ -967,7 +970,7 @@ spec:
                   format: int32
                   type: integer
                 inProgressBIOSVersion:
-                  description: InProgressBIOSVersion is the total number of BIOSVersion in the set that are currently in InProgress.
+                  description: InProgressBIOSVersion is the total number of BIOSVersion resources in the set that are currently in progress.
                   format: int32
                   type: integer
                 pendingBIOSVersion:
@@ -986,13 +989,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: bmcs.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1060,9 +1065,7 @@ spec:
               description: BMCSpec defines the desired state of BMC
               properties:
                 access:
-                  description: |-
-                    Endpoint allows inline configuration of network access details for the BMC.
-                    Use this field if access settings like address are to be configured directly within the BMC resource.
+                  description: Endpoint specifies inline network access details for the BMC.
                   properties:
                     ip:
                       description: IP is the IP address of the BMC.
@@ -1076,8 +1079,8 @@ spec:
                       rule: self == oldSelf
                 bmcSecretRef:
                   description: |-
-                    BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
-                    required to access the BMC. This secret includes sensitive information such as usernames and passwords.
+                    BMCSecretRef is a reference to the BMCSecret object that contains the credentials
+                    required to access the BMC.
                   properties:
                     name:
                       default: ""
@@ -1110,23 +1113,17 @@ spec:
                   description: BMCUUID is the unique identifier for the BMC as defined in Redfish API.
                   type: string
                 consoleProtocol:
-                  description: |-
-                    ConsoleProtocol specifies the protocol to be used for console access to the BMC.
-                    This field is optional and can be omitted if console access is not required.
+                  description: ConsoleProtocol specifies the protocol to be used for console access to the BMC.
                   properties:
                     name:
-                      description: |-
-                        Name specifies the name of the console protocol.
-                        This could be a protocol such as "SSH", "Telnet", etc.
+                      description: Name specifies the name of the console protocol.
                       enum:
                         - IPMI
                         - SSH
                         - SSHLenovo
                       type: string
                     port:
-                      description: |-
-                        Port specifies the port number used for console access.
-                        This port is used by the specified console protocol to establish connections.
+                      description: Port specifies the port number used for console access.
                       format: int32
                       type: integer
                   required:
@@ -1134,9 +1131,7 @@ spec:
                     - port
                   type: object
                 endpointRef:
-                  description: |-
-                    EndpointRef is a reference to the Kubernetes object that contains the endpoint information for the BMC.
-                    This reference is typically used to locate the BMC endpoint within the cluster.
+                  description: EndpointRef is a reference to the Endpoint object that contains the network access information for the BMC.
                   properties:
                     name:
                       default: ""
@@ -1152,20 +1147,17 @@ spec:
                   x-kubernetes-validations:
                     - message: endpointRef is immutable
                       rule: self == oldSelf
+                hostname:
+                  description: Hostname is the hostname of the BMC.
+                  type: string
                 protocol:
-                  description: |-
-                    Protocol specifies the protocol to be used for communicating with the BMC.
-                    It could be a standard protocol such as IPMI or Redfish.
+                  description: Protocol specifies the protocol to be used for communicating with the BMC.
                   properties:
                     name:
-                      description: |-
-                        Name specifies the name of the protocol.
-                        This could be a protocol such as "IPMI", "Redfish", etc.
+                      description: Name specifies the name of the protocol.
                       type: string
                     port:
-                      description: |-
-                        Port specifies the port number used for communication.
-                        This port is used by the specified protocol to establish connections.
+                      description: Port specifies the port number used for communication.
                       format: int32
                       type: integer
                     scheme:
@@ -1241,26 +1233,28 @@ spec:
                       - type
                     type: object
                   type: array
+                eventsSubscriptionLink:
+                  description: EventsSubscriptionLink is the link to the events subscription of the bmc.
+                  type: string
                 firmwareVersion:
                   description: FirmwareVersion is the version of the firmware currently running on the BMC.
                   type: string
                 ip:
-                  description: |-
-                    IP is the IP address of the BMC.
-                    The type is specified as string and is schemaless.
+                  description: IP is the IP address of the BMC.
                   type: string
                 lastResetTime:
                   description: LastResetTime is the timestamp of the last reset operation performed on the BMC.
                   format: date-time
                   type: string
                 macAddress:
-                  description: |-
-                    MACAddress is the MAC address of the BMC.
-                    The format is validated using a regular expression pattern.
+                  description: MACAddress is the MAC address of the BMC.
                   pattern: ^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$
                   type: string
                 manufacturer:
                   description: Manufacturer is the name of the BMC manufacturer.
+                  type: string
+                metricsReportSubscriptionLink:
+                  description: MetricsReportSubscriptionLink is the link to the metrics report subscription of the bmc.
                   type: string
                 model:
                   description: Model is the model number or name of the BMC.
@@ -1292,13 +1286,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: bmcsecrets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1306,6 +1302,8 @@ spec:
     kind: BMCSecret
     listKind: BMCSecretList
     plural: bmcsecrets
+    shortNames:
+      - bmcsec
     singular: bmcsecret
   scope: Cluster
   versions:
@@ -1377,13 +1375,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: bmcsettings.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1430,7 +1430,7 @@ spec:
               description: BMCSettingsSpec defines the desired state of BMCSettings.
               properties:
                 BMCRef:
-                  description: BMCRef is a reference to a specific BMC to apply setting to.
+                  description: BMCRef is a reference to a specific BMC to apply settings to.
                   properties:
                     name:
                       default: ""
@@ -1444,8 +1444,21 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                   x-kubernetes-validations:
-                    - message: serverRef is immutable
+                    - message: BMCRef is immutable
                       rule: self == oldSelf
+                retryPolicy:
+                  description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                  properties:
+                    maxAttempts:
+                      description: |-
+                        MaxAttempts is the maximum number of automatic retry attempts after failure.
+                        0 means no automatic retries. Must be between 0 and 10 inclusive.
+                        If not set, the operator-level default is used.
+                      format: int32
+                      maximum: 10
+                      minimum: 0
+                      type: integer
+                  type: object
                 serverMaintenancePolicy:
                   description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
                   type: string
@@ -1459,41 +1472,149 @@ spec:
                       serverMaintenanceRef:
                         description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the BMCSettings has requested for the referred server.
                         properties:
-                          apiVersion:
-                            description: APIVersion is the API version of the referenced object.
-                            type: string
-                          kind:
-                            description: Kind is the kind of the referenced object.
-                            type: string
                           name:
                             description: Name is the name of the referenced object.
                             type: string
                           namespace:
                             description: Namespace is the namespace of the referenced object.
                             type: string
-                          uid:
-                            description: UID is the uid of the referenced object.
-                            type: string
                         required:
-                          - apiVersion
-                          - kind
                           - name
                           - namespace
-                          - uid
                         type: object
                     type: object
                   type: array
                 settings:
                   additionalProperties:
                     type: string
-                  description: SettingsMap contains bmc settings as map
+                  description: SettingsMap contains BMC settings as a map.
                   type: object
+                variables:
+                  description: Variables is a list of variables that can be used in the settings for templating.
+                  items:
+                    properties:
+                      key:
+                        description: Key is the name of the variable to be used in the BMCSettingsTemplate format.
+                        maxLength: 63
+                        minLength: 1
+                        type: string
+                      valueFrom:
+                        description: ValueFrom defines a simple single source for the variable value.
+                        properties:
+                          configMapKeyRef:
+                            description: ConfigMapKeyRef points to a namespaced ConfigMap key.
+                            properties:
+                              key:
+                                description: Key is the key within the referenced object.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                              name:
+                                description: Name is the referenced object name.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                              namespace:
+                                description: Namespace is the referenced object namespace.
+                                maxLength: 63
+                                minLength: 1
+                                type: string
+                            required:
+                              - key
+                              - name
+                              - namespace
+                            type: object
+                          fieldRef:
+                            description: |-
+                              FieldRef sources the value from a field of the BMCSettings object itself (e.g. spec.BMCRef.name).
+                              Only string-typed fields are supported; integer, bool, or map fields will cause a resolution error.
+                            properties:
+                              fieldPath:
+                                description: |-
+                                  FieldPath is the path of the field on the BMCSettings object to select (e.g. spec.BMCRef.name).
+                                  Only string-typed fields are supported; integer, bool, or map fields will cause a resolution error.
+                                maxLength: 256
+                                minLength: 1
+                                type: string
+                            required:
+                              - fieldPath
+                            type: object
+                          objectFieldRef:
+                            description: |-
+                              ObjectFieldRef sources the value from a field of a named related object.
+                              The kind must be "BMC". Supports dot-path navigation and bracket notation for map keys
+                              containing dots or slashes (e.g. metadata.labels[kubernetes.metal.cloud.sap/nodename]).
+                            properties:
+                              fieldPath:
+                                description: |-
+                                  FieldPath is the path of the field to select on the target object.
+                                  Supports dot-path navigation (e.g. metadata.name) and bracket notation for map
+                                  keys containing dots or slashes (e.g. metadata.labels[topology.kubernetes.io/region]).
+                                maxLength: 256
+                                minLength: 1
+                                type: string
+                              kind:
+                                description: Kind is the API kind of the object to read the field from (e.g. "BMC").
+                                maxLength: 63
+                                minLength: 1
+                                type: string
+                              name:
+                                description: |-
+                                  Name is the name of the object to read the field from.
+                                  Supports $(VAR) substitution using previously resolved variables in declaration order.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                            required:
+                              - fieldPath
+                              - kind
+                              - name
+                            type: object
+                          secretKeyRef:
+                            description: SecretKeyRef points to a namespaced Secret key.
+                            properties:
+                              key:
+                                description: Key is the key within the referenced object.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                              name:
+                                description: Name is the referenced object name.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                              namespace:
+                                description: Namespace is the referenced object namespace.
+                                maxLength: 63
+                                minLength: 1
+                                type: string
+                            required:
+                              - key
+                              - name
+                              - namespace
+                            type: object
+                        type: object
+                        x-kubernetes-validations:
+                          - message: exactly one of fieldRef, objectFieldRef, configMapKeyRef, or secretKeyRef must be provided
+                            rule: '(has(self.fieldRef) ? 1 : 0) + (has(self.objectFieldRef) ? 1 : 0) + (has(self.configMapKeyRef) ? 1 : 0) + (has(self.secretKeyRef) ? 1 : 0) == 1'
+                          - message: objectFieldRef.kind must be 'BMC'
+                            rule: '!has(self.objectFieldRef) || self.objectFieldRef.kind == ''BMC'''
+                    required:
+                      - key
+                      - valueFrom
+                    type: object
+                  maxItems: 64
+                  type: array
                 version:
-                  description: Version defines the BMC firmware for which the settings should be applied.
+                  description: Version specifies the BMC firmware version for which the settings should be applied.
                   type: string
               required:
+                - BMCRef
                 - version
               type: object
+              x-kubernetes-validations:
+                - message: variable keys must be unique
+                  rule: '!has(self.variables) || self.variables.all(v, self.variables.filter(w, w.key == v.key).size() == 1)'
             status:
               description: BMCSettingsStatus defines the observed state of BMCSettings.
               properties:
@@ -1553,8 +1674,476 @@ spec:
                       - type
                     type: object
                   type: array
+                failedAttempts:
+                  description: FailedAttempts is the number of automatic retry attempts made after failure.
+                  format: int32
+                  type: integer
+                observedGeneration:
+                  description: ObservedGeneration is the most recent generation observed by the controller.
+                  format: int64
+                  type: integer
                 state:
                   description: State represents the current state of the BMC configuration task.
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcsettingssets.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: bmcsettingssets.metal.ironcore.dev
+spec:
+  group: metal.ironcore.dev
+  names:
+    kind: BMCSettingsSet
+    listKind: BMCSettingsSetList
+    plural: bmcsettingssets
+    singular: bmcsettingsset
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.bmcSettingsTemplate.version
+          name: BMCVersion
+          type: string
+        - jsonPath: .status.fullyLabeledBMCs
+          name: TotalBMCs
+          type: integer
+        - jsonPath: .status.availableBMCSettings
+          name: AvailableBMCSettings
+          type: integer
+        - jsonPath: .status.pendingBMCSettings
+          name: Pending
+          type: integer
+        - jsonPath: .status.inProgressBMCSettings
+          name: InProgress
+          type: integer
+        - jsonPath: .status.completedBMCSettings
+          name: Completed
+          type: integer
+        - jsonPath: .status.failedBMCSettings
+          name: Failed
+          type: integer
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: BMCSettingsSet is the Schema for the bmcsettingssets API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: BMCSettingsSetSpec defines the desired state of BMCSettingsSet.
+              properties:
+                bmcSelector:
+                  description: BMCSelector specifies a label selector to identify the BMCs to be selected.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                      items:
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      type: object
+                  type: object
+                  x-kubernetes-map-type: atomic
+                bmcSettingsTemplate:
+                  description: BMCSettingsTemplate defines the template for the BMCSettings resource to be applied to the BMCs.
+                  properties:
+                    retryPolicy:
+                      description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                      properties:
+                        maxAttempts:
+                          description: |-
+                            MaxAttempts is the maximum number of automatic retry attempts after failure.
+                            0 means no automatic retries. Must be between 0 and 10 inclusive.
+                            If not set, the operator-level default is used.
+                          format: int32
+                          maximum: 10
+                          minimum: 0
+                          type: integer
+                      type: object
+                    serverMaintenancePolicy:
+                      description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
+                      type: string
+                    settings:
+                      additionalProperties:
+                        type: string
+                      description: SettingsMap contains BMC settings as a map.
+                      type: object
+                    variables:
+                      description: Variables is a list of variables that can be used in the settings for templating.
+                      items:
+                        properties:
+                          key:
+                            description: Key is the name of the variable to be used in the BMCSettingsTemplate format.
+                            maxLength: 63
+                            minLength: 1
+                            type: string
+                          valueFrom:
+                            description: ValueFrom defines a simple single source for the variable value.
+                            properties:
+                              configMapKeyRef:
+                                description: ConfigMapKeyRef points to a namespaced ConfigMap key.
+                                properties:
+                                  key:
+                                    description: Key is the key within the referenced object.
+                                    maxLength: 253
+                                    minLength: 1
+                                    type: string
+                                  name:
+                                    description: Name is the referenced object name.
+                                    maxLength: 253
+                                    minLength: 1
+                                    type: string
+                                  namespace:
+                                    description: Namespace is the referenced object namespace.
+                                    maxLength: 63
+                                    minLength: 1
+                                    type: string
+                                required:
+                                  - key
+                                  - name
+                                  - namespace
+                                type: object
+                              fieldRef:
+                                description: |-
+                                  FieldRef sources the value from a field of the BMCSettings object itself (e.g. spec.BMCRef.name).
+                                  Only string-typed fields are supported; integer, bool, or map fields will cause a resolution error.
+                                properties:
+                                  fieldPath:
+                                    description: |-
+                                      FieldPath is the path of the field on the BMCSettings object to select (e.g. spec.BMCRef.name).
+                                      Only string-typed fields are supported; integer, bool, or map fields will cause a resolution error.
+                                    maxLength: 256
+                                    minLength: 1
+                                    type: string
+                                required:
+                                  - fieldPath
+                                type: object
+                              objectFieldRef:
+                                description: |-
+                                  ObjectFieldRef sources the value from a field of a named related object.
+                                  The kind must be "BMC". Supports dot-path navigation and bracket notation for map keys
+                                  containing dots or slashes (e.g. metadata.labels[kubernetes.metal.cloud.sap/nodename]).
+                                properties:
+                                  fieldPath:
+                                    description: |-
+                                      FieldPath is the path of the field to select on the target object.
+                                      Supports dot-path navigation (e.g. metadata.name) and bracket notation for map
+                                      keys containing dots or slashes (e.g. metadata.labels[topology.kubernetes.io/region]).
+                                    maxLength: 256
+                                    minLength: 1
+                                    type: string
+                                  kind:
+                                    description: Kind is the API kind of the object to read the field from (e.g. "BMC").
+                                    maxLength: 63
+                                    minLength: 1
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name is the name of the object to read the field from.
+                                      Supports $(VAR) substitution using previously resolved variables in declaration order.
+                                    maxLength: 253
+                                    minLength: 1
+                                    type: string
+                                required:
+                                  - fieldPath
+                                  - kind
+                                  - name
+                                type: object
+                              secretKeyRef:
+                                description: SecretKeyRef points to a namespaced Secret key.
+                                properties:
+                                  key:
+                                    description: Key is the key within the referenced object.
+                                    maxLength: 253
+                                    minLength: 1
+                                    type: string
+                                  name:
+                                    description: Name is the referenced object name.
+                                    maxLength: 253
+                                    minLength: 1
+                                    type: string
+                                  namespace:
+                                    description: Namespace is the referenced object namespace.
+                                    maxLength: 63
+                                    minLength: 1
+                                    type: string
+                                required:
+                                  - key
+                                  - name
+                                  - namespace
+                                type: object
+                            type: object
+                            x-kubernetes-validations:
+                              - message: exactly one of fieldRef, objectFieldRef, configMapKeyRef, or secretKeyRef must be provided
+                                rule: '(has(self.fieldRef) ? 1 : 0) + (has(self.objectFieldRef) ? 1 : 0) + (has(self.configMapKeyRef) ? 1 : 0) + (has(self.secretKeyRef) ? 1 : 0) == 1'
+                              - message: objectFieldRef.kind must be 'BMC'
+                                rule: '!has(self.objectFieldRef) || self.objectFieldRef.kind == ''BMC'''
+                        required:
+                          - key
+                          - valueFrom
+                        type: object
+                      maxItems: 64
+                      type: array
+                    version:
+                      description: Version specifies the BMC firmware version for which the settings should be applied.
+                      type: string
+                  required:
+                    - version
+                  type: object
+                  x-kubernetes-validations:
+                    - message: variable keys must be unique
+                      rule: '!has(self.variables) || self.variables.all(v, self.variables.filter(w, w.key == v.key).size() == 1)'
+              required:
+                - bmcSelector
+                - bmcSettingsTemplate
+              type: object
+            status:
+              description: BMCSettingsSetStatus defines the observed state of BMCSettingsSet.
+              properties:
+                availableBMCSettings:
+                  description: AvailableBMCSettings is the number of BMCSettings currently created by the set.
+                  format: int32
+                  type: integer
+                completedBMCSettings:
+                  description: CompletedBMCSettings is the total number of completed BMCSettings in the set.
+                  format: int32
+                  type: integer
+                failedBMCSettings:
+                  description: FailedBMCSettings is the total number of failed BMCSettings in the set.
+                  format: int32
+                  type: integer
+                fullyLabeledBMCs:
+                  description: FullyLabeledBMCs is the number of BMCs in the set.
+                  format: int32
+                  type: integer
+                inProgressBMCSettings:
+                  description: InProgressBMCSettings is the total number of BMCSettings in the set that are currently in progress.
+                  format: int32
+                  type: integer
+                pendingBMCSettings:
+                  description: PendingBMCSettings is the total number of pending BMCSettings in the set.
+                  format: int32
+                  type: integer
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcusers.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: bmcusers.metal.ironcore.dev
+spec:
+  group: metal.ironcore.dev
+  names:
+    kind: BMCUser
+    listKind: BMCUserList
+    plural: bmcusers
+    shortNames:
+      - bmcu
+    singular: bmcuser
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .status.id
+          name: ID
+          type: string
+        - jsonPath: .spec.userName
+          name: UserName
+          type: string
+        - jsonPath: .spec.roleID
+          name: RoleID
+          type: string
+        - jsonPath: .status.lastRotation
+          name: LastRotation
+          type: date
+        - jsonPath: .status.passwordExpiration
+          name: PasswordExpiration
+          type: date
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: BMCUser is the Schema for the bmcusers API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: BMCUserSpec defines the desired state of BMCUser.
+              properties:
+                bmcRef:
+                  description: BMCRef references the BMC this user should be created on.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                bmcSecretRef:
+                  description: |-
+                    BMCSecretRef references the BMCSecret containing the credentials for this user.
+                    If not set, the operator will generate a secure password based on BMC manufacturer requirements.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                description:
+                  description: Description is a description for the BMC user.
+                  type: string
+                roleID:
+                  description: RoleID is the ID of the role to assign to the user.
+                  type: string
+                rotationPeriod:
+                  description: |-
+                    RotationPeriod defines how often the password should be rotated.
+                    If not set, the password will not be rotated.
+                  type: string
+                userName:
+                  description: UserName is the username of the BMC user.
+                  type: string
+              required:
+                - roleID
+                - userName
+              type: object
+            status:
+              description: BMCUserStatus defines the observed state of BMCUser.
+              properties:
+                effectiveBMCSecretRef:
+                  description: |-
+                    EffectiveBMCSecretRef references the BMCSecret currently used for this user.
+                    This may differ from Spec.BMCSecretRef if the operator generated a password.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                id:
+                  description: ID is the identifier of the user in the BMC system.
+                  type: string
+                lastRotation:
+                  description: LastRotation is the timestamp of the last password rotation.
+                  format: date-time
+                  type: string
+                passwordExpiration:
+                  description: PasswordExpiration is the timestamp when the password will expire.
+                  format: date-time
                   type: string
               type: object
           type: object
@@ -1568,13 +2157,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: bmcversions.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1582,6 +2173,8 @@ spec:
     kind: BMCVersion
     listKind: BMCVersionList
     plural: bmcversions
+    shortNames:
+      - bmcv
     singular: bmcversion
   scope: Cluster
   versions:
@@ -1589,8 +2182,8 @@ spec:
         - jsonPath: .spec.version
           name: BMCVersion
           type: string
-        - jsonPath: .spec.updateType
-          name: updateType
+        - jsonPath: .spec.updatePolicy
+          name: UpdatePolicy
           type: string
         - jsonPath: .spec.bmcRef.name
           name: BMCRef
@@ -1653,15 +2246,13 @@ spec:
                     - message: bmcRef is immutable
                       rule: self == oldSelf
                 image:
-                  description: details regarding the image to use to upgrade to given BMC version
+                  description: Image specifies the image to use to upgrade to the given BMC version.
                   properties:
                     URI:
-                      description: The URI of the software image to update/install."
+                      description: URI is the URI of the software image to install.
                       type: string
                     secretRef:
-                      description: |-
-                        ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                        to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
+                      description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
                       properties:
                         name:
                           description: name is unique within a namespace to reference a secret resource.
@@ -1672,47 +2263,48 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     transferProtocol:
-                      description: The network protocol that the server's update service uses to retrieve 'ImageURI'
+                      description: TransferProtocol is the network protocol used to retrieve the image URI.
                       type: string
                   required:
                     - URI
+                  type: object
+                retryPolicy:
+                  description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                  properties:
+                    maxAttempts:
+                      description: |-
+                        MaxAttempts is the maximum number of automatic retry attempts after failure.
+                        0 means no automatic retries. Must be between 0 and 10 inclusive.
+                        If not set, the operator-level default is used.
+                      format: int32
+                      maximum: 10
+                      minimum: 0
+                      type: integer
                   type: object
                 serverMaintenancePolicy:
                   description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
                   type: string
                 serverMaintenanceRefs:
-                  description: ServerMaintenanceRefs are references to a ServerMaintenance objects that Controller has requested for the each of the related server.
+                  description: ServerMaintenanceRefs are references to ServerMaintenance objects that the controller has requested for the related servers.
                   items:
                     description: ObjectReference is the namespaced name reference to an object.
                     properties:
-                      apiVersion:
-                        description: APIVersion is the API version of the referenced object.
-                        type: string
-                      kind:
-                        description: Kind is the kind of the referenced object.
-                        type: string
                       name:
                         description: Name is the name of the referenced object.
                         type: string
                       namespace:
                         description: Namespace is the namespace of the referenced object.
                         type: string
-                      uid:
-                        description: UID is the uid of the referenced object.
-                        type: string
                     required:
-                      - apiVersion
-                      - kind
                       - name
                       - namespace
-                      - uid
                     type: object
                   type: array
                 updatePolicy:
-                  description: UpdatePolicy is an indication of whether the server's upgrade service should bypass vendor update policies
+                  description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                   type: string
                 version:
-                  description: Version contains a BMC version to upgrade to
+                  description: Version specifies the BMC version to upgrade to.
                   type: string
               required:
                 - image
@@ -1777,11 +2369,19 @@ spec:
                       - type
                     type: object
                   type: array
+                failedAttempts:
+                  description: FailedAttempts is the number of automatic retry attempts made after failure.
+                  format: int32
+                  type: integer
+                observedGeneration:
+                  description: ObservedGeneration is the most recent generation observed by the controller.
+                  format: int64
+                  type: integer
                 state:
                   description: State represents the current state of the BMC configuration task.
                   type: string
                 upgradeTask:
-                  description: UpgradeTask contains the state of the Upgrade Task created by the BMC
+                  description: UpgradeTask contains the state of the upgrade task created by the BMC.
                   properties:
                     URI:
                       description: URI is the URI of the task created by the BMC for the BIOS upgrade.
@@ -1809,13 +2409,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: bmcversionsets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1823,6 +2425,8 @@ spec:
     kind: BMCVersionSet
     listKind: BMCVersionSetList
     plural: bmcversionsets
+    shortNames:
+      - bmcvs
     singular: bmcversionset
   scope: Cluster
   versions:
@@ -1877,7 +2481,7 @@ spec:
               description: BMCVersionSetSpec defines the desired state of BMCVersionSet.
               properties:
                 bmcSelector:
-                  description: BMCSelector specifies a label selector to identify the BMC that are to be selected.
+                  description: BMCSelector specifies a label selector to identify the BMCs to be selected.
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -1921,18 +2525,16 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 bmcVersionTemplate:
-                  description: BMCVersionTemplate defines the template for the BMCversion Resource to be applied to the servers.
+                  description: BMCVersionTemplate defines the template for the BMCVersion resource to be applied to the BMCs.
                   properties:
                     image:
-                      description: details regarding the image to use to upgrade to given BMC version
+                      description: Image specifies the image to use to upgrade to the given BMC version.
                       properties:
                         URI:
-                          description: The URI of the software image to update/install."
+                          description: URI is the URI of the software image to install.
                           type: string
                         secretRef:
-                          description: |-
-                            ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                            to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
+                          description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
                           properties:
                             name:
                               description: name is unique within a namespace to reference a secret resource.
@@ -1943,47 +2545,32 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         transferProtocol:
-                          description: The network protocol that the server's update service uses to retrieve 'ImageURI'
+                          description: TransferProtocol is the network protocol used to retrieve the image URI.
                           type: string
                       required:
                         - URI
                       type: object
+                    retryPolicy:
+                      description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                      properties:
+                        maxAttempts:
+                          description: |-
+                            MaxAttempts is the maximum number of automatic retry attempts after failure.
+                            0 means no automatic retries. Must be between 0 and 10 inclusive.
+                            If not set, the operator-level default is used.
+                          format: int32
+                          maximum: 10
+                          minimum: 0
+                          type: integer
+                      type: object
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
                       type: string
-                    serverMaintenanceRefs:
-                      description: ServerMaintenanceRefs are references to a ServerMaintenance objects that Controller has requested for the each of the related server.
-                      items:
-                        description: ObjectReference is the namespaced name reference to an object.
-                        properties:
-                          apiVersion:
-                            description: APIVersion is the API version of the referenced object.
-                            type: string
-                          kind:
-                            description: Kind is the kind of the referenced object.
-                            type: string
-                          name:
-                            description: Name is the name of the referenced object.
-                            type: string
-                          namespace:
-                            description: Namespace is the namespace of the referenced object.
-                            type: string
-                          uid:
-                            description: UID is the uid of the referenced object.
-                            type: string
-                        required:
-                          - apiVersion
-                          - kind
-                          - name
-                          - namespace
-                          - uid
-                        type: object
-                      type: array
                     updatePolicy:
-                      description: UpdatePolicy is an indication of whether the server's upgrade service should bypass vendor update policies
+                      description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                       type: string
                     version:
-                      description: Version contains a BMC version to upgrade to
+                      description: Version specifies the BMC version to upgrade to.
                       type: string
                   required:
                     - image
@@ -1996,27 +2583,27 @@ spec:
               description: BMCVersionSetStatus defines the observed state of BMCVersionSet.
               properties:
                 availableBMCVersion:
-                  description: AvailableBMCVersion is the number of BMCVersion current created by the set.
+                  description: AvailableBMCVersion is the number of BMCVersion resources currently created by the set.
                   format: int32
                   type: integer
                 completedBMCVersion:
-                  description: CompletedBMCVersion is the total number of completed BMCVersion in the set.
+                  description: CompletedBMCVersion is the total number of completed BMCVersion resources in the set.
                   format: int32
                   type: integer
                 failedBMCVersion:
-                  description: FailedBMCVersion is the total number of failed BMCVersion in the set.
+                  description: FailedBMCVersion is the total number of failed BMCVersion resources in the set.
                   format: int32
                   type: integer
                 fullyLabeledBMCs:
-                  description: FullyLabeledBMCs is the number of server in the set.
+                  description: FullyLabeledBMCs is the number of BMCs in the set.
                   format: int32
                   type: integer
                 inProgressBMCVersion:
-                  description: InProgressBMCVersion is the total number of BMCVersion in the set that are currently in InProgress.
+                  description: InProgressBMCVersion is the total number of BMCVersion resources in the set that are currently in progress.
                   format: int32
                   type: integer
                 pendingBMCVersion:
-                  description: PendingBMCVersion is the total number of pending BMCVersion in the set.
+                  description: PendingBMCVersion is the total number of pending BMCVersion resources in the set.
                   format: int32
                   type: integer
               type: object
@@ -2031,13 +2618,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: endpoints.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2045,6 +2634,8 @@ spec:
     kind: Endpoint
     listKind: EndpointList
     plural: endpoints
+    shortNames:
+      - mep
     singular: endpoint
   scope: Cluster
   versions:
@@ -2104,13 +2695,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: serverbootconfigurations.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2118,6 +2711,8 @@ spec:
     kind: ServerBootConfiguration
     listKind: ServerBootConfigurationList
     plural: serverbootconfigurations
+    shortNames:
+      - sbc
     singular: serverbootconfiguration
   scope: Namespaced
   versions:
@@ -2164,8 +2759,8 @@ spec:
               properties:
                 ignitionSecretRef:
                   description: |-
-                    IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
-                    the ignition configuration for the server. This field is optional and can be omitted if not specified.
+                    IgnitionSecretRef is a reference to the Secret object that contains
+                    the ignition configuration for the server.
                   properties:
                     name:
                       default: ""
@@ -2179,9 +2774,7 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 image:
-                  description: |-
-                    Image specifies the boot image to be used for the server.
-                    This field is optional and can be omitted if not specified.
+                  description: Image specifies the boot image to be used for the server.
                   type: string
                 serverRef:
                   description: ServerRef is a reference to the server for which this boot configuration is intended.
@@ -2274,13 +2867,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: serverclaims.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2288,6 +2883,8 @@ spec:
     kind: ServerClaim
     listKind: ServerClaimList
     plural: serverclaims
+    shortNames:
+      - scl
     singular: serverclaim
   scope: Namespaced
   versions:
@@ -2334,8 +2931,8 @@ spec:
               properties:
                 ignitionSecretRef:
                   description: |-
-                    IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
-                    the ignition configuration for the server. This field is optional and can be omitted if not specified.
+                    IgnitionSecretRef is a reference to the Secret object that contains
+                    the ignition configuration for the server.
                   properties:
                     name:
                       default: ""
@@ -2355,9 +2952,7 @@ spec:
                   description: Power specifies the desired power state of the server.
                   type: string
                 serverRef:
-                  description: |-
-                    ServerRef is a reference to a specific server to be claimed.
-                    This field is optional and can be omitted if the server is to be selected using ServerSelector.
+                  description: ServerRef is a reference to a specific server to be claimed.
                   properties:
                     name:
                       default: ""
@@ -2374,9 +2969,7 @@ spec:
                     - message: serverRef is immutable
                       rule: self == oldSelf
                 serverSelector:
-                  description: |-
-                    ServerSelector specifies a label selector to identify the server to be claimed.
-                    This field is optional and can be omitted if a specific server is referenced using ServerRef.
+                  description: ServerSelector specifies a label selector to identify the server to be claimed.
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -2422,6 +3015,36 @@ spec:
                   x-kubernetes-validations:
                     - message: serverSelector is immutable
                       rule: self == oldSelf
+                tolerations:
+                  description: Tolerations allow a ServerClaim to bind to a Server with matching taints.
+                  items:
+                    description: |-
+                      Toleration allows a ServerClaim to tolerate taints on a Server so that
+                      the claim can be bound to a server that would otherwise be restricted.
+                    properties:
+                      effect:
+                        description: Effect indicates the taint effect to tolerate.
+                        enum:
+                          - NoBind
+                          - Evict
+                        type: string
+                      key:
+                        description: Key is the taint key that the toleration applies to.
+                        minLength: 1
+                        type: string
+                      operator:
+                        description: Operator represents the key's relationship to the value.
+                        enum:
+                          - Equal
+                          - Exists
+                        type: string
+                      value:
+                        description: Value is the taint value the toleration matches to.
+                        type: string
+                    required:
+                      - key
+                    type: object
+                  type: array
               required:
                 - image
                 - power
@@ -2449,13 +3072,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: servermaintenances.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2463,6 +3088,8 @@ spec:
     kind: ServerMaintenance
     listKind: ServerMaintenanceList
     plural: servermaintenances
+    shortNames:
+      - sm
     singular: servermaintenance
   scope: Namespaced
   versions:
@@ -2482,6 +3109,9 @@ spec:
         - jsonPath: .status.state
           name: State
           type: string
+        - jsonPath: .spec.priority
+          name: Priority
+          type: integer
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -2510,9 +3140,22 @@ spec:
             spec:
               description: ServerMaintenanceSpec defines the desired state of a ServerMaintenance
               properties:
+                locatorLED:
+                  description: |-
+                    LocatorLED specifies the desired state of the server's locator LED during maintenance.
+                    When maintenance ends, the locator LED is turned off.
+                  type: string
                 policy:
                   description: Policy specifies the maintenance policy to be enforced on the server.
                   type: string
+                priority:
+                  default: 0
+                  description: |-
+                    Priority determines ordering when multiple ServerMaintenance resources target the same server.
+                    Higher values are processed first. If priorities are equal, older resources are processed first.
+                    If omitted, priority is treated as 0.
+                  format: int32
+                  type: integer
                 serverBootConfigurationTemplate:
                   description: ServerBootConfigurationTemplate specifies the boot configuration to be applied to the server during maintenance.
                   properties:
@@ -2520,12 +3163,12 @@ spec:
                       description: Name specifies the name of the boot configuration.
                       type: string
                     spec:
-                      description: Parameters specify the parameters to be used for rendering the boot configuration.
+                      description: Spec specifies the boot configuration to be rendered.
                       properties:
                         ignitionSecretRef:
                           description: |-
-                            IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
-                            the ignition configuration for the server. This field is optional and can be omitted if not specified.
+                            IgnitionSecretRef is a reference to the Secret object that contains
+                            the ignition configuration for the server.
                           properties:
                             name:
                               default: ""
@@ -2539,9 +3182,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         image:
-                          description: |-
-                            Image specifies the boot image to be used for the server.
-                            This field is optional and can be omitted if not specified.
+                          description: Image specifies the boot image to be used for the server.
                           type: string
                         serverRef:
                           description: ServerRef is a reference to the server for which this boot configuration is intended.
@@ -2597,18 +3238,286 @@ spec:
       subresources:
         status: {}
 ---
+# Source: metal-operator/templates/crd/metal.ironcore.dev_serverreadinessrules.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: serverreadinessrules.metal.ironcore.dev
+spec:
+  group: metal.ironcore.dev
+  names:
+    kind: ServerReadinessRule
+    listKind: ServerReadinessRuleList
+    plural: serverreadinessrules
+    singular: serverreadinessrule
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: ServerReadinessRule is the Schema for the serverreadinessrules API
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: spec defines the desired state of ServerReadinessRule
+              properties:
+                conditions:
+                  description: |-
+                    Conditions contains a list of the Server conditions that defines the specific
+                    criteria that must be met for taints to be managed on the target Server.
+                    The presence or status of these conditions directly triggers the application or removal of Server taints.
+                  items:
+                    description: |-
+                      ConditionRequirement defines a specific Server condition and the status value
+                      required to trigger the controller's action.
+                    properties:
+                      requiredStatus:
+                        description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: |-
+                          Type of server condition
+
+                          Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                        maxLength: 316
+                        minLength: 1
+                        type: string
+                    required:
+                      - requiredStatus
+                      - type
+                    type: object
+                  maxItems: 32
+                  minItems: 1
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - type
+                  x-kubernetes-list-type: map
+                  x-kubernetes-validations:
+                    - message: conditions is immutable
+                      rule: self == oldSelf
+                enforcementMode:
+                  description: |-
+                    EnforcementMode specifies how the controller maintains the desired state.
+                    enforcementMode is one of BootstrapOnly, Continuous.
+                    "BootstrapOnly" applies the configuration once during initial setup.
+                    "Continuous" ensures the state is monitored and corrected throughout the resource lifecycle.
+                  enum:
+                    - BootstrapOnly
+                    - Continuous
+                  type: string
+                  x-kubernetes-validations:
+                    - message: enforcementMode is immutable
+                      rule: self == oldSelf
+                serverSelector:
+                  description: ServerSelector limits the scope of this rule to a specific subset of Servers.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                      items:
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      type: object
+                  type: object
+                  x-kubernetes-map-type: atomic
+                  x-kubernetes-validations:
+                    - message: serverSelector is immutable
+                      rule: self == oldSelf
+                taint:
+                  description: |-
+                    Taint defines the specific Taint (Key, Value, and Effect) to be managed
+                    on Servers that meet the defined condition criteria.
+                  properties:
+                    effect:
+                      default: NoBind
+                      description: |-
+                        Effect indicates the effect of the taint on ServerClaims that do not
+                        tolerate the taint.
+                      enum:
+                        - NoBind
+                        - Evict
+                      type: string
+                    key:
+                      description: Key is the taint key to be applied to a server.
+                      minLength: 1
+                      type: string
+                    value:
+                      description: Value is the taint value corresponding to the taint key.
+                      type: string
+                  required:
+                    - key
+                  type: object
+                  x-kubernetes-validations:
+                    - message: taint key length must be at most 253 characters
+                      rule: self.key.size() <= 253
+                    - message: taint key is immutable
+                      rule: '!has(oldSelf.key) || self.key == oldSelf.key'
+                    - message: taint effect is immutable
+                      rule: '!has(oldSelf.effect) || self.effect == oldSelf.effect'
+                    - message: taint value is immutable
+                      rule: '!has(oldSelf.value) || self.value == oldSelf.value'
+              required:
+                - conditions
+                - enforcementMode
+                - serverSelector
+                - taint
+              type: object
+            status:
+              description: status defines the observed state of ServerReadinessRule
+              properties:
+                conditions:
+                  description: |-
+                    conditions represent the current state of the ServerReadinessRule resource.
+                    Each condition has a unique type and reflects the status of a specific aspect of the resource.
+
+                    Standard condition types include:
+                    - "Available": the resource is fully functional
+                    - "Progressing": the resource is being created or updated
+                    - "Degraded": the resource failed to reach or maintain its desired state
+
+                    The status of each condition is one of True, False, or Unknown.
+                  items:
+                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - type
+                  x-kubernetes-list-type: map
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
 # Source: metal-operator/templates/crd/metal.ironcore.dev_servers.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
+    metal-operator-remote-webhook-injector: "true"
+    clusterctl.cluster.x-k8s.io: ""
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: servers.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2616,12 +3525,14 @@ spec:
     kind: Server
     listKind: ServerList
     plural: servers
+    shortNames:
+      - srv
     singular: server
   scope: Cluster
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .spec.uuid
-          name: UUID
+        - jsonPath: .spec.systemUUID
+          name: SystemUUID
           type: string
         - jsonPath: .status.manufacturer
           name: Manufacturer
@@ -2695,17 +3606,15 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 bmc:
-                  description: |-
-                    BMC contains the access details for the BMC.
-                    This field is optional and can be omitted if no BMC access is specified.
+                  description: BMC contains the access details for the BMC.
                   properties:
                     address:
                       description: Address is the address of the BMC.
                       type: string
                     bmcSecretRef:
                       description: |-
-                        BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
-                        required to access the BMC. This secret includes sensitive information such as usernames and passwords.
+                        BMCSecretRef is a reference to the BMCSecret object that contains the credentials
+                        required to access the BMC.
                       properties:
                         name:
                           default: ""
@@ -2722,14 +3631,10 @@ spec:
                       description: Protocol specifies the protocol to be used for communicating with the BMC.
                       properties:
                         name:
-                          description: |-
-                            Name specifies the name of the protocol.
-                            This could be a protocol such as "IPMI", "Redfish", etc.
+                          description: Name specifies the name of the protocol.
                           type: string
                         port:
-                          description: |-
-                            Port specifies the port number used for communication.
-                            This port is used by the specified protocol to establish connections.
+                          description: Port specifies the port number used for communication.
                           format: int32
                           type: integer
                         scheme:
@@ -2745,9 +3650,7 @@ spec:
                     - protocol
                   type: object
                 bmcRef:
-                  description: |-
-                    BMCRef is a reference to the BMC object associated with this server.
-                    This field is optional and can be omitted if no BMC is associated with this server.
+                  description: BMCRef is a reference to the BMC object associated with this server.
                   properties:
                     name:
                       default: ""
@@ -2763,30 +3666,17 @@ spec:
                 bootConfigurationRef:
                   description: |-
                     BootConfigurationRef is a reference to a BootConfiguration object that specifies
-                    the boot configuration for this server. This field is optional and can be omitted
-                    if no boot configuration is specified.
+                    the boot configuration for this server.
                   properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
                     name:
                       description: Name is the name of the referenced object.
                       type: string
                     namespace:
                       description: Namespace is the namespace of the referenced object.
                       type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
                   required:
-                    - apiVersion
-                    - kind
                     - name
                     - namespace
-                    - uid
                   type: object
                 bootOrder:
                   description: BootOrder specifies the boot order of the server.
@@ -2814,87 +3704,64 @@ spec:
                 maintenanceBootConfigurationRef:
                   description: |-
                     MaintenanceBootConfigurationRef is a reference to a BootConfiguration object that specifies
-                    the boot configuration for this server during maintenance. This field is optional and can be omitted
+                    the boot configuration for this server during maintenance.
                   properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
                     name:
                       description: Name is the name of the referenced object.
                       type: string
                     namespace:
                       description: Namespace is the namespace of the referenced object.
                       type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
                   required:
-                    - apiVersion
-                    - kind
                     - name
                     - namespace
-                    - uid
                   type: object
                 power:
                   description: Power specifies the desired power state of the server.
                   type: string
-                serverClaimRef:
+                reclaimPolicy:
+                  default: Recycle
                   description: |-
-                    ServerClaimRef is a reference to a ServerClaim object that claims this server.
-                    This field is optional and can be omitted if no claim is associated with this server.
+                    ReclaimPolicy specifies how the server is reclaimed after use.
+                    Can be
+                    - Recycle (default), immediately transitioning the server to `Available` after use.
+                    - Retain, transitioning the server to `Released` after use, leaving `spec.serverClaimRef` set,
+                      transitioning to `Available` once `spec.serverClaimRef` is removed.
+                  enum:
+                    - Recycle
+                    - Retain
+                  type: string
+                serverClaimRef:
+                  description: ServerClaimRef is a reference to a ServerClaim object that claims this server.
                   properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
                     name:
                       description: Name is the name of the referenced object.
+                      maxLength: 253
                       type: string
+                      x-kubernetes-validations:
+                        - rule: self == oldSelf
                     namespace:
                       description: Namespace is the namespace of the referenced object.
+                      maxLength: 63
                       type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
+                      x-kubernetes-validations:
+                        - rule: self == oldSelf
                   required:
-                    - apiVersion
-                    - kind
                     - name
                     - namespace
-                    - uid
                   type: object
-                  x-kubernetes-validations:
-                    - message: serverClaimRef cannot be switched directly
-                      rule: self == null || oldSelf == null || self == oldSelf
                 serverMaintenanceRef:
                   description: ServerMaintenanceRef is a reference to a ServerMaintenance object that maintains this server.
                   properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
                     name:
                       description: Name is the name of the referenced object.
                       type: string
                     namespace:
                       description: Namespace is the namespace of the referenced object.
                       type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
                   required:
-                    - apiVersion
-                    - kind
                     - name
                     - namespace
-                    - uid
                   type: object
                 systemURI:
                   description: SystemURI is the unique URI for the server resource in REDFISH API.
@@ -2902,13 +3769,35 @@ spec:
                 systemUUID:
                   description: SystemUUID is the unique identifier for the server.
                   type: string
-                uuid:
-                  description: |-
-                    UUID is the unique identifier for the server.
-                    Deprecated in favor of systemUUID.
-                  type: string
+                taints:
+                  description: Taints control which ServerClaims can be bound to this server.
+                  items:
+                    description: |-
+                      Taint represents a taint applied to a Server that restricts which
+                      ServerClaims can be bound to it.
+                    properties:
+                      effect:
+                        default: NoBind
+                        description: |-
+                          Effect indicates the effect of the taint on ServerClaims that do not
+                          tolerate the taint.
+                        enum:
+                          - NoBind
+                          - Evict
+                        type: string
+                      key:
+                        description: Key is the taint key to be applied to a server.
+                        minLength: 1
+                        type: string
+                      value:
+                        description: Value is the taint value corresponding to the taint key.
+                        type: string
+                    required:
+                      - key
+                    type: object
+                  type: array
               required:
-                - uuid
+                - systemUUID
               type: object
             status:
               description: ServerStatus defines the observed state of Server.
@@ -3087,12 +3976,12 @@ spec:
                 storages:
                   description: Storages is a list of storages associated with the server.
                   items:
-                    description: Storage defines the details of one storage device
+                    description: Storage defines the details of one storage device.
                     properties:
                       drives:
                         description: Drives is a collection of drives associated with this storage.
                         items:
-                          description: StorageDrive defines the details of one storage drive
+                          description: StorageDrive defines the details of one storage drive.
                           properties:
                             capacity:
                               anyOf:
@@ -3108,7 +3997,7 @@ spec:
                               description: Model specifies the model of the storage device.
                               type: string
                             name:
-                              description: Name is the name of the storage interface.
+                              description: Name is the name of the storage drive.
                               type: string
                             state:
                               description: State specifies the state of the storage device.
@@ -3122,7 +4011,7 @@ spec:
                           type: object
                         type: array
                       name:
-                        description: Name is the name of the storage interface.
+                        description: Name is the name of the storage device.
                         type: string
                       state:
                         description: State specifies the state of the storage device.
@@ -3130,7 +4019,7 @@ spec:
                       volumes:
                         description: Volumes is a collection of volumes associated with this storage.
                         items:
-                          description: StorageVolume defines the details of one storage volume
+                          description: StorageVolume defines the details of one storage volume.
                           properties:
                             capacity:
                               anyOf:
@@ -3140,7 +4029,7 @@ spec:
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                             name:
-                              description: Name is the name of the storage interface.
+                              description: Name is the name of the storage volume.
                               type: string
                             raidType:
                               description: RAIDType specifies the RAID type of the associated Volume.
@@ -3180,7 +4069,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3211,7 +4100,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3248,7 +4137,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3281,7 +4170,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3312,7 +4201,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3349,7 +4238,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3382,7 +4271,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3413,7 +4302,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3450,7 +4339,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3483,7 +4372,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3514,7 +4403,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3551,7 +4440,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3572,6 +4461,37 @@ rules:
       - biosversionsets/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/bmc_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmc-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcs
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcs/status
+    verbs:
+      - get
 ---
 # Source: metal-operator/templates/rbac/bmc_editor_role.yaml
 # permissions for end users to edit bmcs.
@@ -3579,7 +4499,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3611,7 +4531,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3632,6 +4552,37 @@ rules:
       - bmcs/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/bmcsecret_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsecret-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsecrets
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsecrets/status
+    verbs:
+      - get
 ---
 # Source: metal-operator/templates/rbac/bmcsecret_editor_role.yaml
 # permissions for end users to edit bmcsecrets.
@@ -3639,7 +4590,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3671,7 +4622,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3704,7 +4655,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3735,7 +4686,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3772,7 +4723,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3793,6 +4744,208 @@ rules:
       - bmcsettings/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_editor_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the metal.ironcore.dev.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-editor-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_viewer_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to metal.ironcore.dev resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-viewer-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcuser_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcuser-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcuser_editor_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the metal.ironcore.dev.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcuser-editor-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcuser_viewer_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to metal.ironcore.dev resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcuser-viewer-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers/status
+    verbs:
+      - get
 # Source: metal-operator/templates/rbac/bmcversion_admin_role.yaml
 # This rule is not used by the project metal-operator itself.
 # It is provided to allow the cluster admin to help manage permissions for users.
@@ -3805,7 +4958,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3836,7 +4989,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3873,7 +5026,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3906,7 +5059,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3937,7 +5090,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3974,7 +5127,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3995,6 +5148,37 @@ rules:
       - bmcversionsets/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/endpoint_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: endpoint-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - endpoints
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - endpoints/status
+    verbs:
+      - get
 ---
 # Source: metal-operator/templates/rbac/endpoint_editor_role.yaml
 # permissions for end users to edit endpoints.
@@ -4002,7 +5186,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4034,7 +5218,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4061,7 +5245,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4086,7 +5270,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4103,13 +5287,21 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   name: metal-operator-manager-role
 rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
   - apiGroups:
       - ""
     resources:
@@ -4153,6 +5345,8 @@ rules:
       - bmcs
       - bmcsecrets
       - bmcsettings
+      - bmcsettingssets
+      - bmcusers
       - bmcversions
       - bmcversionsets
       - endpoints
@@ -4160,6 +5354,7 @@ rules:
       - serverclaims
       - serverconfigurations
       - servermaintenances
+      - serverreadinessrules
       - servers
     verbs:
       - create
@@ -4179,12 +5374,15 @@ rules:
       - bmcs/finalizers
       - bmcsecrets/finalizers
       - bmcsettings/finalizers
+      - bmcsettingssets/finalizers
+      - bmcusers/finalizers
       - bmcversions/finalizers
       - bmcversionsets/finalizers
       - endpoints/finalizers
       - serverbootconfigurations/finalizers
       - serverclaims/finalizers
       - servermaintenances/finalizers
+      - serverreadinessrules/finalizers
       - servers/finalizers
     verbs:
       - update
@@ -4198,17 +5396,51 @@ rules:
       - bmcs/status
       - bmcsecrets/status
       - bmcsettings/status
+      - bmcsettingssets/status
+      - bmcusers/status
       - bmcversions/status
       - bmcversionsets/status
       - endpoints/status
       - serverbootconfigurations/status
       - serverclaims/status
       - servermaintenances/status
+      - serverreadinessrules/status
       - servers/status
     verbs:
       - get
       - patch
       - update
+# Source: metal-operator/templates/rbac/server_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: server-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - servers
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - servers/status
+    verbs:
+      - get
 ---
 # Source: metal-operator/templates/rbac/server_editor_role.yaml
 # permissions for end users to edit servers.
@@ -4216,7 +5448,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4248,7 +5480,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4269,6 +5501,37 @@ rules:
       - servers/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/serverbootconfiguration_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: serverbootconfiguration-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverbootconfigurations
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverbootconfigurations/status
+    verbs:
+      - get
 ---
 # Source: metal-operator/templates/rbac/serverbootconfiguration_editor_role.yaml
 # permissions for end users to edit serverbootconfigurations.
@@ -4276,7 +5539,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4308,7 +5571,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4329,6 +5592,37 @@ rules:
       - serverbootconfigurations/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/serverclaim_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: serverclaim-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverclaims
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverclaims/status
+    verbs:
+      - get
 ---
 # Source: metal-operator/templates/rbac/serverclaim_editor_role.yaml
 # permissions for end users to edit serverclaims.
@@ -4336,7 +5630,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4368,7 +5662,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4401,7 +5695,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4432,7 +5726,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4469,7 +5763,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4490,13 +5784,120 @@ rules:
       - servermaintenances/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/serverreadinessrule_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: serverreadinessrule-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverreadinessrules
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverreadinessrules/status
+    verbs:
+      - get
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverreadinessrules/finalizers
+    verbs:
+      - update
+# Source: metal-operator/templates/rbac/serverreadinessrule_editor_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the metal.ironcore.dev.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: serverreadinessrule-editor-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverreadinessrules
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverreadinessrules/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/serverreadinessrule_viewer_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to metal.ironcore.dev resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: serverreadinessrule-viewer-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverreadinessrules
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverreadinessrules/status
+    verbs:
+      - get
 ---
 # Source: metal-operator/templates/rbac/metrics_auth_role_binding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4516,7 +5917,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4537,7 +5938,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4582,7 +5983,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-493d587-crds"
+    helm.sh/chart: "0.6.2-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
