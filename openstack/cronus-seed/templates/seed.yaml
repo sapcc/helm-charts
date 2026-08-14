@@ -47,6 +47,24 @@ spec:
         - name: cronus
           description: Cronus Service
           password: '{{ $.Values.global.cronus_service_password }}'
+        - name: cronus-exporter
+          description: Cronus Exporter Service Account
+          password: '{{ $.Values.global.cronus_exporter_password }}'
+          role_assignments:
+          - system: all
+            role: reader
+        - name: cronus-updater
+          description: Cronus Updater Service Account
+          password: '{{ $.Values.global.cronus_updater_password }}'
+          role_assignments:
+          - system: all
+            role: reader
+        - name: cronus-poller
+          description: Cronus Poller Service Account
+          password: '{{ $.Values.global.cronus_poller_password }}'
+          role_assignments:
+          - system: all
+            role: reader
     - name: monsoon3
       projects:
       - name: cronus-simulator
@@ -55,11 +73,35 @@ spec:
           role: email_admin # for monitoring
         - user: cronus@Default
           role: objectstore_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: email_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-updater@Default
+          role: email_admin # for monitoring
+        - user: cronus-updater@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-poller@Default
+          role: email_admin # for monitoring
+        - user: cronus-poller@Default
+          role: objectstore_admin # for monitoring
       - name: consulting_poc
         role_assignments:
         - user: cronus@Default
           role: email_admin # for monitoring
         - user: cronus@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: email_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-updater@Default
+          role: email_admin # for monitoring
+        - user: cronus-updater@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-poller@Default
+          role: email_admin # for monitoring
+        - user: cronus-poller@Default
           role: objectstore_admin # for monitoring
     - name: hcp03
       projects:
@@ -83,6 +125,10 @@ spec:
           role: email_router
         - user: cronus@Default
           role: service
+        - user: cronus-exporter@Default
+          role: keymanager_viewer # to read Barbican secrets for AWS credentials
+        - user: cronus-updater@Default
+          role: keymanager_viewer # to read Barbican secrets for AWS credentials
         swift:
           enabled: true
           containers:
