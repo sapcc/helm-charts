@@ -11,11 +11,13 @@ spec:
   domains:
   - name: {{ .Values.name }}
     users:
-    - name: {{ .Values.glance.users.name | quote }}
-      description: 'Read-only access to Glance images'
-      password: {{ .Values.glance.users.password | quote }}
+    {{- range .Values.users }}
+    - name: {{ .name | quote }}
+      description: {{ .description | quote }}
+      password: {{ .password | quote }}
       role_assignments:
-      {{- range .Values.glance.users.roleAssignment }}
+      {{- range .roleAssignments }}
       - project: {{ .project | quote }}
         role: {{ .role | quote }}
       {{- end }}
+    {{- end }}
