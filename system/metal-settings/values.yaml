@@ -101,6 +101,35 @@ bmcVersions:
       included: []
       excluded: []
 
+# Label keys used to build serverSelector/bmcSelector matchLabels and
+# matchExpressions in the generated BIOSSettingsSet/BMCSettingsSet/
+# BIOSVersionSet/BMCVersionSet resources.
+#
+# Override these per-cluster to support migrations where a newer/renamed
+# label group is used to identify servers (e.g. testing a new
+# "kubernetes.metal.cloud.sap/cluster-type" replacement on a subset of
+# clusters before rolling it out everywhere).
+labelKeys:
+  type: "kubernetes.metal.cloud.sap/type"
+  clusterType: "kubernetes.metal.cloud.sap/cluster-type"
+  serverName: "kubernetes.metal.cloud.sap/name"
+
+# apiVersion used for the generated BIOSSettingsSet/BMCSettingsSet/
+# BIOSVersionSet/BMCVersionSet resources.
+#
+# metal-operator (single-group project) serves these kinds under
+# "metal.ironcore.dev/v1alpha1". metal-maintenance-operator (multigroup
+# project) serves the same kinds under group-qualified versions, e.g.
+# "system.metal.ironcore.dev/v1alpha1" for BIOSSettingsSet/BIOSVersionSet and
+# "baseboard.metal.ironcore.dev/v1alpha1" for BMCSettingsSet/BMCVersionSet.
+# Override per-cluster to test migrating from metal-operator to
+# metal-maintenance-operator.
+apiVersions:
+  biosSettingsSet: "metal.ironcore.dev/v1alpha1"
+  bmcSettingsSet: "metal.ironcore.dev/v1alpha1"
+  biosVersionSet: "metal.ironcore.dev/v1alpha1"
+  bmcVersionSet: "metal.ironcore.dev/v1alpha1"
+
 # Cluster-specific values injected into the metal-bmc-settings ConfigMap.
 # These are region/cluster-level overrides consumed by BMCSettings variables at reconcile time.
 clusterConfig:
