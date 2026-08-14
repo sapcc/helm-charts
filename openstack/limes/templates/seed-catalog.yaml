@@ -1,6 +1,7 @@
 {{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
 {{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld"    -}}
-{{- $limes_url := .Values.limes.clusters.ccloud.catalog_url | required ".Values.limes.clusters.ccloud.catalog_url" -}}
+{{- $v1_domain := .Values.limes.api_domain_names.v1 | required "missing value for .Values.limes.api_domain_names.v1" -}}
+{{- $v2_domain := .Values.limes.api_domain_names.v2 | required "missing value for .Values.limes.api_domain_names.v2" -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -20,7 +21,7 @@ spec:
         - region:    '{{ $region }}'
           interface: public
           enabled:   true
-          url:       '{{ $limes_url }}'
+          url:       'https://{{ $v1_domain }}'
         {{- if not .Values.global.is_global_region }}
         - region:    '{{ $region }}'
           interface: internal
@@ -36,7 +37,7 @@ spec:
         - region:    '{{ $region }}'
           interface: public
           enabled:   true
-          url:       '{{ $limes_url }}/resources'
+          url:       'https://{{ $v2_domain }}/resources'
         {{- if not .Values.global.is_global_region }}
         - region:    '{{ $region }}'
           interface: internal
@@ -52,7 +53,7 @@ spec:
         - region:    '{{ $region }}'
           interface: public
           enabled:   true
-          url:       '{{ $limes_url }}/rates'
+          url:       'https://{{ $v2_domain }}/rates'
         {{- if not .Values.global.is_global_region }}
         - region:    '{{ $region }}'
           interface: internal
@@ -71,7 +72,7 @@ spec:
         - region:    '{{ $region }}'
           interface: public
           enabled:   true
-          url:       '{{ $limes_url | replace "limes-3" (printf "liquid-%s" $name) }}'
+          url:       'https://{{ $v2_domain | replace "limitas" (printf "liquid-%s" $name) }}'
         {{- if not $.Values.global.is_global_region }}
         - region:    '{{ $region }}'
           interface: internal

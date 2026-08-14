@@ -21,7 +21,7 @@ groups:
           description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is being CPU-throttled constantly. This is probably impacting performance, so check if we can increase the number of replicas or the resource requests/limits."
 
       - alert: OpenstackHermesPodSchedulingInsufficientMemory
-        expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"hermes-.+"}[30m])) by (pod_name) > 0
+        expr: sum(rate(kube_pod_failed_scheduling_memory_total{namespace="hermes",pod_name!~"keep-image-pulled-.*"}[30m])) by (pod_name) > 0
         for: 15m
         labels:
           severity: warning
@@ -38,7 +38,7 @@ groups:
           description: "The pod {{`{{ $labels.pod_name }}`}} failed to be scheduled. Insufficient memory!"
 
       - alert: OpenstackHermesPodOOMKilled
-        expr: sum(rate(klog_pod_oomkill{pod_name=~"hermes-.+"}[30m])) by (pod_name) > 0
+        expr: sum(rate(klog_pod_oomkill{namespace="hermes",pod_name!~"keep-image-pulled-.*"}[30m])) by (pod_name) > 0
         for: 5m
         labels:
           support_group: observability
@@ -53,6 +53,23 @@ groups:
         annotations:
           summary: Pod was oomkilled
           description: "The pod {{`{{ $labels.pod_name }}`}} was oomkilled recently"
+
+      - alert: OpenstackHermesPodNotRunning
+        expr: |
+          kube_pod_container_status_waiting_reason{namespace="hermes", reason=~"CrashLoopBackOff|Error|CreateContainerConfigError|OOMKilled|RunContainerError|PostStartHookError", pod!~"keep-image-pulled-.*"} == 1
+        for: 15m
+        labels:
+          support_group: observability
+          tier: os
+          service: hermes
+          severity: warning
+          context: pod
+          dashboard: hermes-overview
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+          meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is {{`{{ $labels.reason }}`}}"
+        annotations:
+          summary: Pod is not running
+          description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is in {{`{{ $labels.reason }}`}} state for more than 15 minutes."
 
       - alert: OpenstackHermesPodOOMExceedingLimits
         # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%

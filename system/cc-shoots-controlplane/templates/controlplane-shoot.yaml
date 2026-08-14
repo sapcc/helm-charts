@@ -28,7 +28,11 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
+      {{- if $.Values.networking.overlay }}
+      vethMTU: "8930"
+      {{- else }}
       vethMTU: "8950"
+      {{- end }}
       ipam:
         type: host-local
         cidr: usePodCIDR
@@ -169,7 +173,7 @@ spec:
         machineControllerManager:
           machineCreationTimeout: 1h30m0s
           machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: 1h30m0s
+          machineDrainTimeout: 240h0m0s
         providerConfig:
           apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
           kind: WorkerConfig

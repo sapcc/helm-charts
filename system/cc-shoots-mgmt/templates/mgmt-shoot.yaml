@@ -16,7 +16,11 @@ spec:
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
+  {{- if $cluster.useWorkloadIdentity }}
+  credentialsBindingName: metal-wi-{{ $key }}
+  {{- else }}
   credentialsBindingName: metal-{{ $key }}
+  {{- end }}
   seedName: rt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -30,7 +34,11 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
+      {{- if $.Values.networking.overlay }}
+      vethMTU: "8930"
+      {{- else }}
       vethMTU: "8950"
+      {{- end }}
       ipam:
         type: host-local
         cidr: usePodCIDR
@@ -58,7 +66,7 @@ spec:
             name: audit-policy-cp
       {{- end }}
     verticalPodAutoscaler:
-      enabled: true # VPA needs to enabled for ManagedSeed
+      enabled: {{ if hasKey (default dict $cluster.verticalPodAutoscaler) "enabled" }}{{ $cluster.verticalPodAutoscaler.enabled }}{{ else }}true{{ end }}
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -171,7 +179,7 @@ spec:
         machineControllerManager:
           machineCreationTimeout: 1h30m0s
           machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: 1h30m0s
+          machineDrainTimeout: 240h0m0s
         providerConfig:
           apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
           kind: WorkerConfig

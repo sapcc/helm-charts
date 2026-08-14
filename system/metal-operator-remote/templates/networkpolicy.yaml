@@ -30,8 +30,6 @@ spec:
   - ports:
     - port: 443
       protocol: TCP
-    - port: 444
-      protocol: TCP
     to:
     - namespaceSelector:
         matchLabels:
@@ -59,8 +57,6 @@ spec:
   - ports:
     - port: 9443
       protocol: TCP
-    - port: 9444
-      protocol: TCP
     from:
     - podSelector:
         matchLabels:
@@ -82,8 +78,6 @@ spec:
   - ports:
     - port: 9443
       protocol: TCP
-    - port: 9444
-      protocol: TCP
     to:
     - podSelector:
         matchLabels:
@@ -95,6 +89,28 @@ spec:
       role: apiserver
   policyTypes:
   - Egress
+---
+# Required for JWKS fetch from gardener discovery endpoint , which are needed for new metal api infra (CCM & MCM) auth flow
+{{- if .Values.virtualGardenLBIP }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-apiserver-egress-to-virtual-garden-lb
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - ipBlock:
+          cidr: {{ .Values.virtualGardenLBIP }}/32
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: virtual-garden-istio-ingress
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -109,6 +125,7 @@ spec:
   - ports:
     - protocol: TCP
       port: 8082
+    from:
     - namespaceSelector:
         matchLabels:
           name: kube-monitoring

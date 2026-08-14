@@ -32,3 +32,39 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: metal-operator-webhook-injector
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metal-operator-webhook-injector
+rules:
+- verbs:
+  - get
+  - list
+  - watch
+  - patch
+  apiGroups:
+  - resources.gardener.cloud
+  resources:
+  - managedresources
+- verbs:
+  - get
+  - update
+  - patch
+  apiGroups:
+  - ""
+  resources:
+  - secrets
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metal-operator-webhook-injector
+subjects:
+- kind: ServiceAccount
+  name: metal-operator-webhook-injector
+  namespace: '{{ .Release.Namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-operator-webhook-injector

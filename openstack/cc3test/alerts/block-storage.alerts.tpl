@@ -103,3 +103,43 @@ groups:
     annotations:
       description: "Cinder create snapshot test fails - please ignore: {{`{{ $labels.name }}`}}"
       summary: "Cinder create snapshot test fails - please ignore: {{`{{ $labels.name }}`}}"
+
+
+  - alert: OpenstackCinderKVMVolumeAttachFailed
+    expr: |
+        last_over_time(cc3test_status{service="nova_kvm", 
+        name=~"TestComputeKVMServer_attach_server.+",phase="call"}[1h]) == 0
+    for: 2h
+    labels:
+      severity: critical
+      support_group: compute-storage-api
+      tier: os
+      service: cinder
+      context: cinder
+      meta: "Openstack Cinder KVM Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-kvm-attach-volume/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "Openstack Cinder KVM Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+      summary: "Openstack Cinder KVM Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
+
+
+  - alert: OpenstackCinderKVMVolumeAttachFlapping
+    expr: changes(cc3test_status{service="nova_kvm", 
+        name=~"TestComputeKVMServer_attach_server.+",phase="call"}[2h]) > 8
+    labels:
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+      service: cinder
+      context: cinder
+      meta: "Openstack Cinder KVM Canary is flapping for 2 hours, see last three reports for more details"
+      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-kvm-attach-volume/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "Openstack Cinder KVM Canary is flapping for 2 hours, see last three reports for more details"
+      summary: "Openstack Cinder KVM Canary is flapping for 2 hours, see last three reports for more details"

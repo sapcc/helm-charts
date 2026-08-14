@@ -3,15 +3,15 @@
 apiVersion: resources.gardener.cloud/v1alpha1
 kind: ManagedResource
 metadata:
-  name: disco-crd
+  name: {{ .Release.Name }}-crd
 spec:
   secretRefs:
-  - name: disco-crd
+  - name: {{ .Release.Name }}-crd
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: disco-crd
+  name: {{ .Release.Name }}-crd
 type: Opaque
 data:
   objects.yaml: {{ .Files.Get "crds/records.disco.stable.sap.cc.yaml" | b64enc }}
@@ -19,15 +19,15 @@ data:
 apiVersion: resources.gardener.cloud/v1alpha1
 kind: ManagedResource
 metadata:
-  name: disco-rbac
+  name: {{ .Release.Name }}-rbac
 spec:
   secretRefs:
-  - name: disco-rbac
+  - name: {{ .Release.Name }}-rbac
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: disco-rbac
+  name: {{ .Release.Name }}-rbac
 type: Opaque
 data:
   objects.yaml: {{ include "disco.shootRBAC" . | b64enc }}

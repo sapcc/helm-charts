@@ -53,6 +53,13 @@ spec:
             - /etc/limes/limes.json
           env:
             {{ include "limes_common_envvars" . | indent 12 }}
+            {{- $public_v1_name := .Values.limes.api_domain_names.v1 | required "missing value for .Values.limes.api_domain_names.v1" }}
+            {{- $public_v2_name := .Values.limes.api_domain_names.v2 | required "missing value for .Values.limes.api_domain_names.v2" }}
+            {{- $internal_name  := printf "limes-api-ccloud.%s.svc" .Release.Namespace }}
+            - name: LIMES_API_DOMAIN_NAME_V1
+              value: {{ printf "%s,%s" $public_v1_name $internal_name | quote }}
+            - name: LIMES_API_DOMAIN_NAME_V2
+              value: {{ printf "%s,%s" $public_v2_name $internal_name | quote }}
             - name: LIMES_API_POLICY_PATH
               value: /etc/limes/policy.json
           securityContext:
@@ -62,14 +69,14 @@ spec:
               name: config
           livenessProbe:
             httpGet:
-              path: /
+              path: /healthcheck
               port: 80
             timeoutSeconds: 10
             periodSeconds: 60
             initialDelaySeconds: 60
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthcheck
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5

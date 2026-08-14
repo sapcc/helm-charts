@@ -176,6 +176,37 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  name: metal-operator-dns-records
+rules:
+  - apiGroups:
+      - disco.stable.sap.cc
+    resources:
+      - records
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metal-operator-dns-records-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-operator-dns-records
+subjects:
+  - kind: ServiceAccount
+    name: metal-operator-controller-manager
+    namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
   name: metal-operator-webhook-injector
 rules:
   - apiGroups:

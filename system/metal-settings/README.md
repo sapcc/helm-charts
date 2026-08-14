@@ -178,7 +178,6 @@ machines:
           version: "7.00.00.183"   # Target BMC firmware version gate.
           settingsFileName: dell-default.yaml  # File under bmc_settings/ to use for BMCSettingsSet.
           imageURI: "https://..."  # Firmware image download URL for BMCVersionSet.
-
 ```
 
 **Key rules:**
@@ -190,6 +189,44 @@ machines:
 - `included` uses `operator: In`, `excluded` uses `operator: NotIn`.
 - Unlike vendor/model/version/clusterType filters, `servers` narrows the generated resource selector rather than deciding whether Helm renders the resource at all.
 
+### Region-Specific Settings Overrides (`settingsContent`)
+
+For specific BIOS or BMC settings overrides (stored in other values files), use `settingsContent` to provide inline YAML instead of referencing a bundled file:
+
+**In region-specific values file** :
+
+```yaml
+# Define BIOS settings content once via YAML anchors, reference multiple times to avoid duplication
+_biosSettingsContent:
+  myCustomSettings: &myCustomSettings |
+    settingsFlow:
+    - name: myFlow
+      priority: 10
+      settings:
+        Setting1: Value1
+        Setting2: Value2
+
+machines:
+  dell:
+    models:
+      poweredge-r860-custom:
+        model: poweredge-r860
+        clusterTypes: [cc-kvm-compute]
+        bios:
+          version: "2.9.4"
+          settingsContent: *myCustomSettings      # Use inline content instead of settingsFileName
+          imageURI: "https://..."
+          settingsParams:
+            serverFilter:
+              included: [node003-bb086, node009-bb086]
+              excluded: []
+```
+
+**Behavior:**
+- If `settingsContent` is provided, it is used (takes precedence over `settingsFileName`)
+- If `settingsContent` is absent, the chart falls back to `settingsFileName` (loads from bundled `bios_settings/` or `bmc_settings/`)
+- Use YAML anchors (`&name`) and aliases (`*name`) to define settings once and reference them multiple times — this prevents duplication across region-specific overrides
+- Helm deep-merges region-specific values on top of base values, so only override entries that differ
 ## Filter Logic
 
 - **Empty `included` list** = include all (default behavior)
@@ -370,6 +407,57 @@ biosSettings:
     vendors:
       included: [lenovo]
 ```
+
+### UC12: Override Region-Specific BMC Settings
+
+In a region-specific values file (e.g., `kube-secrets`), override BMC settings for specific nodes and enable BMC settings deployment:
+
+```yaml
+# kube-secrets/values/helm/metalapi/<region>/<cluster>/metal-settings.yaml
+
+# Define BMC settings content once via YAML anchors
+_bmcSettingsContent:
+  customDellIdrac: &customDellIdrac |
+    settingsFlow:
+    - name: syslogConfiguration
+      priority: 10
+      settings:
+        SyslogServer: "{{ .Values.clusterConfig.syslogServer }}"
+        SyslogPort: 514
+    - name: snmpConfiguration
+      priority: 20
+      settings:
+        SnmpCommunity: "public"
+
+bmcSettings:
+  enabled: true
+
+clusterConfig:
+  configMapName: metal-bmc-settings
+  syslogServer: "syslog.region-qa-de-1.cloud.sap"
+
+machines:
+  dell:
+    models:
+      poweredge-r860:
+        model: poweredge-r860
+        clusterTypes: *defaultClusterTypes
+        bmc:
+          version: "7.20.60.50"
+          settingsContent: *customDellIdrac    # Use region-specific BMC settings override
+          settingsParams:
+            serverFilter:
+              included: [node001-bb001, node002-bb001]
+              excluded: []
+          imageURI: "https://<repo-address>/poweredge-r860/iDRAC-7.20.60.50.EXE"
+```
+
+This example:
+- Defines BMC settings content with templated values (e.g., `{{ .Values.clusterConfig.syslogServer }}`)
+- Uses `settingsContent` to override the default `settingsFileName` from the base chart
+- Enables `bmcSettings` only in this region (keeps it disabled elsewhere)
+- Applies the custom BMC settings only to specific nodes via `serverFilter`
+- Reuses the same settings across multiple models via YAML anchors
 
 ## Available Vendors and Models
 

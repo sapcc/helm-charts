@@ -1,7 +1,10 @@
+{{- range $cluster := .Values.clusters }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: greenhouse-manifests
+  namespace: {{ $cluster.namespace }}
 data:
   data: |-
     apiVersion: rbac.authorization.k8s.io/v1
@@ -11,7 +14,7 @@ data:
     subjects:
       - kind: User
         apiGroup: rbac.authorization.k8s.io
-        name: greenhouse:system:serviceaccount:{{ .Values.greenhouse.org }}:rt-{{ .Values.global.region }}
+        name: greenhouse:system:serviceaccount:{{ $.Values.greenhouse.org }}:{{ $cluster.name }}
     roleRef:
       apiGroup: rbac.authorization.k8s.io
       kind: ClusterRole
@@ -29,3 +32,4 @@ data:
       - kind: Group
         name: system:unauthenticated
         apiGroup: rbac.authorization.k8s.io
+{{- end }}

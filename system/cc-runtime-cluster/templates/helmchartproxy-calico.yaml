@@ -1,11 +1,14 @@
+{{- range $cluster := .Values.clusters }}
+---
 apiVersion: addons.cluster.x-k8s.io/v1alpha1
 kind: HelmChartProxy
 metadata:
   name: calico-cni
+  namespace: {{ $cluster.namespace }}
 spec:
   clusterSelector:
     matchLabels:
-      cluster.x-k8s.io/cluster-name: rt-{{ .Values.global.region }}
+      cluster.x-k8s.io/cluster-name: {{ $cluster.name }}
   repoURL: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
   chartName: calico-cni
   releaseName: calico-cni
@@ -20,7 +23,7 @@ spec:
   valuesTemplate: |
     calico:
       global:
-        clusterCIDR: {{ .Values.controlplane.podSubnet }}
+        clusterCIDR: {{ $.Values.controlplane.podSubnet }}
       config:
         monitoring:
           enabled: false
@@ -92,3 +95,4 @@ spec:
       enabled: false
     calico-crds:
       enabled: false
+{{- end }}

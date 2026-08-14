@@ -119,6 +119,11 @@ limes:
   #     rabbitmq_password: blowfish
   passwords: DEFINED_IN_VALUES_FILE
 
+  # Values for the $LIMES_API_DOMAIN_NAME_{V1,V2} environment variables. Must be supplied in regional values.
+  api_domain_names:
+    v1: null
+    v2: null
+
   # This section of the YAML must be identical to the "clusters" section of the
   # Limes configuration file.
   # <https://github.com/sapcc/limes/blob/master/docs/operators/config.md>
@@ -145,6 +150,8 @@ postgresql:
   users:
     limes: {}
   sharedMemoryLimit: 128Mi
+
+  priorityClassName: important-payload
 
   config:
     log_min_duration_statement: 250
@@ -216,7 +223,7 @@ pgmetrics:
             FROM project_az_resources pazr
             JOIN az_resources azr ON azr.id = pazr.az_resource_id
             JOIN resources r ON r.id = azr.resource_id
-            WHERE azr.az = 'total' 
+            WHERE azr.az = 'total'
               AND pazr.usage > pazr.quota
               AND NOT (r.path = 'swift/capacity' AND pazr.usage < pazr.quota + 1099511627776)
           metrics:
