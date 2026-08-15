@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: migrate-{{ .Values.name }}-db-maria-to-pxc
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "pxc-db.labels" . | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/migrate-db.sh").AsConfig . | indent 2 }}
+  config.yaml: |
+{{ include "pxc-db.sync.configmap" . | indent 4 }}
