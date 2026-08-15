@@ -121,7 +121,7 @@ Empty values are skipped so callers may pass "" for optional dependencies.
     {{- fail "tls.keyWrapping is required when tls.enabled (options: none, vault-transit, hsm, tpm)" }}
   {{- end }}
   {{- if not .Values.tls.keyStorage }}
-    {{- fail "tls.keyStorage is required when tls.enabled (options: k8s-secret, vault-secret)" }}
+    {{- fail "tls.keyStorage is required when tls.enabled (options: internal-k8s-secret, k8s-secret, vault-secret)" }}
   {{- end }}
   {{- if and (eq .Values.tls.keyWrapping "none") (eq .Values.tls.keyStorage "k8s-secret") (not .Values.tls.allowInsecureStorage) }}
     {{- fail "tls: unwrapped keys cannot be stored as plain-text K8s Secrets. Set tls.keyWrapping or tls.keyStorage, or set tls.allowInsecureStorage: true to acknowledge." }}

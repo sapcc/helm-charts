@@ -66,8 +66,11 @@ tls:
   # There are no defaults; the operator must make an explicit choice.
   # keyGeneration: go-crypto | hsm-entropy | hsm-full | tpm-entropy
   # keyWrapping: none | vault-transit | hsm | tpm
-  # keyStorage: k8s-secret | vault-secret
-  # Escape hatch: set allowInsecureStorage: true to allow wrapping=none + storage=k8s-secret
+  # keyStorage: internal-k8s-secret | k8s-secret | vault-secret
+  #   internal-k8s-secret (recommended): key written directly to the K8s API; stays in-cluster, never in Git
+  #   k8s-secret: Secret manifest emitted for Git commit + GitOps operator review
+  # Escape hatch: allowInsecureStorage: true also passes --allow-insecure-storage to the binary,
+  #   permitting wrapping=none + storage=k8s-secret (development only)
   allowInsecureStorage: false
   lifecycle:
     image: keppel.eu-de-1.cloud.sap/ccloud/tls-lifecycle-manager
