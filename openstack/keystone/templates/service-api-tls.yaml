@@ -1,0 +1,29 @@
+{{- if .Values.tls.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-public-tls
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: keystone
+    type: api-tls
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  selector:
+    name: {{ .Release.Name }}-api
+  type: {{ default "ClusterIP" .Values.services.type }}
+  ports:
+    - name: public-tls
+      protocol: "TCP"
+      port: 443
+      targetPort: 443
+  {{- if .Values.services.externalip }}
+  externalIPs:
+    - {{ .Values.services.externalip | quote }}
+  {{- end }}
+{{- end }}

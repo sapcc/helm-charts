@@ -1,21 +1,4 @@
-{{- if .Values.services.ingress.enabled }}
-{{- if .Values.services.ingress.x509.ca }}
-kind: Secret
-apiVersion: v1
-
-metadata:
-  name: {{ .Release.Name }}-x509-ca
-  labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: keystone
-    type: x509-ca
-data:
-  ca.crt: {{ .Values.services.ingress.x509.ca | b64enc }}
----
-{{- end }}
+{{- if and .Values.services.ingress.enabled (not .Values.tls.enabled) }}
 {{- if not .Values.services.ingress.tlsacme }}
 {{- if .Values.services.public.tlsCertificate}}
 kind: Secret
@@ -46,14 +29,7 @@ metadata:
     component: keystone
     type: api
   annotations:
-    {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-    ingress.kubernetes.io/ssl-passthrough: "true"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-    ingress.kubernetes.io/backend-protocol: "HTTPS"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    config.linkerd.io/skip-inbound-ports: "443"
-    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
-    {{- else if or .Values.federation.oidc.enabled .Values.federation.saml.enabled }}
+    {{- if or .Values.federation.oidc.enabled .Values.federation.saml.enabled }}
     # the affinity bits are required for federation; they do not affect the
     # cases when the API is used, but will affect browser-based workflows
     ingress.kubernetes.io/affinity: cookie
@@ -76,7 +52,7 @@ metadata:
     ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
     nginx.ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
     {{- end }}
-    {{- if and .Values.services.ingress.x509.ca (not (and .Values.tls.enabled .Values.tls.passthrough)) }}
+    {{- if .Values.services.ingress.x509.ca }}
     ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
@@ -86,7 +62,7 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
-    {{- if and .Values.services.ingress.tlsacme (not .Values.tls.enabled) }}
+    {{- if .Values.services.ingress.tlsacme }}
     kubernetes.io/tls-acme: "true"
     {{- end }}
     {{- if .Values.global.is_global_region }}
@@ -130,9 +106,5 @@ spec:
             service:
               name: "{{if .Values.global.is_global_region }}keystone-global{{else}}keystone{{end}}"
               port:
-                {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-                number: 443
-                {{- else }}
                 number: 5000
-                {{- end }}
 {{- end }}

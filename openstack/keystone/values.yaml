@@ -61,7 +61,6 @@ osprofiler-redis:
 tls:
   enabled: false
   secretName: keystone-tls
-  passthrough: false
   # Per-region operator choices — all three are REQUIRED when tls.enabled: true.
   # There are no defaults; the operator must make an explicit choice.
   # keyGeneration: go-crypto | hsm-entropy | hsm-full | tpm-entropy
@@ -321,7 +320,10 @@ services:
     # let kubernetes.io/tls-acme manage tls certificates
     tlsacme: true
 
-    # x509 client certificate support
+    # x509 client certificate support.
+    # NOTE: `ca` is the client-certificate trust anchor, consumed by the
+    # nginx-ingress (auth-tls-secret) and by Apache (SSLCACertificateFile) when
+    # TLS terminates in the pod. The `ingress` path in this key name is legacy.
     x509:
       # ca: <your ca certificate>
       issuer_attribute: HTTP_SSL_CLIENT_I_DN
