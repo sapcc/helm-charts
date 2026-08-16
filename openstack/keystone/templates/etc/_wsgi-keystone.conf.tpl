@@ -77,7 +77,7 @@ WSGIServerMetrics On
 # TLS hardening at server level (must be outside VirtualHost)
 Include /etc/apache2/conf-enabled/tls-hardening.conf
 
-# External HTTPS endpoint (via Ingress TLS passthrough)
+# External HTTPS endpoint
 # Note: Listen 443 is provided by /etc/apache2/ports.conf when mod_ssl is enabled
 
 <VirtualHost *:443>
@@ -88,7 +88,7 @@ Include /etc/apache2/conf-enabled/tls-hardening.conf
     SSLCertificateKeyFile /mnt/secrets/tls.key
 
     {{- if .Values.services.ingress.x509.ca }}
-    # Client certificate verification (moved from ingress to Apache in passthrough mode)
+    # Client certificate verification
     SSLVerifyClient optional
     SSLVerifyDepth 3
     SSLCACertificateFile /etc/apache2/x509-ca/ca.crt
