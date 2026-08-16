@@ -1,3 +1,4 @@
+{{- if not .Values.tls.enabled }}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -13,14 +14,7 @@ metadata:
     type: api
     component: barbican
   annotations:
-  {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-    ingress.kubernetes.io/ssl-passthrough: "true"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-    ingress.kubernetes.io/backend-protocol: "HTTPS"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    config.linkerd.io/skip-inbound-ports: "443"
-    disco: "true"
-  {{- else if and .Values.tlsacme (not .Values.tls.enabled) }}
+  {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
     disco: "true"
   {{- end }}
@@ -45,8 +39,5 @@ spec:
             service:
               name: barbican-api
               port:
-                {{- if and .Values.tls.enabled .Values.tls.passthrough }}
-                number: 443
-                {{- else }}
                 number: {{.Values.api_port_internal}}
-                {{- end }}
+{{- end }}

@@ -1,0 +1,29 @@
+{{- if .Values.tls.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: barbican-public-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api-tls
+    component: barbican
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  selector:
+    name: barbican-api
+  ports:
+    - name: barbican-tls
+      protocol: "TCP"
+      port: 443
+      targetPort: 443
+  {{- if .Values.services.externalip }}
+  externalIPs:
+    - {{ .Values.services.externalip | quote }}
+  {{- end }}
+{{- end }}
