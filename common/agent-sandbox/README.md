@@ -2,7 +2,7 @@
 
 Running agents inside an internal network can be dangerous. If agents access the public internet, they may be subjected to prompt injection, which can be used to exfiltrate sensitive internal information.
 
-To mitigate this issue, this repo provides a Helm chart that you can drop into your agent's namespace, restricting access to specific whitelisted domains. In this way, the chance of your agent encountering malicious prompts can be reduced.
+To mitigate this issue, we provide a Helm chart that you can drop into your agent's namespace, restricting access to specific whitelisted domains. In this way, the chance of your agent encountering malicious prompts can be reduced.
 
 This helm chart can be applied to any namespace and will restrict the network access of pods with the label `agent-sandbox=enforce` to only allow access to a set of whitelisted domains. All other traffic will be blocked. Agents can call the proxy instead of the upstream URL to reach the whitelisted domains.
 
@@ -15,7 +15,7 @@ minikube start --cni=calico
 
 Create network policies and proxy setup, allowing access to `github.com`:
 ```bash
-helm upgrade --install agent-sandbox helm/chart --set proxy.allowedDomains={.github.com}
+helm upgrade --install agent-sandbox common/agent-sandbox --set proxy.allowedDomains={.github.com}
 ```
 
 Wait for the proxy to be ready:
