@@ -1,0 +1,35 @@
+owner-info:
+  enabled: true
+  helm-chart-url: "https://github.wdf.sap.corp/sap-cloud-infrastructure/agent-sandbox"
+  maintainers: ["Team Workload Management"]
+  support-group: "workload-management"
+  service: "agent-sandbox"
+
+# Egress proxy for the agents. The agent is network-restricted to reach
+# only this proxy (plus cluster DNS); the proxy enforces the domain
+# allowlist at L7 (Squid), so filtering is DNS-name based rather than
+# tied to resolved IPs.
+#
+# Point the agent at it via env, e.g.:
+#   HTTPS_PROXY=http://egress-proxy:3128
+#   HTTP_PROXY=http://egress-proxy:3128
+proxy:
+  image:
+    repository: ubuntu/squid
+    tag: latest
+    pullPolicy: IfNotPresent
+  # Sidecar that tails Squid's access log to stdout (see proxy-deployment).
+  logSidecar:
+    image:
+      repository: busybox
+      tag: latest
+      pullPolicy: IfNotPresent
+  replicas: 3
+  # Port Squid listens on and the agent connects to.
+  port: 3128
+  # Domains the agent is allowed to reach through the proxy. A leading dot
+  # matches the apex AND all subdomains (.github.com covers github.com and
+  # api.github.com). Do NOT also list the bare apex — Squid treats a dotted
+  # entry and its apex on the same ACL as a contradiction and refuses to
+  # start ("subdomain of ..."). List each domain once, with a leading dot.
+  allowedDomains: []

@@ -1,0 +1,75 @@
+# Egress proxy Deployment. The agent pods are network-restricted so they
+# can ONLY reach this proxy; the proxy in turn enforces the domain
+# allowlist (see the ConfigMap) and is the only workload allowed to talk
+# to the internet.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-sandbox-egress-proxy
+  labels:
+    app: agent-sandbox-egress-proxy
+spec:
+  replicas: {{ .Values.proxy.replicas }}
+  selector:
+    matchLabels:
+      app: agent-sandbox-egress-proxy
+  template:
+    metadata:
+      labels:
+        app: agent-sandbox-egress-proxy
+      annotations:
+        # Restart pods when the squid config changes.
+        checksum/config: {{ include (print $.Template.BasePath "/proxy-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: squid
+          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
+          imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.proxy.port }}
+          volumeMounts:
+            - name: squid-config
+              mountPath: /etc/squid/squid.conf
+              subPath: squid.conf
+              readOnly: true
+            - name: squid-logs
+              mountPath: /var/log/squid
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+        - name: access-log
+          image: "{{ .Values.proxy.logSidecar.image.repository }}:{{ .Values.proxy.logSidecar.image.tag }}"
+          imagePullPolicy: {{ .Values.proxy.logSidecar.image.pullPolicy }}
+          securityContext:
+            runAsUser: 13
+            runAsGroup: 13
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          command:
+            - /bin/sh
+            - -c
+            - exec tail -n0 -F /var/log/squid/access.log
+          volumeMounts:
+            - name: squid-logs
+              mountPath: /var/log/squid
+              readOnly: true
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
+      volumes:
+        - name: squid-config
+          configMap:
+            name: agent-sandbox-egress-proxy-config
+        - name: squid-logs
+          emptyDir: {}

@@ -1,0 +1,104 @@
+# Baseline: deny all ingress and egress for the agent pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-sandbox-netpol
+spec:
+  podSelector:
+    matchLabels:
+      agent-sandbox: enforce
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress: []
+---
+# Agent -> proxy (and DNS).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-sandbox-netpol-agent-egress
+spec:
+  podSelector:
+    matchLabels:
+      agent-sandbox: enforce
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: agent-sandbox-egress-proxy
+      ports:
+        - protocol: TCP
+          port: {{ .Values.proxy.port }}
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# Proxy ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-sandbox-netpol-proxy-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app: agent-sandbox-egress-proxy
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              agent-sandbox: enforce
+      ports:
+        - protocol: TCP
+          port: {{ .Values.proxy.port }}
+---
+# Proxy egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-sandbox-netpol-proxy-egress
+  labels:
+    app: agent-sandbox-egress-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app: agent-sandbox-egress-proxy
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Outbound to upstreams. Excludes RFC1918/link-local so the proxy can't
+    # be used to reach cluster-internal or private networks.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
