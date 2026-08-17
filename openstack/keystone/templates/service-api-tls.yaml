@@ -1,4 +1,4 @@
-{{- if .Values.tls.enabled }}
+{{- if and .Values.tls.enabled .Values.global.keystone_external_ip }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -12,18 +12,16 @@ metadata:
     component: keystone
     type: api-tls
   annotations:
+    projectcalico.org/loadBalancerIPs: '["{{ .Values.global.keystone_external_ip }}"]'
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     name: {{ .Release.Name }}-api
-  type: {{ default "ClusterIP" .Values.services.type }}
   ports:
     - name: public-tls
       protocol: "TCP"
       port: 443
       targetPort: 443
-  {{- if .Values.services.externalip }}
-  externalIPs:
-    - {{ .Values.services.externalip | quote }}
-  {{- end }}
 {{- end }}
