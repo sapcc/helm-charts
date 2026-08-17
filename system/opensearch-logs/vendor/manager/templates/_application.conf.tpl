@@ -51,6 +51,7 @@ hosts = [
       username = "{{.Values.global.fortlogs_logs.admin.username}}"
       password = "{{.Values.global.fortlogs_logs.admin.password}}"
     }
+  }
 {{- end }}
 {{- end }}
 ]
