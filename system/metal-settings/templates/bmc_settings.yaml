@@ -21,16 +21,16 @@
 {{- $explicitName := (get $settingsParams "setMetadataName") }}
 {{- $withCluster := printf "%s-%s" $explicitName (lower $clusterType) }}
 {{- $resourceName := ternary $withCluster $defaultName (ne $explicitName "") }}
-apiVersion: metal.ironcore.dev/v1alpha1
+apiVersion: {{ $.Values.apiVersions.bmcSettingsSet }}
 kind: BMCSettingsSet
 metadata:
   name: {{ $resourceName }}
 spec:
   bmcSelector:
     matchLabels:
-      kubernetes.metal.cloud.sap/type: {{ $model }}
-      kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
-{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+      {{ $.Values.labelKeys.type }}: {{ $model }}
+      {{ $.Values.labelKeys.clusterType }}: {{ $clusterType }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters "labelKey" $.Values.labelKeys.serverName) }}
 {{- if $serverMatchExpressions }}
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
@@ -41,6 +41,10 @@ spec:
 {{ $entry.bmc.settingsContent | trim | indent 4 }}
 {{- else }}
 {{ tpl ($.Files.Get (printf "bmc_settings/%s" $entry.bmc.settingsFileName)) $ | trim | indent 4 }}
+{{- end }}
+{{- with $.Values.bmcSettings.retryPolicy }}
+    retryPolicy:
+{{ toYaml . | indent 6 }}
 {{- end }}
 ---
 {{- end }}

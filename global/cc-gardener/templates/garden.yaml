@@ -93,13 +93,20 @@ spec:
       {{- toYaml .Values.garden.runtimeCluster.zones | nindent 6 }}
     settings:
       verticalPodAutoscaler:
-        enabled: false
+        enabled: true
+        {{- with dig "runtimeCluster" "verticalPodAutoscaler" "maxAllowed" nil .Values.garden }}
+        maxAllowed: {{ toYaml . | nindent 10 }}
+        {{- end }}
       topologyAwareRouting:
         enabled: false
 {{- if .Values.garden.runtimeCluster.loadBalancerServices }}
       loadBalancerServices: {{ toYaml .Values.garden.runtimeCluster.loadBalancerServices | nindent 8 }}
 {{- end }}
   virtualCluster:
+{{- if .Values.garden.virtualCluster.highAvailability }}
+    controlPlane:
+      highAvailability: {}
+{{- end }}
     dns:
       domains:
       {{- if .Values.garden.domainOverride }}
@@ -191,6 +198,10 @@ spec:
 {{- if gt (len .Values.garden.virtualCluster.gardenerResourceManager.additionalTargetNamespaces) 0 }}
       gardenerResourceManager:
         additionalTargetNamespaces: {{- toYaml .Values.garden.virtualCluster.gardenerResourceManager.additionalTargetNamespaces | nindent 8 }}
+{{- end }}
+{{- if and .Values.garden.virtualCluster.gardenerScheduler .Values.garden.virtualCluster.gardenerScheduler.strategy }}
+      gardenerScheduler:
+        strategy: {{ .Values.garden.virtualCluster.gardenerScheduler.strategy }}
 {{- end }}
     maintenance:
       timeWindow:

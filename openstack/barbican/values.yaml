@@ -547,3 +547,13 @@ barbican_nanny:
   interval: 1
   db_secret_move:
     enabled: false
+
+# SCIBPL-218: restrict kubectl exec / port-forward / attach on the
+# barbican-api pods via a ValidatingAdmissionPolicy (K8s >= 1.30).
+# See templates/validating-admission-policy.yaml.
+restrictPodsExec:
+  enabled: true
+  # Kubernetes groups whose members bypass the policy (break-glass).
+  # Override per-cluster in the secrets repo if needed.
+  breakGlassGroups:
+    - system:masters

@@ -91,6 +91,13 @@ data:
     echo "Outgoing inteface is ${INTERFACE}"
     echo "${INTERFACE}" > /shared/interface
 
+{{ if .Values.dnsmasq.service }}
+    # Re-add the service IP on every container start. The init container adds it
+    # on pod creation, but the preStop hook removes it on liveness-triggered
+    # restarts. Without this, dnsmasq cannot bind to listen-address after a restart.
+    ip addr add ${DHCPSERVERIP}/32 dev ${INTERFACE} 2>/dev/null || true
+{{ end }}
+
     {{- if .Values.ipxe.efi.host }}
     curl -o /shared/tftpboot/{{ .Values.ipxe.efi.file }} {{ .Values.ipxe.efi.host }}/{{ .Values.ipxe.efi.file }}
     {{- else }}

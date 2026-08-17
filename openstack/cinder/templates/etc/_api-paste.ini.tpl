@@ -131,4 +131,8 @@ backend_host = {{ .Release.Name }}-api-ratelimit-redis
 backend_port = 6379
 backend_secret_file = {{ .Values.api_rate_limit.backend_secret_file }}
 backend_timeout_seconds = {{ .Values.api_rate_limit.backend_timeout_seconds }}
+# Skip rate limiting for service-to-service requests carrying a Keystone-confirmed
+# service token. Safe here because service_token_roles_required = True is set in
+# [keystone_authtoken] (cinder.conf), so only genuine service tokens are confirmed.
+bypass_service_token = {{ if .Values.api_rate_limit.bypass_service_token -}}True{{- else -}}False{{- end }}
 {{- end }}

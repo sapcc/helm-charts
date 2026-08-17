@@ -21,21 +21,25 @@
 {{- $explicitName := (get $settingsParams "setMetadataName") }}
 {{- $withCluster := printf "%s-%s" $explicitName (lower $clusterType) }}
 {{- $resourceName := ternary $withCluster $defaultName (ne $explicitName "") }}
-apiVersion: metal.ironcore.dev/v1alpha1
+apiVersion: {{ $.Values.apiVersions.biosSettingsSet }}
 kind: BIOSSettingsSet
 metadata:
   name: {{ $resourceName }}
 spec:
   serverSelector:
     matchLabels:
-      kubernetes.metal.cloud.sap/type: {{ $model }}
-      kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
-{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+      {{ $.Values.labelKeys.type }}: {{ $model }}
+      {{ $.Values.labelKeys.clusterType }}: {{ $clusterType }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters "labelKey" $.Values.labelKeys.serverName) }}
 {{- if $serverMatchExpressions }}
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   biosSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
+{{- with $.Values.biosSettings.retryPolicy }}
+    retryPolicy:
+{{ toYaml . | indent 6 }}
+{{- end }}
 {{- if $entry.bios.settingsContent }}
 {{ $entry.bios.settingsContent | trim | indent 4 }}
 {{- else }}

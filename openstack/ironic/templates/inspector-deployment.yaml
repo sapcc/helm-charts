@@ -65,7 +65,10 @@ spec:
             add:
               - NET_ADMIN
         env:
-          {{- include "utils.sentry_config" . | indent 10 }}
+        # workaround for OSSN-0099
+        - name: IRONIC_THREAD_STACK_SIZE
+          value: "8388608"
+        {{- include "utils.sentry_config" . | indent 8 }}
         lifecycle:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}

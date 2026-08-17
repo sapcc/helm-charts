@@ -72,18 +72,18 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-pguser-archer
+                  name: {{ include "archer.pgUserSecretName" . }}
                   key: postgres-password
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-secret
+                  name: {{ include "archer.secretName" . }}
                   key: service_user_password
             {{- if .Values.audit.enabled }}
             - name: AUDIT_TRANSPORT_URL
               valueFrom:
                 secretKeyRef:
-                  name: archer-secret
+                  name: {{ include "archer.secretName" . }}
                   key: audit_transport_url
             {{- end }}
             {{- with not $.Values.global.linkerd_enabled }}

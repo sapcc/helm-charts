@@ -1,3 +1,7 @@
+## 8.2.6
+
+* disable absent-metrics-operator for Thanos-Ruler alerts 
+
 ## 8.2.3
 
 * add alert relabeling config for playbook labels, enforces fully qualified domain names instead of paths

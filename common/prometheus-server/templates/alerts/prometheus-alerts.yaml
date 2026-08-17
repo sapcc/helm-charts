@@ -22,6 +22,8 @@ metadata:
   name: {{ include "prometheus.fullName" (list $name $root) }}-prometheus-thanos-rule.alerts
   labels:
     thanos-ruler: {{ required "$.Values.alerts.thanos.name " $.Values.alerts.thanos.name }}
+    # Disable absent-metrics-operator (AMO) for Thanos-Ruler alerts.
+    absent-metrics-operator/disable: "true"
 
 spec:
 {{ include (print $.Template.BasePath "/alerts/_prometheus-thanos-rule.alerts.tpl") (list $name $root) | indent 2 }}

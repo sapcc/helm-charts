@@ -28,6 +28,7 @@
   Usage:
     include "mariadb.backup_v2.object_lock" (dict "target" $target.object_lock "default" .Values.backup_v2.object_lock)
 */}}
+
 {{- define "mariadb.backup_v2.object_lock" -}}
 {{- $target := default (dict) .target -}}
 {{- $default := default (dict) .default -}}
@@ -47,6 +48,17 @@
 object_lock_enabled: true
 object_lock_mode: {{ $mode | quote }}
 object_lock_retention_days: {{ $days }}
+{{- end -}}
+{{- end -}}
+
+{{/* Emit SSE-C keys for a backup_v2 S3 target; per-target overrides default. */}}
+{{- define "mariadb.backup_v2.sse_c" -}}
+{{- $target := default (dict) .target -}}
+{{- $key := default "" .default -}}
+{{- if hasKey $target "sse_customer_key" -}}{{- $key = $target.sse_customer_key -}}{{- end -}}
+{{- if $key -}}
+sse_customer_algorithm: "AES256"
+sse_customer_key: {{ include "mariadb.resolve_secret_squote" $key }}
 {{- end -}}
 {{- end -}}
 

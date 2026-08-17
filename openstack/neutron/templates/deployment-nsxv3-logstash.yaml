@@ -8,6 +8,8 @@ metadata:
     type: backend
     component: neutron
   annotations:
+    secret.reloader.stakater.com/reload: neutron-nsxv3-logstash-secret
+    deployment.reloader.stakater.com/pause-period: 120s
     vpa-butler.cloud.sap/main-container: neutron-nsxv3-logstash
 spec:
   replicas: {{ .Values.logger.logstash.replicas | default 3 }}
@@ -25,7 +27,8 @@ spec:
         name: neutron-nsxv3-logstash
       annotations:
         kubectl.kubernetes.io/default-container: neutron-nsxv3-logstash
-        configmap-logger-hash: {{ include (print .Template.BasePath "/configmap-nsxv3-logstash.yaml") . | sha256sum }}
+        configmap-logger-hash: {{ include (print .Template.BasePath "/configmap-nsxv3-logstash.yaml") $ | sha256sum }}
+        secret-nsxv3-logstash-hash: {{ include (print $.Template.BasePath "/secret-nsxv3-logstash.yaml") $ | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- if .Values.logger.persistence.enabled }}
