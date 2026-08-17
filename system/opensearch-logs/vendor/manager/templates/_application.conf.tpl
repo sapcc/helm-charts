@@ -43,7 +43,8 @@ hosts = [
     auth = {
       username = "{{.Values.global.fortlogs_audit.admin.username}}"
       password = "{{.Values.global.fortlogs_audit.admin.password}}"
-    },
+    }
+  },
   {
     host = "https://logs-api.fortlogs.qa-de-1.cloud.sap"
     name = "{{ .Values.global.cluster }} Fortlogs Logs"
