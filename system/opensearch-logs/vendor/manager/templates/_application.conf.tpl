@@ -44,11 +44,6 @@ hosts = [
       username = "{{.Values.global.fortlogs_audit.admin.username}}"
       password = "{{.Values.global.fortlogs_audit.admin.password}}"
     }
-    auth2 = {
-      username = "{{.Values.global.fortlogs_audit.admin2.username}}"
-      password = "{{.Values.global.fortlogs_audit.admin2.password}}"
-    }
-  },
   {
     host = "https://logs-api.fortlogs.qa-de-1.cloud.sap"
     name = "{{ .Values.global.cluster }} Fortlogs Logs"
@@ -56,11 +51,6 @@ hosts = [
       username = "{{.Values.global.fortlogs_logs.admin.username}}"
       password = "{{.Values.global.fortlogs_logs.admin.password}}"
     }
-    auth2 = {
-      username = "{{.Values.global.fortlogs_audit.admin2.username}}"
-      password = "{{.Values.global.fortlogs_audit.admin2.password}}"
-    }
-  },
 {{- end }}
 {{- end }}
 ]
