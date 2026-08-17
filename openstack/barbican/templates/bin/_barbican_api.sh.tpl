@@ -9,8 +9,6 @@ function start () {
     cp -a $(type -p ${BARBICAN_WSGI_SCRIPT}) /var/www/cgi-bin/barbican/
   done
 
-  a2dismod status
-
   if [ -f /etc/apache2/envvars ]; then
     source /etc/apache2/envvars
   fi

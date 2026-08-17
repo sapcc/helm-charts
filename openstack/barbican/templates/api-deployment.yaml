@@ -64,7 +64,7 @@ spec:
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           securityContext:
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
           command:
             - /scripts/barbican-api.sh
@@ -147,6 +147,10 @@ spec:
               readOnly: true
             - name: wsgi-barbican
               mountPath: /var/www/cgi-bin/barbican
+            - name: barbican-apache-run
+              mountPath: /var/run/apache2
+            - name: barbican-apache-sites
+              mountPath: /etc/apache2/sites-enabled
             - name: barbican-bin
               mountPath: /scripts
             {{- if .Values.watcher.enabled }}
@@ -285,6 +289,10 @@ spec:
         - name: barbican-run
           emptyDir: {}
         - name: wsgi-barbican
+          emptyDir: {}
+        - name: barbican-apache-run
+          emptyDir: {}
+        - name: barbican-apache-sites
           emptyDir: {}
         - name: barbican-bin
           configMap:

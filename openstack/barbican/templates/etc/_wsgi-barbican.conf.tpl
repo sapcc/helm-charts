@@ -16,10 +16,6 @@ CustomLog /dev/stdout combined env=!forwarded
 CustomLog /dev/stdout proxy env=forwarded
 {{- end }}
 
-{{- if .Values.api.metrics.enabled }}
-WSGIServerMetrics On
-{{- end }}
-
 WSGIDaemonProcess barbican-api processes={{ .Values.api.processes | default 1 }} threads={{ .Values.api.threads | default 1 }} \
     user=barbican group=barbican display-name=%{GROUP}
 
