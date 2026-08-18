@@ -12,7 +12,9 @@ metadata:
     component: keystone
     type: api-tls
   annotations:
+    {{- if .Values.calicoLoadBalancer }}
     projectcalico.org/loadBalancerIPs: '["{{ .Values.global.keystone_external_ip }}"]'
+    {{- end }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   type: LoadBalancer
@@ -24,4 +26,8 @@ spec:
       protocol: "TCP"
       port: 443
       targetPort: 443
+  {{- if not .Values.calicoLoadBalancer }}
+  externalIPs:
+    - {{ .Values.global.keystone_external_ip }}
+  {{- end }}
 {{- end }}
