@@ -39,13 +39,10 @@ spec:
             - ALL
         targets:
         - istioGateway:
-            create: true
+            create: false
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: credativ--plutono
-# TODO: Clarify wildcard TLS secret deployment
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
           labelSelector:
             matchLabels:
               component: plutono
@@ -55,12 +52,10 @@ spec:
               gardener.cloud/role: shoot
           targetPort: 3000
         - istioGateway:
-            create: true
+            create: false
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: prometheus--prometheus
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
             deniedPaths:
               - /-/reload
               - /-/quit
@@ -74,12 +69,10 @@ spec:
               gardener.cloud/role: shoot
           targetPort: 9090
         - istioGateway:
-            create: true
+            create: false
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: prometheus--alertmanager
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
           labelSelector:
             matchLabels:
               component: alertmanager
@@ -89,10 +82,7 @@ spec:
               gardener.cloud/role: shoot
           targetPort: 9093
         - istioGateway:
-            create: true
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
-#              namespace: garden
+            create: false
           labelSelector:
             matchLabels:
               component: plutono
@@ -102,10 +92,7 @@ spec:
               kubernetes.io/metadata.name: garden
           targetPort: 3000
         - istioGateway:
-            create: true
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
-#              namespace: garden
+            create: false
           labelSelector:
             matchLabels:
               component: alertmanager
