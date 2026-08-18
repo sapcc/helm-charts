@@ -1,4 +1,5 @@
 {{- define "wsgi_barbican_conf" }}
+ServerName {{ include "barbican_api_endpoint_host_public" . }}
 {{- if .Values.use_json }}
 ErrorLog /dev/stdout
 ErrorLogFormat "%M"
