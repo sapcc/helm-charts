@@ -26,7 +26,7 @@ hosts = [
 {{- if .Values.opensearch_manager.enabled }}
   {
     host = "https://opensearch-logs-client.opensearch-logs:9200"
-    name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
+    name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster {{.Values.global.region}}"
     auth = {
       username = "{{.Values.global.users.admin.username}}"
       password = "{{.Values.global.users.admin.password}}"
@@ -38,16 +38,16 @@ hosts = [
   },
 {{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "eu-de-1") }}
   {
-    host = "https://audit-api.fortlogs.qa-de-1.cloud.sap"
-    name = "{{ .Values.global.cluster }} Fortlogs Audit"
+    host = "https://audit-api.fortlogs.{{.Values.global.region}}.cloud.sap"
+    name = "{{ .Values.global.cluster }} Fortlogs Audit {{.Values.global.region}}"
     auth = {
       username = "{{.Values.global.fortlogs_audit.admin.username}}"
       password = "{{.Values.global.fortlogs_audit.admin.password}}"
     }
   },
   {
-    host = "https://logs-api.fortlogs.qa-de-1.cloud.sap"
-    name = "{{ .Values.global.cluster }} Fortlogs Logs"
+    host = "https://logs-api.fortlogs.{{.Values.global.region}}.cloud.sap"
+    name = "{{ .Values.global.cluster }} Fortlogs Logs {{.Values.global.region}}"
     auth = {
       username = "{{.Values.global.fortlogs_logs.admin.username}}"
       password = "{{.Values.global.fortlogs_logs.admin.password}}"
