@@ -88,16 +88,25 @@ Include /etc/apache2/conf-enabled/tls-hardening.conf
     SSLCertificateKeyFile /mnt/secrets/tls.key
 
     {{- if .Values.services.ingress.x509.ca }}
-    # Client certificate verification
     SSLVerifyClient optional
     SSLVerifyDepth 3
     SSLCACertificateFile /etc/apache2/x509-ca/ca.crt
 
-    # Pass client cert info to WSGI app via request headers
-    # Replaces the headers that NGINX used to forward when it terminated TLS
-    RequestHeader set SSL_CLIENT_CERT "%{SSL_CLIENT_CERT}s"
-    RequestHeader set SSL_CLIENT_I_DN "%{SSL_CLIENT_I_DN}s"
-    RequestHeader set SSL_CLIENT_VERIFY "%{SSL_CLIENT_VERIFY}s"
+    # Reconstruct, from the verified TLS session, the client-certificate request
+    # headers cc_x509 consumes (same format NGINX forwarded when it terminated
+    # TLS). Every inbound spelling is stripped first so a client cannot inject
+    # them; only these Apache-set values, sourced from the verified handshake,
+    # reach the WSGI app.
+    RequestHeader unset SSL-Client-Cert
+    RequestHeader unset SSL_Client-Cert
+    RequestHeader unset SSL-Client_Cert
+    RequestHeader unset SSL_CLIENT_CERT
+    RequestHeader unset SSL-Client-Verify
+    RequestHeader unset SSL_Client-Verify
+    RequestHeader unset SSL-Client_Verify
+    RequestHeader unset SSL_CLIENT_VERIFY
+    RequestHeader set SSL-Client-Cert "expr=%{escape:%{SSL:SSL_CLIENT_CERT}}"
+    RequestHeader set SSL-Client-Verify "expr=%{SSL:SSL_CLIENT_VERIFY}"
     {{- end }}
 
     WSGIDaemonProcess keystone-tls processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
