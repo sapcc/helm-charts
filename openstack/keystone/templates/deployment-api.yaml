@@ -64,6 +64,14 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.tls.enabled }}
+      securityContext:
+        # distroless "nonroot" gid of the tls-lifecycle-manager image; lets the
+        # non-root tls-init container read the 0440 tls-input Secret while keeping
+        # the key group-restricted (not world-readable) per the BSI least-privilege
+        # requirement (Sicherheitsarchitektur 4.x: non-root, restriktive Berechtigungen).
+        fsGroup: 65532
+      {{- end }}
       {{- if .Values.api.priorityClassName }}
       priorityClassName: {{ .Values.api.priorityClassName }}
       {{- end }}
