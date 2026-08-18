@@ -48,4 +48,40 @@ Listen 0.0.0.0:{{ .Values.api_port_internal }}
 
     KeepAliveTimeout 61
 </VirtualHost>
+
+{{- if .Values.tls.enabled }}
+LoadModule ssl_module /usr/lib/apache2/modules/mod_ssl.so
+Listen 0.0.0.0:443
+<VirtualHost *:443>
+    ServerName {{ include "barbican_api_endpoint_host_public" . }}
+
+    SSLEngine on
+    SSLCertificateFile    /etc/apache2/ssl/tls.crt
+    SSLCertificateKeyFile /etc/apache2/ssl/tls.key
+    Include /etc/apache2/conf-enabled/tls-hardening.conf
+
+    WSGIProcessGroup barbican-api
+    WSGIScriptAlias / /var/www/cgi-bin/barbican/barbican-wsgi-api
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    LimitRequestBody 114688
+
+    <Directory /var/www/cgi-bin/barbican>
+        Require all granted
+    </Directory>
+
+    ErrorLog /dev/stderr
+    {{- if .Values.use_json }}
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout json_combined env=!forwarded
+    CustomLog /dev/stdout json_proxy env=forwarded
+    {{- else }}
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout combined env=!forwarded
+    CustomLog /dev/stdout proxy env=forwarded
+    {{- end }}
+
+    KeepAliveTimeout 61
+</VirtualHost>
+{{- end }}
 {{- end }}
