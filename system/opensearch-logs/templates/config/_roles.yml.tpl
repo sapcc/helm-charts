@@ -412,6 +412,7 @@ maillog:
     - "indices:monitor/stats"
   - index_patterns:
     - "logs-*"
+    - "cronus-*"
     allowed_actions:
     - "read"
     - "indices:data/read/search*"
