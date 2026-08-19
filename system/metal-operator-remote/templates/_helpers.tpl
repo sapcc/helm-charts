@@ -60,3 +60,24 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Aliases for upstream metal-operator helpers used in controller-manager.yaml.
+Defined here so the template renders correctly even when chart dependencies
+are not pulled (e.g. during CI linting).
+*/}}
+{{- define "metal-operator.name" -}}
+{{- include "chart.name" . }}
+{{- end }}
+
+{{- define "metal-operator.fullname" -}}
+{{- include "chart.fullname" . }}
+{{- end }}
+
+{{- define "metal-operator.resourceName" -}}
+{{- printf "%s-%s" (include "chart.fullname" .context) .suffix | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "metal-operator.serviceAccountName" -}}
+{{- include "chart.serviceAccountName" . }}
+{{- end }}
