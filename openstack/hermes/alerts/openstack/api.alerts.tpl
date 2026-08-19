@@ -236,6 +236,7 @@ groups:
       description: Hermes monitoring endpoint is down => Hermes is down
       summary: Hermes API is not available, check pod logs
 
+{{- if .Values.logRouter.enabled }}
   - alert: OpenstackHermesLogRouterRabbitMQDisconnected
     expr: sum(log_router_rabbitmq_connected) == 0
     for: 2m
@@ -286,3 +287,4 @@ groups:
     annotations:
       description: "Log Router is failing to write to the admin-tier storage. The admin tier provides unconditional compliance copies of all audit events. Sustained errors mean audit records are missing from the admin bucket."
       summary: "Log Router admin-tier write errors — compliance data at risk"
+{{- end }}
