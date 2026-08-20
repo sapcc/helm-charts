@@ -91,8 +91,16 @@ prometheus-infra-frontend:
       containerName: prometheus-infra-scaleout-thanos
       userName: prometheus-infra-scaleout-thanos
 
-  nodeSelector:
-    ccloud.sap.com/nodepool: bigpack-kvm-b
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:            # This term = one set (AND within)
+          - key: ccloud.sap.com/nodepool
+            operator: In
+            values:
+            - bigpack-kvm-b
+            - bigpack
 
 thanos:
   name: infra-frontend
