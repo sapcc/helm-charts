@@ -172,6 +172,48 @@ resources:
   linuxbridge_agent: {}
   socat: {}
 
+linuxbridge_agent:
+  secretName: ""
+  default_log_levels:
+    - neutron.plugins.ml2.drivers.agent._common_agent=WARN
+    - neutron.agent.securitygroups_rpc=WARN
+    - oslo_messaging._drivers.amqpdriver=WARN
+  logging:
+    formatters:
+      context:
+        class: oslo_log.formatters.ContextFormatter
+    handlers:
+      stdout:
+        class: StreamHandler
+        args: "(sys.stdout,)"
+        formatter: context
+    loggers:
+      root:
+        handlers: stdout
+        level: INFO
+      neutron.plugins.ml2.drivers.agent._common_agent:
+        handlers: stdout
+        level: WARNING
+      neutron.agent.securitygroups_rpc:
+        handlers: stdout
+        level: WARNING
+      oslo_messaging._drivers.amqpdriver:
+        handlers: stdout
+        level: WARNING
+  rabbitmq:
+    # Default: neutron-rabbitmq.<namespace>.svc.<cluster domain>
+    host: ""
+    namespace: monsoon3
+    use_discovery_record: false
+    port: 5672
+    virtual_host: ""
+    defaultUser: neutron_1
+  extraEnv:
+    - name: OS_DEFAULT__HOST
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+
 autoscaling:
   enabled: false
   minReplicas: 1
@@ -180,7 +222,6 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 agents:
-  ni: {}
   f5: {}
 
 nodeSelector: {}

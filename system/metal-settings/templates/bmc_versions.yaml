@@ -20,7 +20,7 @@
 
 {{/* Model and Version filtering */}}
 {{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcVersions.filters.versions)) }}
-apiVersion: metal.ironcore.dev/v1alpha1
+apiVersion: {{ $.Values.apiVersions.bmcVersionSet }}
 kind: BMCVersionSet
 metadata:
   {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
@@ -33,8 +33,8 @@ metadata:
 spec:
   bmcSelector:
     matchLabels:
-      kubernetes.metal.cloud.sap/type: {{ $model }}
-{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+      {{ $.Values.labelKeys.type }}: {{ $model }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters "labelKey" $.Values.labelKeys.serverName) }}
 {{- if $serverMatchExpressions }}
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}

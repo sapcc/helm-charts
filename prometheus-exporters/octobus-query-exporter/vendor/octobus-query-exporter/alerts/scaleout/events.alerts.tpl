@@ -75,7 +75,7 @@ groups:
                 and on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
                 and on(hostsystem) elasticsearch_octobus_nfslocked_issue_hostsystem_doc_count
         labels:
-          severity: warning
+          severity: critical
           service: compute
           tier: vmware
           support_group: compute

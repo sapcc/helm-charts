@@ -68,22 +68,22 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-pguser-archer
+                  name: {{ include "archer.pgUserSecretName" $ }}
                   key: postgres-password
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-secret
+                  name: {{ include "archer.secretName" $ }}
                   key: service_user_password
             - name: BIGIP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-secret
+                  name: {{ include "archer.secretName" $ }}
                   key: bigip_password
             - name: BIGIP_USER
               valueFrom:
                 secretKeyRef:
-                  name: archer-secret
+                  name: {{ include "archer.secretName" $ }}
                   key: bigip_username
           ports:
             - name: metrics
@@ -101,12 +101,12 @@ spec:
             defaultMode: 420
             sources:
               - configMap:
-                  name: archer-etc
+                  name: {{ include "archer.fullname" $ }}-etc
                   items:
                     - key: archer.ini
                       path: archer.ini
               - configMap:
-                  name: archer-etc-{{ $host }}
+                  name: {{ include "archer.fullname" $ }}-etc-{{ $host }}
                   items:
                     - key: f5.ini
                       path: f5.ini

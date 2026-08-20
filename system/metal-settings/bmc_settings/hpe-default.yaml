@@ -11,8 +11,10 @@
 #
 # Values sourced from: baremetal-config/hpe/*/bmc/defaultsettings.yml
 settings:
+  {{- if .Values.clusterConfig.hpeLicenseSecretName }}
   # License key — $(LicenseKey) fetched at reconcile time from the Secret named by clusterConfig.hpeLicenseSecretName.
   "POST /redfish/v1/Managers/1/LicenseService/": '{"LicenseKey": "$(LicenseKey)"}'
+  {{- end }}
   # Network protocol: HTTP port, IPMI, disable XML responses
   "PATCH /redfish/v1/managers/1/networkprotocol": '{"HTTP": {"Port": 1080}, "IPMI": {"ProtocolEnabled": true}, "Oem": {"Hpe": {"XMLResponseEnabled": false}}}'
   # SNMP: disable SNMPv1, disable cold-start trap broadcast
@@ -48,9 +50,11 @@ variables:
         name: $(BmcName)
         fieldPath: metadata.labels[kubernetes.metal.cloud.sap/bb]
   # LicenseKey: iLO license fetched at reconcile time — secret name configured via Helm values.
+  {{- if .Values.clusterConfig.hpeLicenseSecretName }}
   - key: LicenseKey
     valueFrom:
       secretKeyRef:
         name: {{ .Values.clusterConfig.hpeLicenseSecretName }}
         namespace: {{ .Values.clusterConfig.managedNamespace }}
         key: licenseKey
+  {{- end }}
