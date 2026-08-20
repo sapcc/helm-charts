@@ -51,3 +51,38 @@ groups:
       description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
         constantly. This is probably impacting performance, so check if we can increase the number
         of replicas or the resource requests/limits.
+
+  - alert: OpenstackKeystoneTLSCertificateExpiresCritical
+    expr: (probe_ssl_earliest_cert_expiry{instance=~"https://identity-3\\..*"} - time()) / 86400 < 7
+    for: 1h
+    labels:
+      no_alert_on_absence: "true"
+      context: security
+      dashboard: keystone
+      service: keystone
+      severity: critical
+      tier: os
+      support_group: identity
+      playbook: 'docs/support/playbook/keystone/alerts/tls-certificate-expiry/#openstackkeystonetlscertificateexpirescritical'
+    annotations:
+      description: The TLS certificate served by Keystone at {{ $labels.instance }} expires in less than 7 days. External HTTPS access will break when it expires. Check the rotation CronJob and cert-manager.
+      summary: Keystone served TLS certificate expires within 7 days
+
+  - alert: OpenstackKeystoneTLSRotationStale
+    expr: >
+      time() - kube_cronjob_created{cronjob="keystone-tls-rotation"} >= 8*24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_successful_time{cronjob="keystone-tls-rotation"}
+        or on(cronjob) kube_cronjob_status_last_schedule_time{cronjob="keystone-tls-rotation"}) >= 8*24*60*60
+    for: 1h
+    labels:
+      no_alert_on_absence: "true"
+      context: security
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: os
+      support_group: identity
+      playbook: 'docs/support/playbook/keystone/alerts/tls-certificate-expiry/#openstackkeystonetlsrotationstale'
+    annotations:
+      description: The Keystone TLS certificate rotation CronJob has not completed successfully in over 8 days. If not resolved, the certificate will expire and external HTTPS access will break. Check the CronJob and its Jobs.
+      summary: Keystone TLS certificate rotation is stale
