@@ -17,3 +17,38 @@ groups:
     annotations:
       description: 'barbican-api pod {{ $labels.pod }} not ready; recreate pod. See playbook.'
       summary: 'barbican-api pod not ready'
+
+  - alert: OpenstackBarbicanTLSCertificateExpiresCritical
+    expr: (probe_ssl_earliest_cert_expiry{instance=~"https://keymanager-3\\..*"} - time()) / 86400 < 7
+    for: 1h
+    labels:
+      no_alert_on_absence: "true"
+      context: security
+      dashboard: barbican
+      service: barbican
+      severity: critical
+      tier: os
+      support_group: identity
+      playbook: 'docs/support/playbook/barbican/alerts/tls-certificate-expiry/#openstackbarbicantlscertificateexpirescritical'
+    annotations:
+      description: The TLS certificate served by Barbican at {{ $labels.instance }} expires in less than 7 days. External HTTPS access will break when it expires. Check the rotation CronJob and cert-manager.
+      summary: Barbican served TLS certificate expires within 7 days
+
+  - alert: OpenstackBarbicanTLSRotationStale
+    expr: >
+      time() - kube_cronjob_created{cronjob="barbican-tls-rotation"} >= 8*24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_successful_time{cronjob="barbican-tls-rotation"}
+        or on(cronjob) kube_cronjob_status_last_schedule_time{cronjob="barbican-tls-rotation"}) >= 8*24*60*60
+    for: 1h
+    labels:
+      no_alert_on_absence: "true"
+      context: security
+      dashboard: barbican
+      service: barbican
+      severity: warning
+      tier: os
+      support_group: identity
+      playbook: 'docs/support/playbook/barbican/alerts/tls-certificate-expiry/#openstackbarbicantlsrotationstale'
+    annotations:
+      description: The Barbican TLS certificate rotation CronJob has not completed successfully in over 8 days. If not resolved, the certificate will expire and external HTTPS access will break. Check the CronJob and its Jobs.
+      summary: Barbican TLS certificate rotation is stale
