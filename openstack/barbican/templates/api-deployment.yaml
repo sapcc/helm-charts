@@ -12,7 +12,7 @@ metadata:
     type: api
     component: barbican
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets{{- if .Values.tls.enabled }},{{ .Values.tls.certSecret }}{{- end }}"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
@@ -42,6 +42,9 @@ spec:
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- if .Values.tls.enabled }}
+        config.linkerd.io/skip-inbound-ports: "443"
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
@@ -115,6 +118,10 @@ spec:
           ports:
             - name: barbican-api
               containerPort: {{.Values.api_port_internal}}
+            {{- if .Values.tls.enabled }}
+            - name: barbican-tls
+              containerPort: 443
+            {{- end }}
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican
@@ -145,6 +152,15 @@ spec:
               mountPath: /etc/apache2/conf-enabled/wsgi-barbican.conf
               subPath: wsgi-barbican.conf
               readOnly: true
+            {{- if .Values.tls.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
+              subPath: tls-hardening.conf
+              readOnly: true
+            - name: barbican-tls
+              mountPath: /etc/apache2/ssl
+              readOnly: true
+            {{- end }}
             - name: wsgi-barbican
               mountPath: /var/www/cgi-bin/barbican
             - name: barbican-apache-run
@@ -302,6 +318,16 @@ spec:
           configMap:
             name: barbican-bin
             defaultMode: 0555
+        {{- if .Values.tls.enabled }}
+        - name: barbican-tls
+          secret:
+            secretName: {{ required ".Values.tls.certSecret is required when tls.enabled" .Values.tls.certSecret }}
+            items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+        {{- end }}
         {{- if .Values.hsm.enabled }}
         - name: hsm
           secret:
