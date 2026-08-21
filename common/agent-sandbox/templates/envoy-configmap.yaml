@@ -66,6 +66,12 @@ data:
                     "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
                     stat_prefix: agent_sandbox_tls
                     cluster: original_dst_tls
+                    access_log:
+                      - name: envoy.access_loggers.stdout
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                          log_format:
+                            text_format: "ALLOW sni=%REQUESTED_SERVER_NAME% dst=%UPSTREAM_HOST% bytes_tx=%BYTES_SENT% bytes_rx=%BYTES_RECEIVED%\n"
 {{- end }}
             - filters:
                 - name: envoy.filters.network.tcp_proxy
@@ -73,6 +79,12 @@ data:
                     "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
                     stat_prefix: agent_sandbox_tls_deny
                     cluster: denied
+                    access_log:
+                      - name: envoy.access_loggers.stdout
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                          log_format:
+                            text_format: "DENY sni=%REQUESTED_SERVER_NAME% src=%DOWNSTREAM_REMOTE_ADDRESS%\n"
       clusters:
         - name: original_dst_http
           type: ORIGINAL_DST
