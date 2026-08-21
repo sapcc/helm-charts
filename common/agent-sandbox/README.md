@@ -12,7 +12,7 @@ Allow domains (wildcards supported) and use the default `ghcr.io/anomalyco/openc
 
 ```bash
 helm upgrade --install agent-sandbox ./common/agent-sandbox \
-  --set allowedDomains[0]=github.com \
+  --set 'allowedDomains[0]=github.com' \
   --set 'allowedDomains[1]=*.github.com'
 ```
 
