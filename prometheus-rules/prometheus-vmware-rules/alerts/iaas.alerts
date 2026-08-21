@@ -3,7 +3,7 @@ groups:
 - name: iaas.alerts
   rules:
   - alert: IaasHostLicenseKey
-    expr: ( vrops_hostsystem_license_key{license_key!~"TM67X.*"} and on(vccluster) vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1 ) > 0
+    expr: vrops_hostsystem_license_key{license_key!~"TM67X.*"} + on (hostsystem) group_right(license_key) vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"} > 0
     for: 30m
     labels:
       severity: warning
@@ -17,14 +17,13 @@ groups:
     annotations:
       description: "IaaS ESXi host {{ $labels.hostsystem }} in IaaS host group without valid license"
       summary: "IaaS ESXi host {{ $labels.hostsystem }} in IaaS host group without valid license"
-
   - alert: IaasClusterWithoutFailoverHost
     expr: |
-      (vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1
-      unless on(vccluster)
-      count by (vccluster) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1) >= 2)
+      (count by (vccluster) (vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"}) > 0)
+      unless (count by (vccluster) (vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"}
+      and on(hostsystem) vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1 ) > 0)
     for: 15m
-    labels:
+    labels:GitLens
       severity: critical
       service: compute
       support_group: iaas-support
@@ -37,19 +36,14 @@ groups:
 
   - alert: NonIaasVmOnIaasHost
     expr: |
-      (
-        count by (hostsystem) (
-          group by (project, hostsystem, virtualmachine) (vrops_virtualmachine_system_powered_on{} == 1)
+      count by (hostsystem) (
+        (
+          group by (project, hostsystem, virtualmachine)(vrops_virtualmachine_system_powered_on{}==1)
           and on(project)
           group by(project) (label_replace(limes_project_usage{domain!~"iaas-.*"}, "project", "$1", "project_id", "(.*)"))
         )
       )
-      * on(hostsystem) group_left(vccluster, vcenter, cluster, datacenter, region)
-      (
-        vrops_hostsystem_runtime_powerstate == 1
-        and on(vccluster, vcenter)
-        vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1
-      )
+      and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"}
     for: 30m
     labels:
       severity: warning
@@ -74,7 +68,9 @@ groups:
         )
         unless on(hostsystem)
         vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
-      ) > 75
+      )
+      and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"}
+      > 75
     for: 60m
     labels:
       severity: warning
@@ -87,6 +83,44 @@ groups:
       description: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
       summary: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
 
+  - alert: IaasHostConnectionStateNotConnected
+    expr: |
+      vrops_hostsystem_runtime_connectionstate{state=~"disconnected|notResponding"}
+      and on(hostsystem) vrops_hostsystem_runtime_powerstate{state!="Powered Off"}
+      and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"}
+    for: 15m
+    labels:
+      severity: warning
+      service: compute
+      support_group: iaas-support
+      context: "IaaS host connection state"
+      meta: "IaaS ESXi host {{ $labels.hostsystem }} is {{ $labels.state }}"
+      playbook: docs/compute/iaas/knowledgebase/vmware/iaas-host-connection-state-not-connected
+    annotations:
+      description: "IaaS ESXi host {{ $labels.hostsystem }} in cluster {{ $labels.vccluster }} is {{ $labels.state }} for more than 15 minutes"
+      summary: "IaaS ESXi host {{ $labels.hostsystem }} is {{ $labels.state }}"
+
+  - alert: IaasClusterTooFewHosts
+    expr: |
+      count by (vccluster, vcenter, region) (
+        vrops_hostsystem_runtime_connectionstate{state="connected"}
+        and on(hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
+        and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"}
+        unless on(hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
+      ) < 4
+    for: 15m
+    labels:
+      severity: warning
+      service: compute
+      support_group: iaas-support
+      context: "IaaS cluster host count"
+      meta: "IaaS cluster {{ $labels.vccluster }} has fewer than 3 active non-failover hosts"
+      playbook: docs/compute/iaas/knowledgebase/vmware/iaas-cluster-too-few-hosts
+    annotations:
+      description: "IaaS cluster {{ $labels.vccluster }} has fewer than 3 active non-failover hosts. HA capacity may be insufficient."
+      summary: "IaaS cluster {{ $labels.vccluster }} has fewer than 3 active non-failover hosts"
+
   - alert: IaasVCenterHasMultipleGreyVMsCopy
     expr: |
       count by(vcenter)
@@ -95,6 +129,7 @@ groups:
       and on(hostsystem) (vrops_hostsystem_runtime_connectionstate{state="connected"})
       and on(hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"})
       and on(hostsystem) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{}) == 1
+      and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~"(^|.*,)iaas(,.*|$)"}
       ) > 0
     for: 15m
     labels:
