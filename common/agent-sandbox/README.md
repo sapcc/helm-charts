@@ -43,6 +43,63 @@ wget -T 5 -q --spider https://google.com      # blocked
 wget -T 5 -q --spider https://1.1.1.1         # blocked: no allowed SNI
 ```
 
+## Demo with Local OpenCode Config and Thalamus
+
+Suppose you have your opencode config at `${HOME}/.config/opencode/opencode.json` with your API key and other settings. Create a ConfigMap from it:
+```bash
+kubectl create cm opencode-config --from-file="${HOME}/.config/opencode/opencode.json"
+```
+
+Then, you can install the chart with the ConfigMap mounted into the agent container and the `OPENCODE_CONFIG` environment variable set:
+```bash
+helm upgrade --install agent-sandbox ./common/agent-sandbox \
+  --set 'allowedDomains[0]=github.com' \
+  --set 'allowedDomains[1]=*.github.com' \
+  --set 'allowedDomains[2]=*.thalamus.eu-de-1.cloud.sap' \
+  --set 'allowedDomains[3]=*.opencode.ai' \
+  --set 'allowedDomains[4]=opencode.ai' \
+  --set 'allowedDomains[5]=registry.npmjs.org' \
+  --set 'agent.container.volumeMounts[0].name=opencode-config' \
+  --set 'agent.container.volumeMounts[0].mountPath=/root/.config/opencode/opencode.json' \
+  --set 'agent.container.volumeMounts[0].subPath=opencode.json' \
+  --set 'agent.container.volumeMounts[0].readOnly=true' \
+  --set 'agent.volumes[0].name=opencode-config' \
+  --set 'agent.volumes[0].configMap.name=opencode-config' \
+  --set 'agent.container.env[0].name=OPENCODE_CONFIG' \
+  --set 'agent.container.env[0].value=/root/.config/opencode/opencode.json' \
+  --set 'agent.container.command[0]=opencode' \
+  --set 'agent.container.command[1]=run' \
+  --set 'agent.container.command[2]=try and access github.com\, api.github.com\, google.com\, and report which ones are allowed'
+```
+
+Look at the logs:
+```bash
+$ kubectl logs deploy/agent-sandbox -c agent
+
+Results (tested via `wget`, since `curl` isn't installed):
+
+| Site | Status |
+|---|---|
+| github.com | **Allowed** — HTTP 200 OK |
+| api.github.com | **Allowed** — HTTP 200 OK |
+| google.com | **Blocked** — TLS handshake reset by peer (`Connection reset by peer`) |
+
+GitHub domains are fully reachable; google.com is cut off at the SSL connection stage, suggesting a network-level block on that domain.
+```
+
+That's because the Envoy sidecar is enforcing the domain allowlist, and google.com is not on it. You can see the Envoy logs for more details:
+```bash
+$ kubectl logs deploy/agent-sandbox-agent -c agent-sandbox-envoy
+
+DENY sni=google.com src=10.1.24.37:54548
+DENY sni=google.com src=10.1.24.37:54564
+ALLOW sni=github.com dst=140.82.121.3:443 bytes_tx=37629 bytes_rx=1715
+ALLOW sni=github.com dst=140.82.121.3:443 bytes_tx=37629 bytes_rx=1715
+ALLOW sni=models.opencode.ai dst=172.66.173.149:443 bytes_tx=308856 bytes_rx=919
+ALLOW sni=opencode.ai dst=172.65.90.22:443 bytes_tx=57521 bytes_rx=147580
+ALLOW sni=opencode.ai dst=172.65.90.22:443 bytes_tx=13342 bytes_rx=33792
+```
+
 ## Limits
 
 - `*.example.com` matches subdomains only, not `example.com` itself — list both if needed
