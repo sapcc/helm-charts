@@ -19,7 +19,7 @@
     - name: health
       containerPort: 8083
   securityContext:
-    {{- toYaml .Values.controllerManager.manager.podSecurityContext | nindent 4 }}
+    {{- merge (dict "runAsUser" .Values.manager.podSecurityContext.runAsUser "runAsGroup" .Values.manager.podSecurityContext.runAsGroup) .Values.manager.securityContext | toYaml | nindent 4 }}
   resources:
     requests:
       cpu: 50m
