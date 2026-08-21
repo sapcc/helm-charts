@@ -22,7 +22,7 @@ spec:
     {{- end }}
     machineImages:
       {{- toYaml .Values.extensions.openstack.machineImages | nindent 6 }}
-    providerConfig: # https://github.com/gardener/gardener-extension-provider-openstack/blob/master/pkg/apis/openstack/types_cloudprofile.go
+    providerConfig:
       apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
       kind: CloudProfileConfig
       keystoneURLs:
@@ -69,8 +69,6 @@ spec:
   machineImageUpdates:
   - imageName: gardenlinux
     source:
-      # https://github.com/cobaltcore-dev/cloud-profile-sync/blob/main/api/v1alpha1/managedcloudprofile.go
-      # glance.* values (incl. the vault-referenced password) are provided via the kube-secrets override.
       glance:
         authURLFormat: {{ .Values.extensions.openstack.glance.authURLFormat | quote }}
         regions:
@@ -99,6 +97,5 @@ metadata:
     app: gardener
 type: Opaque
 stringData:
-  # vault reference supplied by the kube-secrets override; resolved by secrets-injector.
   password: {{ .Values.extensions.openstack.glance.password | quote }}
 {{ end -}}
