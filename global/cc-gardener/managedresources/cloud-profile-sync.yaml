@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: managedcloudprofiles.cloudprofilesync.cobaltcore.dev
 spec:
   group: cloudprofilesync.cobaltcore.dev
@@ -85,19 +85,48 @@ spec:
                         description: Versions is the list of allowed Kubernetes versions
                           with optional expiration dates for Shoot clusters.
                         items:
-                          description: ExpirableVersion contains a version and an
-                            expiration date.
+                          description: ExpirableVersion contains a version with associated
+                            lifecycle information.
                           properties:
                             classification:
                               description: |-
                                 Classification defines the state of a version (preview, supported, deprecated).
-                                To get the currently valid classification, use CurrentLifecycleClassification().
+
+                                Deprecated: Is replaced by Lifecycle. mutually exclusive with it.
                               type: string
                             expirationDate:
-                              description: ExpirationDate defines the time at which
-                                this version expires.
+                              description: |-
+                                ExpirationDate defines the time at which this version expires.
+
+                                Deprecated: Is replaced by Lifecycle; mutually exclusive with it.
                               format: date-time
                               type: string
+                            lifecycle:
+                              description: |-
+                                Lifecycle defines the lifecycle stages for this version.
+                                Mutually exclusive with Classification and ExpirationDate.
+                                This can only be used when the VersionClassificationLifecycle feature gate is enabled.
+                              items:
+                                description: |-
+                                  LifecycleStage describes a stage in the versions lifecycle.
+                                  Each stage defines the classification of the version (e.g. unavailable, preview, supported, deprecated, expired)
+                                  and the time at which this classification becomes effective.
+                                properties:
+                                  classification:
+                                    description: Classification is the category of
+                                      this lifecycle stage (unavailable, preview,
+                                      supported, deprecated, expired).
+                                    type: string
+                                  startTime:
+                                    description: |-
+                                      StartTime defines when this lifecycle stage becomes active.
+                                      StartTime can be omitted for the first lifecycle stage, implying a start time in the past.
+                                    format: date-time
+                                    type: string
+                                required:
+                                - classification
+                                type: object
+                              type: array
                             version:
                               description: Version is the version identifier.
                               type: string
@@ -184,7 +213,8 @@ spec:
                               classification:
                                 description: |-
                                   Classification defines the state of a version (preview, supported, deprecated).
-                                  To get the currently valid classification, use CurrentLifecycleClassification().
+
+                                  Deprecated: Is replaced by Lifecycle. mutually exclusive with it.
                                 type: string
                               cri:
                                 description: CRI list of supported container runtime
@@ -223,8 +253,10 @@ spec:
                                   type: object
                                 type: array
                               expirationDate:
-                                description: ExpirationDate defines the time at which
-                                  this version expires.
+                                description: |-
+                                  ExpirationDate defines the time at which this version expires.
+
+                                  Deprecated: Is replaced by Lifecycle; mutually exclusive with it.
                                 format: date-time
                                 type: string
                               inPlaceUpdates:
@@ -253,6 +285,32 @@ spec:
                                   - '>= 1.26' - supports only kubelet versions greater than or equal to 1.26
                                   - '< 1.26' - supports only kubelet versions less than 1.26
                                 type: string
+                              lifecycle:
+                                description: |-
+                                  Lifecycle defines the lifecycle stages for this version.
+                                  Mutually exclusive with Classification and ExpirationDate.
+                                  This can only be used when the VersionClassificationLifecycle feature gate is enabled.
+                                items:
+                                  description: |-
+                                    LifecycleStage describes a stage in the versions lifecycle.
+                                    Each stage defines the classification of the version (e.g. unavailable, preview, supported, deprecated, expired)
+                                    and the time at which this classification becomes effective.
+                                  properties:
+                                    classification:
+                                      description: Classification is the category
+                                        of this lifecycle stage (unavailable, preview,
+                                        supported, deprecated, expired).
+                                      type: string
+                                    startTime:
+                                      description: |-
+                                        StartTime defines when this lifecycle stage becomes active.
+                                        StartTime can be omitted for the first lifecycle stage, implying a start time in the past.
+                                      format: date-time
+                                      type: string
+                                  required:
+                                  - classification
+                                  type: object
+                                type: array
                               version:
                                 description: Version is the version identifier.
                                 type: string
@@ -303,6 +361,17 @@ spec:
                             type.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
+                        machineControllerManager:
+                          description: MachineControllerManagerSettings contains a
+                            subset of the MachineControllerManagerSettings which can
+                            be defaulted for a machine type in a CloudProfile.
+                          properties:
+                            machineCreationTimeout:
+                              description: MachineCreationTimeout is the period after
+                                which creation of a machine of this machine type is
+                                declared failed.
+                              type: string
+                          type: object
                         memory:
                           anyOf:
                           - type: integer
@@ -521,7 +590,7 @@ spec:
                   garbage collection
                 properties:
                   enabled:
-                    description: Enabled toggles garbage collection for this resource.
+                    description: Enabled toggles garbage collection for this image.
                     type: boolean
                   maxAge:
                     description: |-
@@ -531,6 +600,150 @@ spec:
                     x-kubernetes-validations:
                     - message: maxAge must not be negative
                       rule: duration(self) >= duration('0s')
+                type: object
+              kubernetesVersionUpdateConfig:
+                description: KubernetesVersionUpdateConfig contains the source and
+                  provider information to automate Kubernetes version updates.
+                properties:
+                  expirationThreshold:
+                    description: |-
+                      ExpirationThreshold defines the grace period after a version's expiration date.
+                      Versions whose expiration date has passed by more than this duration will be
+                      removed from the CloudProfile.
+                    type: string
+                  landscapeSetup:
+                    description: LandscapeSetup contains the required OCI and GitHub
+                      sources for Kubernetes versions.
+                    properties:
+                      github:
+                        description: Github contains configuration for fetching Kubernetes
+                          version classifications from a GitHub repository.
+                        properties:
+                          filePath:
+                            description: |-
+                              FilePath is the path to the versions file within the repository,
+                              e.g. "kubernetes/versions.yaml".
+                            type: string
+                          githubApp:
+                            description: |-
+                              GithubApp configures authentication via a GitHub App installation.
+                              Mutually exclusive with PersonalAccessTokenSecret.
+                            properties:
+                              appID:
+                                description: AppID is the numeric GitHub App ID.
+                                format: int64
+                                type: integer
+                              installationID:
+                                description: InstallationID is the numeric installation
+                                  ID for the target repository.
+                                format: int64
+                                type: integer
+                              privateKeySecret:
+                                description: |-
+                                  PrivateKeySecret is a reference to a secret containing the RSA private key
+                                  (PEM-encoded) used to sign JWTs.
+                                properties:
+                                  key:
+                                    description: Key within the Secret to use for
+                                      required data.
+                                    type: string
+                                  name:
+                                    description: Name of a Secret.
+                                    type: string
+                                  namespace:
+                                    description: Namespace of a Secret.
+                                    type: string
+                                required:
+                                - key
+                                - name
+                                - namespace
+                                type: object
+                            required:
+                            - appID
+                            - installationID
+                            - privateKeySecret
+                            type: object
+                          personalAccessTokenSecret:
+                            description: |-
+                              PersonalAccessTokenSecret is a reference to a secret containing a GitHub
+                              personal access token. Mutually exclusive with GithubApp.
+                            properties:
+                              key:
+                                description: Key within the Secret to use for required
+                                  data.
+                                type: string
+                              name:
+                                description: Name of a Secret.
+                                type: string
+                              namespace:
+                                description: Namespace of a Secret.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            - namespace
+                            type: object
+                          provider:
+                            description: Provider is the provider whose Kubernetes
+                              versions are read from the file.
+                            type: string
+                          repository:
+                            description: Repository is the owner/repo path, e.g. "my-org/landscape-setup".
+                            type: string
+                          repositoryApiUrl:
+                            description: |-
+                              RepositoryApiURL is the base URL of the GitHub REST API, e.g.
+                              "https://api.github.com" or "https://github.mycompany.com/api/v3".
+                            type: string
+                        required:
+                        - filePath
+                        - provider
+                        - repository
+                        - repositoryApiUrl
+                        type: object
+                      oci:
+                        description: OCI contains configuration for the OCI component-descriptor
+                          source.
+                        properties:
+                          insecure:
+                            description: Insecure disables TLS
+                            type: boolean
+                          password:
+                            description: Password for authentication
+                            properties:
+                              key:
+                                description: Key within the Secret to use for required
+                                  data.
+                                type: string
+                              name:
+                                description: Name of a Secret.
+                                type: string
+                              namespace:
+                                description: Namespace of a Secret.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            - namespace
+                            type: object
+                          registry:
+                            description: Registry contains the hostname and port of
+                              the OCI registry
+                            type: string
+                          repository:
+                            description: Repository contains the monitored repository
+                            type: string
+                          username:
+                            description: Username for authentication
+                            type: string
+                        required:
+                        - registry
+                        - repository
+                        type: object
+                    required:
+                    - github
+                    - oci
+                    type: object
                 type: object
               machineImageUpdates:
                 description: MachineImageUpdates contains the source and provider
@@ -561,11 +774,83 @@ spec:
                           - registry
                           - repository
                           type: object
+                        openStack:
+                          description: OpenStack contains configuration to update
+                            provider.machineImages for OpenStack CloudProfiles.
+                          type: object
                       type: object
                     source:
                       description: Source contains configuration for a source for
                         machine images.
                       properties:
+                        glance:
+                          description: Glance contains configuration for an OpenStack
+                            Glance source.
+                          properties:
+                            authURLFormat:
+                              description: AuthURLFormat is the Keystone endpoint
+                                format string with a single "%s" for the region.
+                              type: string
+                            keepLatest:
+                              description: KeepLatest limits results to the newest
+                                N versions.
+                              type: integer
+                            namePrefix:
+                              description: NamePrefix selects images by name prefix.
+                                Empty means the default.
+                              type: string
+                            parallel:
+                              description: Parallel bounds how many regions are queried
+                                concurrently.
+                              format: int64
+                              type: integer
+                            passwordSecret:
+                              description: PasswordSecret is a reference to a secret
+                                containing the OpenStack password.
+                              properties:
+                                key:
+                                  description: Key within the Secret to use for required
+                                    data.
+                                  type: string
+                                name:
+                                  description: Name of a Secret.
+                                  type: string
+                                namespace:
+                                  description: Namespace of a Secret.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              - namespace
+                              type: object
+                            projectDomainName:
+                              description: ProjectDomainName scopes the token domain.
+                              type: string
+                            projectName:
+                              description: ProjectName scopes the token.
+                              type: string
+                            regions:
+                              description: Regions is the list of OpenStack regions
+                                to query.
+                              items:
+                                type: string
+                              type: array
+                            userDomainName:
+                              description: UserDomainName is the domain of the authenticating
+                                user.
+                              type: string
+                            username:
+                              description: Username for authentication.
+                              type: string
+                          required:
+                          - authURLFormat
+                          - passwordSecret
+                          - projectDomainName
+                          - projectName
+                          - regions
+                          - userDomainName
+                          - username
+                          type: object
                         oci:
                           description: OCI contains configuration for an OCI source.
                           properties:
