@@ -91,3 +91,42 @@ groups:
       description: Api Requests to Keystone is {{ $value }}ops/s
       summary: Api Requests to Keystone is {{ $value }}ops/s
 
+  - alert: OpenstackKeystoneApiHighLatency
+    expr: |
+      sum(irate(openstack_watcher_api_requests_duration_seconds_sum{service="identity"}[5m]))
+      /
+      sum(irate(openstack_watcher_api_requests_duration_seconds_count{service="identity"}[5m]))
+      > 3
+    for: 5m
+    labels:
+      context: latency
+      dashboard: keystone
+      meta: Keystone API mean latency > 3s
+      service: keystone
+      severity: warning
+      tier: os
+      support_group: identity
+      playbook: 'docs/devops/alert/keystone/#openstackkeystoneapihighlatency'
+    annotations:
+      description: Keystone API service-level mean latency has been above 3s for 5 minutes.
+      summary: Keystone API high latency
+
+  - alert: OpenstackKeystoneApiCriticalLatency
+    expr: |
+      sum(irate(openstack_watcher_api_requests_duration_seconds_sum{service="identity"}[5m]))
+      /
+      sum(irate(openstack_watcher_api_requests_duration_seconds_count{service="identity"}[5m]))
+      > 10
+    for: 2m
+    labels:
+      context: latency
+      dashboard: keystone
+      meta: Keystone API mean latency > 10s
+      service: keystone
+      severity: critical
+      tier: os
+      support_group: identity
+      playbook: 'docs/devops/alert/keystone/#openstackkeystoneapicriticallatency'
+    annotations:
+      description: Keystone API service-level mean latency has been above 10s for 2 minutes.
+      summary: Keystone API critically high latency
