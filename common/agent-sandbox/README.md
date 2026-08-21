@@ -27,10 +27,30 @@ agent:
 
 The chart creates:
 
-- `agent-sandbox-agent`: Deployment with the agent, iptables init container, and Envoy sidecar
+- `agent-sandbox`: the agent workload (Deployment, Job, or CronJob — see [Workload kind](#workload-kind)) with the agent, iptables init container, and Envoy sidecar
 - `agent-sandbox-envoy`: Envoy config with the domain allowlist
 - `agent-sandbox`: NetworkPolicy for pods labeled `agent-sandbox.cloud.sap/enforce=true`
 - `owner-info`: org-required owner metadata
+
+## Workload kind
+
+`agent.workload.kind` selects how the agent runs:
+
+- `Deployment` (default): long-lived service, restarted continuously. Uses `agent.workload.replicas`.
+- `Job`: one-off task that runs once and stops. Use this for a single agent run.
+- `CronJob`: scheduled task. Uses `agent.workload.schedule` (and `agent.workload.concurrencyPolicy`).
+
+For `Job`/`CronJob`, `agent.workload.restartPolicy` (`Never` or `OnFailure`) and
+`agent.workload.backoffLimit` control retry behavior, and the optional
+`agent.workload.ttlSecondsAfterFinished` cleans up finished pods.
+
+> Setting a container-level `restartPolicy` on a `Deployment` does **not** make
+> the agent run once — the Deployment recreates the pod, so it crashloops. Use
+> `agent.workload.kind=Job` for run-once behavior.
+
+The Envoy proxy runs as a native sidecar (an init container with
+`restartPolicy: Always`) so that in `Job`/`CronJob` mode the run completes once
+the agent exits instead of hanging on the always-on proxy.
 
 ## Test
 
@@ -65,6 +85,7 @@ helm upgrade --install agent-sandbox ./common/agent-sandbox \
   --set 'agent.container.volumeMounts[0].readOnly=true' \
   --set 'agent.volumes[0].name=opencode-config' \
   --set 'agent.volumes[0].configMap.name=opencode-config' \
+  --set 'agent.workload.kind=Job' \
   --set 'agent.container.env[0].name=OPENCODE_CONFIG' \
   --set 'agent.container.env[0].value=/root/.config/opencode/opencode.json' \
   --set 'agent.container.command[0]=opencode' \
@@ -72,9 +93,9 @@ helm upgrade --install agent-sandbox ./common/agent-sandbox \
   --set 'agent.container.command[2]=try and access github.com\, api.github.com\, google.com\, and report which ones are allowed'
 ```
 
-Look at the logs:
+Look at the logs (this runs as a `Job`, so address it with `job/`):
 ```bash
-$ kubectl logs deploy/agent-sandbox -c agent
+$ kubectl logs job/agent-sandbox -c agent
 
 Results (tested via `wget`, since `curl` isn't installed):
 
@@ -89,7 +110,7 @@ GitHub domains are fully reachable; google.com is cut off at the SSL connection 
 
 That's because the Envoy sidecar is enforcing the domain allowlist, and google.com is not on it. You can see the Envoy logs for more details:
 ```bash
-$ kubectl logs deploy/agent-sandbox-agent -c agent-sandbox-envoy
+$ kubectl logs job/agent-sandbox -c agent-sandbox-envoy
 
 DENY sni=google.com src=10.1.24.37:54548
 DENY sni=google.com src=10.1.24.37:54564

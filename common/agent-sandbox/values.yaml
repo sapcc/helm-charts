@@ -17,7 +17,23 @@ iptables:
 
 agent:
   name: agent-sandbox
-  replicas: 1
+  # Which Kubernetes workload runs the agent:
+  #   Deployment - long-lived, continuously restarted (default)
+  #   Job        - one-off task, runs once then stops
+  #   CronJob    - scheduled task, runs on a cron schedule
+  workload:
+    kind: Deployment
+    # Deployment only:
+    replicas: 1
+    # Job / CronJob only. Pod restart policy for batch runs: Never | OnFailure.
+    restartPolicy: Never
+    # Job / CronJob only. Retries before the run is marked failed.
+    backoffLimit: 0
+    # Job / CronJob only. Delete finished pods after N seconds (optional).
+    ttlSecondsAfterFinished: null
+    # CronJob only.
+    schedule: "0 * * * *"
+    concurrencyPolicy: Forbid
   container:
     name: agent
     image: ghcr.io/anomalyco/opencode:latest
