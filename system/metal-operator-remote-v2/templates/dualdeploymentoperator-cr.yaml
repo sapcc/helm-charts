@@ -1,0 +1,58 @@
+{{/*
+DualDeploymentOperator CR — disabled by default.
+
+CARVE-OUT: renders ONLY when BOTH conditions are met:
+  1. .Values.mode is unset (empty string) — the operator is the SOLE injector of mode;
+     an operator render always sets mode=seed or mode=shoot, so this gate ensures the CR
+     never appears inside an operator render (which would create a circular reference).
+  2. .Values.dualDeploymentOperatorCR.enabled == true (default false).
+
+spec.applyOrder is FIXED to SeedFirst. The shootAccess Secret
+(dualDeploymentOperatorCR.shootAccess.secretName, default
+dual-deployment-operator-shoot-access) is provisioned by the dual-deployment-operator
+install chart (shootRbac.enabled), NOT by this chart. The operator defaults to
+shoot-first and reads shootAccess BEFORE the seed is applied; SeedFirst avoids a
+first-deploy ordering surprise. See dualdeploymentoperator_controller.go:165,331.
+
+metadata.namespace: sourced from dualDeploymentOperatorCR.namespace if set,
+otherwise falls back to .Release.Namespace (which on a per-shoot direct install IS
+the seed CP namespace shoot--cp--m-<region>).
+*/}}
+{{- if and (not .Values.mode) .Values.dualDeploymentOperatorCR.enabled }}
+apiVersion: dualdeployment.cc.sap.com/v1alpha1
+kind: DualDeploymentOperator
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ default .Release.Namespace .Values.dualDeploymentOperatorCR.namespace }}
+spec:
+  # applyOrder: SeedFirst is MANDATORY — see file header comment.
+  applyOrder: SeedFirst
+
+  shootNamespace: {{ required "dualDeploymentOperatorCR.shootNamespace is required" .Values.dualDeploymentOperatorCR.shootNamespace | quote }}
+
+  shootAccess:
+    secretName: {{ .Values.dualDeploymentOperatorCR.shootAccess.secretName | default "dual-deployment-operator-shoot-access" | quote }}
+    server: {{ required "dualDeploymentOperatorCR.shootAccess.server is required" .Values.dualDeploymentOperatorCR.shootAccess.server | quote }}
+
+  source:
+    helm:
+      repo: {{ required "dualDeploymentOperatorCR.source.repo is required" .Values.dualDeploymentOperatorCR.source.repo | quote }}
+      name: {{ required "dualDeploymentOperatorCR.source.name is required" .Values.dualDeploymentOperatorCR.source.name | quote }}
+      version: {{ required "dualDeploymentOperatorCR.source.version is required" .Values.dualDeploymentOperatorCR.source.version | quote }}
+      {{- if .Values.dualDeploymentOperatorCR.values }}
+      values:
+        {{- toYaml .Values.dualDeploymentOperatorCR.values | nindent 8 }}
+      {{- end }}
+      {{- if .Values.dualDeploymentOperatorCR.seedValues }}
+      seedValues:
+        {{- toYaml .Values.dualDeploymentOperatorCR.seedValues | nindent 8 }}
+      {{- end }}
+      {{- if .Values.dualDeploymentOperatorCR.shootValues }}
+      shootValues:
+        {{- toYaml .Values.dualDeploymentOperatorCR.shootValues | nindent 8 }}
+      {{- end }}
+  {{- if .Values.dualDeploymentOperatorCR.transformations }}
+  transformations:
+    {{- toYaml .Values.dualDeploymentOperatorCR.transformations | nindent 4 }}
+  {{- end }}
+{{- end }}
