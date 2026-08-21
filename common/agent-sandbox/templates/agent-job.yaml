@@ -1,0 +1,18 @@
+{{- if eq .Values.agent.workload.kind "Job" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.agent.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.agent.name }}
+spec:
+  backoffLimit: {{ .Values.agent.workload.backoffLimit }}
+  {{- with .Values.agent.workload.ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ . }}
+  {{- end }}
+  template:
+    metadata:
+      {{- include "agent-sandbox.podMeta" . | nindent 6 }}
+    spec:
+      {{- tuple .Values.agent.workload.kind $ | include "agent-sandbox.podSpec" | nindent 6 }}
+{{- end }}

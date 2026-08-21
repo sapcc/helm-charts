@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-sandbox
+spec:
+  podSelector:
+    matchLabels:
+      agent-sandbox.cloud.sap/enforce: "true"
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+{{- range .Values.agent.allowedEndpoints }}
+{{- $parts := splitList ":" . }}
+    - to:
+        - ipBlock:
+            cidr: {{ index $parts 0 }}/32
+      ports:
+        - protocol: TCP
+          port: {{ index $parts 1 }}
+{{- end }}
