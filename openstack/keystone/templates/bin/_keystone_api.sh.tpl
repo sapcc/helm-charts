@@ -24,14 +24,6 @@ function start () {
     cp -a $(type -p ${KEYSTONE_WSGI_SCRIPT}) /var/www/cgi-bin/keystone/
   done
 
-  a2dismod status
-
-  {{- if .Values.tls.enabled }}
-  a2enmod ssl
-  a2enmod headers
-  a2dissite 000-default
-  {{- end }}
-
   if [ -f /etc/apache2/envvars ]; then
      # Loading Apache2 ENV variables
      source /etc/apache2/envvars
