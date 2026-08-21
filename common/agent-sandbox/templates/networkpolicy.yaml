@@ -34,3 +34,12 @@ spec:
           port: 80
         - protocol: TCP
           port: 443
+{{- range .Values.agent.allowedEndpoints }}
+{{- $parts := splitList ":" . }}
+    - to:
+        - ipBlock:
+            cidr: {{ index $parts 0 }}/32
+      ports:
+        - protocol: TCP
+          port: {{ index $parts 1 }}
+{{- end }}

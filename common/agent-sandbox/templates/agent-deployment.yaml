@@ -70,6 +70,12 @@ spec:
               iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 15006 -j ACCEPT
               iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 80 -j ACCEPT
               iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 443 -j ACCEPT
+{{- range .Values.agent.allowedEndpoints }}
+{{- $parts := splitList ":" . }}
+
+              # Allow direct access to internal endpoint {{ . }}
+              iptables -A AGENT_SANDBOX_FILTER -p tcp -d {{ index $parts 0 }} --dport {{ index $parts 1 }} -j ACCEPT
+{{- end }}
 
               # Everything else from the agent is out of scope for this sandbox.
               iptables -A AGENT_SANDBOX_FILTER -j REJECT
