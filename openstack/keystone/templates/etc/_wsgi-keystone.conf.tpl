@@ -78,7 +78,9 @@ WSGIServerMetrics On
 Include /etc/apache2/conf-enabled/tls-hardening.conf
 
 # External HTTPS endpoint
-# Note: Listen 443 is provided by /etc/apache2/ports.conf when mod_ssl is enabled
+# mod_ssl is loaded via a conf-enabled snippet, which is parsed after
+# ports.conf, so its ssl_module-gated Listen 443 does not apply here.
+Listen 0.0.0.0:443
 
 <VirtualHost *:443>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
