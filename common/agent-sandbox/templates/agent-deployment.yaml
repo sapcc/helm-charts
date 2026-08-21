@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.agent.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.agent.name }}
+spec:
+  replicas: {{ .Values.agent.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.agent.name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Values.agent.name }}
+        agent-sandbox.cloud.sap/enforce: "true"
+      annotations:
+        checksum/envoy-config: {{ include (print $.Template.BasePath "/envoy-configmap.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: setup-agent-sandbox-iptables
+          image: {{ .Values.iptables.image | quote }}
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              # Install iptables in the short-lived init container. The rules
+              # stay in the shared pod network namespace after this exits.
+              apk add --no-cache iptables
+
+              echo "=== Setting up agent sandbox iptables rules ==="
+
+              # NAT chain: transparently send agent web traffic to Envoy.
+              iptables -t nat -N AGENT_SANDBOX_EGRESS || true
+              iptables -t nat -F AGENT_SANDBOX_EGRESS
+
+              # Do not redirect Envoy's own upstream connections back to Envoy.
+              iptables -t nat -A AGENT_SANDBOX_EGRESS -m owner --uid-owner {{ .Values.envoy.uid }} -j RETURN
+
+              # Do not touch loopback traffic.
+              iptables -t nat -A AGENT_SANDBOX_EGRESS -d 127.0.0.0/8 -j RETURN
+
+              # Intercept normal HTTP and HTTPS. The agent still connects to
+              # port 80/443; only the local destination is changed.
+              iptables -t nat -A AGENT_SANDBOX_EGRESS -p tcp --dport 80 -j REDIRECT --to-ports 15001
+              iptables -t nat -A AGENT_SANDBOX_EGRESS -p tcp --dport 443 -j REDIRECT --to-ports 15006
+              iptables -t nat -C OUTPUT -p tcp -j AGENT_SANDBOX_EGRESS 2>/dev/null || iptables -t nat -A OUTPUT -p tcp -j AGENT_SANDBOX_EGRESS
+
+              # Filter chain: block non-web egress from the agent process.
+              iptables -N AGENT_SANDBOX_FILTER || true
+              iptables -F AGENT_SANDBOX_FILTER
+
+              # Keep local pod traffic working.
+              iptables -A AGENT_SANDBOX_FILTER -o lo -j ACCEPT
+
+              # Let Envoy connect to approved upstreams after it checks Host/SNI.
+              iptables -A AGENT_SANDBOX_FILTER -m owner --uid-owner {{ .Values.envoy.uid }} -j ACCEPT
+
+              # Allow DNS; NetworkPolicy limits this to kube-dns.
+              iptables -A AGENT_SANDBOX_FILTER -p udp --dport 53 -j ACCEPT
+              iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 53 -j ACCEPT
+
+              # Allow redirected connections into Envoy and the original web
+              # ports before NAT rewrites them.
+              iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 15001 -j ACCEPT
+              iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 15006 -j ACCEPT
+              iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 80 -j ACCEPT
+              iptables -A AGENT_SANDBOX_FILTER -p tcp --dport 443 -j ACCEPT
+
+              # Everything else from the agent is out of scope for this sandbox.
+              iptables -A AGENT_SANDBOX_FILTER -j REJECT
+              iptables -C OUTPUT -j AGENT_SANDBOX_FILTER 2>/dev/null || iptables -A OUTPUT -j AGENT_SANDBOX_FILTER
+
+              echo ""
+              echo "=== NAT rules (AGENT_SANDBOX_EGRESS) ==="
+              iptables -t nat -L AGENT_SANDBOX_EGRESS -n -v
+              echo ""
+              echo "=== Filter rules (AGENT_SANDBOX_FILTER) ==="
+              iptables -L AGENT_SANDBOX_FILTER -n -v
+              echo ""
+              echo "=== Agent sandbox iptables setup complete ==="
+      containers:
+        - name: {{ .Values.agent.container.name }}
+          image: {{ .Values.agent.container.image | quote }}
+          env:
+            - name: HOME
+              value: /home/agent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: agent-home
+              mountPath: /home/agent
+        - name: agent-sandbox-envoy
+          image: {{ .Values.envoy.image | quote }}
+          args: ["-c", "/etc/envoy/envoy.yaml"]
+          securityContext:
+            runAsUser: {{ .Values.envoy.uid }}
+            runAsGroup: {{ .Values.envoy.uid }}
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: agent-sandbox-envoy
+              mountPath: /etc/envoy
+              readOnly: true
+      volumes:
+        - name: agent-home
+          emptyDir: {}
+        - name: agent-sandbox-envoy
+          configMap:
+            name: agent-sandbox-envoy

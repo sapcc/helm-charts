@@ -1,65 +1,52 @@
 # Agent Sandbox
 
-Running agents inside an internal network can be dangerous. If agents access the public internet, they may be subjected to prompt injection, which can be used to exfiltrate sensitive internal information.
+Proof of concept for running a coding agent with transparent domain-based egress control in Kubernetes.
 
-To mitigate this issue, we provide a Helm chart that you can drop into your agent's namespace, restricting access to specific whitelisted domains. In this way, the chance of your agent encountering malicious prompts can be reduced.
+The chart deploys an agent pod with an iptables init container and an Envoy sidecar.
+TCP/80 and TCP/443 are redirected to Envoy on high local ports inside the pod.
+Envoy allows HTTP by `Host` and HTTPS by TLS SNI.
 
-This helm chart can be applied to any namespace and will restrict the network access of pods with the label `agent-sandbox=enforce` to only allow access to a set of whitelisted domains. All other traffic will be blocked. Agents can call the proxy instead of the upstream URL to reach the whitelisted domains.
+## Install
 
-## Example Usage
+Allow domains (wildcards supported) and use the default `ghcr.io/anomalyco/opencode` agent:
 
-Start minikube with Calico CNI to enable network policies:
 ```bash
-minikube start --cni=calico
+helm upgrade --install agent-sandbox ./common/agent-sandbox \
+  --set allowedDomains[0]=github.com \
+  --set 'allowedDomains[1]=*.github.com'
 ```
 
-Create network policies and proxy setup, allowing access to `github.com`:
+Or pass a custom agent image:
+
+```yaml
+agent:
+  container:
+    name: agent
+    image: your-agent-image:latest
+```
+
+The chart creates:
+
+- `agent-sandbox-agent`: Deployment with the agent, iptables init container, and Envoy sidecar
+- `agent-sandbox-envoy`: Envoy config with the domain allowlist
+- `agent-sandbox`: NetworkPolicy for pods labeled `agent-sandbox.cloud.sap/enforce=true`
+- `owner-info`: org-required owner metadata
+
+## Test
+
+From the agent container:
+
 ```bash
-helm upgrade --install agent-sandbox common/agent-sandbox --set proxy.allowedDomains={.github.com}
+wget -T 5 -q --spider https://github.com      # allowed
+wget -T 5 -q --spider https://api.github.com  # allowed
+wget -T 5 -q --spider https://google.com      # blocked
+wget -T 5 -q --spider https://1.1.1.1         # blocked: no allowed SNI
 ```
 
-Wait for the proxy to be ready:
-```bash
-kubectl wait --for=condition=Ready pod -l app=agent-sandbox-egress-proxy --timeout=120s
-```
+## Limits
 
-Test that the agent can reach allowed domains and is blocked from others:
-```bash
-kubectl run netcheck --rm -it --restart=Never \
--l="agent-sandbox"=enforce \
---image=curlimages/curl:latest \
--- sh -c '
-echo "github.com directly: $(curl -m 5 -s -o /dev/null -w %{http_code} https://github.com)"
-echo "example.com directly: $(curl -m 5 -s -o /dev/null -w %{http_code} https://example.com)"
-
-P=http://agent-sandbox-egress-proxy:3128
-echo "github.com via proxy: $(curl -m 5 -s -o /dev/null -w %{http_code} -x $P https://github.com)"
-echo "example.com via proxy: $(curl -m 5 -s -o /dev/null -w %{http_code} -x $P https://example.com)"
-'
-```
-
-Result:
-```
-github.com directly: 000
-example.com directly: 000
-github.com via proxy: 200
-example.com via proxy: 000
-```
-
-Note: `000` means the connection was blocked by the proxy, and `200` means the connection was successful.
-
-Test that other pods can reach any domain:
-```bash
-kubectl run netcheck --rm -it --restart=Never \
---image=curlimages/curl:latest \
--- sh -c '
-echo "github.com directly: $(curl -m 5 -s -o /dev/null -w %{http_code} https://github.com)"
-echo "example.com directly: $(curl -m 5 -s -o /dev/null -w %{http_code} https://example.com)"
-'
-```
-
-Result:
-```
-github.com directly: 200
-example.com directly: 200
-```
+- `*.example.com` matches subdomains only, not `example.com` itself — list both if needed
+- SNI/Host based, no TLS decryption
+- ECH or missing SNI fails closed
+- NetworkPolicy is only a coarse guardrail; Envoy enforces domains
+- only the init container gets `NET_ADMIN`
