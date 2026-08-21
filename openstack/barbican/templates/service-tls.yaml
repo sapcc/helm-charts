@@ -1,4 +1,5 @@
-{{- if .Values.tls.enabled }}
+{{- $externalIP := include "barbican.external_ip" . }}
+{{- if and .Values.tls.enabled $externalIP }}
 kind: Service
 apiVersion: v1
 metadata:
@@ -13,8 +14,13 @@ metadata:
     type: api-tls
     component: barbican
   annotations:
+    {{- if .Values.calicoLoadBalancer }}
+    projectcalico.org/loadBalancerIPs: '["{{ $externalIP }}"]'
+    {{- end }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     name: barbican-api
   ports:
@@ -22,8 +28,8 @@ spec:
       protocol: "TCP"
       port: 443
       targetPort: 443
-  {{- if .Values.services.externalip }}
+  {{- if not .Values.calicoLoadBalancer }}
   externalIPs:
-    - {{ .Values.services.externalip | quote }}
+    - {{ $externalIP }}
   {{- end }}
 {{- end }}
