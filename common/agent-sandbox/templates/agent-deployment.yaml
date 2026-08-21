@@ -86,9 +86,16 @@ spec:
       containers:
         - name: {{ .Values.agent.container.name }}
           image: {{ .Values.agent.container.image | quote }}
+{{- with .Values.agent.container.command }}
+          command:
+{{ toYaml . | indent 12 }}
+{{- end }}
           env:
             - name: HOME
               value: /home/agent
+{{- with .Values.agent.container.env }}
+{{ toYaml . | indent 12 }}
+{{- end }}
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
@@ -99,6 +106,9 @@ spec:
           volumeMounts:
             - name: agent-home
               mountPath: /home/agent
+{{- with .Values.agent.container.volumeMounts }}
+{{ toYaml . | indent 12 }}
+{{- end }}
         - name: agent-sandbox-envoy
           image: {{ .Values.envoy.image | quote }}
           args: ["-c", "/etc/envoy/envoy.yaml"]
@@ -119,3 +129,6 @@ spec:
         - name: agent-sandbox-envoy
           configMap:
             name: agent-sandbox-envoy
+{{- with .Values.agent.volumes }}
+{{ toYaml . | indent 8 }}
+{{- end }}
