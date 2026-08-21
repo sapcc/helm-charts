@@ -15,6 +15,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "barbican.external_ip" -}}
+{{- $svc := .Values.services | default dict -}}
+{{- .Values.global.barbican_external_ip | default $svc.externalip -}}
+{{- end -}}
+
 {{- define "barbican.db_service" }}
   {{- include "utils.db_host" . }}
 {{- end }}

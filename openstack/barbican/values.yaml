@@ -11,6 +11,8 @@ global:
   domain_seeds:
     skip_hcm_domain: false
   linkerd_requested: false
+  # Public /32 for the pod-level TLS LoadBalancer service and DNS record.
+  # barbican_external_ip: "192.168.1.100"
 
 rbac:
   enabled: true
@@ -472,7 +474,12 @@ sentry:
 
 tlsacme: true
 
+# Announce the public TLS /32 via Calico LoadBalancer IPs. Set to false on
+# metal clusters that announce via spec.externalIPs instead.
+calicoLoadBalancer: true
+
 services:
+  # Backward-compat alias for global.barbican_external_ip.
   # externalip: "192.168.1.100"
 
 # SCIBPL-209: Ingress hardening — request size cap and connection limiting.
