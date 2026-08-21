@@ -17,27 +17,11 @@ spec:
       labels:
         name: pmtud
         k8s-app: pmtud
-      annotations:
-        configmap-pmtud-hash: {{ include (print $.Template.BasePath "/go-pmtud-configmap.yaml") $ | sha256sum }}
     spec:
-      initContainers:
-        - name: iptables-init
-          image: "{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.image }}:{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.tag }}"
-          command:
-            - /scripts/pmtud/iptables-init.sh
-          securityContext:
-            privileged: true
-          volumeMounts:
-            - name: pmtud
-              mountPath: /scripts/pmtud
       containers:
       - name: pmtud
         image: "{{ required ".Values.images.pmtud.image is missing" .Values.images.pmtud.image }}:{{ required ".Values.images.pmtud.tag is missing" .Values.images.pmtud.tag }}"
         imagePullPolicy: IfNotPresent
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/scripts/pmtud/iptables-stop.sh"]
         command:
           - /go-pmtud
           - --iface_names={{ required ".Values.pmtud.ifaceNames is required" .Values.pmtud.ifaceNames | join "," }}
@@ -55,16 +39,9 @@ spec:
               fieldPath: spec.nodeName
         securityContext:
            privileged: true
-        volumeMounts:
-          - name: pmtud
-            mountPath: /scripts/pmtud
       hostNetwork: true
       serviceAccountName: pmtud
       terminationGracePeriodSeconds: 5
       tolerations:
         - operator: "Exists"
-      volumes:
-        - name: pmtud
-          configMap:
-            name: pmtud
-            defaultMode: 0744
+      volumes: []
