@@ -162,19 +162,16 @@ spec:
               cpu: {{required ".Values.resources_requests_cpu_ls is missing" .Values.resources_requests_cpu_ls}}
 
         - name: logstash-exporter
-          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/kuskoman/logstash-exporter:v1.9.1
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
           imagePullPolicy: IfNotPresent
-          env:
-            - name: LOGSTASH_URL
-              value: "http://localhost:9600"
-            - name: PORT
-              value: "9198"
-          startupProbe:
-            httpGet:
-              path: /healthcheck
-              port: 9198
-            failureThreshold: 24
-            periodSeconds: 10
+          command: ["/bin/sh", "-c"]
+          ## Delay start of logstash-exporter to give logstash more time to come online.
+          args:
+            - >-
+              sleep 120;
+              exec /logstash_exporter
+                --logstash.endpoint=http://localhost:9600
+                --web.listen-address=:9198
           ports:
             - name: ls-exporter
               containerPort: 9198
