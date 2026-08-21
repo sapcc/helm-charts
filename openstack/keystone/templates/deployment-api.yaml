@@ -243,6 +243,12 @@ spec:
               mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
               subPath: wsgi-keystone.conf
               readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/status-off.conf
+              subPath: status-off.conf
+              readOnly: true
+            - name: apache-sites
+              mountPath: /etc/apache2/sites-enabled
             {{- if .Values.federation.oidc.enabled }}
             - name: keystone-federation
               mountPath: /etc/apache2/conf-enabled/federation-oidc.conf
@@ -279,6 +285,10 @@ spec:
             {{- if .Values.tls.enabled }}
             - name: tls-secrets
               mountPath: /mnt/secrets
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/00-ssl-load.conf
+              subPath: ssl-load.conf
               readOnly: true
             - name: keystone-etc
               mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
@@ -347,6 +357,8 @@ spec:
         - name: etc-keystone
           emptyDir: {}
         - name: wsgi-keystone
+          emptyDir: {}
+        - name: apache-sites
           emptyDir: {}
         - name: keystone-etc
           configMap:
