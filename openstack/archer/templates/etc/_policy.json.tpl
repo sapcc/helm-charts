@@ -21,7 +21,7 @@
   "service-endpoint:read": "rule:context_is_viewer",
   "service-endpoint:accept": "rule:context_is_editor",
   "service-endpoint:reject": "rule:context_is_editor",
-  "service-endpoint:read-global": "rule:context_is_viewer",
+  "service-endpoint:read-global": "rule:cloud_admin",
   "service-endpoint:accept-global": "rule:cloud_admin",
   "service-endpoint:reject-global": "rule:cloud_admin",
 

@@ -1,3 +1,16 @@
+## 6.8.1
+
+* adapt Thanos flag to endpoint
+
+## 6.8.0
+
+* Prometheus to v3.12.0
+* Thanos to v0.40.0
+
+## 6.7.4
+
+* Fix PrometheusMultiplePodScrapes alert failing with many-to-many matching error when pods share the same name across namespaces
+
 ## 6.7.3 
 
 * Prometheus bump to v2.55.1

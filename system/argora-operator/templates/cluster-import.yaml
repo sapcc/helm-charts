@@ -8,6 +8,12 @@ metadata:
   namespace: argora-system
 spec:
   clusters:
-{{ toYaml $clusters | nindent 2 }}
+  {{- range $cluster := $clusters }}
+  - {{ toYaml (omit $cluster "bmcUser" "bmcPassword") | nindent 4 | trim }}
+    {{- if and $cluster.bmcUser $cluster.bmcPassword }}
+    bmcCredentialsRef:
+      name: bmc-{{ $cluster.name }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 {{- end }}

@@ -1,22 +1,23 @@
-1. Get the application URL by running these commands:
+Archer {{ .Values.image.tag }} has been deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Endpoints:
 {{- if .Values.ingress.enabled }}
-{{- range $host := .Values.ingress.hosts }}
-  {{- range .paths }}
-  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
-  {{- end }}
+  - Public:   http{{ if .Values.ingress.tls }}s{{ end }}://{{ include "archer.fullname" . }}.{{ .Values.global.region }}.{{ .Values.global.tld }}/
 {{- end }}
-{{- else if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "archer.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.service.type }}
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "archer.fullname" . }}'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "archer.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.service.port }}
-{{- else if contains "ClusterIP" .Values.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "archer.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
-  echo "Visit http://127.0.0.1:8080 to use your application"
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+  - Cluster:  http://{{ include "archer.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDNSSearchDomain | default "cluster.local" }}:{{ .Values.service.port }}
+
+Keystone seed:
+  The OpenstackSeed for archer is applied in the "{{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}" namespace
+  and depends on "{{ .Values.global.keystoneNamespace }}/keystone-seed".
+
+Useful commands:
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/name={{ include "archer.name" . }},app.kubernetes.io/component=api -f
+  kubectl -n {{ .Release.Namespace }} get job -l app.kubernetes.io/instance={{ .Release.Name }}
+
+{{- if not .Values.serviceAccount.create }}
+
+NOTE: serviceAccount.create is false. Pods will run under the "{{ include "archer.serviceAccountName" . }}" service account
+      in namespace "{{ .Release.Namespace }}" -- make sure it exists and has the RBAC needed by kubernetes-entrypoint
+      (get/list on pods, services, endpoints, jobs, daemonsets).
 {{- end }}

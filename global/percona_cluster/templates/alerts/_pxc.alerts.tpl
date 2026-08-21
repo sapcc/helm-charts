@@ -62,7 +62,7 @@
     labels:
       context: database
       service: {{ include "alerts.service" . }}
-      severity: warning
+      severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: 'docs/support/playbook/database/db_percona_alerts'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
@@ -76,7 +76,7 @@
     labels:
       context: database
       service: {{ include "alerts.service" . }}
-      severity: info
+      severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: 'docs/support/playbook/database/db_percona_alerts'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
@@ -90,7 +90,7 @@
     labels:
       context: database
       service: {{ include "alerts.service" . }}
-      severity: info
+      severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: 'docs/support/playbook/database/db_percona_alerts'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}

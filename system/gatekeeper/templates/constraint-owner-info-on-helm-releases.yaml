@@ -15,7 +15,7 @@ metadata:
     severity: 'error'
 spec:
   enforcementAction: {{ if (eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "gh-actions" "internet" "scaleout") }}deny{{ else }}dryrun{{ end }}
-  match: {{ include "match_active_helm_releases" . | indent 4 }}
+  match: {{ include "gatekeeper-policies.match-active-helm-releases" . | indent 4 }}
   parameters:
     helmManifestParserURL: {{ include "helm_manifest_parser_url" . | quote }}
     knownBrokenReleases:
@@ -27,9 +27,6 @@ spec:
       # list and the responsible owners for that deployment. We will use this
       # to regularly follow up with the service owners to check on the state of
       # their support group assignment.
-      {{- if eq .Values.cluster_type "test" }}
-      - testing/known-broken # used for testing the exception mechanism
-      {{- end }}
       {{- if and (eq .Values.cluster_type "baremetal") (eq .Values.global.region "qa-de-1") }}
       - owner-label-injector-staging/owner-label-injector-staging   # staging deployment of owner-label-injector
       - owner-label-injector-staging/test-chart-without-owner-info  # dummy chart for testing for owner-label-injector
@@ -51,27 +48,31 @@ spec:
       - logs/logs
       - network-cc/blackbox-exporter
       - network-cc/json-exporter
-      - network-cc/kube-monitoring-cc
-      - network-cc/net-cc-prometheus-config
+      - network-cc/network-metrics-cc
+      - network-cc/network-cc-prometheus-config
       - network-cc/snmp-exporter
       - network-cc/ssh-exporter
-      - network-cc/thanos-net-cc
-      - network-cc/thanos-net-cc-rules
+      - network-cc/network-metrics-thanos-cc
+      - network-cc/network-metrics-thanos-cc-rules
       - network-wan/blackbox-exporter
       - network-wan/json-exporter
-      - network-wan/kube-monitoring-wan
-      - network-wan/net-wan-prometheus-config
+      - network-wan/network-metrics-wan
+      - network-wan/network-wan-prometheus-config
       - network-wan/snmp-exporter
       - network-wan/ssh-exporter
-      - network-wan/thanos-net-wan
-      - network-wan/thanos-net-wan-rules
+      - network-wan/network-metrics-thanos-wan
+      - network-wan/network-metrics-thanos-wan-rules
       - network/netbox-iface-connection-exporter
       - network/netbox-sd
-      - network/thanos-net
+      - network/network-metrics-thanos
       - opensearch-logs/opensearch
+      - owner-label-injector/owner-label-injector
       - priority-class/priority-class
       - secrets-injector/secrets-injector
+      - trust-manager/trust-manager
+      - vpa-butler/vpa-butler
       - controlplane-operations/controlplane-operations
+      - oidc-discovery-access/oidc-discovery-access
       {{- end }}
 
 {{- end -}}

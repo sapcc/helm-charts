@@ -1,9 +1,10 @@
+{{- if .Values.webhooks.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/disco-serving-cert
-  name: disco-mutating-webhook-configuration
+  name: {{ .Release.Name }}-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
@@ -25,3 +26,4 @@ webhooks:
     resources:
     - records
   sideEffects: None
+{{- end }}

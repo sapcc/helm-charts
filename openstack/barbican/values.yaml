@@ -12,6 +12,9 @@ global:
     skip_hcm_domain: false
   linkerd_requested: false
 
+rbac:
+  enabled: true
+
 owner-info:
   support-group: identity
   service: barbican
@@ -32,6 +35,23 @@ pod:
 
 api_port_internal: '9311'
 debug: "True"
+use_json: false
+
+# processes=1 matches paste.httpserver: single PKCS#11 session, single pKEK cache per pod
+api:
+  replicas: 2
+  processes: 1
+  threads: 1
+  metrics:
+    enabled: true
+  resources:
+    enabled: true
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
 
 statsd:
   port: 9102
@@ -452,6 +472,23 @@ sentry:
 
 tlsacme: true
 
+# SCIBPL-209: Ingress hardening — request size cap and connection limiting.
+# These annotations are applied to the nginx ingress controller.
+# Keystone middleware already enforces authentication; these settings add a
+# first line of defence at the edge against oversized payloads and
+# connection floods before traffic reaches the Barbican API process.
+ingress:
+  # Cap the maximum allowed request body size (secrets/payloads).
+  # Requests exceeding this limit are rejected with HTTP 413.
+  enableRequestSizeLimit: true
+  maxRequestBodySize: "1m"
+  # Limit simultaneous connections per source IP.
+  # Helps mitigate connection-flood DoS attempts.
+  # NOTE: if callers arrive from a shared NAT gateway or single-IP proxy,
+  # all their traffic counts against one IP — tune before enabling in prod.
+  enableConnectionsLimit: true
+  limitConnections: 20
+
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
@@ -496,7 +533,7 @@ simple_crypto:
 hsm:
   enabled: false
   luna:
-    image: lunaclient-r9.1
+    image: lunaclient-r9.2
   multistore:
     enabled: false
   ha:
@@ -527,3 +564,13 @@ barbican_nanny:
   interval: 1
   db_secret_move:
     enabled: false
+
+# SCIBPL-218: restrict kubectl exec / port-forward / attach on the
+# barbican-api pods via a ValidatingAdmissionPolicy (K8s >= 1.30).
+# See templates/validating-admission-policy.yaml.
+restrictPodsExec:
+  enabled: true
+  # Kubernetes groups whose members bypass the policy (break-glass).
+  # Override per-cluster in the secrets repo if needed.
+  breakGlassGroups:
+    - system:masters

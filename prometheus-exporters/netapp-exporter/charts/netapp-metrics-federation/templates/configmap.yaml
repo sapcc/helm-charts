@@ -7,38 +7,35 @@ metadata:
 data:
   snapmirror.yaml: |
     metrics:
-      - export_name: netapp_snapmirror_labels:remotebkp
+      # Cross-region snapmirror labels: endpoint labels are joined with detailed labels where share_id="" — those are
+      # the cross-region relationships where the destination filer has no knowledge of the source's OpenStack labels.
+      # The share_id="" filter prevents matching local relationships that are already fully enriched.
+      - export_name: netapp_snapmirror_labels:remote
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
             * on(relationship_id)
-            group_right(project_id, share_id, share_name) netapp_snapmirror_labels:enhanced{share_id=""}
+            group_right(project_id, share_id, share_name) netapp_snapmirror_detailed_labels:enhanced{share_id=""}
         label_rules:
         - type: fill
           label_name: unhealthy_reason
-        help: "netapp snapmirror labels for remote backup targets"
-      - export_name: netapp_snapmirror_labels:localbkp
-        query: netapp_snapmirror_labels:enhanced{region="{{ .Values.global.region }}", project_id!="",share_id!="", destination_volume!~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
-        label_rules:
-        - type: fill
-          label_name: unhealthy_reason
-        help: "netapp snapmirror labels for local backup targets"
-      - export_name: netapp_snapmirror_lag_time:federated
+        help: "netapp snapmirror labels for cross-region relationships"
+      - export_name: netapp_snapmirror_lag_time:remote
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
             * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
-            group_left() netapp_snapmirror_lag_time:enhanced
-        help: "netapp snapmirror lag time"
-      - export_name: netapp_snapmirror_last_transfer_duration:federated
+            group_left() label_replace(netapp_snapmirror_lag_time, "destination_cluster", "$1", "filer", "(.*)")
+        help: "netapp snapmirror lag time for cross-region relationships"
+      - export_name: netapp_snapmirror_last_transfer_duration:remote
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
             * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
-            group_left() netapp_snapmirror_last_transfer_duration:enhanced
-      - export_name: netapp_snapmirror_last_transfer_size:federated
+            group_left() label_replace(netapp_snapmirror_last_transfer_duration, "destination_cluster", "$1", "filer", "(.*)")
+      - export_name: netapp_snapmirror_last_transfer_size:remote
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
             * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
-            group_left() netapp_snapmirror_last_transfer_size:enhanced
-      - export_name: netapp_snapmirror_source_snapshot_count:federated
+            group_left() label_replace(netapp_snapmirror_last_transfer_size, "destination_cluster", "$1", "filer", "(.*)")
+      - export_name: netapp_snapmirror_source_snapshot_count:remote
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
           * on (source_cluster, source_vserver, source_volume) group_left()
@@ -47,7 +44,7 @@ data:
             "source_cluster", "$1", "filer", "(.*)"),
             "source_vserver", "$1", "svm", "(.*)"),
             "source_volume", "$1", "volume", "(.*)")
-      - export_name: netapp_snapmirror_destination_snapshot_count:federated
+      - export_name: netapp_snapmirror_destination_snapshot_count:remote
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
           * on (destination_cluster, destination_vserver, destination_volume) group_left()

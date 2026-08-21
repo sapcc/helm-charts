@@ -153,7 +153,7 @@ groups:
 
   - alert: PodNotReady
     # alert on pods that are not ready but in the Running phase on a Ready node
-    expr: (kube_pod_status_phase_normalized{phase="Running"} * on(pod, node, namespace) kube_pod_status_ready_normalized{condition="false"} * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1) * on(pod) group_left(label_alert_tier, label_alert_service, label_cc_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))
+    expr: (kube_pod_status_phase_normalized{phase="Running"} * on(pod, node, namespace) kube_pod_status_ready_normalized{condition="false"} * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1) * on(pod, namespace) group_left(label_alert_tier, label_alert_service, label_cc_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))
     for: 2h
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
@@ -179,7 +179,7 @@ groups:
       summary: Pod cannot pull all container images
 
   - alert: PrometheusMultiplePodScrapes
-    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
+    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod, namespace) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}

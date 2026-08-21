@@ -21,11 +21,18 @@ global:
 
   linkerd_requested: false
 
+  playbookDomain: https://operations.global.cloud.sap
+
 # The image for the Prometheus server. The tag equals the .Chart.appVersion.
 image:
   repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
 
 # Mandatory name for a single Prometheus. To setup multiple, define a list of .Values.names or .Values.global.targets.
+# Disable local compaction on Prometheus.
+# Workaround for prometheus-operator v0.93.0 bug with Thanos sidecar path mismatch.
+# See: https://github.com/prometheus-operator/prometheus-operator/issues/8763 for more details
+disableCompaction: true
+
 # The name is used to find relevant aggregation and alerting rules.
 # Examples: kubernetes, openstack, infrastructure, maia, vmware etc.
 name: 

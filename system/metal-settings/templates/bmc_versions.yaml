@@ -1,32 +1,59 @@
-{{- range $path, $_  := $.Files.Glob "bmc_versions/**" }}
-{{- $name := base (dir $path) }}
-{{- if eq (len (splitList "/" $path)) 4 -}}
+{{- if .Values.bmcVersions.enabled }}
+{{- $usedNames := dict }}
+{{- range $vendor, $vendorConfig := .Values.machines }}
+{{- if $vendorConfig }}
 
-{{- $folders := splitList "/" $path }}
-{{- $version := index $folders 3}}
-{{- $vendor := index $folders 1 }}
-{{- $model := index $folders 2 }}
-{{- $version := replace "_" "-" $version}}
-{{- $version := replace ".yaml" "" $version}}
+{{/* Vendor filtering */}}
+{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcVersions.filters.vendors) }}
+{{- $processedModels := dict }}
+{{- range $entryName, $entry := $vendorConfig.models }}
+{{- if and $entry.bmc $entry.bmc.imageURI }}
+{{- $model := $entry.model }}
+{{- $version := $entry.bmc.version }}
+{{- $modelKey := printf "%s-%s" $model $version }}
+{{- $versionParams := (get $entry.bmc "versionParams") | default dict }}
+{{- $serverFilters := (get $versionParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
-{{ range $path, $_ := $.Files.Glob (printf "bmc_versions/%s/%s/*.yaml" $vendor $model) -}}
-apiVersion: metal.ironcore.dev/v1alpha1
+{{/* Skip if we've already processed this model-version combination */}}
+{{- if not (hasKey $processedModels $modelKey) }}
+{{- $_ := set $processedModels $modelKey true }}
+
+{{/* Model and Version filtering */}}
+{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcVersions.filters.versions)) }}
+apiVersion: {{ $.Values.apiVersions.bmcVersionSet }}
 kind: BMCVersionSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $version }}
+  {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
+  {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  {{- if hasKey $usedNames $resourceName }}
+  {{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (entry %q, model %q). Two machines.<vendor>.models entries produced the same name with differing bmc.version/imageURI. Only one entry per model should define bmc.version/imageURI, or set a unique bmc.versionParams.setMetadataName on the others." $resourceName $entryName $model) }}
+  {{- end }}
+  {{- $_ := set $usedNames $resourceName true }}
+  name: {{ $resourceName }}
 spec:
   bmcSelector:
     matchLabels:
-      kubernetes.metal.cloud.sap/type: {{ $model }}
+      {{ $.Values.labelKeys.type }}: {{ $model }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters "labelKey" $.Values.labelKeys.serverName) }}
+{{- if $serverMatchExpressions }}
+{{ $serverMatchExpressions | nindent 4 }}
+{{- end }}
   bmcVersionTemplate:
     serverMaintenancePolicy: OwnerApproval
-{{- if $.Files.Lines $path | len | eq 2 }}
-{{ $.Files.Get (printf "bmc_versions/%s/default.yaml" $vendor) | trim | indent 4 }}
-{{ $.Files.Get $path | trim | indent 4 }}
-{{- else }}
-{{ $.Files.Get $path | trim | indent 4 }}
+    version: {{ $version | quote }}
+    image:
+      URI: {{ $entry.bmc.imageURI | quote }}
+      transferProtocol: "HTTPS"
+{{- with $.Values.bmcVersions.retryPolicy }}
+    retryPolicy:
+{{ toYaml . | indent 6 }}
 {{- end }}
 ---
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

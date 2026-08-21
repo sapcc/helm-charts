@@ -48,6 +48,7 @@ spec:
           {{- end }}
           spec:
 {{- with $.Values.affinity }}
+{{- if .topologyKey }}
             affinity:
               podAntiAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
@@ -55,6 +56,7 @@ spec:
                       matchLabels:
                         {{ toYaml .matchLabels  }}
                     topologyKey: {{ .topologyKey }}
+{{- end }}
 {{- end }}
             containers:
             - image: {{ include "thanosimage" $root }}

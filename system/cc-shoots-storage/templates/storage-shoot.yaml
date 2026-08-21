@@ -10,10 +10,11 @@ metadata:
     greenhouse.sap/owned-by: storage
     greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
 spec:
+  purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  credentialsBindingName: metal-{{ $region }}
+  credentialsBindingName: metal-wi-{{ $region }}
   seedName: mgmt-{{ $region }}
   region: {{ $region }}
   networking:
@@ -24,14 +25,25 @@ spec:
     providerConfig:
       apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
       kind: NetworkConfig
+      {{- if not $.Values.networking.overlay }}
       backend: bird
+      {{- end }}
+      {{- if $.Values.networking.overlay }}
+      vethMTU: "8930"
+      {{- else }}
       vethMTU: "8950"
+      {{- end }}
       ipam:
         type: host-local
         cidr: usePodCIDR
+      {{- if $.Values.networking.overlay }}
+      overlay:
+        enabled: true
+      {{- else }}
       overlay:
         enabled: false
         createPodRoutes: true
+      {{- end }}
       birdExporter:
         enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
   kubernetes:
@@ -118,12 +130,24 @@ spec:
             bgpFilter:
               - name: v4filter
                 exportV4:
+                  {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
+                  {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
+                  {{- end }}
+                  {{- if $.Values.networking.overlay }}
+                  - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
+                    matchOperator: In
+                    action: Reject
+                  {{- end }}
+            {{- if $.Values.networking.overlay }}
+            nodeToNodeMeshEnabled: true
+            {{- else }}
             nodeToNodeMeshEnabled: false
+            {{- end }}
             serviceLoadBalancerIPs:
             {{- range $cluster.networking.externalServices }}
             - {{ .cidr }}
@@ -147,7 +171,7 @@ spec:
         machineControllerManager:
           machineCreationTimeout: 1h30m0s
           machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: 1h30m0s
+          machineDrainTimeout: 240h0m0s
         providerConfig:
           apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
           kind: WorkerConfig
@@ -193,7 +217,7 @@ spec:
         machineControllerManager:
           machineCreationTimeout: 1h30m0s
           machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: 1h30m0s
+          machineDrainTimeout: 240h0m0s
         providerConfig:
           apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
           kind: WorkerConfig

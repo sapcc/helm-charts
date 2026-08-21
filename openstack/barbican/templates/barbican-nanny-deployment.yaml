@@ -56,6 +56,9 @@ spec:
       - name: move-secrets
         image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
         imagePullPolicy: IfNotPresent
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
         command:
         - dumb-init
 {{- if not .Values.barbican_nanny.debug }}
@@ -100,6 +103,8 @@ spec:
         - name: barbican-etc-confd
           mountPath: /etc/barbican/barbican.conf.d
           readOnly: true
+        - name: nanny-tmp
+          mountPath: /tmp
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- if not .Values.proxysql.native_sidecar }}
@@ -115,6 +120,8 @@ spec:
       - name: barbican-scripts
         configMap:
           name: barbican-scripts
+      - name: nanny-tmp
+        emptyDir: {}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
 {{- end }}

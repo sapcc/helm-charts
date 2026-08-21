@@ -26,12 +26,12 @@ databases: {}
 # (e.g. the bgwriter queries can be quite costly, so you might want to disable them if not used)
 collectors:
   database: true
-  replication_slot: true
+  replication_slots: true
   stat_bgwriter: true
 
 image:
   repository: shared-app-images/postgres-exporter
-  tag: 0.19.1-20260416205126
+  tag: 0.20.1-20260819215219
 
 # resource requests and limits <http://kubernetes.io/docs/user-guide/compute-resources/>
 resources:
@@ -45,7 +45,8 @@ resources:
 # alert configuration for Prometheus
 alerts:
   enabled: true
-  # name of the Prometheus that scrapes the metrics and produces alerts
+  # Name of the Prometheus that scrapes the metrics and produces alerts.
+  # This field can also accept a template string like '{{ eq .Values.global.clusterType "scaleout" | ternary "infra-frontend" "obs-metrics-product" }}'.
   prometheus: openstack
   # The tier label of the alerts.
   tier: os

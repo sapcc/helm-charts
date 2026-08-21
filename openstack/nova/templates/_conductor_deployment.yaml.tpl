@@ -5,7 +5,7 @@
 {{- $conductorConfig := $conductorArgs.config_file | required "'config_file' is required" }}
 {{- $dependencies := $conductorArgs.dependencies | required "'depenencies' is required" }}
 {{- $configMapKey := $conductorArgs.config_map_key | required "'config_map_key' is required" }}
-{{- $secretKey := $conductorArgs.secret_key | required "'secret_key' is required" }}
+{{- $secretKeys := $conductorArgs.secret_keys | required "'secret_keys' is required" }}
 {{- with index . 0 }}
 {{- $statsdEnabled := dig "DEFAULT" "statsd_enabled" nil $conductorConfig }}
 {{- $statsdPort := dig "DEFAULT" "statsd_port" nil $conductorConfig | required "'config_file.DEFAULT.statsd_port' is required" }}
@@ -54,6 +54,9 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "name" "nova-conductor") | include "utils.topology.constraints" | indent 6 }}
@@ -135,8 +138,10 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
+              {{- range $secretKey := $secretKeys }}
               - key: {{ $secretKey }}
                 path: nova.conf.d/{{ $secretKey }}
+              {{- end }}
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.osprofiler.enabled }}

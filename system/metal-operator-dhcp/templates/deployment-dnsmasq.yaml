@@ -57,6 +57,11 @@ spec:
         volumeMounts:
           - name: metal-dnsmasq
             mountPath: /opt/dnsmasq
+          - name: shared
+            mountPath: /shared
+          - name: lib-modules
+            mountPath: /lib/modules
+            readOnly: true
 {{ end }}
       containers:
       - command:
@@ -110,15 +115,43 @@ spec:
             - ALL
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+{{ if .Values.dnsmasq.service }}
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /opt/dnsmasq/dhcp-stop.sh
+{{ end }}
         volumeMounts:
         - mountPath: /opt/dnsmasq
           name: metal-dnsmasq
+        - mountPath: /shared
+          name: shared
+        {{- if .Values.bootScripts }}
+        {{- range $filename, $_ := .Values.bootScripts }}
+        - mountPath: /shared/tftpboot/{{ $filename }}
+          name: metal-bootscripts
+          subPath: {{ $filename }}
+        {{- end }}
+        {{- end }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
       volumes:
+      - name: shared
+        emptyDir: {}
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+          type: Directory
       - configMap:
           defaultMode: 484
           name: metal-dnsmasq
         name: metal-dnsmasq
+      {{- if .Values.bootScripts }}
+      - configMap:
+          defaultMode: 484
+          name: metal-bootscripts
+        name: metal-bootscripts
+      {{- end }}

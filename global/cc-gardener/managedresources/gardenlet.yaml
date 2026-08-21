@@ -1,7 +1,7 @@
 {{ if .Values.gardenlet.enabled -}}
 {{- range $index, $seedRegion := .Values.gardenlet.seedRegions }}
 {{- $regionName := default $seedRegion.name $seedRegion.altRegion }}
-{{- $clusterName := printf "%s-%s" (required "Values.gardenlet.namePrefix is required" $.Values.gardenlet.namePrefix) $seedRegion.name }}
+{{- $clusterName := printf "%s-%s" (required "Values.gardenlet.namePrefix is required" $.Values.gardenlet.namePrefix) (default $seedRegion.name $seedRegion.seedName) }}
 ---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: Gardenlet
@@ -18,10 +18,12 @@ spec:
 {{- if and $.Values.gardenlet.image $.Values.gardenlet.image.repository }}
       repository: {{ $.Values.gardenlet.image.repository }}
 {{- end }}
+# set global gardner tag value
+{{- $gardenerTag := $.Values.operator.image.tag | default $.Chart.AppVersion }}
 {{- if and $.Values.gardenlet.image $.Values.gardenlet.image.tag }}
       tag: {{ $.Values.gardenlet.image.tag }}
 {{- else }}
-      tag: {{ $.Chart.AppVersion }}
+      tag: {{ $gardenerTag }}
 {{- end }}
     imageVectorOverwrite: |
 {{ $.Values.operator.imageVectorOverwrite | indent 6 }}
@@ -31,7 +33,7 @@ spec:
       networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
     helm:
       ociRepository:
-{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" $.Values.gardenlet.helm.ociRepository "fallbackTag" $.Chart.AppVersion) | indent 8 }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" $.Values.gardenlet.helm.ociRepository "fallbackTag" $gardenerTag) | indent 8 }}
   config:
     gardenClientConnection:
       kubeconfigSecret:
@@ -84,7 +86,9 @@ spec:
             type: openstack-designate
           provider:
             type: openstack-designate
-            secretRef:
+            credentialsRef:
+              apiVersion: v1
+              kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
         ingress: # see prerequisites
@@ -101,7 +105,10 @@ spec:
           zones: {{ toYaml $seedRegion.zones | nindent 12 }}
         settings:
           verticalPodAutoscaler:
-            enabled: false
+            enabled: true
+            {{- with dig "settings" "verticalPodAutoscaler" "maxAllowed" nil $seedRegion }}
+            maxAllowed: {{ toYaml . | nindent 14 }}
+            {{- end }}
           excessCapacityReservation:
             enabled: false
           dependencyWatchdog:

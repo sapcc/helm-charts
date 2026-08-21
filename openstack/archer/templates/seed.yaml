@@ -2,7 +2,7 @@ apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
   name: {{ include "archer.name" . }}-seed
-  namespace: monsoon3
+  namespace: {{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}
   labels:
     {{- include "archer.labels" . | nindent 4 }}
 spec:
@@ -19,7 +19,7 @@ spec:
           url: 'https://{{include "archer_api_endpoint_public" .}}'
         - interface: internal # Limes accesses backend service APIs using OS_INTERFACE=internal
           region: '{{.Values.global.region}}'
-          url: 'http://archer.{{ include "svc_fqdn" . }}:{{ .Values.service.port }}'
+          url: 'http://{{ include "archer.fullname" . }}.{{ include "svc_fqdn" . }}:{{ .Values.service.port }}'
 
   domains:
     - name: Default

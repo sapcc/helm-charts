@@ -2,6 +2,62 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.7 - 2026/07/17
+
+- Add linkerd skip-inbound-ports annotation for TLS listener port in RabbitMQ deployment, if enabled
+- Chart version bumped
+
+## 0.25.6 - 2026/07/13
+
+- Fix volume-permission container failing on fresh PVCs. Only was working if `.erlang.cookie` was existing. 
+- Chart version bumped
+
+## 0.25.5 - 2026/07/02
+
+- RabbitMQ [4.3.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.2)
+- `rabbitmq-user-credential-updater` updated to `20260630105135` version
+- Chart version bumped
+
+## 0.25.4 - 2026/07/01
+
+- Fix `projectcalico.org/loadBalancerIPs` annotation needing JSON as value
+
+## 0.25.3 - 2026/07/01
+
+- Set `projectcalico.org/loadBalancerIPs` annotation to `externalIPs`' values to support newer, Gardener-based clusters
+
+## 0.25.2 - 2026/06/03
+
+- `rabbitmq-user-credential-updater` updated to `20260521084806` version
+- Chart version bumped
+
+## 0.25.1 - 2026/05/26
+
+- RabbitMQ [4.3.1 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.1)
+- Chart version bumped
+
+## 0.25.0 - 2026/05/12
+
+- Allow not adding `rabbitmq.serviceName` to the certificate's dnsNames
+  - If enabled, `externalNames` is a required setting
+  - Makes most sense together with also setting `certificate.commonName`
+
+## 0.24.1 - 2026/04/30
+- Enable transient_nonexcl_queues option, as it's in use by some services
+- Chart version bumped
+
+## 0.24.0 - 2026/04/28
+
+- Use `clusterDNSSearchDomain` to generate the certificate default common name and SAN
+  - Used to be the hardcoded `<fullname>.<namespace>.svc.kubernetes.<region>.<tld>`
+  - Now it's `<fullname>.<namespace>.svc.<clusterDNSSearchDomain>`
+- Chart version bumped
+
+## 0.23.0 - 2026/04/27
+
+- RabbitMQ [4.3.0 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.0)
+- Chart version bumped
+
 ## 0.22.2 - 2026/04/08
 
 - Fix erlang cookie file permissions in StatefulSet init container

@@ -26,9 +26,6 @@ apiVersion: v1
 metadata:
   name: {{ include "utils.coordination.volume_name" . }}
   annotations:
-  {{- if .Values.coordinationBackendStorageClass }}
-    volume.beta.kubernetes.io/storage-class: {{ .Values.coordinationBackendStorageClass | quote }}
-  {{- end }}
   {{- if  index .Values "owner-info" }}
     ccloud/support-group: {{  index .Values "owner-info" "support-group" | quote }}
     ccloud/service: {{  index .Values "owner-info" "service" | quote }}
@@ -39,5 +36,8 @@ spec:
   resources:
     requests:
       storage: {{ .Values.coordinationBackendStorageSize | default "1G" | quote }}
+{{- if .Values.coordinationBackendStorageClass }}
+  storageClassName: {{ .Values.coordinationBackendStorageClass | quote }}
+{{- end }}
 {{- end }}
 {{- end }}

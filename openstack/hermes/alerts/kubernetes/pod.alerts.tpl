@@ -1,0 +1,90 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-hermes-pod.alerts
+  rules:
+      - alert: OpenstackHermesPodCPUThrottling
+        expr: rate(container_cpu_cfs_throttled_periods_total{namespace="hermes",pod!~"keep-image-pulled-.*"}[1h]) / rate(container_cpu_cfs_periods_total{namespace="hermes",pod!~"keep-image-pulled-.*"}[1h]) > 0.8
+        for: 15m
+        labels:
+          no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur
+          support_group: observability
+          tier: os
+          service: hermes
+          severity: info
+          context: cpu
+          dashboard: hermes-overview
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+          meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
+        annotations:
+          summary: Container is constantly CPU-throttled
+          description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is being CPU-throttled constantly. This is probably impacting performance, so check if we can increase the number of replicas or the resource requests/limits."
+
+      - alert: OpenstackHermesPodSchedulingInsufficientMemory
+        expr: sum(rate(kube_pod_failed_scheduling_memory_total{namespace="hermes",pod_name!~"keep-image-pulled-.*"}[30m])) by (pod_name) > 0
+        for: 15m
+        labels:
+          severity: warning
+          support_group: observability
+          tier: os
+          service: hermes
+          context: memory
+          dashboard: hermes-overview
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+          meta: "{{`{{ $labels.pod_name }}`}}"
+          no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+        annotations:
+          summary: Scheduling failed due to insufficient memory
+          description: "The pod {{`{{ $labels.pod_name }}`}} failed to be scheduled. Insufficient memory!"
+
+      - alert: OpenstackHermesPodOOMKilled
+        expr: sum(rate(klog_pod_oomkill{namespace="hermes",pod_name!~"keep-image-pulled-.*"}[30m])) by (pod_name) > 0
+        for: 5m
+        labels:
+          support_group: observability
+          tier: os
+          service: hermes
+          severity: info
+          context: memory
+          dashboard: hermes-overview
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+          meta: "{{`{{ $labels.pod_name }}`}}"
+          no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+        annotations:
+          summary: Pod was oomkilled
+          description: "The pod {{`{{ $labels.pod_name }}`}} was oomkilled recently"
+
+      - alert: OpenstackHermesPodNotRunning
+        expr: |
+          kube_pod_container_status_waiting_reason{namespace="hermes", reason=~"CrashLoopBackOff|Error|CreateContainerConfigError|OOMKilled|RunContainerError|PostStartHookError", pod!~"keep-image-pulled-.*"} == 1
+        for: 15m
+        labels:
+          support_group: observability
+          tier: os
+          service: hermes
+          severity: warning
+          context: pod
+          dashboard: hermes-overview
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+          meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is {{`{{ $labels.reason }}`}}"
+          no_alert_on_absence: "true" # metric only exists when a pod is in a waiting state
+        annotations:
+          summary: Pod is not running
+          description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is in {{`{{ $labels.reason }}`}} state for more than 15 minutes."
+
+      - alert: OpenstackHermesPodOOMExceedingLimits
+        # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+        expr: container_memory_saturation_ratio{namespace="hermes"} > 0.7 AND predict_linear(container_memory_saturation_ratio{namespace="hermes"}[1h], 7*3600) > 1.0
+        for: 30m
+        labels:
+          support_group: observability
+          tier: os
+          service: hermes
+          severity: info
+          context: memory
+          dashboard: hermes-overview
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+          meta: "{{`{{ $labels.pod_name }}`}}"
+        annotations:
+          summary: Exceeding memory limits in 8h
+          description: "The pod {{`{{ $labels.pod_name }}`}} will exceed its memory limit in 8h."

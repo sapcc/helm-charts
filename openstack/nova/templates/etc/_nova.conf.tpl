@@ -27,6 +27,9 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 sync_power_state_pool_size = {{ .Values.sync_power_state_pool_size | default 500 }}
 sync_power_state_interval = {{ .Values.sync_power_state_interval | default 1200 }}
 sync_power_state_unexpected_call_stop = false
+{{- if (.Values.imageVersion | hasPrefix "bobcat" | not) }}
+heal_instance_info_cache_interval = {{ .Values.heal_instance_info_cache_interval | default 86400 }}
+{{- end }}
 
 prepare_empty_host_for_spawning_interval = 600
 
@@ -43,12 +46,6 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 {{- range $k, $v := .Values.quota }}
 {{ $k }} = {{ $v }}
 {{- end }}
-
-# usage refreshes on new reservations, 0 means disabled
-# number of seconds between subsequent usage refreshes
-max_age = {{ .Values.usage_max_age | default 0 }}
-# count of reservations until usage is refreshed
-until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 
 {{ include "ini_sections.oslo_messaging_rabbit" .}}
 
@@ -116,6 +113,7 @@ project_name = "{{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 valid_interfaces = internal
 region_name = {{.Values.global.region}}
+timeout = {{.Values.placement_timeout}}
 
 {{- include "ini_sections.cache" . }}
 

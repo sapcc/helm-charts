@@ -53,6 +53,10 @@ cronus:
   maillog:
     uri: {{ .Values.cronus.maillog.uri | quote }}
 {{- end }}
+{{- if .Values.cronus.postfixUsage }}
+  postfixUsage:
+    uri: {{ .Values.cronus.postfixUsage.uri | quote }}
+{{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
 {{- end }}
@@ -82,7 +86,14 @@ cronus:
     {{- end }}
     allowedServices:
     {{- range $key, $value := .Values.config.allowedServices }}
+      {{- if kindIs "slice" $value }}
+      {{ $key }}:
+        {{- range $value }}
+        - {{ . }}
+        {{- end }}
+      {{- else }}
       {{ $key }}: {{ $value }}
+      {{- end }}
     {{- end }}
   listenAddr:
     http: :{{ .Values.cronus.http }} # default :5000
@@ -322,6 +333,7 @@ cronus:
 {{- end }}
 {{- if .Values.hermes }}
   auditSink:
+    enabled: {{ .Values.config.cronusAuditSink.enabled | default false }}
     queueName: {{ .Values.config.cronusAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}

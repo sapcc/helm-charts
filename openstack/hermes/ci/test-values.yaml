@@ -1,7 +1,13 @@
 global:
   region: earth
+  tld: example.com
   master_password: topSecret
+  clusterDNSSearchDomain: cluster.local
+  registry: keppel.eu-de-1.cloud.sap
+  linkerd_enabled: false
+  linkerd_requested: false
   metis:
+    user: metis-user
     password: topSecret
   forwarding:
     audit:
@@ -33,6 +39,8 @@ hermes:
   image_tag: latest
   image_pull_policy: IfNotPresent
   dockerHubMirror: another-region
+  # Required by log-router-secret when logRouter.swift.enabled=true (CI exercises that path).
+  seed_password: test
   certs:
     tls_crt: my-tls-cert
     tls_key: my-tls-key
@@ -89,3 +97,55 @@ rabbitmq_notifications:
 
   metrics:
     enabled: false
+
+logRouter:
+  enabled: true
+  image_tag: "latest"
+  replicas: 1
+  init_image: "keppel.eu-de-1.cloud.sap/ccloud/shared-app-images/alpine-busybox:latest"
+
+  rabbitmq:
+    port: 5672
+    queue: "dataplane.audit"
+    exchange: ""
+    routing_key: "#"
+    prefetch: "10"
+    user: test
+    password: test
+
+  s3:
+    endpoint: "https://ceph.qa.example.com"
+    region: "qa"
+    bucket: "audit-qa"
+    prefix: "dataplane/"
+
+  # CI exercises the Swift/Keystone-token auth path (the only supported mode).
+  swift:
+    enabled: true
+    service_type: "object-store-ceph"
+
+  wal:
+    storage: 1Gi
+
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+hermes-postgresql:
+  postgresVersion: 17
+  databases:
+    hermes: {}
+  users:
+    hermes: {}
+    log-router: {}
+  config:
+    max_connections: 16
+  persistence:
+    enabled: false
+    size: 1Gi
+  alerts:
+    support_group: observability

@@ -19,6 +19,12 @@ spec:
     kinds:
       - apiGroups: [ admissionregistration.k8s.io ]
         kinds: [ MutatingWebhookConfiguration, ValidatingWebhookConfiguration ]
+  parameters:
+    {{- if eq .Values.cluster_type "kubernikus" "virtual" "metal" }}
+    kubeSystemReleaseName: "kube-system-{{ .Values.cluster_type }}"
+    {{- else }}
+    kubeSystemReleaseName: "kube-system"
+    {{- end }}
 
 # NOTE: When we want to move into `enforcementMode: deny` for some of these
 # kinds, the plan is to make a new constraint config and move the respective

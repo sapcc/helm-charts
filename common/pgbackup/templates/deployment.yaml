@@ -67,6 +67,10 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-pgbackup"
                   key: swift-password
+            {{- if eq .Values.global.region "eu-de-3" }}
+            - name: OS_SERVICE_TYPE
+              value: object-store-ceph
+            {{- end }}
             - name: PGSQL_HOST
               value: '{{ $db_host }}.{{ .Release.Namespace }}.svc'
             - name: PGSQL_USER

@@ -11,9 +11,15 @@ spec:
     labels:
       {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "deployment" "messagequeue") | indent 6 }}
   dnsNames:
+  {{- if .Values.addServiceNameToDnsNames }}
     - {{ include "rabbitmq.serviceName" . }}
-  {{- if .Values.externalNames }}
-    {{- range .Values.externalNames }}
+    {{- if .Values.externalNames }}
+      {{- range .Values.externalNames }}
+    - "{{ . }}"
+      {{- end }}
+    {{- end }}
+  {{- else }}
+    {{- range (required ".Values.externalNames is required with addServiceNameToDnsNames set to false" .Values.externalNames) }}
     - "{{ . }}"
     {{- end }}
   {{- end }}

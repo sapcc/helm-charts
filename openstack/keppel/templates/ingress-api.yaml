@@ -1,6 +1,7 @@
 {{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
 {{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
 
+---
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -48,6 +49,37 @@ spec:
             backend:
               service:
                 name: keppel-api
+                port:
+                  number: 80
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: keppel-liquid-api
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+
+spec:
+  tls:
+    - secretName: tls-keppel-liquid-api
+      hosts:
+        - 'keppel-liquid.{{ $region }}.{{ $tld }}'
+  rules:
+    - host: 'keppel-liquid.{{ $region }}.{{ $tld }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keppel-liquid-api
                 port:
                   number: 80
 

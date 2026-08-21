@@ -46,16 +46,34 @@ spec:
       apiVersion: auditing.extensions.gardener.cloud/v1alpha1
       kind: AuditConfiguration
       backends:
-      - http:
+      - deliveryMode: Guaranteed
+        http:
           url: {{ .Values.extensions.auditing.url }}
           tls:
             secretReferenceName: auditing-mtls
+      {{- range .Values.extensions.auditing.backends }}
+      - http:
+          url: {{ .url }}
+          {{- if .tls }}
+          tls:
+            secretReferenceName: {{ required "backends[].tls.secretName is required" .tls.secretName }}
+          {{- end }}
+      {{- end }}
   resources:
   - name: auditing-mtls
     resourceRef:
       apiVersion: v1
       kind: Secret
       name: auditing-mtls
+  {{- range .Values.extensions.auditing.backends }}
+  {{- if .tls }}
+  - name: {{ required "backends[].tls.secretName is required" .tls.secretName }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: {{ .tls.secretName }}
+  {{- end }}
+  {{- end }}
   {{- end }}
   runtimeCluster:
     ingress:
@@ -75,13 +93,20 @@ spec:
       {{- toYaml .Values.garden.runtimeCluster.zones | nindent 6 }}
     settings:
       verticalPodAutoscaler:
-        enabled: false
+        enabled: true
+        {{- with dig "runtimeCluster" "verticalPodAutoscaler" "maxAllowed" nil .Values.garden }}
+        maxAllowed: {{ toYaml . | nindent 10 }}
+        {{- end }}
       topologyAwareRouting:
         enabled: false
 {{- if .Values.garden.runtimeCluster.loadBalancerServices }}
       loadBalancerServices: {{ toYaml .Values.garden.runtimeCluster.loadBalancerServices | nindent 8 }}
 {{- end }}
   virtualCluster:
+{{- if .Values.garden.virtualCluster.highAvailability }}
+    controlPlane:
+      highAvailability: {}
+{{- end }}
     dns:
       domains:
       {{- if .Values.garden.domainOverride }}
@@ -138,6 +163,10 @@ spec:
     gardener:
       clusterIdentity: {{ .Values.global.clusterIdentity | default .Values.global.cluster }}
       gardenerAPIServer:
+        {{- with .Values.garden.gardenerAPIServer.featureGates }}
+        featureGates:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         admissionPlugins:
         - name: ShootVPAEnabledByDefault
           disabled: true
@@ -150,10 +179,6 @@ spec:
 {{- if .Values.garden.dashboard }}
 {{- if .Values.garden.dashboard.enabled }}
       gardenerDashboard:
-{{- if .Values.garden.dashboard.customIngress }}
-        ingress:
-          enabled: false
-{{- end }}
         enableTokenLogin: {{ .Values.garden.dashboard.enableTokenLogin }}
         logLevel: info
 {{- if .Values.garden.dashboard.oidc.enabled }}
@@ -173,6 +198,10 @@ spec:
 {{- if gt (len .Values.garden.virtualCluster.gardenerResourceManager.additionalTargetNamespaces) 0 }}
       gardenerResourceManager:
         additionalTargetNamespaces: {{- toYaml .Values.garden.virtualCluster.gardenerResourceManager.additionalTargetNamespaces | nindent 8 }}
+{{- end }}
+{{- if and .Values.garden.virtualCluster.gardenerScheduler .Values.garden.virtualCluster.gardenerScheduler.strategy }}
+      gardenerScheduler:
+        strategy: {{ .Values.garden.virtualCluster.gardenerScheduler.strategy }}
 {{- end }}
     maintenance:
       timeWindow:

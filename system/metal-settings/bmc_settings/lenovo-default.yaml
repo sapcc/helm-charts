@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Default XCC BMC settings for Lenovo ThinkSystem models.
+# Applied via BMCSettingsSet after the BMC firmware reaches the target version.
+# Rendered as a Helm template via tpl — configMapName is substituted at chart render time.
+# BmcName and Domain are resolved at reconcile time from fieldRef / metal-bmc-settings ConfigMap.
+#
+# Keys use the format "METHOD /redfish/endpoint" — the controller issues the
+# corresponding HTTP call and compares the current response against the desired body.
+# Multiple settings for the same endpoint are merged into a single JSON body.
+#
+# Values sourced from: baremetal-config/lenovo/*/bmc/default-settings.yml
+settings:
+  # NTP + IPMI (merged — same endpoint)
+  "PATCH /redfish/v1/Managers/1/NetworkProtocol": '{"NTP": {"ProtocolEnabled": true, "NTPServers": ["timehost1.global.cloud.sap", "timehost2.global.cloud.sap", "timehost3.global.cloud.sap"]}, "IPMI": {"ProtocolEnabled": true}}'
+  # SNMP: disable SNMPv3 agent
+  "PATCH /redfish/v1/Managers/1/NetworkProtocol/Oem/Lenovo/SNMP": '{"SNMPv3Agent": {"ProtocolEnabled": false}}'
+  # Disable ToHost interface (in-band BMC access)
+  "PATCH /redfish/v1/Managers/1/EthernetInterfaces/ToHost": '{"InterfaceEnabled": false}'
+  # Power: random startup delay, restore last power state after power loss
+  "PATCH /redfish/v1/Chassis/1/Power": '{"Oem": {"Lenovo": {"RandomDelay": true, "PowerRestorePolicy": "Restore"}}}'
+  # Hostname — $(BmcName) resolved at reconcile time via fieldRef variable below
+  "PATCH /redfish/v1/Managers/1/EthernetInterfaces/NIC": '{"Oem": {"Lenovo": {"IPv6Enabled": false}}, "HostName": "$(BmcName)"}'
+  # DNS: static servers, disable DDNS; domain built from $(Region) BMC label at reconcile time
+  "PATCH /redfish/v1/Managers/1/NetworkProtocol/Oem/Lenovo/DNS": '{"IPv4Address1": "147.204.9.200", "IPv4Address2": "147.204.9.201", "DNSEnable": true, "PreferredAddresstype": "IPv4", "DDNS": [{"DomainNameSource": "DHCP", "DDNSEnable": false, "DomainName": "cc.$(Region).cloud.sap"}]}'
+variables:
+  # BmcName: resolved from the BMCSettings object itself — used as the name for objectFieldRef lookups below.
+  - key: BmcName
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.BMCRef.name
+  # Region: topology region from BMC label (e.g. "qa-de-1") — used to construct the DNS domain.
+  - key: Region
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[topology.kubernetes.io/region]

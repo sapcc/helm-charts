@@ -28,8 +28,8 @@ replicaCount: 1
 
 kmip:
   pullPolicy: IfNotPresent
-  image: defined-in-secrets
-  restapi_image: defined-in-secrets
+  pykmipCoreImageVersion: defined-in-secrets
+  pykmipRestApiImageVersion: defined-in-secrets
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -55,12 +55,15 @@ service:
 
 tlsacme: true
 
+sentry:
+  enabled: true
+
 ingress:
   enabled: true
 
 livenessProbe:
   tcpSocket:
-    port: 5696
+    port: 5697
   initialDelaySeconds: 10
   periodSeconds: 10
   timeoutSeconds: 1
@@ -68,7 +71,7 @@ livenessProbe:
   failureThreshold: 3
 readinessProbe:
   tcpSocket:
-    port: 5696
+    port: 5697
   initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 1
@@ -143,32 +146,105 @@ mysql_metrics:
   db_name: kmip
   db_user: kmip
   customMetrics:
-    - help: Count managed_objects
+    - name: openstack_kmip_managed_objects_gauge
+      help: Number of managed objects grouped by type, policy, sensitivity, and owner
       labels:
-      - "uid"
       - "object_type"
       - "class_type"
-      - "value"
-      - "name_index"
       - "operation_policy_name"
       - "sensitive"
-      - "initial_date"
       - "owner"
-      name: openstack_kmip_managed_objects_gauge
+      - "value"
       query: |
-        SELECT
-          uid,
-          object_type,
-          class_type,
-          value,
-          name_index,
-          operation_policy_name,
-          `sensitive`,
-          initial_date,
-          owner,
-          COUNT(*) AS gauge
-        FROM managed_objects
-        GROUP BY uid, object_type, class_type, value, name_index, operation_policy_name, `sensitive`, initial_date, owner;
+        SELECT object_type, class_type, operation_policy_name, `sensitive`, owner, value, gauge
+        FROM (
+          SELECT
+            CAST(object_type AS CHAR) AS object_type,
+            COALESCE(class_type, '') AS class_type,
+            COALESCE(operation_policy_name, '') AS operation_policy_name,
+            CAST(`sensitive` AS CHAR) AS `sensitive`,
+            COALESCE(owner, '') AS owner,
+            'redacted' AS value,
+            COUNT(*) AS gauge
+          FROM managed_objects
+          GROUP BY
+            object_type,
+            class_type,
+            operation_policy_name,
+            `sensitive`,
+            owner
+          UNION ALL
+          SELECT
+            'none' AS object_type,
+            'none' AS class_type,
+            'none' AS operation_policy_name,
+            'none' AS `sensitive`,
+            'none' AS owner,
+            'redacted' AS value,
+            0 AS gauge
+          WHERE NOT EXISTS (SELECT 1 FROM managed_objects)
+        ) x;
+      values:
+      - "gauge"
+    - name: openstack_kmip_managed_objects_by_state_gauge
+      help: Number of cryptographic objects per lifecycle state
+      labels:
+      - "class_type"
+      - "state"
+      - "owner"
+      query: |
+        SELECT class_type, state, owner, gauge
+        FROM (
+          SELECT
+            COALESCE(mo.class_type, '') AS class_type,
+            CAST(co.state AS CHAR) AS state,
+            COALESCE(mo.owner, '') AS owner,
+            COUNT(*) AS gauge
+          FROM managed_objects mo
+          JOIN crypto_objects co ON mo.uid = co.uid
+          GROUP BY mo.class_type, co.state, mo.owner
+          UNION ALL
+          SELECT
+            'none' AS class_type,
+            'none' AS state,
+            'none' AS owner,
+            0 AS gauge
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM managed_objects mo
+            JOIN crypto_objects co ON mo.uid = co.uid
+          )
+        ) x;
+      values:
+      - "gauge"
+    - name: openstack_kmip_managed_objects_age_seconds_gauge
+      help: Age in seconds of the oldest managed object per owner
+      labels:
+      - "owner"
+      query: |
+        SELECT owner, gauge
+        FROM (
+          SELECT
+            COALESCE(owner, '') AS owner,
+            UNIX_TIMESTAMP() - MIN(initial_date) AS gauge
+          FROM managed_objects
+          WHERE initial_date > 0
+          GROUP BY owner
+          UNION ALL
+          SELECT
+            'none' AS owner,
+            0 AS gauge
+          WHERE NOT EXISTS (
+            SELECT 1 FROM managed_objects WHERE initial_date > 0
+          )
+        ) x;
+      values:
+      - "gauge"
+    - name: openstack_kmip_total_managed_objects_gauge
+      help: Total number of managed objects in the database
+      labels: []
+      query: |
+        SELECT COUNT(*) AS gauge FROM managed_objects;
       values:
       - "gauge"
 

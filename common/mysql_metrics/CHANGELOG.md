@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.8.1 - 2026/04/28
+- Updated CHANGELOG.md
+
+## v0.8.0 - 2026/04/28
+- Use `clusterDNSSearchDomain` to generate the service cluster FQDN
+  - Used to be the hardcoded `<fullname>.<namespace>.svc.kubernetes.<region>.<tld>`
+  - Now it's `<fullname>.<namespace>.svc.<clusterDNSSearchDomain>`
+
 ## v0.6.1 - 2026/01/19
 * Update sql-exporter version to 0.9.0 (2026-01-19)
 
