@@ -155,4 +155,9 @@ octavia = True
 [dns]
 nameservers = 10.114.1.233,147.204.35.140,147.204.35.141
 
+[api-schema]
+allow_additional_properties = true
+nullable_properties = current_workload,disk_available_least
+on_violation = strict
+
 {{ end }}
