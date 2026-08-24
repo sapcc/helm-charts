@@ -48,7 +48,10 @@ groups:
       meta: "{{ $labels.pod_name }}"
     annotations:
       summary: Exceeding memory limits in 8h
-      description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
+      description: >
+        The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
+        Check if the growth is traffic-driven (consider scaling replicas) or
+        a potential memory leak (restart the pod and monitor).
 
   - alert: OpenstackKeystoneApiCPUThrottlingExceeds80Percentage
     expr: rate(container_cpu_cfs_throttled_periods_total{container="keystone-api"}[5m]) / rate(container_cpu_cfs_periods_total{container="keystone-api"}[5m]) > 0.8
