@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.42.1 - 2026/08/20
+* `maria-back-me-up` updated to `10.11-20260820143216` with ceph-s3 fixes
+* updated optional `go-maria-sync` deployment image tag
+* updated sidecar images:
+  * `mysqld-exporter` updated to `v0.20.0`
+  * `mariadb-credentials-updater`
+  * `pod-readiness`
+* chart version bumped
+
 ## v0.42.0 - 2026/07/13
 * support SSE-C for Ceph S3 backup uploads
   * default at `global.mariadb.backup_v2.ceph_s3.sse_customer_key`
