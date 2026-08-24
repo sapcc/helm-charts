@@ -110,6 +110,7 @@ groups:
     expr: opensearch_logs_keystone_saml_errors_doc_count > 0
     for: 0m
     labels:
+      context: compliance
       severity: warning
       service: keystone
       support_group: identity
