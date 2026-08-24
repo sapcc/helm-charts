@@ -34,21 +34,6 @@ groups:
       description: 'The keystone ingress API endpoint is throwing 5xx for 15 min. Check if the keystone-api k8s pods are OK ASAP.'
       summary: 'Keystone API ingress endpoint is in Critical State'
 
-  - alert: OpenstackKeystonePodOOMKilled
-    expr: sum(rate(klog_pod_oomkill{pod_name=~"keystone-.+"}[30m])) by (pod_name) > 0
-    for: 5m
-    labels:
-      no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
-      support_group: identity
-      tier: os
-      service: keystone
-      severity: info
-      context: memory
-      meta: "{{ $labels.pod_name }}"
-    annotations:
-      summary: Pod was oomkilled
-      description: The pod {{ $labels.pod_name }} was oomkilled recently.
-
   - alert: OpenstackKeystonePodOOMExceedingLimits
     # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
     expr: container_memory_saturation_ratio{pod_name=~"keystone-.+",container_name="keystone-api"} > 0.7 AND predict_linear(container_memory_saturation_ratio{pod_name=~"keystone-.+",container_name="keystone-api"}[1h], 7*3600) > 1.0
