@@ -35,11 +35,21 @@ Include /etc/apache2/conf-enabled/tls-hardening.conf
     WSGIScriptAlias / /var/www/cgi-bin/barbican/barbican-wsgi-api
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
+    LimitRequestBody 114688
 
     <IfVersion >= 2.4>
         ErrorLogFormat "%{cu}t %M"
     </IfVersion>
     ErrorLog /dev/stderr
+    {{- if .Values.use_json }}
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout json_combined env=!forwarded
+    CustomLog /dev/stdout json_proxy env=forwarded
+    {{- else }}
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout combined env=!forwarded
+    CustomLog /dev/stdout proxy env=forwarded
+    {{- end }}
 
     KeepAliveTimeout 61
 </VirtualHost>
