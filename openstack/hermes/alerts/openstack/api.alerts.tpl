@@ -170,7 +170,7 @@ groups:
       summary: "RabbitMQ blocking publishers (free-disk watermark)"
 
   - alert: OpenstackHermesLogstashPlugins
-    expr: sum(increase(logstash_node_plugin_events_out_total[30m])) <= 0
+    expr: sum(increase(logstash_stats_pipeline_plugin_events_out[30m])) <= 0
     labels:
       context: logstash
       severity: warning
@@ -186,7 +186,7 @@ groups:
       summary: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
 
   - alert: OpenstackHermesLogstashKafkaFailure
-    expr: sum(rate(logstash_node_plugin_failures_total{namespace=~"hermes",plugin="kafka"}[10m])) > 0
+    expr: sum(rate(logstash_stats_pipeline_plugin_bulk_requests_errors{namespace=~"hermes",plugin="kafka"}[10m])) + sum(rate(logstash_stats_pipeline_plugin_documents_non_retryable_failures{namespace=~"hermes",plugin="kafka"}[10m])) > 0
     for: 5m
     labels:
       context: logstash
@@ -203,7 +203,7 @@ groups:
       summary: "Hermes logstash Kafka output plugin is failing"
 
   - alert: OpenstackHermesLogstashPluginsJDBCStaticFailure
-    expr: sum(rate(logstash_node_plugin_failures_total{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
+    expr: sum(rate(logstash_stats_pipeline_plugin_bulk_requests_errors{namespace=~"hermes",plugin="jdbc_static"}[10m])) + sum(rate(logstash_stats_pipeline_plugin_documents_non_retryable_failures{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
     labels:
       context: logstash
       severity: warning
