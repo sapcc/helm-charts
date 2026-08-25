@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.42.2 - 2026/08/25
+* MariaDB version updated to [10.11.19](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.19)
+* `maria-back-me-up` updated to `10.11-20260825091346`
+* chart version bumped
+
 ## v0.42.1 - 2026/08/20
 * `maria-back-me-up` updated to `10.11-20260820143216` with ceph-s3 fixes
 * updated optional `go-maria-sync` deployment image tag
