@@ -63,6 +63,16 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+        env:
+          - name: KUBECONFIG
+            value: /var/run/remote-kubeconfig/kubeconfig
+        volumeMounts:
+          - name: remote-serviceaccount
+            mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+            readOnly: true
+          - name: remote-kubeconfig
+            mountPath: /var/run/remote-kubeconfig
+            readOnly: true
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -74,3 +84,15 @@ spec:
           type: RuntimeDefault
       serviceAccountName: {{ include "chart.resourceName" (dict "suffix" "metaldata" "context" $) }}
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: remote-serviceaccount
+          secret:
+            secretName: metal-operator-remote-kubeconfig
+            items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
+        - name: remote-kubeconfig
+          configMap:
+            name: remote-kubeconfig
