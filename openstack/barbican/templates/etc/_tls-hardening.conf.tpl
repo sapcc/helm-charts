@@ -10,8 +10,8 @@ SSLProtocol -all +TLSv1.3 +TLSv1.2
 # TLS 1.2 Cipher Suites (ECDHE + AEAD only, PFS required)
 SSLCipherSuite ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256
 
-# TLS 1.3 Cipher Suites
-SSLCipherSuite TLSv1.3 TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+# TLS 1.3 Cipher Suites (AES-GCM and AES-CCM)
+SSLCipherSuite TLSv1.3 TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_SHA256
 
 # Server chooses cipher order
 SSLHonorCipherOrder on
@@ -31,3 +31,6 @@ SSLSessionTickets off
 
 # Strict SNI
 SSLStrictSNIVHostCheck on
+
+# Disable TLS compression (CRIME mitigation)
+SSLCompression off

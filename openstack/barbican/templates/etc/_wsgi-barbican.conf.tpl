@@ -30,6 +30,13 @@ Include /etc/apache2/conf-enabled/tls-hardening.conf
     SSLCertificateFile /mnt/secrets/tls.crt
     SSLCertificateKeyFile /mnt/secrets/tls.key
 
+    # HTTP security response headers
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Content-Security-Policy "default-src 'self'"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
     WSGIDaemonProcess barbican-api-tls processes={{ .Values.api.processes | default 1 }} threads=1 user=barbican group=barbican display-name=%{GROUP}
     WSGIProcessGroup barbican-api-tls
     WSGIScriptAlias / /var/www/cgi-bin/barbican/barbican-wsgi-api
