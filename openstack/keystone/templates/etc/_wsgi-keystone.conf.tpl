@@ -89,6 +89,13 @@ Listen 0.0.0.0:443
     SSLCertificateFile /mnt/secrets/tls.crt
     SSLCertificateKeyFile /mnt/secrets/tls.key
 
+    # HTTP security response headers
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Content-Security-Policy "default-src 'self'"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
     {{- if .Values.services.ingress.x509.ca }}
     SSLVerifyClient optional
     SSLVerifyDepth 3
