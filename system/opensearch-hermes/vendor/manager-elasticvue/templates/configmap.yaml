@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-hermes-manager-elasticvue-configmap
+  namespace: hermes
+  labels:
+    system: opensearch-hermes
+    service: audit
+    component: opensearch-hermes-manager-elasticvue
+
+data:
+  opensearch-proxy.conf: |
+    server {
+        listen 9201;
+        server_name _;
+
+        location / {
+            proxy_pass https://{{ .Values.opensearch.service }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.opensearch.port }};
+            proxy_ssl_trusted_certificate /etc/nginx/certs/ca.crt;
+            proxy_ssl_verify on;
+            proxy_ssl_verify_depth 2;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            # Required for OpenSearch responses
+            proxy_pass_header Authorization;
+            proxy_read_timeout 90s;
+        }
+    }
