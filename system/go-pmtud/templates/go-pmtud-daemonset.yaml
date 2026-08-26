@@ -17,9 +17,12 @@ spec:
       labels:
         name: pmtud
         k8s-app: pmtud
+      {{- if not .Values.pmtud.inBinaryLifecycle }}
       annotations:
         configmap-pmtud-hash: {{ include (print $.Template.BasePath "/go-pmtud-configmap.yaml") $ | sha256sum }}
+      {{- end }}
     spec:
+      {{- if not .Values.pmtud.inBinaryLifecycle }}
       initContainers:
         - name: iptables-init
           image: "{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.image }}:{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.tag }}"
@@ -30,14 +33,17 @@ spec:
           volumeMounts:
             - name: pmtud
               mountPath: /scripts/pmtud
+      {{- end }}
       containers:
       - name: pmtud
         image: "{{ required ".Values.images.pmtud.image is missing" .Values.images.pmtud.image }}:{{ required ".Values.images.pmtud.tag is missing" .Values.images.pmtud.tag }}"
         imagePullPolicy: IfNotPresent
+        {{- if not .Values.pmtud.inBinaryLifecycle }}
         lifecycle:
           preStop:
             exec:
               command: ["/scripts/pmtud/iptables-stop.sh"]
+        {{- end }}
         command:
           - /go-pmtud
           - --iface_names={{ required ".Values.pmtud.ifaceNames is required" .Values.pmtud.ifaceNames | join "," }}
@@ -55,16 +61,22 @@ spec:
               fieldPath: spec.nodeName
         securityContext:
            privileged: true
+        {{- if not .Values.pmtud.inBinaryLifecycle }}
         volumeMounts:
           - name: pmtud
             mountPath: /scripts/pmtud
+        {{- end }}
       hostNetwork: true
       serviceAccountName: pmtud
       terminationGracePeriodSeconds: 5
       tolerations:
         - operator: "Exists"
+      {{- if not .Values.pmtud.inBinaryLifecycle }}
       volumes:
         - name: pmtud
           configMap:
             name: pmtud
             defaultMode: 0744
+      {{- else }}
+      volumes: []
+      {{- end }}
