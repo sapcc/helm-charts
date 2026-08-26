@@ -140,7 +140,7 @@ Listen 0.0.0.0:443
     <LocationMatch "^/Shibboleth\.sso(/|$)">
         SetHandler shib
     </LocationMatch>
-    IncludeOptional /etc/apache2/conf-enabled/federation-saml.conf
+    IncludeOptional /etc/apache2/conf-enabled/federation-saml.d/*.conf
     {{- end }}
 </VirtualHost>
 {{- end }}
