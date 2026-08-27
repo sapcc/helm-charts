@@ -37,8 +37,7 @@ Include /etc/apache2/conf-enabled/tls-hardening.conf
     Header always set Content-Security-Policy "default-src 'self'"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
-    WSGIDaemonProcess barbican-api-tls processes={{ .Values.api.processes | default 1 }} threads=1 user=barbican group=barbican display-name=%{GROUP}
-    WSGIProcessGroup barbican-api-tls
+    WSGIProcessGroup barbican-api
     WSGIScriptAlias / /var/www/cgi-bin/barbican/barbican-wsgi-api
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
