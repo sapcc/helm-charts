@@ -114,8 +114,19 @@ Listen 0.0.0.0:443
     RequestHeader unset SSL_Client-Verify
     RequestHeader unset SSL-Client_Verify
     RequestHeader unset SSL_CLIENT_VERIFY
+    {{- /* The issuer/subject DN env vars have four underscore-separated tokens,
+           so a client can spell the injected header with '-' or '_' at each of
+           the three separators; strip every combination. */}}
+    {{- range $dn := list "I" "S" }}
+    {{- range $s1 := list "-" "_" }}
+    {{- range $s2 := list "-" "_" }}
+    {{- range $s3 := list "-" "_" }}
+    RequestHeader unset SSL{{ $s1 }}Client{{ $s2 }}{{ $dn }}{{ $s3 }}DN
+    {{- end }}{{- end }}{{- end }}{{- end }}
     RequestHeader set SSL-Client-Cert "expr=%{escape:%{SSL:SSL_CLIENT_CERT}}"
     RequestHeader set SSL-Client-Verify "expr=%{SSL:SSL_CLIENT_VERIFY}"
+    RequestHeader set SSL-Client-I-DN "expr=%{SSL:SSL_CLIENT_I_DN}"
+    RequestHeader set SSL-Client-S-DN "expr=%{SSL:SSL_CLIENT_S_DN}"
     {{- end }}
 
     WSGIDaemonProcess keystone-tls processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
