@@ -23,6 +23,10 @@ build-cluster-api-core:
 	@find cluster-api-core/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#/{{ include "cluster-api-core.fullname" . }}-system/#/#g' {} \;
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
+	@# Label CRDs so clusterctl move discovers them (the core Cluster/Machine/
+	@# KubeadmControlPlane graph is the root of the ownerRef chain clusterctl walks;
+	@# without this label a non-clusterctl-init install is invisible to `clusterctl move`)
+	@find cluster-api-core/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
 
@@ -37,6 +41,9 @@ build-controlplane-kubeadm:
 	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#/{{ include "controlplane-kubeadm.fullname" . }}-system/#/#g' {} \;
 	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-control-plane-system.#.#g' {} \;
 	@$(SED) -i 's/10240/30720/g' controlplane-kubeadm/crds/*
+	@# Label CRDs so clusterctl move discovers them (KubeadmControlPlane is in the
+	@# Cluster ownerRef chain clusterctl walks)
+	@find controlplane-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
 
@@ -48,12 +55,18 @@ build-bootstrap-kubeadm:
 	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#/{{ include "bootstrap-kubeadm.fullname" . }}-system/#/#g' {} \;
 	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-bootstrap-system.#.#g' {} \;
 	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/*
+	@# Label CRDs so clusterctl move discovers them (KubeadmConfig is owned by the
+	@# Machines in the Cluster ownerRef chain clusterctl walks)
+	@find bootstrap-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
 	$(call fix-crds,provider-helm)
+	@# Label CRDs so clusterctl move discovers them (HelmChartProxy/HelmReleaseProxy
+	@# are in the Cluster ownerRef chain clusterctl walks)
+	@find provider-helm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@find provider-helm/templates -type f -exec $(SED) -i -e 's#webhook-server-cert#caaph-webhook-server-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
 	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
@@ -61,6 +74,8 @@ build-provider-helm:
 build-provider-ipam:
 	$(call build-chart,provider-ipam,https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/default,$(PROVIDER_IPAM_VERSION))
 	$(call fix-crds,provider-ipam)
+	@# Label CRDs so clusterctl move discovers them
+	@find provider-ipam/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@find provider-ipam/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@find provider-ipam/templates -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-ipam/values.yaml
@@ -96,6 +111,9 @@ build-provider-metal3:
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
 	@# fix for "no matches for kind "IPClaim"
 	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
+	@# Label CRDs so clusterctl move discovers them (Metal3Cluster/Metal3Machine are
+	@# in the Cluster ownerRef chain clusterctl walks)
+	@find provider-metal3/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
 	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
 
@@ -119,6 +137,9 @@ build-provider-kubernikus:
 		   provider-kubernikus/templates/manager-clusterrole.yaml; \
 	fi
 	@find provider-kubernikus/templates -type f -exec $(SED) -i -e 's#-cluster-api-control-plane-provider-kubernikus#-manager-role#g' {} \;
+	@# Label CRDs so clusterctl move discovers them (KubernikusControlPlane is in the
+	@# Cluster ownerRef chain clusterctl walks)
+	@find provider-kubernikus/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
 
@@ -136,33 +157,59 @@ build-baremetal-operator:
 	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
+
 build-metal-operator:
 	@helm dep up metal-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator/Chart.yaml
 
 build-metal-operator-remote:
 	@helm dep up metal-operator-remote
-	# Merge upstream controllerManager defaults with our overrides into values.yaml
+	# Merge upstream manager defaults with our overrides into values.yaml
 	@yq eval-all \
-		'select(fileIndex == 0).controllerManager * select(fileIndex == 1).controllerManager | {"controllerManager": .}' \
+		'select(fileIndex == 0).manager * select(fileIndex == 1).manager | {"manager": .}' \
 		<(tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/values.yaml) \
 		metal-operator-remote/values-overrides.yaml | \
 		yq eval -i '. *= load("/dev/stdin")' metal-operator-remote/values.yaml
-	# Render CRDs and RBAC into managed resources for the shoot cluster
+	@yq eval -i ".metaldata.image.tag = \"$$(tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/values.yaml | yq eval '.metaldata.image.tag' -)\"" metal-operator-remote/values.yaml
+	# Render CRDs, essential RBAC and metaldata for the shoot; manager Deployment is excluded (runs directly in this release).
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml | \
-		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - \
 		> metal-operator-remote/managedresources/crds-and-rbac.yaml
-	# Extract upstream Deployment template and inject webhook-injector as native sidecar (initContainer)
+	# Patch upstream's Deployment: add webhook-injector sidecar, restore dns-record-template/ignition volumes (macdb unused, omitted), fix its extraVolume* nindent bug, and localize named-template includes.
 	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml | \
 		$(SED) \
 			-e '/namespace: {{ .Release.Namespace }}/d' \
+			-e 's/include "metal-operator\./include "chart./g' \
+			-e '/^          {{- if \.Values\.manager\.extraVolumeMounts }}$$/,/^          {{- end }}$$/c\          {{- range .Values.manager.extraVolumeMounts }}\n          {{- if not (and $$.Values.certManager.enable (eq .name "webhook-certs")) }}\n          {{- toYaml (list .) | nindent 8 }}\n          {{- end }}\n          {{- end }}' \
+			-e '/^        {{- if \.Values\.manager\.extraVolumes }}$$/,/^        {{- end }}$$/c\      {{- range .Values.manager.extraVolumes }}\n      {{- if not (and $$.Values.certManager.enable (eq .name "webhook-certs")) }}\n      {{- toYaml (list .) | nindent 6 }}\n      {{- end }}\n      {{- end }}' \
+			-e '/^        volumeMounts:$$/a\        {{- if .Values.manager.dnsRecordTemplate.enabled }}\n        - mountPath: /etc/metal-operator/dns\n          name: dns-record-template\n        {{- end }}\n        {{- if .Values.ignition.override }}\n        - name: ignition-template\n          mountPath: /etc/metal-operator\n          readOnly: true\n        {{- end }}' \
+			-e '/^      volumes:$$/a\      {{- if .Values.manager.dnsRecordTemplate.enabled }}\n      - name: dns-record-template\n        configMap:\n          name: dns-record-template\n      {{- end }}\n      {{- if .Values.ignition.override }}\n      - name: ignition-template\n        configMap:\n          name: {{ include "chart.name" . }}-ignition-template\n      {{- end }}' \
 			-e '/^      containers:/i\      initContainers:\n      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}'\
 		> metal-operator-remote/templates/controller-manager.yaml
+	@grep -q 'mountPath: /etc/metal-operator/dns' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q -- '- name: dns-record-template' metal-operator-remote/templates/controller-manager.yaml && \
+		[ "$$(grep -c -- '- name: ignition-template' metal-operator-remote/templates/controller-manager.yaml)" -ge 2 ] && \
+		grep -q 'initContainers:' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q 'include "chart.webhook-injector-sidecar"' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q 'path: /healthz' metal-operator-remote/templates/controller-manager.yaml && \
+		grep -q 'path: /readyz' metal-operator-remote/templates/controller-manager.yaml || \
+		{ echo "ERROR: sed insertion anchors not found in controller-manager.yaml (dns-record-template/ignition-template volumes, webhook-injector-sidecar initContainers, or liveness/readiness probe paths) - upstream manager.yaml layout likely changed, update the sed anchors."; exit 1; }
+	@echo "NOTE: controller-manager.yaml sed pipeline is best-effort - verify with 'helm lint'/'helm template' after regenerating."
+	# Vendor the metaldata DaemonSet locally; it must run directly here too since the seed itself may be bare-metal.
+	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/extras/metaldata.yaml | \
+		$(SED) \
+			-e '/namespace: {{ .Release.Namespace }}/d' \
+			-e 's/include "metal-operator\./include "chart./g' \
+			-e 's/\.Values\.metaldata\.image\.tag | default \.Chart\.AppVersion/required "metaldata.image.tag is required" .Values.metaldata.image.tag/' \
+			-e '1i\# Vendored copy of metal-operator-core'"'"'s templates/extras/metaldata.yaml; must run directly here since the seed itself may be bare-metal.' \
+		> metal-operator-remote/templates/metaldata.yaml
+	@grep -q 'required "metaldata.image.tag is required" .Values.metaldata.image.tag' metal-operator-remote/templates/metaldata.yaml || \
+		{ echo "ERROR: metaldata.image.tag required-guard substitution not found in metaldata.yaml - upstream extras/metaldata.yaml layout likely changed, update the sed anchor."; exit 1; }
+	# templates/metaldata-rbac.yaml is hand-maintained (mirrors upstream's rbac/metaldata*.yaml, simplified) - update by hand if upstream changes.
 	# Render webhook configurations and rewrite service refs to URL-based
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 	  -n kube-system \
@@ -171,6 +218,7 @@ build-metal-operator-remote:
 		> metal-operator-remote/webhooks.yaml
 	# Bump patch version
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+
 
 build-boot-operator:
 	@helm dep up boot-operator
@@ -186,6 +234,17 @@ build-boot-operator-remote:
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - >\
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
+
+build-metal-maintenance-operator-remote:
+	@helm dep up metal-maintenance-operator-remote
+	@helm template metal-maintenance-operator \
+		metal-maintenance-operator-remote/charts/metal-maintenance-operator*.tgz \
+		-n kube-system \
+		-f metal-maintenance-operator-remote/values-managed-resources.yaml | \
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
+		yq eval 'select(.kind != "Service" and .kind != "Deployment" and .metadata.name != "metal-maintenance-operator-leader-election-role" and .metadata.name != "metal-maintenance-operator-leader-election-rolebinding")' - \
+		> metal-maintenance-operator-remote/managedresources/crds-and-rbac.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml
 
 build-argora-operator:
 	@helm dep up argora-operator

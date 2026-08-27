@@ -11,11 +11,11 @@ metadata:
     component: keystone
     type: api
   annotations:
-{{- if .Values.api.metrics.enabled }}
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{.Values.api.metrics.port}}"
-    prometheus.io/targets: "{{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}"
-{{- end }}
+    # Metrics are scraped from the pod (see deployment-api.yaml annotations) via
+    # the metrics-named container port. Annotating the Service for scraping as
+    # well would cause the statsd endpoint to be scraped twice (once by the
+    # service/endpoint discovery and once by the pod discovery), doubling every
+    # statsd metric. See docs playbook "Prometheus target scraped multiple times".
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
 {{- if .Values.global.is_global_region }}

@@ -170,7 +170,7 @@ groups:
       summary: "RabbitMQ blocking publishers (free-disk watermark)"
 
   - alert: OpenstackHermesLogstashPlugins
-    expr: sum(increase(logstash_node_plugin_events_out_total[30m])) <= 0
+    expr: sum(increase(logstash_stats_pipeline_plugin_events_out[30m])) <= 0
     labels:
       context: logstash
       severity: warning
@@ -185,8 +185,25 @@ groups:
       description: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
       summary: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
 
+  - alert: OpenstackHermesLogstashKafkaFailure
+    expr: sum(rate(logstash_stats_pipeline_plugin_bulk_requests_errors{namespace=~"hermes",plugin="kafka"}[10m])) + sum(rate(logstash_stats_pipeline_plugin_documents_non_retryable_failures{namespace=~"hermes",plugin="kafka"}[10m])) > 0
+    for: 5m
+    labels:
+      context: logstash
+      severity: warning
+      tier: os
+      support_group: observability
+      service: hermes
+      dashboard: hermes-logstash-metrics
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
+      meta: "Hermes logstash Kafka output plugin is failing to deliver audit events"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Hermes logstash Kafka output plugin is failing to deliver audit events to the SIEM broker"
+      summary: "Hermes logstash Kafka output plugin is failing"
+
   - alert: OpenstackHermesLogstashPluginsJDBCStaticFailure
-    expr: sum(rate(logstash_node_plugin_failures_total{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
+    expr: sum(rate(logstash_stats_pipeline_plugin_bulk_requests_errors{namespace=~"hermes",plugin="jdbc_static"}[10m])) + sum(rate(logstash_stats_pipeline_plugin_documents_non_retryable_failures{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
     labels:
       context: logstash
       severity: warning
@@ -219,6 +236,7 @@ groups:
       description: Hermes monitoring endpoint is down => Hermes is down
       summary: Hermes API is not available, check pod logs
 
+{{- if .Values.logRouter.enabled }}
   - alert: OpenstackHermesLogRouterRabbitMQDisconnected
     expr: sum(log_router_rabbitmq_connected) == 0
     for: 2m
@@ -269,3 +287,4 @@ groups:
     annotations:
       description: "Log Router is failing to write to the admin-tier storage. The admin tier provides unconditional compliance copies of all audit events. Sustained errors mean audit records are missing from the admin bucket."
       summary: "Log Router admin-tier write errors — compliance data at risk"
+{{- end }}

@@ -14,7 +14,7 @@ groups:
       meta: "Openstack Octavia API is down"
       dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/octavia/alerts/cc3test-alert-api/"
+      playbook: "docs/support/playbook/octavia/alerts/alert-cc3test-api"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "Openstack Octavia API is down"
@@ -32,7 +32,7 @@ groups:
       meta: "Openstack Octavia API is flapping"
       dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/octavia/alerts/cc3test-alert-api/"
+      playbook: "docs/support/playbook/octavia/alerts/alert-cc3test-api"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "Openstack Octavia API is flapping"
@@ -50,7 +50,7 @@ groups:
       meta: "Openstack Octavia Canary is down, see report for more details"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/octavia/alerts/cc3test-alert-create-lbaas/"
+      playbook: "docs/support/playbook/octavia/alerts/alert-cc3test-create-lbaas"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "Openstack Octavia Canary is down, see report for more details"
@@ -68,7 +68,7 @@ groups:
       meta: "Openstack Octavia Canary is flapping for 2 hours, see last three reports for more details"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/octavia/alerts/cc3test-alert-create-lbaas/"
+      playbook: "docs/support/playbook/octavia/alerts/alert-cc3test-create-lbaas"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "Openstack Octavia Canary is flapping for 2 hours, see last three reports for more details"

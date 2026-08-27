@@ -1,0 +1,56 @@
+package forbiddenclusterwideobjects
+
+import data.lib.add_support_labels
+
+########################################################################
+# admission webhooks
+
+webhook_config_kinds := {
+    "MutatingWebhookConfiguration",
+    "ValidatingWebhookConfiguration",
+}
+
+iro := input.review.object
+
+# Violations act like a blocklist, but we want to have an allowlist, so
+# we go through `allowed_webhook` as an intermediate level.
+violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+    webhook := iro.webhooks[_]
+    count({x | x := allowed_webhook[_]; x.name == webhook.name}) == 0
+    msg := sprintf("webhook %q does not match our allowlist", [webhook.name])
+}
+
+# validating webhook: kube-system/gatekeeper (we don't have mutation enabled for Gatekeeper)
+allowed_webhook contains {"name": webhook.name, "reason": "allow-gatekeeper"} if {
+    iro.kind == "ValidatingWebhookConfiguration"
+    iro.metadata.name == "gatekeeper-validating-webhook-configuration"
+
+    webhook := iro.webhooks[_]
+    webhook.clientConfig.service.namespace == "kube-system"
+    webhook.clientConfig.service.name == "gatekeeper-webhook-service"
+}
+
+# validating AND mutating webhook: kube-system/cert-manager-webhook
+allowed_webhook contains {"name": webhook.name, "reason": "allow-gatekeeper"} if {
+    # NOTE: both kinds are allowed
+    iro.metadata.name == sprintf("%s-cert-manager-webhook", [input.parameters.kubeSystemReleaseName])
+
+    webhook := iro.webhooks[_]
+    webhook.clientConfig.service.namespace == "kube-system"
+    webhook.clientConfig.service.name == sprintf("%s-cert-manager-webhook", [input.parameters.kubeSystemReleaseName])
+    [a | a := webhook.rules[_].apiGroups] == [["cert-manager.io", "acme.cert-manager.io"]]
+}
+
+# validating webhooks: monsoon3/ccloud-seeder, allowed if the webhook
+# only works on objects from ccloud-seeder's own CRDs
+allowed_webhook contains {"name": webhook.name, "reason": "allow-ccloud-seeder"} if {
+    iro.kind == "ValidatingWebhookConfiguration"
+    iro.metadata.name == "gatekeeper-validating-webhook-configuration"
+
+    webhook := iro.webhooks[_]
+    webhook.clientConfig.service.namespace == "monsoon3"
+    [a | a := webhook.rules[_].apiGroups] == [["seeder.cloud.sap"]]
+}
+
+########################################################################
+# TODO: consider additional cluster-scoped objects (see `k api-resources --namespaced=false`)

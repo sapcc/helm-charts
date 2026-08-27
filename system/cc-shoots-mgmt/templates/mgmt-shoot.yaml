@@ -16,11 +16,7 @@ spec:
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  {{- if $cluster.useWorkloadIdentity }}
   credentialsBindingName: metal-wi-{{ $key }}
-  {{- else }}
-  credentialsBindingName: metal-{{ $key }}
-  {{- end }}
   seedName: rt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -66,7 +62,13 @@ spec:
             name: audit-policy-cp
       {{- end }}
     verticalPodAutoscaler:
-      enabled: {{ if hasKey (default dict $cluster.verticalPodAutoscaler) "enabled" }}{{ $cluster.verticalPodAutoscaler.enabled }}{{ else }}true{{ end }}
+      enabled: true # VPA needs to be enabled for ManagedSeed
+      targetCPUPercentile: 0.75
+      targetMemoryPercentile: 0.85
+      recommendationMarginFraction: 0.05
+      {{- with dig "verticalPodAutoscaler" "maxAllowed" nil $cluster }}
+      maxAllowed: {{ toYaml . | nindent 8 }}
+      {{- end }}
   maintenance:
     autoUpdate:
       kubernetesVersion: false

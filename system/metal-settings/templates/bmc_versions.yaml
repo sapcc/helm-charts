@@ -1,4 +1,5 @@
 {{- if .Values.bmcVersions.enabled }}
+{{- $usedNames := dict }}
 {{- range $vendor, $vendorConfig := .Values.machines }}
 {{- if $vendorConfig }}
 
@@ -6,7 +7,7 @@
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcVersions.filters.vendors) }}
 {{- $processedModels := dict }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if $entry.bmc }}
+{{- if and $entry.bmc $entry.bmc.imageURI }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
@@ -19,17 +20,21 @@
 
 {{/* Model and Version filtering */}}
 {{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcVersions.filters.versions)) }}
-apiVersion: metal.ironcore.dev/v1alpha1
+apiVersion: {{ $.Values.apiVersions.bmcVersionSet }}
 kind: BMCVersionSet
 metadata:
   {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
   {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
+  {{- if hasKey $usedNames $resourceName }}
+  {{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (entry %q, model %q). Two machines.<vendor>.models entries produced the same name with differing bmc.version/imageURI. Only one entry per model should define bmc.version/imageURI, or set a unique bmc.versionParams.setMetadataName on the others." $resourceName $entryName $model) }}
+  {{- end }}
+  {{- $_ := set $usedNames $resourceName true }}
   name: {{ $resourceName }}
 spec:
   bmcSelector:
     matchLabels:
-      kubernetes.metal.cloud.sap/type: {{ $model }}
-{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters) }}
+      {{ $.Values.labelKeys.type }}: {{ $model }}
+{{- $serverMatchExpressions := include "metal-settings.serverMatchExpressions" (dict "serverFilters" $serverFilters "labelKey" $.Values.labelKeys.serverName) }}
 {{- if $serverMatchExpressions }}
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
@@ -39,9 +44,9 @@ spec:
     image:
       URI: {{ $entry.bmc.imageURI | quote }}
       transferProtocol: "HTTPS"
-{{- if gt (int $.Values.bmcVersions.RetryPolicy) 0 }}
+{{- with $.Values.bmcVersions.retryPolicy }}
     retryPolicy:
-      maxAttempts: {{ $.Values.bmcVersions.RetryPolicy }}
+{{ toYaml . | indent 6 }}
 {{- end }}
 ---
 {{- end }}

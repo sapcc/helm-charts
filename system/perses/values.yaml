@@ -121,15 +121,6 @@ persesPlugin:
       successThreshold: 1
       failureThreshold: 5
 
-    # -- Additional volumes on the output StatefulSet definition.
-    volumes:
-      - name: plugins
-        emptyDir: {}
-
-    # -- Additional VolumeMounts on the output StatefulSet definition.
-    volumeMounts:
-      - name: plugins
-        mountPath: /etc/perses/plugins
     # -- TLS configuration for mounting certificates from Kubernetes secrets
     tls:
       # -- Enable TLS certificate mounting
@@ -233,6 +224,10 @@ persesPlugin:
       accessModes:
         - ReadWriteMany
 
+    # Perses runs with escalated privelege as the metal clusters use NFS storage and fsGroup has no effect on them.
+    securityContext:
+      runAsNonRoot: false
+
     # --  Sidecar configuration that watches for ConfigMaps with the specified label/labelValue and loads them into Perses provisioning
     sidecar:
       # -- Enable the sidecar container for ConfigMap provisioning
@@ -333,7 +328,7 @@ persesPlugin:
     alertLabels:
       support_group: "observability"
       service: "perses"
-      persesDashboard: "observability/dashboards/perses-overview"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/perses-overview"
 
 # -- All the SAP Cloud Infrastructure specific values should go here.
 sapCloudInfrastructure:

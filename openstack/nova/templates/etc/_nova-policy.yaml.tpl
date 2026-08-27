@@ -638,7 +638,7 @@ os_compute_api:os-server-groups:delete: rule:context_is_editor
 # List all server groups
 #   GET /os-server-groups
 #os_compute_api:os-server-groups:index: rule:system_or_project_reader
-os_compute_api:os-server-groups:index: rule:context_is_editor or rule:context_is_cloud_viewer
+os_compute_api:os-server-groups:index: rule:context_is_viewer or rule:context_is_cloud_viewer
 
 # List all server groups for all projects
 #   GET /os-server-groups

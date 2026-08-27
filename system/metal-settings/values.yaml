@@ -30,7 +30,8 @@ defaultClusterTypes: &defaultClusterTypes
 
 biosSettings:
   enabled: true
-  RetryPolicy: 5
+  retryPolicy:
+    maxAttempts: 5
   filters:
     # Filter by vendor (dell, hpe, lenovo)
     vendors:
@@ -72,7 +73,8 @@ bmcSettings:
 
 biosVersions:
   enabled: true
-  RetryPolicy: 5
+  retryPolicy:
+    maxAttempts: 5
   filters:
     vendors:
       included: []
@@ -86,7 +88,8 @@ biosVersions:
 
 bmcVersions:
   enabled: true
-  RetryPolicy: 5
+  retryPolicy:
+    maxAttempts: 5
   filters:
     vendors:
       included: []
@@ -97,6 +100,35 @@ bmcVersions:
     versions:
       included: []
       excluded: []
+
+# Label keys used to build serverSelector/bmcSelector matchLabels and
+# matchExpressions in the generated BIOSSettingsSet/BMCSettingsSet/
+# BIOSVersionSet/BMCVersionSet resources.
+#
+# Override these per-cluster to support migrations where a newer/renamed
+# label group is used to identify servers (e.g. testing a new
+# "kubernetes.metal.cloud.sap/cluster-type" replacement on a subset of
+# clusters before rolling it out everywhere).
+labelKeys:
+  type: "kubernetes.metal.cloud.sap/type"
+  clusterType: "kubernetes.metal.cloud.sap/cluster-type"
+  serverName: "kubernetes.metal.cloud.sap/name"
+
+# apiVersion used for the generated BIOSSettingsSet/BMCSettingsSet/
+# BIOSVersionSet/BMCVersionSet resources.
+#
+# metal-operator (single-group project) serves these kinds under
+# "metal.ironcore.dev/v1alpha1". metal-maintenance-operator (multigroup
+# project) serves the same kinds under group-qualified versions, e.g.
+# "system.metal.ironcore.dev/v1alpha1" for BIOSSettingsSet/BIOSVersionSet and
+# "baseboard.metal.ironcore.dev/v1alpha1" for BMCSettingsSet/BMCVersionSet.
+# Override per-cluster to test migrating from metal-operator to
+# metal-maintenance-operator.
+apiVersions:
+  biosSettingsSet: "metal.ironcore.dev/v1alpha1"
+  bmcSettingsSet: "metal.ironcore.dev/v1alpha1"
+  biosVersionSet: "metal.ironcore.dev/v1alpha1"
+  bmcVersionSet: "metal.ironcore.dev/v1alpha1"
 
 # Cluster-specific values injected into the metal-bmc-settings ConfigMap.
 # These are region/cluster-level overrides consumed by BMCSettings variables at reconcile time.
@@ -355,13 +387,13 @@ machines:
         model: proliant-dl560-gen11     # explicit: map key differs from hardware model label
         clusterTypes: [cc-kvm-compute]
         bios:
-          version: "U59 v2.50 (04/22/2025)"
-          settingsFileName: hpe-dl560-gen11-kvm.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/U59_2.50_04_22_2025.fwpkg"
+          version: "U59 v2.84 (04/02/2026)"
+          settingsFileName: hpe-dl560-gen11-latest-kvm.yaml
+          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/U59_2.84_04_02_2026.fwpkg"
         bmc:
-          version: "iLO 6 v1.68"
+          version: "iLO 6 v1.76"
           settingsFileName: hpe-default.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_168.fwpkg"
+          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_176.fwpkg"
 
       proliant-dl560-gen11-sci:
         model: proliant-dl560-gen11     # explicit: map key differs from hardware model label
@@ -374,13 +406,22 @@ machines:
             cc-ironcore,
           ]
         bios:
+          # version is kept (required by BIOSSettingsTemplate.version to describe
+          # the BIOS version these settings apply to), but imageURI is intentionally
+          # omitted here: BIOSVersionSet is generated per model (clusterTypes are
+          # ignored for it), so exactly ONE entry per model may define imageURI -
+          # see proliant-dl560-gen11-kvm above, which is the canonical firmware
+          # upgrade target for this model. Defining imageURI here too would render
+          # a second BIOSVersionSet with the same metadata.name
+          # ("hpe-proliant-dl560-gen11"), which the template now rejects with a
+          # hard failure.
           version: "U59 v2.50 (04/22/2025)"
           settingsFileName: hpe-dl560-gen11-sci.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/U59_2.50_04_22_2025.fwpkg"
         bmc:
+          # Same reasoning as bios above: version kept for BMCSettingsTemplate,
+          # imageURI omitted to avoid a duplicate BMCVersionSet.
           version: "iLO 6 v1.68"
           settingsFileName: hpe-default.yaml
-          imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_168.fwpkg"
 
       # Models with firmware only (no biosSettings)
       proliant-dl320-gen11:
@@ -415,8 +456,10 @@ machines:
 
       proliant-dl380-gen12:
         model: proliant-dl380-gen12
+        clusterTypes: *defaultClusterTypes
         bios:
           version: "U68 v1.52 (10/03/2025)"
+          settingsFileName: hpe-dl380-gen12.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl380-gen12/U68_1.52_10_03_2025.fwpkg"
         bmc:
           version: "1.18.00 Oct 09 2025"
