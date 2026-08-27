@@ -16,8 +16,10 @@ spec:
   machineImages: {{ toYaml .Values.extensions.openstack.machineImages | nindent 4 }}
   providerConfig: # https://github.com/gardener/gardener-extension-provider-openstack/blob/master/pkg/apis/openstack/types_cloudprofile.go
     apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
-    rescanBlockStorageOnResize: true
     kind: CloudProfileConfig
+    {{- if .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
+    rescanBlockStorageOnResize: {{ .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
+    {{- end }}
     keystoneURLs:
     {{- range $region := .Values.extensions.openstack.regions }}
     - region: {{ $region.name | quote }}
