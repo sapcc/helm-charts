@@ -126,5 +126,8 @@ Empty values are skipped so callers may pass "" for optional dependencies.
   {{- if and (eq .Values.tls.keyWrapping "none") (eq .Values.tls.keyStorage "k8s-secret") (not .Values.tls.allowInsecureStorage) }}
     {{- fail "tls: unwrapped keys cannot be stored as plain-text K8s Secrets. Set tls.keyWrapping or tls.keyStorage, or set tls.allowInsecureStorage: true to acknowledge." }}
   {{- end }}
+  {{- if not .Values.global.keystone_external_ip }}
+    {{- fail "tls.enabled requires global.keystone_external_ip: enabling TLS removes the ingress and the public TLS Service only renders once the external IP is set." }}
+  {{- end }}
 {{- end }}
 {{- end }}
