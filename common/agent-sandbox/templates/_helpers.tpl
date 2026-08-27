@@ -35,6 +35,7 @@ restartPolicy: {{ $ctx.Values.agent.workload.restartPolicy }}
 initContainers:
   - name: setup-agent-sandbox-iptables
     image: {{ $ctx.Values.iptables.image | quote }}
+    imagePullPolicy: {{ $ctx.Values.iptables.imagePullPolicy | quote }}
     securityContext:
       capabilities:
         add: ["NET_ADMIN"]
@@ -106,6 +107,7 @@ initContainers:
   # Envoy egress proxy as a native sidecar (restartPolicy: Always).
   - name: agent-sandbox-envoy
     image: {{ $ctx.Values.envoy.image | quote }}
+    imagePullPolicy: {{ $ctx.Values.envoy.imagePullPolicy | quote }}
     restartPolicy: Always
     args: ["-c", "/etc/envoy/envoy.yaml"]
     securityContext:
@@ -122,6 +124,7 @@ initContainers:
 containers:
   - name: {{ $ctx.Values.agent.container.name }}
     image: {{ $ctx.Values.agent.container.image | quote }}
+    imagePullPolicy: {{ $ctx.Values.agent.container.imagePullPolicy | quote }}
 {{- with $ctx.Values.agent.container.command }}
     command:
 {{ toYaml . | indent 6 }}
