@@ -16,7 +16,7 @@ adminrole:
   -  "admin"
   -  "admin2"
   backend_roles:
-{{- if .Values.global.restricted.enabled }}
+{{- if .Values.global.restricted }}
   - SCI_FORTLOGS_EU-DE-1_LOGS_SU2_ADMIN
 {{- else }}
   - CC_IAS_TEAM_SUPERVISION
@@ -41,7 +41,7 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-{{- if .Values.global.restricted.enabled }}
+{{- if .Values.global.restricted }}
   - SCI_FORTLOGS_EU-DE-1_LOGS_SU2_VIEWER
 {{- else }}
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
@@ -86,7 +86,7 @@ kibana_server:
 kibana_user:
   reserved: false
   backend_roles:
-{{- if .Values.global.restricted.enabled }}
+{{- if .Values.global.restricted }}
   - SCI_FORTLOGS_EU-DE-1_LOGS_SU2_VIEWER
 {{- else }}
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
@@ -113,7 +113,7 @@ promrole:
   - "ronly2"
 {{- end }}
   backend_roles:
-{{- if .Values.global.restricted.enabled }}
+{{- if .Values.global.restricted }}
   - SCI_FORTLOGS_EU-DE-1_LOGS_SU2_VIEWER
 {{- else }}
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
