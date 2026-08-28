@@ -93,7 +93,10 @@ Listen 0.0.0.0:443
     Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "DENY"
-    Header always set Content-Security-Policy "default-src 'self'"
+    # script-src hash allows only the inline auto-submit in
+    # _sso_callback_template.html.tpl (kept in sync by the drift guard in
+    # keystone.tls.validate); default-src 'self' otherwise.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'sha256-oBahlBFQem+nMs1JwgcBB03Hy8nRh5e8qEGTOcxmAuM='"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
     {{- if .Values.services.ingress.x509.ca }}
