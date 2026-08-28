@@ -2,7 +2,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Values.agent.name }}
+  # A Job's pod template is immutable, so a fixed name cannot be relaunched by
+  # `helm upgrade`. Suffixing with the release revision gives each upgrade a
+  # fresh Job; pair with ttlSecondsAfterFinished to garbage-collect old ones.
+  name: {{ .Values.agent.name }}-{{ .Release.Revision }}
   labels:
     app.kubernetes.io/name: {{ .Values.agent.name }}
 spec:
