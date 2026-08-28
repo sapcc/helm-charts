@@ -1,11 +1,27 @@
 {{/*
+Name of the Envoy egress ConfigMap for this agent. Scoped to the agent name so
+multiple sandboxes can coexist in the same namespace without colliding.
+*/}}
+{{- define "agent-sandbox.envoyConfigMapName" -}}
+{{ .Values.agent.name }}-envoy
+{{- end -}}
+
+{{/*
+Value of the per-agent enforce label. NetworkPolicy selects on this so each
+sandbox's policy only matches its own pods, not every agent in the namespace.
+*/}}
+{{- define "agent-sandbox.enforceLabel" -}}
+agent-sandbox.cloud.sap/enforce-{{ .Values.agent.name }}
+{{- end -}}
+
+{{/*
 Pod metadata (labels + annotations) shared by all workload kinds.
 Usage: {{- include "agent-sandbox.podMeta" . | nindent <n> }}
 */}}
 {{- define "agent-sandbox.podMeta" -}}
 labels:
   app.kubernetes.io/name: {{ .Values.agent.name }}
-  agent-sandbox.cloud.sap/enforce: "true"
+  {{ include "agent-sandbox.enforceLabel" . }}: "true"
 annotations:
   checksum/envoy-config: {{ include (print $.Template.BasePath "/envoy-configmap.yaml") . | sha256sum }}
 {{- end -}}
@@ -153,7 +169,7 @@ volumes:
     emptyDir: {}
   - name: agent-sandbox-envoy
     configMap:
-      name: agent-sandbox-envoy
+      name: {{ include "agent-sandbox.envoyConfigMapName" $ctx }}
 {{- with $ctx.Values.agent.volumes }}
 {{ toYaml . | indent 2 }}
 {{- end }}
