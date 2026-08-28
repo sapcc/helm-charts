@@ -1,0 +1,82 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: opensearch-hermes-manager-elasticvue
+  namespace: hermes
+  labels:
+    system: opensearch-hermes
+    service: audit
+    component: opensearch-hermes-manager-elasticvue
+    role: manager-elasticvue
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: opensearch-hermes-manager-elasticvue
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: opensearch-hermes-manager-elasticvue
+        role: manager-elasticvue
+      annotations:
+        kubectl.kubernetes.io/default-container: "manager-elasticvue"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      volumes:
+        - name: proxy-config
+          configMap:
+            name: opensearch-hermes-manager-elasticvue-configmap
+        - name: ca-cert
+          secret:
+            secretName: opensearch-hermes-ca-secret
+      containers:
+      - name: manager-elasticvue
+        image: {{.Values.global.registry}}/elk-elasticsearch-manager:{{.Values.image_version}}
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ELASTICVUE_CLUSTERS
+            valueFrom:
+              secretKeyRef:
+                name: opensearch-hermes-manager-elasticvue-secret
+                key: ELASTICVUE_CLUSTERS
+        ports:
+          - name: manager
+            containerPort: {{.Values.port_internal}}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{.Values.port_internal}}
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{.Values.port_internal}}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+      # Nginx sidecar that proxies browser requests to the internal OpenSearch
+      # cluster over TLS. Elasticvue is a browser-side app and cannot reach the
+      # ClusterIP OpenSearch service directly, so all API traffic goes through
+      # this proxy on localhost:9201.
+      - name: opensearch-proxy
+        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/nginx:alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: proxy
+            containerPort: 9201
+        volumeMounts:
+          - mountPath: /etc/nginx/conf.d/opensearch-proxy.conf
+            name: proxy-config
+            subPath: opensearch-proxy.conf
+          - mountPath: /etc/nginx/certs/ca.crt
+            name: ca-cert
+            subPath: ca.crt
