@@ -246,8 +246,10 @@ spec:
               mountPath: /etc/apache2/conf-enabled/status-off.conf
               subPath: status-off.conf
               readOnly: true
+            {{- if .Values.tls.enabled }}
             - name: apache-sites
               mountPath: /etc/apache2/sites-enabled
+            {{- end }}
             {{- if .Values.federation.oidc.enabled }}
             - name: keystone-federation
               mountPath: /etc/apache2/conf-enabled/federation-oidc.conf
@@ -361,8 +363,10 @@ spec:
           emptyDir: {}
         - name: wsgi-keystone
           emptyDir: {}
+        {{- if .Values.tls.enabled }}
         - name: apache-sites
           emptyDir: {}
+        {{- end }}
         - name: keystone-etc
           configMap:
             name: keystone-etc
