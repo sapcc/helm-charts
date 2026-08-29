@@ -74,9 +74,6 @@ WSGIServerMetrics On
 {{- end }}
 
 {{- if .Values.tls.enabled }}
-# TLS hardening at server level (must be outside VirtualHost)
-Include /etc/apache2/conf-enabled/tls-hardening.conf
-
 # External HTTPS endpoint
 # mod_ssl is loaded via a conf-enabled snippet, which is parsed after
 # ports.conf, so its ssl_module-gated Listen 443 does not apply here.
