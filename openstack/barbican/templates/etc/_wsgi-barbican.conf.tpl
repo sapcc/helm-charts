@@ -22,9 +22,6 @@ Listen 0.0.0.0:{{ .Values.api_port_internal }}
 # ports.conf, so its ssl_module-gated Listen 443 does not apply here.
 Listen 0.0.0.0:443
 
-# TLS hardening at server level (must be outside VirtualHost)
-Include /etc/apache2/conf-enabled/tls-hardening.conf
-
 <VirtualHost *:443>
     SSLEngine on
     SSLCertificateFile /mnt/secrets/tls.crt
