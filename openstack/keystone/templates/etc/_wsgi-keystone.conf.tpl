@@ -73,6 +73,17 @@ CustomLog /dev/stdout proxy env=forwarded
 WSGIServerMetrics On
 {{- end }}
 
+# Single WSGI daemon group shared by the internal (:5000) and, when enabled, the
+# external TLS (:443) vhosts. Defined at server scope so both can reference it
+# and the worker count (and thus the memory footprint) stays fixed regardless of
+# tls.enabled.
+WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+{{- if .Values.api.metrics.enabled }}
+# Load the worker-pool sampler into every keystone-public daemon process.
+# It reports each process's active_requests to statsd for Prometheus.
+WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
+{{- end }}
+
 {{- if .Values.tls.enabled }}
 # External HTTPS endpoint
 # mod_ssl is loaded via a conf-enabled snippet, which is parsed after
@@ -135,8 +146,7 @@ Listen 0.0.0.0:443
     RequestHeader set SSL-Client-S-DN "expr=%{SSL:SSL_CLIENT_S_DN}"
     {{- end }}
 
-    WSGIDaemonProcess keystone-tls processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
-    WSGIProcessGroup keystone-tls
+    WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
@@ -165,12 +175,6 @@ Listen 0.0.0.0:443
 # Internal HTTP endpoint (protected by Linkerd mTLS at the network layer)
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
-    WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
-    {{- if .Values.api.metrics.enabled }}
-    # Load the worker-pool sampler into every keystone-public daemon process.
-    # It reports each process's active_requests to statsd for Prometheus.
-    WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
-    {{- end }}
     WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}
