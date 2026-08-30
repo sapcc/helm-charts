@@ -60,7 +60,7 @@
   value: /etc/castellum-certs/prometheus-vmware.key.pem
 {{- end }}
 - name: OS_AUTH_URL
-  value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}:5000/v3"
+  value: "{{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3"
 - name: OS_AUTH_VERSION
   value: "3"
 - name: OS_IDENTITY_API_VERSION
