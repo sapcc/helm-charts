@@ -96,6 +96,12 @@ Listen 0.0.0.0:443
     Header always set Content-Security-Policy "default-src 'self'; script-src 'sha256-oBahlBFQem+nMs1JwgcBB03Hy8nRh5e8qEGTOcxmAuM='"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
+    # Strip the external-auth trust-key header from inbound requests, as the
+    # ingress did when it fronted this endpoint. Both spellings are removed
+    # because WSGI folds '-' and '_' to the same HTTP_X_TRUSTED_KEY env var.
+    RequestHeader unset X-Trusted-Key
+    RequestHeader unset X_Trusted_Key
+
     {{- if .Values.services.ingress.x509.ca }}
     SSLVerifyClient optional
     SSLVerifyDepth 3
