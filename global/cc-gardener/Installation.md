@@ -107,6 +107,27 @@ global:
 
 2.3. Helm install:
 
+**Starting with `cc-gardener` v0.38.0**, you need to use an umbrella chart that references both this `cc-gardener` chart and the `gardener/operator` chart.
+
+This change decouples the operator chart from the `cc-gardener` chart, allowing the operator chart to be upgraded independently of `cc-gardener` for each runtime Gardener cluster.
+
+Sample umbrella chart:
+
+```yaml
+apiVersion: v2
+name: umbrella-gardener
+type: application
+version: 0.1.0
+home: https://github.com/gardener/gardener
+dependencies:
+  - name: operator
+    repository: oci://europe-docker.pkg.dev/gardener-project/releases/charts/gardener
+    version: v1.144.2
+  - name: cc-gardener
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: '>= 0.0.0'
+```
+
 ```bash
 uh install cc-gardener . -f custom-values.yaml --create-namespace -n garden
 

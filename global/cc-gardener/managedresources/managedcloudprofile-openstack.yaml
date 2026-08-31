@@ -1,0 +1,232 @@
+{{ if and .Values.extensions.openstack.enabled .Values.mcpopenstack -}}
+---
+apiVersion: cloudprofilesync.cobaltcore.dev/v1alpha1
+kind: ManagedCloudProfile
+metadata:
+  name: openstack
+spec:
+  cloudProfile:
+    type: openstack
+    seedSelector:
+      providerTypes: ["*"]
+    regions:
+      {{- toYaml .Values.extensions.openstack.regions | nindent 6 }}
+    kubernetes:
+      versions:
+        {{- toYaml .Values.extensions.kubernetesVersions | nindent 8 }}
+    machineTypes:
+      {{- toYaml .Values.extensions.openstack.machineTypes | nindent 6 }}
+    {{- if .Values.extensions.openstack.volumeTypes }}
+    volumeTypes:
+      {{- toYaml .Values.extensions.openstack.volumeTypes | nindent 6 }}
+    {{- end }}
+    machineImages:
+      {{- toYaml .Values.extensions.openstack.machineImages | nindent 6 }}
+    providerConfig:
+      apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
+      kind: CloudProfileConfig
+      {{- if .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
+      rescanBlockStorageOnResize: {{ .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
+      {{- end }}
+      keystoneURLs:
+      {{- range $region := .Values.extensions.openstack.regions }}
+      - region: {{ $region.name | quote }}
+        url: "https://identity-3.{{ $region.name }}.cloud.sap/v3"
+      {{- end }}
+      constraints:
+        floatingPools:
+        - name: FloatingIP*
+          region: ap-ae-1
+        - name: FloatingIP*
+          region: ap-au-1
+        - name: FloatingIP*
+          region: ap-cn-1
+        - name: FloatingIP*
+          region: ap-jp-1
+        - name: FloatingIP*
+          region: ap-jp-2
+        - name: FloatingIP*
+          region: ap-sa-1
+        - name: FloatingIP*
+          region: ap-sa-2
+        - name: FloatingIP*
+          region: eu-de-1
+        - name: FloatingIP*
+          region: eu-de-2
+        - name: FloatingIP*
+          region: eu-nl-1
+        - name: FloatingIP*
+          region: la-br-1
+        - name: FloatingIP*
+          region: na-ca-1
+        - name: FloatingIP*
+          region: na-us-1
+        - name: FloatingIP*
+          region: na-us-2
+        - name: FloatingIP*
+          region: na-us-3
+          # from cloudprofile converged-cloud-cis
+        - name: cis-ciea-*
+          region: ap-ae-1
+        - name: cis-ciea-*
+          region: ap-au-1
+        - name: cis-ciea-*
+          region: ap-cn-1
+        - name: cis-ciea-*
+          region: ap-jp-1
+        - name: cis-ciea-*
+          region: ap-jp-2
+        - name: cis-ciea-*
+          region: ap-sa-1
+        - name: cis-ciea-*
+          region: ap-sa-2
+        - name: cis-ciea-*
+          region: eu-de-1
+        - name: cis-ciea-*
+          region: eu-de-2
+        - name: cis-ciea-*
+          region: eu-nl-1
+        - name: cis-ciea-*
+          region: la-br-1
+        - name: cis-ciea-*
+          region: na-ca-1
+        - name: cis-ciea-*
+          region: na-us-1
+        - name: cis-ciea-*
+          region: na-us-2
+        - name: cis-ciea-*
+          region: na-us-3
+        - name: cis-gmp-*
+          region: ap-ae-1
+        - name: cis-gmp-*
+          region: ap-au-1
+        - name: cis-gmp-*
+          region: ap-cn-1
+        - name: cis-gmp-*
+          region: ap-jp-1
+        - name: cis-gmp-*
+          region: ap-jp-2
+        - name: cis-gmp-*
+          region: ap-sa-1
+        - name: cis-gmp-*
+          region: ap-sa-2
+        - name: cis-gmp-*
+          region: eu-de-1
+        - name: cis-gmp-*
+          region: eu-de-2
+        - name: cis-gmp-*
+          region: eu-nl-1
+        - name: cis-gmp-*
+          region: la-br-1
+        - name: cis-gmp-*
+          region: na-ca-1
+        - name: cis-gmp-*
+          region: na-us-1
+        - name: cis-gmp-*
+          region: na-us-2
+        - name: cis-gmp-*
+          region: na-us-3
+        - name: cis-sni-*
+          region: eu-de-1
+        - name: cis-sni-*
+          region: eu-de-2
+          # from cloudprofile converged-cloud-neo
+        - name: neo-*
+          region: eu-de-1
+        - name: neo-gmp-*
+          region: ap-ae-1
+        - name: neo-gmp-*
+          region: ap-au-1
+        - name: neo-gmp-*
+          region: ap-cn-1
+        - name: neo-gmp-*
+          region: ap-jp-1
+        - name: neo-gmp-*
+          region: ap-jp-2
+        - name: neo-gmp-*
+          region: ap-sa-1
+        - name: neo-gmp-*
+          region: ap-sa-2
+        - name: neo-gmp-*
+          region: eu-de-1
+        - name: neo-gmp-*
+          region: eu-de-2
+        - name: neo-gmp-*
+          region: eu-nl-1
+        - name: neo-gmp-*
+          region: la-br-1
+        - name: neo-gmp-*
+          region: na-ca-1
+        - name: neo-gmp-*
+          region: na-us-1
+        - name: neo-gmp-*
+          region: na-us-2
+        - name: neo-gmp-*
+          region: na-us-3
+        - name: gmp-*
+          region: ap-ae-1
+        - name: gmp-*
+          region: ap-au-1
+        - name: gmp-*
+          region: ap-cn-1
+        - name: gmp-*
+          region: ap-jp-1
+        - name: gmp-*
+          region: ap-jp-2
+        - name: gmp-*
+          region: ap-sa-1
+        - name: gmp-*
+          region: ap-sa-2
+        - name: gmp-*
+          region: eu-de-1
+        - name: gmp-*
+          region: eu-de-2
+        - name: gmp-*
+          region: eu-nl-1
+        - name: gmp-*
+          region: la-br-1
+        - name: gmp-*
+          region: na-ca-1
+        - name: gmp-*
+          region: na-us-1
+        - name: gmp-*
+          region: na-us-2
+        - name: gmp-*
+          region: na-us-3
+        loadBalancerProviders:
+        - name: f5
+      machineImages:
+        {{- toYaml .Values.extensions.openstack.providerConfig.machineImages | nindent 8 }}
+  machineImageUpdates:
+  - imageName: gardenlinux
+    source:
+      glance:
+        authURLFormat: {{ .Values.extensions.openstack.glance.authURLFormat | quote }}
+        regions:
+        {{- range $region := .Values.extensions.openstack.regions }}
+        - {{ $region.name | quote }}
+        {{- end }}
+        namePrefix: {{ .Values.extensions.openstack.glance.namePrefix | quote }}
+        keepLatest: {{ .Values.extensions.openstack.glance.keepLatest }}
+        projectName: {{ .Values.extensions.openstack.glance.projectName | quote }}
+        projectDomainName: {{ .Values.extensions.openstack.glance.projectDomainName | quote }}
+        username: {{ .Values.extensions.openstack.glance.username | quote }}
+        userDomainName: {{ .Values.extensions.openstack.glance.userDomainName | quote }}
+        passwordSecret:
+          name: openstack
+          namespace: garden
+          key: password
+    provider:
+      openStack: {}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: openstack
+  namespace: garden
+  labels:
+    app: gardener
+type: Opaque
+stringData:
+  password: {{ .Values.extensions.openstack.glance.password | quote }}
+{{ end -}}

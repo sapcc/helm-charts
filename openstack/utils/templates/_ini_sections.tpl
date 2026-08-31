@@ -6,6 +6,16 @@ heartbeat_in_pthread = False
     {{- if .Values.rabbitmq_ssl_client }}
 ssl = {{ .Values.rabbitmq_ssl_client }}
     {{- end }}
+    {{- /* https://www.rabbitmq.com/docs/consumer-prefetch */}}
+    {{- $prefetch := "" }}
+    {{- if hasKey .Values "rabbit_qos_prefetch_count" }}
+        {{- $prefetch = .Values.rabbit_qos_prefetch_count | toString }}
+    {{- else if hasKey .Values.global "rabbit_qos_prefetch_count" }}
+        {{- $prefetch = .Values.global.rabbit_qos_prefetch_count | toString }}
+    {{- end }}
+    {{- if ne $prefetch "" }}
+rabbit_qos_prefetch_count = {{ $prefetch }}
+    {{- end }}
 {{- end }}
 
 {{- define "ini_sections.default_transport_url" }}

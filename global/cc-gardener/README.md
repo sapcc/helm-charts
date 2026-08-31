@@ -18,31 +18,8 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
     - add additional seeds to `.gardenlet.additionalSeedRegions`
 
 # Upgrade
-- read [the changelog](https://github.com/gardener/gardener/releases)
-- update crd links in readme
-- change `version`, `appVersion` and `version` of operator in `Chart.yaml`
-- change `.operator.image.tag` in `values.yaml`
-- `helm dep up`
-- run `./ci/bump-image-vector.sh` to update `.operator.imageVectorOverwrite` to the recent version
 
-# Upgrade Runtime Cluster Seeds
-- exluding any cluster where Gardener Operator is running
-- Fetch current values and output them to file
-    `› helm get values gardenlet > gardenlet-values.yaml`
-- Update image tag in `gardenlet-values.yaml`
-    ```shell
-    image:
-      pullPolicy: IfNotPresent
-      repository: europe-docker.pkg.dev/gardener-project/releases/gardener/gardenlet
-      tag: v1.144.2  <<<
-    ```
-- Helm diff
-    `› helm diff upgrade gardenlet oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.144.2 -f gardenlet-values.yaml`
-- Helm upgrade
-    `› helm upgrade gardenlet oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.144.2 -f gardenlet-values.yaml`
+The `cc-gardener` chart is upgraded based on two inputs from the umbrella chart that includes it as a subchart:
 
-# Verify
-- Check pods in the `garden` namespace on the seed cluster. `deployment/gardenlet` should have updated.
-- Check `garden` resource in the on the seed cluster. It should have a new Gardener version.
-- Check `gardenlet` resource in the on the garden cluster.
-- Check `seed` resource in the on the garden cluster.
+1. **Operator subchart version** — defined in the umbrella chart's `Chart.yaml`.
+2. **Generated `imageVectorOverrides`** — defined in the umbrella chart's `values.yaml`.

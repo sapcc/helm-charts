@@ -122,7 +122,7 @@ s3_store_bucket = glance
 s3_store_create_bucket_on_put = True
 s3_store_large_object_size = 512
 s3_store_large_object_chunk_size = 50
-s3_store_thread_pool_size = 10
+s3_store_thread_pools = 10
 s3_store_bucket_url_format = path
 {{- end }}
 
@@ -136,8 +136,6 @@ swift_store_create_container_on_put = True
 swift_buffer_on_upload = True
 swift_upload_buffer_dir = /upload
 swift_store_expire_soon_interval = 1800
-swift_store_thread_pool_size = 10
-swift_container_delete_timeout = 2
 {{- if .Values.swift.service_type }}
 swift_store_service_type = {{ .Values.swift.service_type }}
 {{- end }}

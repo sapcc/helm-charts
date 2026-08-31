@@ -140,6 +140,11 @@ limes:
   resources:
     enabled: false
 
+  # May contain the `spec` section of an OpenstackSeed object.
+  # Intended for giving specialized role assignments to customers as part of support tickets
+  # (esp. cross-domain role assignments that are difficult to set up without cloud-admin access).
+  customer_seed: null
+
 postgresql:
   postgresVersion: 18
   persistence:
@@ -150,6 +155,8 @@ postgresql:
   users:
     limes: {}
   sharedMemoryLimit: 128Mi
+
+  priorityClassName: important-payload
 
   config:
     log_min_duration_statement: 250
@@ -221,7 +228,7 @@ pgmetrics:
             FROM project_az_resources pazr
             JOIN az_resources azr ON azr.id = pazr.az_resource_id
             JOIN resources r ON r.id = azr.resource_id
-            WHERE azr.az = 'total' 
+            WHERE azr.az = 'total'
               AND pazr.usage > pazr.quota
               AND NOT (r.path = 'swift/capacity' AND pazr.usage < pazr.quota + 1099511627776)
           metrics:

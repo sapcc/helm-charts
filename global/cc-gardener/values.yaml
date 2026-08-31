@@ -259,6 +259,7 @@ garden:
     # InPlaceNodeUpdates: true
   # externalIP: ""
   managedresources: true # disable on inital deployment
+  enabled: true # disable on initial deployment
   backup:
     provider: aws # aws or openstack
     # aws credentials
@@ -289,12 +290,17 @@ garden:
       # loadBalancerServices:
   virtualCluster:
     version: "1.29.6"
+    highAvailability: false
     # authenticationConfig:
     networking:
       services: ["100.64.0.0/13"]
     adminUsers: []
     gardenerResourceManager:
       additionalTargetNamespaces: []
+    # gardenerScheduler:
+    #   # strategy defines how seeds for shoots that do not specify a seed explicitly are determined.
+    #   # SameRegion (default) or MinimalDistance. Leave unset to use the scheduler's own default.
+    #   strategy: MinimalDistance
   dashboard:
     enabled: false
     enableTokenLogin: false
@@ -325,6 +331,7 @@ extensions:
     parameters: {}
   kubernetesVersions: []
   aws:
+    enabled: true
     version: v1.70.0
     values:
       image:
@@ -422,6 +429,7 @@ extensions:
           repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/machine-controller-manager-provider-aws
           tag: v0.28.0
   oidcAppsController:
+    operatorGroups: []
     version: v0.28.0
     values:
       replicaCount: 1
@@ -486,16 +494,6 @@ extensions:
     helm:
       ociRepository:
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/os-gardenlinux
-  flatcar:
-    enabled: false
-    version: v1.29.0
-    values:
-      image:
-        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/extensions/os-coreos
-      replicaCount: 1
-    helm:
-      ociRepository:
-        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/os-coreos
   openstack:
     enabled: false
     version: v1.55.3
@@ -514,6 +512,7 @@ extensions:
     machineImages: []
     providerConfig:
       machineImages: []
+      rescanBlockStorageOnResize: true
     regions: []
     imageVectorOverwrite:
       images:
@@ -836,7 +835,7 @@ extensions:
         - group: core.gardener.cloud
           resources:
           - controllerdeployments
-    version: v0.3.0
+    version: v0.4.0
     admission:
       values:
         image:
@@ -861,11 +860,27 @@ extensions:
       images:
         - name: auditlog-forwarder
           repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/auditlog-forwarder
-          tag: "v0.2.0"
+          tag: "v0.3.0"
     helm:
       ociRepository:
         # tag:
         repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/auditing
+  networkingProblemDetector:
+    # Deploys the shoot-networking-problemdetector extension which automatically creates:
+    # - nwpd-agent DaemonSets on shoot nodes (pod-net + node-net checks)
+    # - ScrapeConfig (label: prometheus=shoot) for nwpd_* metrics
+    # - Plutono dashboard ConfigMap (label: dashboard.monitoring.gardener.cloud/shoot=true)
+    # Source: https://github.com/gardener/gardener-extension-shoot-networking-problemdetector
+    enabled: false
+    version: v0.32.1
+    autoEnable:
+    - shoot
+    values:
+      image:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/extensions/shoot-networking-problemdetector
+    helm:
+      ociRepository:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/shoot-networking-problemdetector
 gardenlet:
   enabled: false
   image:
@@ -901,3 +916,4 @@ owner-info:
     - Göran Gudat
     - Jan Knipper
     - Marian Schwarz
+mcpopenstack: false

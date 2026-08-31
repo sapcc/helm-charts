@@ -4,10 +4,12 @@
   ],
   "template": {
     "settings": {
-      "index.number_of_shards": "4",
+      "index.number_of_shards": "{{ .Values.global.data_stream.logs.number_of_shards | default "4" }}",
       "index.number_of_replicas": "1",
       "index.append_only.enabled": true,
-      "index.refresh_interval": "60s"
+      "index.refresh_interval": "{{ .Values.global.data_stream.logs.refresh_interval | default "60s" }}",
+      "index.translog.sync_interval": "{{ .Values.global.data_stream.logs.refresh_interval | default "60s" }}",
+      "index.translog.durability": "async"
     },
     "mappings": {
       "dynamic_templates": [

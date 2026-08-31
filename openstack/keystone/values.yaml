@@ -1,6 +1,7 @@
 # Default values for keystone.
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
+imageVersionKubernetesEntrypoint: latest
 # name: value
 
 global:
@@ -40,6 +41,21 @@ nodeAffinity: {}
 # osprofiler
 osprofiler:
   enabled: false
+  redis:
+    enabled: false
+
+osprofiler-redis:
+  persistence:
+    enabled: false
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  alerts:
+    support_group: identity
 
 federation:
   oidc:
@@ -48,6 +64,40 @@ federation:
     client_id: ""
     client_secret: ""
     crypto_passphrase: ""
+  saml:
+    enabled: false
+    # Ordering safety gate. When enabled=true, keystone-api mounts ConfigMaps
+    # and a Secret produced by the SEPARATE keystone-saml-federation chart
+    # (keystone-saml-shibboleth-config, keystone-saml-federation-saml-tenants,
+    # keystone-saml-idp-metadata, and the SP-key Secret) as non-optional
+    # volumes. If those resources do not exist yet, the pod will not start
+    # (FailedMount). You MUST deploy the keystone-saml-federation chart for
+    # this region first, then set this flag to true to acknowledge you have
+    # done so. The chart refuses to render while enabled=true and this is
+    # false.
+    iHaveAlreadyDeployedFederationChart: false
+    spInit:
+      image: keystone-saml-sp-init
+      imageTag: ""
+      # Three required axes for key lifecycle management.
+      # All three must be set when federation.saml.enabled is true.
+      # See keystone-saml-sp-init for available plugins.
+      keyGeneration: ""   # required: go-crypto | hsm-entropy | hsm-full | tpm-entropy
+      keyWrapping: ""     # required: none | vault-transit | hsm | tpm
+      keyStorage: ""      # required: vault-kv | k8s-secret
+      # Set to true only if keyWrapping=none AND keyStorage=k8s-secret.
+      # This combination stores the plaintext private key in a Kubernetes
+      # Secret and does not meet production security requirements.
+      allowInsecureStorage: false
+    idp:
+      # IdP metadata ConfigMap name. Shipped by the keystone-saml-federation
+      # chart. Per-tenant <tenant>-metadata.xml files live inside.
+      # shibboleth2.xml and the federation-saml.d/*.conf files come from
+      # dedicated ConfigMaps (keystone-saml-shibboleth-config and
+      # keystone-saml-federation-saml-tenants) and are not configurable
+      # via values; they are wired by name in deployment-api.yaml.
+      metadataConfigMap: ""           # IdP metadata files (XML)
+      spKeySecretName: "keystone-saml-sp"  # Per-tenant SP key pairs (from federation chart)
 
 api:
   image: "loci-keystone"
@@ -65,6 +115,15 @@ api:
   cloudAdminDomainName: Default
   cloudAdminProjectName: admin
   cloudAdminProjectId: ""
+
+  # Domain IDs considered "admin domains". When non-empty, blocklisted roles
+  # (blocklist_roles) and grants on blocklisted projects (blocklist_projects)
+  # may only be assigned to recipients (users or groups) whose domain is in
+  # this list, even for cloud-admins. Empty = restriction disabled.
+  # The Default domain id is the literal "default"; ccadmin is a per-region UUID.
+  # Enable per-region in secrets, e.g.:
+  #   adminDomainIds: ["default", "<ccadmin domain uuid>"]
+  adminDomainIds: []
 
   ## specify override default tags to be added to each newly created project
   ## else they will be calculated based on the availability zones
@@ -130,7 +189,7 @@ api:
 
   identity:
     # Maximum number of entities that will be returned in an identity collection. 0 disables the limit
-    list_limit: 1500
+    list_limit: 0 # disabled until keystone LDAP marker pagination is fixed (sapcc/keystone#57)
 
   metrics:
     enabled: true
@@ -151,12 +210,14 @@ api:
   terminationGracePeriodSeconds: 30
   minReadySeconds: 5
 
+  priorityClassName: critical-payload
+
   resources:
     requests:
-      memory: 2Gi
-      cpu: 1500m
+      memory: 4Gi
+      cpu: 3000m
     limits:
-      memory: 3Gi
+      memory: 6Gi
 
   replicas: 3
 
@@ -214,8 +275,8 @@ sentry:
   #     exclude_unauthorized:
   #       exception_type: "Unauthorized"
   #       rate_limit: # only report max 5 occurrences within 300 seconds
-  #         max_occurrences: 5 
-  #         time_window: 300 
+  #         max_occurrences: 5
+  #         time_window: 300
   #     invalid_credentials:
   #       message_pattern: ".*length.*exceeded.*" # python regex match in the error message
   #     ignore_jaeger_client:

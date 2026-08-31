@@ -10,7 +10,7 @@ api_paste_config = /etc/neutron/api-paste.ini
 
 pagination_max_limit = 500
 max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
-max_routes = {{.Values.max_routes | default 256}}
+max_routes = {{.Values.max_routes }}
 
 allow_overlapping_ips = true
 core_plugin = ml2

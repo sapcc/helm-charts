@@ -27,6 +27,9 @@ api_workers: 12
 rpc_workers: 5
 rpc_state_workers: 5
 
+# Define max # of static routes per router
+max_routes: 512
+
 owner-info:
   support-group: network-api
   service: neutron
@@ -136,6 +139,13 @@ pod:
       limits:
         cpu: "2000m"
         memory: "1Gi"
+    agent_checks_exporter:
+      requests:
+        cpu: "20m"
+        memory: "64Mi"
+      limits:
+        cpu: "50m"
+        memory: "128Mi"
     nsxv3_agent:
       requests:
         cpu: "128m"
@@ -756,6 +766,40 @@ mysql_metrics:
       - availability_zone
       values:
       - count
+    - help: Neutron DHCP agent ports
+      labels:
+      - network_host
+      - subnet_id
+      - subnet_name
+      - network_id
+      - bridge
+      - network_name
+      - ip_address
+      name: openstack_subnets_with_dhcp_enabled
+      query: |
+        SELECT
+          a.host as network_host,
+          s.id as subnet_id,
+          s.name as subnet_name,
+          n.id as network_id,
+          LEFT(n.id, 11) as bridge,
+          n.name as network_name,
+          s.enable_dhcp as dhcp_enabled
+        FROM
+          networks n
+        INNER JOIN
+          networkdhcpagentbindings nabs ON n.id = nabs.network_id
+        INNER JOIN
+          agents a ON nabs.dhcp_agent_id = a.id
+        INNER JOIN
+          subnets s ON nabs.network_id = s.network_id
+        WHERE
+          a.agent_type="DHCP agent"
+          and a.admin_state_up = 1
+          and n.admin_state_up = 1
+          and n.status = "ACTIVE";
+      values:
+      - dhcp_enabled
 
 max_pool_size: 20
 max_overflow: 5

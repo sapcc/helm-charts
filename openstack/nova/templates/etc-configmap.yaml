@@ -33,6 +33,9 @@ data:
 {{- $configErrorMsg := printf "'.Values.%[1]s.conductor.config_file' is required for cell '%[1]s'" $cellId }}
 {{- $cellValues := get $envAll.Values $cellId | required $configErrorMsg }}
 {{- $conductorConfig := $cellValues.conductor.config_file | required $configErrorMsg }}
+{{- if hasKey $envAll.Values.conductor.config_file "cross_hv" }}
+{{- $_ := set $conductorConfig "cross_hv" $envAll.Values.conductor.config_file.cross_hv }}
+{{- end }}
   nova-{{ $cellName }}-conductor.conf: |
 {{ include "util.helpers.valuesToIni" $conductorConfig | indent 4 }}
 {{- end }}

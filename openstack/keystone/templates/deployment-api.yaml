@@ -12,7 +12,10 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}"
+    {{- if .Values.federation.saml.enabled }}
+    configmap.reloader.stakater.com/reload: "keystone-saml-shibboleth-config,keystone-saml-federation-saml-tenants,{{ .Values.federation.saml.idp.metadataConfigMap }}"
+    {{- end }}
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.api.replicas }}
@@ -48,12 +51,18 @@ spec:
         {{- if .Values.federation.oidc.enabled }}
         federation-hash: {{ include (print $.Template.BasePath "/federation.yaml") . | sha256sum }}
         {{- end }}
-        {{- if .Values.proxysql.mode }}
+        {{- if .Values.federation.saml.enabled }}
+        federation-saml-hash: {{ include (print $.Template.BasePath "/federation-saml.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.api.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.api.priorityClassName }}
+      priorityClassName: {{ .Values.api.priorityClassName }}
+      {{- end }}
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
@@ -61,30 +70,42 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds | default "30" }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      - name: kubernetes-entrypoint
-        #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
-        imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
-        command:
-          - kubernetes-entrypoint
-        env:
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-{{- if .Release.IsInstall }}
-        - name: DEPENDENCY_JOBS
-          value: "{{ tuple . "job-migration" | include "job_name" }},{{ tuple . "job-bootstrap" | include "job_name" }}"
-{{- else }}
-  {{- if or .Values.run_db_migration }}
-        - name: DEPENDENCY_JOBS
-          value: "{{ tuple . "job-migration" | include "job_name" }}"
-  {{- end }}
-{{- end }}
-        - name: DEPENDENCY_SERVICE
-          value: {{ include "keystone.service_dependencies" . | quote }}
-        - name: COMMAND
-          value: "true"
+      {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" (include "keystone.job_dependencies" .)) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      {{- if .Values.federation.saml.enabled }}
+      {{- /* Ordering safety gate: the keystone-saml-federation chart must be
+             deployed for this region BEFORE enabling SAML here, because the
+             ConfigMaps/Secret below are mounted as non-optional volumes. */}}
+      {{- if not .Values.federation.saml.iHaveAlreadyDeployedFederationChart }}
+        {{- fail "federation.saml.enabled is true but federation.saml.iHaveAlreadyDeployedFederationChart is false. keystone-api mounts ConfigMaps and a Secret from the keystone-saml-federation chart (keystone-saml-shibboleth-config, keystone-saml-federation-saml-tenants, keystone-saml-idp-metadata, keystone-saml-sp) as non-optional volumes and will FailedMount if they do not exist. Deploy the keystone-saml-federation chart for this region first, then set federation.saml.iHaveAlreadyDeployedFederationChart: true." }}
+      {{- end }}
+      {{- /* Validate required key lifecycle axes */}}
+      {{- if not .Values.federation.saml.spInit.keyGeneration }}
+        {{- fail "federation.saml.spInit.keyGeneration is required when SAML is enabled (e.g. go-crypto)" }}
+      {{- end }}
+      {{- if not .Values.federation.saml.spInit.keyWrapping }}
+        {{- fail "federation.saml.spInit.keyWrapping is required when SAML is enabled (e.g. none, vault-transit)" }}
+      {{- end }}
+      {{- if not .Values.federation.saml.spInit.keyStorage }}
+        {{- fail "federation.saml.spInit.keyStorage is required when SAML is enabled (e.g. vault-kv)" }}
+      {{- end }}
+      {{- /* Enforce forbidden combination: none + k8s-secret = plaintext key in etcd */}}
+      {{- if and (eq .Values.federation.saml.spInit.keyWrapping "none") (eq .Values.federation.saml.spInit.keyStorage "k8s-secret") (not .Values.federation.saml.spInit.allowInsecureStorage) }}
+        {{- fail "federation.saml.spInit: keyWrapping=none with keyStorage=k8s-secret stores a plaintext private key in a Kubernetes Secret. Set allowInsecureStorage: true to override (QA only)." }}
+      {{- end }}
+      - name: saml-sp-init
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.federation.saml.spInit.image }}:{{ required ".Values.federation.saml.spInit.imageTag is missing" .Values.federation.saml.spInit.imageTag }}
+        args:
+          - --mode=unwrap
+          - --key-wrapping={{ .Values.federation.saml.spInit.keyWrapping }}
+        volumeMounts:
+          - name: keystone-saml-sp-keys
+            mountPath: /saml-sp-secret
+            readOnly: true
+          - name: saml-sp-tmpfs
+            mountPath: /saml-sp-keys
       {{- end }}
       containers:
         - name: keystone-api
@@ -123,6 +144,15 @@ spec:
             {{- end }}
             - name: SENTRY_FILTER_CONFIG_FILE
               value: /etc/config/rules.yaml
+            {{- if .Values.osprofiler.redis.enabled }}
+            - name: OSPROFILER_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-osprofiler-redis-user-default
+                  key: password
+            - name: OS_PROFILER__CONNECTION_STRING
+              value: "redis://:$(OSPROFILER_REDIS_PASSWORD)@{{ .Release.Name }}-osprofiler-redis:6379"
+            {{- end }}
           ports:
             - name: public
               containerPort: 5000
@@ -187,6 +217,33 @@ spec:
               subPath: federation-oidc.conf
               readOnly: true
             {{- end }}
+            {{- if .Values.federation.saml.enabled }}
+            - name: keystone-federation-saml
+              mountPath: /etc/shibboleth/attribute-map.xml
+              subPath: attribute-map.xml
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/shibboleth/security-policy.xml
+              subPath: security-policy.xml
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/shibboleth/shibd.logger
+              subPath: shibd.logger
+              readOnly: true
+            - name: keystone-saml-shibboleth-config
+              mountPath: /etc/shibboleth/shibboleth2.xml
+              subPath: shibboleth2.xml
+              readOnly: true
+            - name: keystone-saml-federation-saml-tenants
+              mountPath: /etc/apache2/conf-enabled/federation-saml.d
+              readOnly: true
+            - name: saml-sp-tmpfs
+              mountPath: /etc/shibboleth/sp-keys
+              readOnly: true
+            - name: keystone-saml-idp-metadata
+              mountPath: /etc/shibboleth/metadata
+              readOnly: true
+            {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
@@ -234,7 +291,9 @@ spec:
 {{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
+      {{- if not .Values.osprofiler.redis.enabled }}
       {{- include "jaeger_agent_sidecar" . | indent 8 }}
+      {{- end }}
       {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 8 }}
       {{- end }}
@@ -255,6 +314,32 @@ spec:
         - name: keystone-federation
           secret:
             secretName: {{ .Release.Name }}-federation
+            defaultMode: 0444
+        {{- end }}
+        {{- if .Values.federation.saml.enabled }}
+        - name: keystone-federation-saml
+          secret:
+            secretName: {{ .Release.Name }}-federation-saml
+            defaultMode: 0444
+        - name: keystone-saml-sp-keys
+          secret:
+            secretName: {{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}
+            defaultMode: 0444
+        - name: saml-sp-tmpfs
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+        - name: keystone-saml-idp-metadata
+          configMap:
+            name: {{ required "federation.saml.idp.metadataConfigMap is required when SAML is enabled" .Values.federation.saml.idp.metadataConfigMap }}
+            defaultMode: 0444
+        - name: keystone-saml-shibboleth-config
+          configMap:
+            name: keystone-saml-shibboleth-config
+            defaultMode: 0444
+        - name: keystone-saml-federation-saml-tenants
+          configMap:
+            name: keystone-saml-federation-saml-tenants
             defaultMode: 0444
         {{- end }}
         - name: keystone-bin

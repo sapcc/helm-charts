@@ -7,7 +7,6 @@ controlplane:
   address: 192.168.1.100
   port: 6443
   version: v1.31.5
-  uplinkInterface: bond0
   machineTemplate:
     matchLabels:
       node-role.kubernetes.io/cp: ""
@@ -63,8 +62,16 @@ clusters:
       passwordhash: bar
   - name: rt-test-8
     namespace: capi-runtime-8
+    machineTemplateMetadata:
+      interfaces: "eno*"
+      vlan: "920"
 
 user:
   name: admin
   passwordhash: "$6$randomsalt$hashedpassword"
   key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEArandomkey"
+
+cloudProviderMetal:
+  image:
+    repository: example.io/metal-cloud-controller-manager
+    tag: latest

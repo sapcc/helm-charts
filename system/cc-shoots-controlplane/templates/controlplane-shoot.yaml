@@ -9,12 +9,15 @@ metadata:
     greenhouse.sap/owned-by: containers
     greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
     metadata.greenhouse.sap/region: {{ $key }}
+    {{- with merge (default dict $cluster.extraLabels) (default dict $.Values.shootExtraLabels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  credentialsBindingName: metal-{{ $key }}
+  credentialsBindingName: metal-wi-{{ $key }}
   seedName: mgmt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -28,7 +31,11 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
+      {{- if $.Values.networking.overlay }}
+      vethMTU: "8930"
+      {{- else }}
       vethMTU: "8950"
+      {{- end }}
       ipam:
         type: host-local
         cidr: usePodCIDR
@@ -60,7 +67,13 @@ spec:
             name: audit-policy-cp
       {{- end }}
     verticalPodAutoscaler:
-      enabled: true # VPA needs to enabled for ManagedSeed
+      enabled: true
+      targetCPUPercentile: 0.75
+      targetMemoryPercentile: 0.85
+      recommendationMarginFraction: 0.05
+      {{- with dig "verticalPodAutoscaler" "maxAllowed" nil $cluster }}
+      maxAllowed: {{ toYaml . | nindent 8 }}
+      {{- end }}
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -129,10 +142,13 @@ spec:
             bgpFilter:
               - name: v4filter
                 exportV4:
+                  {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
+                  {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
+                  {{- end }}
                   {{- end }}
                   {{- if $.Values.networking.overlay }}        
                   - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}

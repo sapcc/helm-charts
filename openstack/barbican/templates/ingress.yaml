@@ -18,6 +18,12 @@ metadata:
     disco: "true"
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+  {{- if .Values.ingress.enableRequestSizeLimit }}
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.ingress.maxRequestBodySize | quote }}
+  {{- end }}
+  {{- if .Values.ingress.enableConnectionsLimit }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ .Values.ingress.limitConnections | quote }}
+  {{- end }}
 spec:
   tls:
      - secretName: tls-{{ include "barbican_api_endpoint_host_public" . | replace "." "-" }}
