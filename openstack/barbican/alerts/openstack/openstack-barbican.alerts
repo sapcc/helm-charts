@@ -118,7 +118,12 @@ groups:
       summary: barbican is unavailable.
 
   - alert: OpenstackBarbicanTLSRotationFailed
-    expr: kube_job_status_failed{job_name=~"barbican-tls-rotation.*"} > 0
+    expr: >
+      kube_job_status_failed{job_name=~"barbican-tls-rotation.*"} > 0
+      and on (namespace, job_name)
+      kube_job_created{job_name=~"barbican-tls-rotation.*"}
+        == on (namespace) group_left()
+      max by (namespace) (kube_job_created{job_name=~"barbican-tls-rotation.*"})
     for: 1h
     labels:
       context: security
