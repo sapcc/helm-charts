@@ -15,3 +15,24 @@ spec:
   usages:
   - digital signature
 {{- end }}
+
+{{- if .Values.extensions.oidcAppsController.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: shoot-dashboards-wildcard
+  namespace: istio-ingress
+spec:
+  dnsNames:
+  {{- for $dnsName := .Values.extensions.oidcAppsController.dashboardDnsNames }}
+  - {{ $dnsName }}
+  {{- end }}
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: DigicertIssuer
+    name: digicert-issuer
+  secretName: {{ .Values.extensions.oidcAppsController.tlsSecretName required "missing value for .Values.extensions.oidcAppsController.tlsSecretName" }}
+  usages:
+  - digital signature
+  - key encipherment
+{{- end }}
