@@ -106,7 +106,12 @@ groups:
       summary: SAML assertion validation failures detected in Keystone
 
   - alert: OpenstackKeystoneTLSRotationFailed
-    expr: kube_job_status_failed{job_name=~"keystone-tls-rotation.*"} > 0
+    expr: >
+      kube_job_status_failed{job_name=~"keystone-tls-rotation.*"} > 0
+      and on (namespace, job_name)
+      kube_job_created{job_name=~"keystone-tls-rotation.*"}
+        == on (namespace) group_left()
+      max by (namespace) (kube_job_created{job_name=~"keystone-tls-rotation.*"})
     for: 1h
     labels:
       context: security
