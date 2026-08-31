@@ -16,10 +16,23 @@ spec:
   releaseNamespace: greenhouse
   releaseName: permission-manager
   optionValues:
+    {{- if and .Values.permissionmanager.ccrn .Values.permissionmanager.ccrn.apiGroups }}
+    - name: ccrn.apiGroups
+      value:
+        {{- toYaml .Values.permissionmanager.ccrn.apiGroups | nindent 8 }}
+    {{- end }}
+    {{- if and .Values.permissionmanager.providers .Values.permissionmanager.providers.kubernetes }}
     - name: providers.kubernetes
-      value: "true"
+      value: {{ .Values.permissionmanager.providers.kubernetes | quote }}
+    {{- end }}
+    {{- if and .Values.permissionmanager.providers .Values.permissionmanager.providers.github }}
     - name: providers.github
-      value: "false"
+      value: {{ .Values.permissionmanager.providers.github | quote }}
+    {{- end }}
+    {{- if and .Values.permissionmanager.manager .Values.permissionmanager.manager.maxConcurrentReconciles }}
+    - name: manager.maxConcurrentReconciles
+      value: {{ .Values.permissionmanager.manager.maxConcurrentReconciles }}
+    {{- end }}
     - name: rbac.namespaced
       value: false
     - name: metrics.enabled
