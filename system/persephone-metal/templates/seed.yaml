@@ -1,0 +1,100 @@
+{{- $vbase           := .Values.global.vaultBaseURL        | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region          := .Values.global.region              | required "missing value for .Values.global.region" -}}
+{{- $landscapes      := .Values.persephone.landscapes      | required "missing value for .Values.persephone.landscapes" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: persephone-seed
+
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-default-seed
+# TODO: (2026-02-05) seeder still cannot find this seed
+# - {{ .Values.global.keystoneNamespace }}/domain-persephone-seed
+
+  domains:
+    - name: Default
+      users:
+      {{- range $_, $landscape := $landscapes }}
+        - name: persephone-{{ $landscape }}-seed
+          description: A service user for the landscape seed
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-seed/password" $vbase $region $landscape | quote }}
+
+        - name: persephone-{{ $landscape }}-operator
+          description: A service user for the persephone-operator
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-operator/password" $vbase $region $landscape | quote }}
+          # expectation: allow persephone-operator to create service users on the fly with default project ID also determined on the fly
+          role_assignments:
+            - domain: persephone
+              role: admin
+
+        - name: persephone-{{ $landscape }}-webhook
+          description: A service user for the persephone-webhook
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-webhook/password" $vbase $region $landscape | quote }}
+          # expectation: allow persephone-webhook to create service users on the fly with default project ID also determined on the fly
+          role_assignments:
+            - domain: persephone
+              role: admin
+      {{- if eq $region "eu-de-1" }}
+        - name: persephone-{{ $landscape }}-runtime
+          description: A service user for the runtime shoot
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-runtime/password" $vbase $region $landscape | quote }}
+
+        - name: persephone-{{ $landscape }}-gardener
+          description: A service user for the gardener operator
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-operator/password" $vbase $region $landscape | quote }}
+      {{- end }}
+      {{- end }}
+
+    - name: ccadmin
+      projects:
+        {{- range $_, $landscape := $landscapes }}
+        - name: cloud_admin
+          role_assignments:
+            # TODO: how to achieve the same permissions without assigning such high privileges?
+            # expected: user can CRUD "shoot service users" in 'persephone' domain; user can list domains to resolve 'persephone' domain name to domain ID
+            - role: admin
+              user: persephone-{{ $landscape }}-operator@Default
+            # TODO: how to achieve the same permissions without assigning such high privileges?
+            # expected: user can CRUD "shoot service users" in 'persephone' domain; user can list domains to resolve 'persephone' domain name to domain ID
+            - role: admin
+              user: persephone-{{ $landscape }}-webhook@Default
+        {{- end }}
+
+
+        {{- range $_, $landscape := $landscapes }}
+        - name: persephone-{{ $landscape }}
+          role_assignments:
+            {{- range $_, $roleName := list "cloud_dns_ops" "compute_admin" "dns_webmaster" "member" "network_admin" "objectstore_admin" "volume_admin" }}
+            - role: {{ $roleName }}
+              user: persephone-{{ $landscape }}-seed@Default
+            {{- end }}
+
+            {{- if eq $region "eu-de-1" }}
+            # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
+            {{- range $_, $roleName := list "compute_admin" "member" "network_admin" "objectstore_admin" "volume_admin" }}
+            - role: {{ $roleName }}
+              user:  persephone-{{ $landscape }}-runtime@Default
+            {{- end }}
+
+            {{- range $_, $roleName := list "compute_admin" "dns_webmaster" "member" "network_admin" "objectstore_admin" "volume_admin" }}
+            - role: {{ $roleName }}
+              user: persephone-{{ $landscape }}-gardener@Default
+            {{- end }}
+            {{- end }}
+        {{- end }}
+
+    - name: persephone
+      projects:
+        {{- range $_, $landscape := $landscapes }}
+        # the seeder creates these projects if they don't exist
+        - name: persephone-{{ $landscape }}
+          role_assignments:
+            - role: admin
+              user: persephone-{{ $landscape }}-operator@Default
+            - role: admin
+              user: persephone-{{ $landscape }}-webhook@Default
+        {{- end }}
