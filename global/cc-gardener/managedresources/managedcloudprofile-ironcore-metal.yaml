@@ -43,14 +43,3 @@ spec:
   {{- end }}
   {{- end }}
 {{- end }}
----
-{{ with dig "kubernetesVersionUpdate" "landscapeSetup" "github" "githubApp" nil .Values.extensions }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ required "secret name is required" .privateKeySecret.name }}
-  namespace: {{ required "secret namespace is required" .privateKeySecret.namespace }}
-type: Opaque
-data:
-  {{ .privateKeySecret.key }}: {{ "vault+kvv2:///secrets/shared/cloud-profile-sync/github-app-private-key" | b64enc }}
-{{- end }}
