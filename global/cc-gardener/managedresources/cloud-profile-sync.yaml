@@ -601,9 +601,9 @@ spec:
                     - message: maxAge must not be negative
                       rule: duration(self) >= duration('0s')
                 type: object
-              kubernetesVersionUpdateConfig:
-                description: KubernetesVersionUpdateConfig contains the source and
-                  provider information to automate Kubernetes version updates.
+              kubernetesUpdate:
+                description: KubernetesUpdate contains the source and provider information
+                  to automate Kubernetes version updates.
                 properties:
                   expirationThreshold:
                     description: |-
@@ -612,95 +612,9 @@ spec:
                       removed from the CloudProfile.
                     type: string
                   landscapeSetup:
-                    description: LandscapeSetup contains the required OCI and GitHub
-                      sources for Kubernetes versions.
+                    description: LandscapeSetup contains the OCI source configuration
+                      for Kubernetes versions.
                     properties:
-                      github:
-                        description: Github contains configuration for fetching Kubernetes
-                          version classifications from a GitHub repository.
-                        properties:
-                          filePath:
-                            description: |-
-                              FilePath is the path to the versions file within the repository,
-                              e.g. "kubernetes/versions.yaml".
-                            type: string
-                          githubApp:
-                            description: |-
-                              GithubApp configures authentication via a GitHub App installation.
-                              Mutually exclusive with PersonalAccessTokenSecret.
-                            properties:
-                              appID:
-                                description: AppID is the numeric GitHub App ID.
-                                format: int64
-                                type: integer
-                              installationID:
-                                description: InstallationID is the numeric installation
-                                  ID for the target repository.
-                                format: int64
-                                type: integer
-                              privateKeySecret:
-                                description: |-
-                                  PrivateKeySecret is a reference to a secret containing the RSA private key
-                                  (PEM-encoded) used to sign JWTs.
-                                properties:
-                                  key:
-                                    description: Key within the Secret to use for
-                                      required data.
-                                    type: string
-                                  name:
-                                    description: Name of a Secret.
-                                    type: string
-                                  namespace:
-                                    description: Namespace of a Secret.
-                                    type: string
-                                required:
-                                - key
-                                - name
-                                - namespace
-                                type: object
-                            required:
-                            - appID
-                            - installationID
-                            - privateKeySecret
-                            type: object
-                          personalAccessTokenSecret:
-                            description: |-
-                              PersonalAccessTokenSecret is a reference to a secret containing a GitHub
-                              personal access token. Mutually exclusive with GithubApp.
-                            properties:
-                              key:
-                                description: Key within the Secret to use for required
-                                  data.
-                                type: string
-                              name:
-                                description: Name of a Secret.
-                                type: string
-                              namespace:
-                                description: Namespace of a Secret.
-                                type: string
-                            required:
-                            - key
-                            - name
-                            - namespace
-                            type: object
-                          provider:
-                            description: Provider is the provider whose Kubernetes
-                              versions are read from the file.
-                            type: string
-                          repository:
-                            description: Repository is the owner/repo path, e.g. "my-org/landscape-setup".
-                            type: string
-                          repositoryApiUrl:
-                            description: |-
-                              RepositoryApiURL is the base URL of the GitHub REST API, e.g.
-                              "https://api.github.com" or "https://github.mycompany.com/api/v3".
-                            type: string
-                        required:
-                        - filePath
-                        - provider
-                        - repository
-                        - repositoryApiUrl
-                        type: object
                       oci:
                         description: OCI contains configuration for the OCI component-descriptor
                           source.
@@ -740,9 +654,13 @@ spec:
                         - registry
                         - repository
                         type: object
+                      provider:
+                        description: Provider is the provider name to select from
+                          the kubernetes-version-data blob,
+                        type: string
                     required:
-                    - github
                     - oci
+                    - provider
                     type: object
                 type: object
               machineImageUpdates:
