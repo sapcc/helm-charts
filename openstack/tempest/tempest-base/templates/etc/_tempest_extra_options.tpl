@@ -50,14 +50,14 @@ security_compliance = True
 build_timeout=600
 
 [network]
-project_network_cidr = 10.199.0.0/16
+project_network_cidr = {{ .Values.tempest_common.project_network_cidr }}
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
 build_interval=20
-subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
+subnet_id = {{ required "Missing tempest_common.subnet_id!" .Values.tempest_common.subnet_id }}
 
 [network-feature-enabled]
 ipv6 = False
@@ -73,10 +73,8 @@ driver = fake-hardware
 
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
-#image_ref = CHANGE_ME_IMAGE_REF
-#image_ref_alt = CHANGEMEIMAGEREFALT
-image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
-image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+image_ref = {{ required "Missing tempest_common.image_ref!" .Values.tempest_common.image_ref }}
+image_ref_alt = {{ required "Missing tempest_common.image_ref_alt!" .Values.tempest_common.image_ref_alt }}
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
@@ -86,7 +84,7 @@ min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 build_timeout=600
-compute_volume_common_az = qa-de-1b
+compute_volume_common_az = {{ required "Missing tempest_common.compute_volume_common_az!" .Values.tempest_common.compute_volume_common_az }}
 
 [compute-feature-enabled]
 resize = True
@@ -121,7 +119,7 @@ v3_endpoint_type = publicURL
 region = {{ .Values.global.region }}
 
 [validation]
-image_ssh_user = ccloud
+image_ssh_user = {{ required "Missing tempest_common.image_ssh_user!" .Values.tempest_common.image_ssh_user }}
 ssh_key_type = rsa
 
 [volume]
@@ -153,6 +151,6 @@ keystone = True
 octavia = True
 
 [dns]
-nameservers = 10.114.1.233,147.204.35.140,147.204.35.141
+nameservers = {{ required "Missing tempest_common.dns_nameservers!" .Values.tempest_common.dns_nameservers }}
 
 {{ end }}
