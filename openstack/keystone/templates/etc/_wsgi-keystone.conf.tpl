@@ -113,16 +113,6 @@ Listen 0.0.0.0:443
     RequestHeader unset X-Trusted-Key
     RequestHeader unset X_Trusted_Key
 
-    {{- if .Values.services.ingress.x509.ca }}
-    SSLVerifyClient optional
-    SSLVerifyDepth 3
-    SSLCACertificateFile /etc/apache2/x509-ca/ca.crt
-
-    # Reconstruct, from the verified TLS session, the client-certificate request
-    # headers cc_x509 consumes (same format NGINX forwarded when it terminated
-    # TLS). Every inbound spelling is stripped first so a client cannot inject
-    # them; only these Apache-set values, sourced from the verified handshake,
-    # reach the WSGI app.
     RequestHeader unset SSL-Client-Cert
     RequestHeader unset SSL_Client-Cert
     RequestHeader unset SSL-Client_Cert
@@ -140,6 +130,17 @@ Listen 0.0.0.0:443
     {{- range $s3 := list "-" "_" }}
     RequestHeader unset SSL{{ $s1 }}Client{{ $s2 }}{{ $dn }}{{ $s3 }}DN
     {{- end }}{{- end }}{{- end }}{{- end }}
+
+    {{- if .Values.services.ingress.x509.ca }}
+    SSLVerifyClient optional
+    SSLVerifyDepth 3
+    SSLCACertificateFile /etc/apache2/x509-ca/ca.crt
+
+    # Reconstruct, from the verified TLS session, the client-certificate request
+    # headers cc_x509 consumes (same format NGINX forwarded when it terminated
+    # TLS). Every inbound spelling is stripped first so a client cannot inject
+    # them; only these Apache-set values, sourced from the verified handshake,
+    # reach the WSGI app.
     RequestHeader set SSL-Client-Cert "expr=%{escape:%{SSL:SSL_CLIENT_CERT}}"
     RequestHeader set SSL-Client-Verify "expr=%{SSL:SSL_CLIENT_VERIFY}"
     RequestHeader set SSL-Client-I-DN "expr=%{SSL:SSL_CLIENT_I_DN}"
