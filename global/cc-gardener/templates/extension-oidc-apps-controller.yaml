@@ -17,7 +17,7 @@ spec:
         cacheSelectorStr: observability.gardener.cloud/app in (plutono, prometheus-shoot,
           alertmanager-seed, alertmanager-shoot)
         clients:
-        - clientId: {{ $.Values.garden.dashboard.oidc.clientIDPublic }}
+        - clientId: {{ .oidcClientId | default $.Values.garden.dashboard.oidc.clientIDPublic }}
           name: oidc-apps-controller-users
         global:
           istioGateway:
@@ -27,7 +27,7 @@ spec:
           oauth2Proxy:
             insecureOidcSkipIssuerVerification: false
             insecureOidcSkipNonce: false
-            oidcIssuerUrl: {{ $.Values.garden.dashboard.oidc.issuerURL }}
+            oidcIssuerUrl: {{ .oidcIssuerUrl | default $.Values.garden.dashboard.oidc.issuerURL }}
             scope: openid email groups
             sslInsecureSkipVerify: false
         priorityClass:
