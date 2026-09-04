@@ -1,0 +1,63 @@
+{{- if not .Values.kos_conductor }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ironic-conductor-group-sync
+  labels:
+    system: openstack
+    type: cronjob
+    component: ironic
+spec:
+  schedule: {{ .Values.conductor.groupSyncSchedule | default "17 * * * *" | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: ironic-conductor-group-sync
+            image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - bash
+            args:
+            - -c
+            - |
+              # Source OpenStack credentials from ironic.conf [service_catalog] + [keystone_authtoken]
+              eval $(
+                cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*' | tr -d '\000' | grep '=' |
+                while read LINE; do var="${LINE% =*}"
+                  val="${LINE#*= }"
+                  echo export OS_${var^^}=${val}
+                done)
+              export OS_AUTH_URL=$(grep -Pzo '\[keystone_authtoken\][^[]*' /etc/ironic/ironic.conf | tr -d '\000' | grep 'auth_url' | awk -F'= ' '{print $2}' | head -1)
+              export OS_IDENTITY_API_VERSION=3
+
+              python3 /etc/ironic/conductor-group-sync.py
+            volumeMounts:
+            - mountPath: /etc/ironic/ironic.conf.d
+              name: ironic-etc-confd
+            - mountPath: /etc/ironic/ironic.conf
+              name: ironic-etc
+              subPath: ironic.conf
+              readOnly: true
+            - mountPath: /etc/ironic/conductor-group-sync.py
+              name: ironic-etc
+              subPath: conductor-group-sync.py
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          volumes:
+          - name: ironic-etc-confd
+            secret:
+              secretName: {{ .Release.Name }}-secrets
+              items:
+              - key: secrets.conf
+                path: secrets.conf
+          - name: ironic-etc
+            configMap:
+              name: ironic-etc
+          {{- include "utils.trust_bundle.volumes" . | indent 10 }}
+{{- end }}
