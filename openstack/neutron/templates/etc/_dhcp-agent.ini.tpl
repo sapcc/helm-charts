@@ -17,7 +17,28 @@ num_sync_threads = {{.Values.agent.dhcp.num_sync_threads | default 4 }}
 edns_client_fingerprint = {{.Values.agent.dhcp.edns_client_fingerprint | default "False" }}
 netns_resolvconf = {{.Values.agent.dhcp.netns_resolvconf | default "False" }}
 enable_router_advertisements = {{.Values.agent.dhcp.enable_router_advertisements | default "False" }}
+{{- if and .Values.dhcp_driver .Values.unbound.enabled }}
+dhcp_driver = {{.Values.dhcp_driver}}
+{{- end }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 50 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 5 }}
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
+
+[SCI]
+dnstap_enabled = {{ .Values.dnstap.enabled | default "False" }}
+{{- if .Values.dnstap.suffix }}
+dnstap_suffix = {{ .Values.dnstap.suffix }}
+{{- else }}
+dnstap_suffix = dnstap.cc.{{ .Values.global.region }}.cloud.sap
+{{- end }}
+{{- if .Values.unbound.logdir }}
+unbound_logdir = {{ .Values.unbound.logdir }}
+{{- end }}
+{{- if .Values.unbound.rpz_ttl }}
+unbound_rpz_ttl = {{ .Values.unbound.rpz_ttl }}
+{{- end }}
+
+
+
+
