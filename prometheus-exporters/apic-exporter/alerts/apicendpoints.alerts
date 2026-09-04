@@ -1,0 +1,30 @@
+groups:
+- name: apicendpoints.alerts
+  rules:
+  - alert: NetworkApicBgwEndpointCountHigh
+    expr: sum(network_apic_endpoints_total) > 55000
+    for: 30m
+    labels:
+      severity: warning
+      tier: net
+      service: apic
+      context: apic-endpoints
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci/#networkapicbgwendpointcount
+    annotations:
+      description: "ACI BGW potential endpoint count is {{ $value }} across monitored VRFs (warning threshold 55000) for more than 30 minutes"
+      summary: "ACI BGW potential endpoint count high: {{ $value }} EPs"
+
+  - alert: NetworkApicBgwEndpointCountCritical
+    expr: sum(network_apic_endpoints_total) > 62000
+    for: 10m
+    labels:
+      severity: critical
+      tier: net
+      service: apic
+      context: apic-endpoints
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci/#networkapicbgwendpointcount
+    annotations:
+      description: "ACI BGW potential endpoint count is {{ $value }} across monitored VRFs (critical threshold 62000 ) for more than 10 minutes"
+      summary: "ACI BGW potential endpoint count critical: {{ $value }} EPs"
