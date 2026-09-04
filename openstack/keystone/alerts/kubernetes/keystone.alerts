@@ -34,25 +34,6 @@ groups:
       description: 'The keystone ingress API endpoint is throwing 5xx for 15 min. Check if the keystone-api k8s pods are OK ASAP.'
       summary: 'Keystone API ingress endpoint is in Critical State'
 
-  - alert: OpenstackKeystonePodOOMExceedingLimits
-    # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
-    expr: container_memory_saturation_ratio{pod_name=~"keystone-.+",container_name="keystone-api"} > 0.7 AND predict_linear(container_memory_saturation_ratio{pod_name=~"keystone-.+",container_name="keystone-api"}[1h], 7*3600) > 1.0
-    for: 30m
-    labels:
-      no_alert_on_absence: "true"
-      support_group: identity
-      tier: os
-      service: keystone
-      severity: info
-      context: memory
-      meta: "{{ $labels.pod_name }}"
-    annotations:
-      summary: Exceeding memory limits in 8h
-      description: >
-        The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
-        Check if the growth is traffic-driven (consider scaling replicas) or
-        a potential memory leak (restart the pod and monitor).
-
   - alert: OpenstackKeystoneApiCPUThrottlingExceeds80Percentage
     expr: rate(container_cpu_cfs_throttled_periods_total{container="keystone-api"}[5m]) / rate(container_cpu_cfs_periods_total{container="keystone-api"}[5m]) > 0.8
     for: 10m
