@@ -1,0 +1,49 @@
+owner-info:
+  enabled: true
+  helm-chart-url: "https://github.wdf.sap.corp/sap-cloud-infrastructure/agent-sandbox"
+  maintainers: ["Team Workload Management"]
+  support-group: "workload-management"
+  service: "agent-sandbox"
+
+# Exact domains the agent may reach over HTTP Host / TLS SNI.
+allowedDomains: []
+
+envoy:
+  image: envoyproxy/envoy:v1.31-latest
+  imagePullPolicy: IfNotPresent
+  uid: 1337
+
+iptables:
+  image: alpine:3.22.1
+  imagePullPolicy: IfNotPresent
+
+agent:
+  name: agent-sandbox
+  # Which Kubernetes workload runs the agent:
+  #   Deployment - long-lived, continuously restarted (default)
+  #   Job        - one-off task, runs once then stops
+  #   CronJob    - scheduled task, runs on a cron schedule
+  workload:
+    kind: Deployment
+    # Deployment only:
+    replicas: 1
+    # Job / CronJob only. Pod restart policy for batch runs: Never | OnFailure.
+    restartPolicy: Never
+    # Job / CronJob only. Retries before the run is marked failed.
+    backoffLimit: 0
+    # Job / CronJob only. Delete finished pods after N seconds (optional).
+    ttlSecondsAfterFinished: null
+    # CronJob only.
+    schedule: "0 * * * *"
+    concurrencyPolicy: Forbid
+  container:
+    name: agent
+    image: ghcr.io/anomalyco/opencode:latest
+    imagePullPolicy: IfNotPresent
+    command: []       # override entrypoint, e.g. ["opencode", "--non-interactive"]
+    env: []           # extra env vars, e.g. [{name: OPENAI_API_KEY, value: ...}]
+    volumeMounts: []  # extra mounts, e.g. [{name: config, mountPath: /etc/agent}]
+  volumes: []         # extra volumes, e.g. [{name: config, configMap: {name: my-config}}]
+  # Internal endpoints exempt from the sandbox (not routed through Envoy).
+  # Format: "IP:port", e.g. ["192.168.5.2:6655"]
+  allowedEndpoints: []
