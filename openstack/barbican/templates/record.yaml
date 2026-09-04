@@ -1,0 +1,19 @@
+{{- $externalIP := include "barbican.external_ip" . }}
+{{- if and .Values.tls.enabled $externalIP }}
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: {{ include "barbican_api_endpoint_host_public" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  type: A
+  record: {{ $externalIP | quote }}
+  hosts:
+    - {{ include "barbican_api_endpoint_host_public" . }}
+  zoneName: {{ .Values.global.region }}.{{ .Values.global.tld }}
+{{- end }}

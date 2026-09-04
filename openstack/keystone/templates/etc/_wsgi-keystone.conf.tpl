@@ -73,14 +73,108 @@ CustomLog /dev/stdout proxy env=forwarded
 WSGIServerMetrics On
 {{- end }}
 
+# Single WSGI daemon group shared by the internal (:5000) and, when enabled, the
+# external TLS (:443) vhosts. Defined at server scope so both can reference it
+# and the worker count (and thus the memory footprint) stays fixed regardless of
+# tls.enabled.
+WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+{{- if .Values.api.metrics.enabled }}
+# Load the worker-pool sampler into every keystone-public daemon process.
+# It reports each process's active_requests to statsd for Prometheus.
+WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
+{{- end }}
+
+{{- if .Values.tls.enabled }}
+# External HTTPS endpoint
+# mod_ssl is loaded via a conf-enabled snippet, which is parsed after
+# ports.conf, so its ssl_module-gated Listen 443 does not apply here.
+Listen 0.0.0.0:443
+
+<VirtualHost *:443>
+    ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+
+    SSLEngine on
+    SSLCertificateFile /mnt/secrets/tls.crt
+    SSLCertificateKeyFile /mnt/secrets/tls.key
+
+    # HTTP security response headers
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    # script-src hash allows only the inline auto-submit in
+    # _sso_callback_template.html.tpl (kept in sync by the drift guard in
+    # keystone.tls.validate); default-src 'self' otherwise.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'sha256-oBahlBFQem+nMs1JwgcBB03Hy8nRh5e8qEGTOcxmAuM='"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Strip the external-auth trust-key header from inbound requests, as the
+    # ingress did when it fronted this endpoint. Both spellings are removed
+    # because WSGI folds '-' and '_' to the same HTTP_X_TRUSTED_KEY env var.
+    RequestHeader unset X-Trusted-Key
+    RequestHeader unset X_Trusted_Key
+
+    {{- if .Values.services.ingress.x509.ca }}
+    SSLVerifyClient optional
+    SSLVerifyDepth 3
+    SSLCACertificateFile /etc/apache2/x509-ca/ca.crt
+
+    # Reconstruct, from the verified TLS session, the client-certificate request
+    # headers cc_x509 consumes (same format NGINX forwarded when it terminated
+    # TLS). Every inbound spelling is stripped first so a client cannot inject
+    # them; only these Apache-set values, sourced from the verified handshake,
+    # reach the WSGI app.
+    RequestHeader unset SSL-Client-Cert
+    RequestHeader unset SSL_Client-Cert
+    RequestHeader unset SSL-Client_Cert
+    RequestHeader unset SSL_CLIENT_CERT
+    RequestHeader unset SSL-Client-Verify
+    RequestHeader unset SSL_Client-Verify
+    RequestHeader unset SSL-Client_Verify
+    RequestHeader unset SSL_CLIENT_VERIFY
+    {{- /* The issuer/subject DN env vars have four underscore-separated tokens,
+           so a client can spell the injected header with '-' or '_' at each of
+           the three separators; strip every combination. */}}
+    {{- range $dn := list "I" "S" }}
+    {{- range $s1 := list "-" "_" }}
+    {{- range $s2 := list "-" "_" }}
+    {{- range $s3 := list "-" "_" }}
+    RequestHeader unset SSL{{ $s1 }}Client{{ $s2 }}{{ $dn }}{{ $s3 }}DN
+    {{- end }}{{- end }}{{- end }}{{- end }}
+    RequestHeader set SSL-Client-Cert "expr=%{escape:%{SSL:SSL_CLIENT_CERT}}"
+    RequestHeader set SSL-Client-Verify "expr=%{SSL:SSL_CLIENT_VERIFY}"
+    RequestHeader set SSL-Client-I-DN "expr=%{SSL:SSL_CLIENT_I_DN}"
+    RequestHeader set SSL-Client-S-DN "expr=%{SSL:SSL_CLIENT_S_DN}"
+    {{- end }}
+
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    LimitRequestBody 114688
+    LimitRequestFieldSize 16380
+    <IfVersion >= 2.4>
+      ErrorLogFormat "%{cu}t %M"
+    </IfVersion>
+    ErrorLog /dev/stdout
+
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout combined env=!forwarded
+    CustomLog /dev/stdout proxy env=forwarded
+
+    KeepAliveTimeout 61
+
+    {{- if .Values.federation.saml.enabled }}
+    <LocationMatch "^/Shibboleth\.sso(/|$)">
+        SetHandler shib
+    </LocationMatch>
+    IncludeOptional /etc/apache2/conf-enabled/federation-saml.d/*.conf
+    {{- end }}
+</VirtualHost>
+{{- end }}
+
+# Internal HTTP endpoint (protected by Linkerd mTLS at the network layer)
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
-    WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
-    {{- if .Values.api.metrics.enabled }}
-    # Load the worker-pool sampler into every keystone-public daemon process.
-    # It reports each process's active_requests to statsd for Prometheus.
-    WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
-    {{- end }}
     WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}

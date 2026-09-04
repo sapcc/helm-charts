@@ -15,6 +15,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "barbican.external_ip" -}}
+{{- $svc := .Values.services | default dict -}}
+{{- .Values.global.barbican_external_ip | default $svc.externalip -}}
+{{- end -}}
+
 {{- define "barbican.db_service" }}
   {{- include "utils.db_host" . }}
 {{- end }}
@@ -38,4 +43,25 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- $hash := $all | sha256sum }}
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersionBarbicanApi | required "Please set barbican.imageVersionBarbicanApi" }}
   {{- end }}
+{{- end }}
+
+{{- define "barbican.tls.validate" -}}
+{{- if .Values.tls.enabled }}
+  {{- if not .Values.tls.keyGeneration }}
+    {{- fail "tls.keyGeneration is required when tls.enabled (options: go-crypto, hsm-entropy, hsm-full, tpm-entropy)" }}
+  {{- end }}
+  {{- if not .Values.tls.keyWrapping }}
+    {{- fail "tls.keyWrapping is required when tls.enabled (options: none, vault-transit, hsm, tpm)" }}
+  {{- end }}
+  {{- if not .Values.tls.keyStorage }}
+    {{- fail "tls.keyStorage is required when tls.enabled (options: internal-k8s-secret, k8s-secret, vault-secret)" }}
+  {{- end }}
+  {{- if and (eq .Values.tls.keyWrapping "none") (eq .Values.tls.keyStorage "k8s-secret") (not .Values.tls.allowInsecureStorage) }}
+    {{- fail "tls: unwrapped keys cannot be stored as plain-text K8s Secrets. Set tls.keyWrapping or tls.keyStorage, or set tls.allowInsecureStorage: true to acknowledge." }}
+  {{- end }}
+  {{- $svc := .Values.services | default dict }}
+  {{- if not (.Values.global.barbican_external_ip | default $svc.externalip) }}
+    {{- fail "tls.enabled requires an external IP (global.barbican_external_ip or services.externalip): enabling TLS removes the ingress and the public TLS Service only renders once the external IP is set." }}
+  {{- end }}
+{{- end }}
 {{- end }}

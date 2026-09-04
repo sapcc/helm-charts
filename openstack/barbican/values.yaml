@@ -11,6 +11,8 @@ global:
   domain_seeds:
     skip_hcm_domain: false
   linkerd_requested: false
+  # Public /32 for the pod-level TLS LoadBalancer service and DNS record.
+  # barbican_external_ip: "192.168.1.100"
 
 rbac:
   enabled: true
@@ -42,6 +44,8 @@ api:
   replicas: 2
   processes: 1
   threads: 1
+  pdb:
+    minAvailable: 1
   metrics:
     enabled: true
   resources:
@@ -472,6 +476,12 @@ sentry:
 
 tlsacme: true
 
+calicoLoadBalancer: false
+
+services:
+  # Backward-compat alias for global.barbican_external_ip.
+  # externalip: "192.168.1.100"
+
 # SCIBPL-209: Ingress hardening — request size cap and connection limiting.
 # These annotations are applied to the nginx ingress controller.
 # Keystone middleware already enforces authentication; these settings add a
@@ -488,6 +498,41 @@ ingress:
   # all their traffic counts against one IP — tune before enabling in prod.
   enableConnectionsLimit: true
   limitConnections: 20
+
+# Pod-level TLS termination in Apache
+tls:
+  enabled: false
+  # Name of the K8s Secret containing tls.key and tls.crt (created by TLS bootstrap Job)
+  secretName: barbican-tls
+  # Per-region operator choices — all three are REQUIRED when tls.enabled: true.
+  # There are no defaults; the operator must make an explicit choice.
+  # keyGeneration: go-crypto | hsm-entropy | hsm-full | tpm-entropy
+  # keyWrapping: none | vault-transit | hsm | tpm
+  # keyStorage: internal-k8s-secret | k8s-secret | vault-secret
+  #   internal-k8s-secret (recommended): key written directly to the K8s API; stays in-cluster, never in Git
+  #   k8s-secret: Secret manifest emitted for Git commit + GitOps operator review
+  # Escape hatch: allowInsecureStorage: true also passes --allow-insecure-storage to the binary,
+  #   permitting wrapping=none + storage=k8s-secret (development only)
+  allowInsecureStorage: false
+  # TLS lifecycle manager binary for bootstrap Job and rotation CronJob
+  lifecycle:
+    image: keppel.eu-de-1.cloud.sap/ccloud/tls-lifecycle-manager
+    imageTag: "20260818160021"
+  # cert-manager issuer configuration
+  issuerName: digicert-issuer
+  issuerKind: ClusterIssuer
+  issuerGroup: certmanager.cloud.sap
+  keyAlgorithm: ECDSAP256
+  # Cron schedule for the weekly certificate rotation CronJob. Defaults are
+  # staggered across services (keystone runs an hour after barbican) so their
+  # rotations do not run at the same time and hit issuer rate limits.
+  rotationSchedule: "0 3 * * 1"
+  probe:
+    enabled: false
+    prometheus: kubernetes
+    module: http_200_403
+    interval: 60s
+    scrapeTimeout: 55s
 
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:

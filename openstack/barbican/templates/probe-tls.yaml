@@ -1,0 +1,22 @@
+{{- if and .Values.tls.enabled .Values.tls.probe.enabled (include "barbican.external_ip" .) }}
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: {{ .Release.Name }}-tls
+  labels:
+    prometheus: {{ .Values.tls.probe.prometheus }}
+spec:
+  jobName: {{ .Release.Name }}-tls
+  prober:
+    url: prober.{{ .Values.global.region }}.cloud.sap
+    scheme: https
+  module: {{ .Values.tls.probe.module }}
+  interval: {{ .Values.tls.probe.interval }}
+  scrapeTimeout: {{ .Values.tls.probe.scrapeTimeout }}
+  targets:
+    staticConfig:
+      static:
+        - https://{{ include "barbican_api_endpoint_host_public" . }}
+      labels:
+        region: {{ .Values.global.region }}
+{{- end }}

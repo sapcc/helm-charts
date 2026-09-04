@@ -4,6 +4,8 @@
 imageVersionKubernetesEntrypoint: latest
 # name: value
 
+calicoLoadBalancer: false
+
 global:
   # tld: cloud.sap
   # region: cluster
@@ -56,6 +58,38 @@ osprofiler-redis:
       memory: 128Mi
   alerts:
     support_group: identity
+
+# Pod-level TLS termination in Apache
+tls:
+  enabled: false
+  secretName: keystone-tls
+  # Per-region operator choices — all three are REQUIRED when tls.enabled: true.
+  # There are no defaults; the operator must make an explicit choice.
+  # keyGeneration: go-crypto | hsm-entropy | hsm-full | tpm-entropy
+  # keyWrapping: none | vault-transit | hsm | tpm
+  # keyStorage: internal-k8s-secret | k8s-secret | vault-secret
+  #   internal-k8s-secret (recommended): key written directly to the K8s API; stays in-cluster, never in Git
+  #   k8s-secret: Secret manifest emitted for Git commit + GitOps operator review
+  # Escape hatch: allowInsecureStorage: true also passes --allow-insecure-storage to the binary,
+  #   permitting wrapping=none + storage=k8s-secret (development only)
+  allowInsecureStorage: false
+  lifecycle:
+    image: keppel.eu-de-1.cloud.sap/ccloud/tls-lifecycle-manager
+    imageTag: "20260818160021"
+  issuerName: digicert-issuer
+  issuerKind: ClusterIssuer
+  issuerGroup: certmanager.cloud.sap
+  keyAlgorithm: ECDSAP256
+  # Cron schedule for the weekly certificate rotation CronJob. Defaults are
+  # staggered across services (keystone runs an hour after barbican) so their
+  # rotations do not run at the same time and hit issuer rate limits.
+  rotationSchedule: "0 4 * * 1"
+  probe:
+    enabled: false
+    prometheus: kubernetes
+    module: http_200_403
+    interval: 60s
+    scrapeTimeout: 55s
 
 federation:
   oidc:
@@ -298,7 +332,10 @@ services:
     # let kubernetes.io/tls-acme manage tls certificates
     tlsacme: true
 
-    # x509 client certificate support
+    # x509 client certificate support.
+    # NOTE: `ca` is the client-certificate trust anchor, consumed by the
+    # nginx-ingress (auth-tls-secret) and by Apache (SSLCACertificateFile) when
+    # TLS terminates in the pod. The `ingress` path in this key name is legacy.
     x509:
       # ca: <your ca certificate>
       issuer_attribute: HTTP_SSL_CLIENT_I_DN

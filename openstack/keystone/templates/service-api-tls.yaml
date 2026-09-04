@@ -1,0 +1,33 @@
+{{- if and .Values.tls.enabled .Values.global.keystone_external_ip }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-public-tls
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: keystone
+    type: api-tls
+  annotations:
+    {{- if .Values.calicoLoadBalancer }}
+    projectcalico.org/loadBalancerIPs: '["{{ .Values.global.keystone_external_ip }}"]'
+    {{- end }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    name: {{ .Release.Name }}-api
+  ports:
+    - name: public-tls
+      protocol: "TCP"
+      port: 443
+      targetPort: 443
+  {{- if not .Values.calicoLoadBalancer }}
+  externalIPs:
+    - {{ .Values.global.keystone_external_ip }}
+  {{- end }}
+{{- end }}

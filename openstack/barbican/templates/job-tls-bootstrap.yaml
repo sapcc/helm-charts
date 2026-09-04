@@ -1,0 +1,43 @@
+{{- if .Values.tls.enabled }}
+{{- include "barbican.tls.validate" . }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-tls-bootstrap
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    component: barbican
+    type: tls-bootstrap
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Release.Name }}-tls-manager
+      containers:
+        - name: tls-bootstrap
+          image: {{ .Values.tls.lifecycle.image }}:{{ .Values.tls.lifecycle.imageTag }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --mode=bootstrap
+            - --namespace={{ .Release.Namespace }}
+            - --secret-name={{ .Values.tls.secretName | default "barbican-tls" }}
+            - --key-algorithm={{ .Values.tls.keyAlgorithm | default "ECDSAP256" }}
+            - --issuer-name={{ .Values.tls.issuerName | default "digicert-issuer" }}
+            - --issuer-kind={{ .Values.tls.issuerKind | default "ClusterIssuer" }}
+            - --issuer-group={{ .Values.tls.issuerGroup | default "certmanager.cloud.sap" }}
+            - --common-name={{ include "barbican_api_endpoint_host_public" . }}
+            - --san-dns={{ include "barbican_api_endpoint_host_public" . }}
+            - --key-generation={{ required "tls.keyGeneration is required" .Values.tls.keyGeneration }}
+            - --key-wrapping={{ required "tls.keyWrapping is required" .Values.tls.keyWrapping }}
+            - --key-storage={{ required "tls.keyStorage is required" .Values.tls.keyStorage }}
+            {{- if .Values.tls.allowInsecureStorage }}
+            - --allow-insecure-storage
+            {{- end }}
+  backoffLimit: 3
+{{- end }}

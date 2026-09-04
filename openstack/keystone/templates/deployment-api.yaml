@@ -1,3 +1,4 @@
+{{- include "keystone.tls.validate" . }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -12,7 +13,7 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}{{- if .Values.tls.enabled }},{{ .Values.tls.secretName | default "keystone-tls" }}{{- end }}"
     {{- if .Values.federation.saml.enabled }}
     configmap.reloader.stakater.com/reload: "keystone-saml-shibboleth-config,keystone-saml-federation-saml-tenants,{{ .Values.federation.saml.idp.metadataConfigMap }}"
     {{- end }}
@@ -54,12 +55,23 @@ spec:
         {{- if .Values.federation.saml.enabled }}
         federation-saml-hash: {{ include (print $.Template.BasePath "/federation-saml.yaml") . | sha256sum }}
         {{- end }}
+        {{- if .Values.tls.enabled }}
+        config.linkerd.io/skip-inbound-ports: "443"
+        {{- end }}
         {{- if .Values.api.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.tls.enabled }}
+      securityContext:
+        # distroless "nonroot" gid of the tls-lifecycle-manager image; lets the
+        # non-root tls-init container read the 0440 tls-input Secret while keeping
+        # the key group-restricted (not world-readable) per the BSI least-privilege
+        # requirement (Sicherheitsarchitektur 4.x: non-root, restriktive Berechtigungen).
+        fsGroup: 65532
+      {{- end }}
       {{- if .Values.api.priorityClassName }}
       priorityClassName: {{ .Values.api.priorityClassName }}
       {{- end }}
@@ -106,6 +118,22 @@ spec:
             readOnly: true
           - name: saml-sp-tmpfs
             mountPath: /saml-sp-keys
+      {{- end }}
+      {{- if .Values.tls.enabled }}
+      - name: tls-init
+        image: {{ .Values.tls.lifecycle.image }}:{{ .Values.tls.lifecycle.imageTag }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - --mode=unwrap
+          - --input-dir=/tls-input
+          - --output-dir=/mnt/secrets
+          - --key-wrapping={{ required "tls.keyWrapping is required" .Values.tls.keyWrapping }}
+        volumeMounts:
+          - name: tls-input
+            mountPath: /tls-input
+            readOnly: true
+          - name: tls-secrets
+            mountPath: /mnt/secrets
       {{- end }}
       containers:
         - name: keystone-api
@@ -156,6 +184,10 @@ spec:
           ports:
             - name: public
               containerPort: 5000
+            {{- if .Values.tls.enabled }}
+            - name: public-tls
+              containerPort: 443
+            {{- end }}
           lifecycle:
             preStop:
               exec:
@@ -211,6 +243,14 @@ spec:
               mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
               subPath: wsgi-keystone.conf
               readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/status-off.conf
+              subPath: status-off.conf
+              readOnly: true
+            {{- if .Values.tls.enabled }}
+            - name: apache-sites
+              mountPath: /etc/apache2/sites-enabled
+            {{- end }}
             {{- if .Values.federation.oidc.enabled }}
             - name: keystone-federation
               mountPath: /etc/apache2/conf-enabled/federation-oidc.conf
@@ -243,6 +283,28 @@ spec:
             - name: keystone-saml-idp-metadata
               mountPath: /etc/shibboleth/metadata
               readOnly: true
+            {{- end }}
+            {{- if .Values.tls.enabled }}
+            - name: tls-secrets
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/00-ssl-load.conf
+              subPath: ssl-load.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
+              subPath: tls-hardening.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/apache-hardening.conf
+              subPath: apache-hardening.conf
+              readOnly: true
+            {{- if .Values.services.ingress.x509.ca }}
+            - name: x509-ca
+              mountPath: /etc/apache2/x509-ca
+              readOnly: true
+            {{- end }}
             {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/mods-available/mpm_event.conf
@@ -302,6 +364,10 @@ spec:
           emptyDir: {}
         - name: wsgi-keystone
           emptyDir: {}
+        {{- if .Values.tls.enabled }}
+        - name: apache-sites
+          emptyDir: {}
+        {{- end }}
         - name: keystone-etc
           configMap:
             name: keystone-etc
@@ -367,3 +433,19 @@ spec:
             name: keystone-sentry-filter-rules
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+        {{- if .Values.tls.enabled }}
+        - name: tls-input
+          secret:
+            secretName: {{ .Values.tls.secretName | default "keystone-tls" }}
+            defaultMode: 0440
+        - name: tls-secrets
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        {{- if .Values.services.ingress.x509.ca }}
+        - name: x509-ca
+          secret:
+            secretName: {{ .Release.Name }}-x509-ca
+            defaultMode: 0444
+        {{- end }}
+        {{- end }}
