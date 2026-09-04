@@ -1,38 +1,6 @@
-# Use this pipeline for no auth or image caching - DEFAULT
-[pipeline:glance-api]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.sapcc_rate_limit.enabled }}rate_limit{{ end }} {{ if .Values.audit.enabled }}audit{{ end }} rootapp
-
-# Use this pipeline for image caching and no auth
-[pipeline:glance-api-caching]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.sapcc_rate_limit.enabled }}rate_limit{{ end }} {{ if .Values.audit.enabled }}audit{{ end }} cache rootapp
-
-# Use this pipeline for caching w/ management interface but no auth
-[pipeline:glance-api-cachemanagement]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler unauthenticated-context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.sapcc_rate_limit.enabled }}rate_limit{{ end }} {{ if .Values.audit.enabled }}audit{{ end }} cache cachemanage rootapp
-
 # Use this pipeline for keystone auth
 [pipeline:glance-api-keystone]
 pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.sapcc_rate_limit.enabled }}rate_limit{{ end }} {{ if .Values.audit.enabled }}audit{{ end }} rootapp
-
-# Use this pipeline for keystone auth with image caching
-[pipeline:glance-api-keystone+caching]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.sapcc_rate_limit.enabled }}rate_limit{{ end }} {{ if .Values.audit.enabled }}audit{{ end }} cache rootapp
-
-# Use this pipeline for keystone auth with caching and cache management
-[pipeline:glance-api-keystone+cachemanagement]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler authtoken context {{ if .Values.watcher.enabled }}watcher{{ end }} {{ if .Values.sapcc_rate_limit.enabled }}rate_limit{{ end }} {{ if .Values.audit.enabled }}audit{{ end }} cache cachemanage rootapp
-
-# Use this pipeline for authZ only. This means that the registry will treat a
-# user as authenticated without making requests to keystone to reauthenticate
-# the user.
-[pipeline:glance-api-trusted-auth]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler context rootapp
-
-# Use this pipeline for authZ only. This means that the registry will treat a
-# user as authenticated without making requests to keystone to reauthenticate
-# the user and uses cache management
-[pipeline:glance-api-trusted-auth+cachemanagement]
-pipeline = cors healthcheck http_proxy_to_wsgi versionnegotiation osprofiler context cache cachemanage rootapp
 
 [pipeline:apiversions]
 pipeline = http_proxy_to_wsgi apiversionsapp
@@ -63,24 +31,12 @@ paste.filter_factory = glance.api.middleware.version_negotiation:VersionNegotiat
 [filter:http_proxy_to_wsgi]
 paste.filter_factory = oslo_middleware:HTTPProxyToWSGI.factory
 
-[filter:cache]
-paste.filter_factory = glance.api.middleware.cache:CacheFilter.factory
-
-[filter:cachemanage]
-paste.filter_factory = glance.api.middleware.cache_manage:CacheManageFilter.factory
-
 [filter:context]
 paste.filter_factory = glance.api.middleware.context:ContextMiddleware.factory
-
-[filter:unauthenticated-context]
-paste.filter_factory = glance.api.middleware.context:UnauthenticatedContextMiddleware.factory
 
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 delay_auth_decision = true
-
-[filter:gzip]
-paste.filter_factory = glance.api.middleware.gzip:GzipMiddleware.factory
 
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory

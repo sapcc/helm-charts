@@ -9,6 +9,9 @@ metadata:
     cluster-type: sci-k8s-storage
     greenhouse.sap/owned-by: storage
     greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    {{- with merge (default dict $cluster.extraLabels) (default dict $.Values.shootExtraLabels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:

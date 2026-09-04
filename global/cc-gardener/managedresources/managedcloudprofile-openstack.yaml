@@ -25,6 +25,9 @@ spec:
     providerConfig:
       apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
       kind: CloudProfileConfig
+      {{- if .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
+      rescanBlockStorageOnResize: {{ .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
+      {{- end }}
       keystoneURLs:
       {{- range $region := .Values.extensions.openstack.regions }}
       - region: {{ $region.name | quote }}
@@ -194,6 +197,9 @@ spec:
         - name: f5
       machineImages:
         {{- toYaml .Values.extensions.openstack.providerConfig.machineImages | nindent 8 }}
+  {{- if .Values.extensions.kubernetesVersionUpdate }}
+  kubernetesUpdate: {{ toYaml .Values.extensions.kubernetesVersionUpdate | nindent 4 }}
+  {{- end }}
   machineImageUpdates:
   - imageName: gardenlinux
     source:

@@ -5,16 +5,10 @@ ErrorLog /dev/stdout
 ErrorLogFormat "%M"
 LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%a\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"}" json_combined
 LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%{X-Forwarded-For}i\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"}" json_proxy
-SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
-CustomLog /dev/stdout json_combined env=!forwarded
-CustomLog /dev/stdout json_proxy env=forwarded
 {{- else }}
 ErrorLog /dev/stderr
 LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %h %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" combined
 LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %{X-Forwarded-For}i %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" proxy
-SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
-CustomLog /dev/stdout combined env=!forwarded
-CustomLog /dev/stdout proxy env=forwarded
 {{- end }}
 
 WSGIDaemonProcess barbican-api processes={{ .Values.api.processes | default 1 }} threads={{ .Values.api.threads | default 1 }} \
