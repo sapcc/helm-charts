@@ -101,5 +101,7 @@
     "os_load-balancer_api:amphora:get_stats": "rule:context_is_admin",
 
     "os_load-balancer_api:provider-flavor:get_all": "rule:context_is_admin",
-    "os_load-balancer_api:provider-availability-zone:get_all": "rule:context_is_admin"
+    "os_load-balancer_api:provider-availability-zone:get_all": "rule:context_is_admin",
+
+    "os_load-balancer_api:member:put_cross_pool_members": "role:lbaas_cpbmu and rule:owner"
 }
