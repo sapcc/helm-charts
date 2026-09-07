@@ -19,11 +19,26 @@ log_warnings: "2"
 query_cache_size: "0"
 query_cache_type: "0"
 join_buffer_size: "4M"
-long_query_time: 5
 binlog_format: "MIXED"
 expire_logs_days: 10
 character_set_server: "utf8" # Should be utf8mb4, but we started with this
 collation_server: "utf8_general_ci"
+
+long_query_time: 5
+slow_query_log:
+  file: /var/log/mysql-slow/slow.log  # ignored when persistence.enabled=false
+  cleanup:
+    enabled: true  # removes old slowlogs on pod init
+    max_age_days: 14
+  persistence:
+    enabled: false
+    autoprovision: false
+    # name: defaults to <release>-mariadb-logs
+    size: "5Gi"
+    access_modes:
+      - ReadWriteOnce
+    # storage_class:
+
 
 db_performance_schema: # Enabling performance schema only (without enabling instruments for data collections).
   # Instrument can be enabled separately. Only Performance Schema Enablement does not cause any
@@ -347,6 +362,10 @@ alerts:
   buffer_pool_warning_threshold: 0.10
   # Ratio of free pages below which MariaDBBufferPoolExhausted (critical) fires.
   buffer_pool_critical_threshold: 0.025
+
+  # Warn when the data PVC free ratio drops below pvc_free_threshold.
+  pvc_free_enabled: false
+  pvc_free_threshold: 0.20
 
 vpa:
   # https://github.com/sapcc/vpa_butler
