@@ -4,7 +4,7 @@
     expr: (mysql_global_variables_max_connections{app_kubernetes_io_instance=~"{{ include "fullName" . }}"} - mysql_global_status_threads_connected{app_kubernetes_io_instance=~"{{ include "fullName" . }}"} < 200)
     for: 10m
     labels:
-      context: datbase
+      context: database
       service: {{ include "alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
