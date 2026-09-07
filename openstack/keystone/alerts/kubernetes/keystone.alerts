@@ -86,3 +86,23 @@ groups:
     annotations:
       description: The Keystone TLS certificate rotation CronJob has not completed successfully in over 8 days. If not resolved, the certificate will expire and external HTTPS access will break. Check the CronJob and its Jobs.
       summary: Keystone TLS certificate rotation is stale
+
+  - alert: OpenstackKeystoneTLSRotationFailed
+    expr: >
+      kube_job_status_failed{job_name=~"keystone-tls-rotation.*"} > 0
+      and on (namespace, job_name)
+      kube_job_created{job_name=~"keystone-tls-rotation.*"}
+        == on (namespace) group_left()
+      max by (namespace) (kube_job_created{job_name=~"keystone-tls-rotation.*"})
+    for: 1h
+    labels:
+      context: security
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: os
+      support_group: identity
+      no_alert_on_absence: "true"
+    annotations:
+      description: The weekly TLS certificate rotation CronJob for Keystone has failed. If not resolved, the TLS certificate will expire and external HTTPS access will break. Check the CronJob logs.
+      summary: Keystone TLS certificate rotation failed
