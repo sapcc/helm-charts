@@ -40,6 +40,18 @@ hermes:
     # hostnames are derived from this template using the key of the targets entry
     host_template: "%s-rabbitmq-notifications.monsoon3"
 
+  # Per-token rate limiting for the Hermes API.
+  # 0 (default) disables rate limiting. Enable per region as needed.
+  # Typical values: requestsPerSecond=2, burst=10 for the default endpoints;
+  # downloadRequestsPerSecond=0.2, downloadBurst=3 for the heavier /download endpoint.
+  rateLimit:
+    requestsPerSecond: 0
+    burst: 0
+    downloadRequestsPerSecond: 0
+    downloadBurst: 0
+    evictionInterval: "5m"
+    maxIdlePeriod: "10m"
+
   # Audit-event publisher for hermes-api PUT/DELETE dataplane-config operations.
   # Reuses the rabbitmq_notifications subchart; events land on the
   # notifications.info queue alongside other OpenStack control-plane audit events.
