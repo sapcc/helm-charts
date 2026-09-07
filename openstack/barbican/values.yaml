@@ -514,6 +514,13 @@ tls:
   # Escape hatch: allowInsecureStorage: true also passes --allow-insecure-storage to the binary,
   #   permitting wrapping=none + storage=k8s-secret (development only)
   allowInsecureStorage: false
+  # One-time acknowledgement required to turn TLS off again. Disabling tls.enabled
+  # tears down the public TLS LoadBalancer and the disco Record that pins the
+  # key-manager endpoint to the external IP; since that name is not disco-managed,
+  # it stops resolving until the region's baseline DNS is restored. The upgrade
+  # fails early unless allowDisable: true is set for that single rollout. It must
+  # not be left set while tls.enabled: true.
+  allowDisable: false
   # TLS lifecycle manager binary for bootstrap Job and rotation CronJob
   lifecycle:
     image: keppel.eu-de-1.cloud.sap/ccloud/tls-lifecycle-manager

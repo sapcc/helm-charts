@@ -114,6 +114,9 @@ Empty values are skipped so callers may pass "" for optional dependencies.
 
 {{- define "keystone.tls.validate" -}}
 {{- if .Values.tls.enabled }}
+  {{- if .Values.tls.allowDisable }}
+    {{- fail "tls.allowDisable must not be set while tls.enabled is true. It only authorizes the single rollout that turns TLS off; leaving it set silently disarms the teardown guard on the next disable. Remove tls.allowDisable from the values." }}
+  {{- end }}
   {{- if not .Values.tls.keyGeneration }}
     {{- fail "tls.keyGeneration is required when tls.enabled (options: go-crypto, hsm-entropy, hsm-full, tpm-entropy)" }}
   {{- end }}
@@ -141,6 +144,18 @@ Empty values are skipped so callers may pass "" for optional dependencies.
   {{- $ssoScript := index (splitList "</script>" (index $ssoParts 1)) 0 }}
   {{- if ne (sha256sum $ssoScript) "a016a19411507a6fa732cd49c20701074dc7cbc9d18797bca8419339cc6602e3" }}
     {{- fail "SSO callback inline script changed; recompute the CSP script-src hash (sha256/base64 of the <script> body) in etc/_wsgi-keystone.conf.tpl and update the pinned hash here." }}
+  {{- end }}
+{{- else }}
+  {{- /* Teardown guard: TLS is off in the values, but if the public TLS Service
+         still exists this upgrade would tear down pod-level TLS. That removes the
+         LoadBalancer and the disco Record pinning the endpoint to the external IP;
+         since identity-3 is deliberately not disco-managed, the endpoint stops
+         resolving until the region's baseline DNS is restored. Fail the render
+         (before Helm touches anything) unless the teardown is acknowledged. */}}
+  {{- $svc := lookup "v1" "Service" .Release.Namespace (printf "%s-public-tls" .Release.Name) }}
+  {{- if and $svc (not .Values.tls.allowDisable) }}
+    {{- $host := printf "%s.%s.%s" .Values.services.public.host (.Values.global.region | toString) (.Values.global.tld | toString) }}
+    {{- fail (printf "Refusing to disable pod-level TLS: the %s-public-tls LoadBalancer still exists, so TLS termination is currently active. Disabling removes it and the disco Record pinning %s to global.keystone_external_ip; because %s is not disco-managed, the public endpoint stops resolving until the region's baseline DNS is restored. To tear down intentionally, repoint %s DNS back to the ingress first, then set tls.allowDisable=true for this rollout." .Release.Name $host $host $host) }}
   {{- end }}
 {{- end }}
 {{- end }}
