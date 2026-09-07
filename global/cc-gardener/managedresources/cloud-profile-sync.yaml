@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: managedcloudprofiles.cloudprofilesync.cobaltcore.dev
 spec:
   group: cloudprofilesync.cobaltcore.dev
@@ -669,9 +669,13 @@ spec:
                 items:
                   properties:
                     imageName:
-                      description: ImagesName is the name of the image to maintain
+                      description: ImageName is the name of the image to maintain
                         automatically
                       type: string
+                    paused:
+                      description: Paused disables automatic updates for this image
+                        and keeps the existing CloudProfile machine images.
+                      type: boolean
                     provider:
                       description: Provider contains configuration for a provider
                         for machine images.
@@ -760,6 +764,10 @@ spec:
                             username:
                               description: Username for authentication.
                               type: string
+                            versionOffset:
+                              description: VersionOffset controls how many newest
+                                GardenLinux versions to skip before applying KeepLatest.
+                              type: integer
                           required:
                           - authURLFormat
                           - passwordSecret
