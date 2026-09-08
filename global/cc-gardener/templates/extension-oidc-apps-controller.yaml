@@ -113,4 +113,54 @@ spec:
               - alertmanager-seed
               - alertmanager-shoot
 {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-oidc-ext-to-virtual-garden-kube-apiserver-from-shoot-rbac-proxy
+  namespace: garden
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    from:
+    - namespaceSelector:
+        matchLabels:
+          gardener.cloud/role: shoot
+      podSelector:
+        matchLabels:
+          oidc-application-controller/component: pod
+  policyTypes:
+  - Ingress
+---
+# NetworkPolicy to allow egress traffic from the 
+# plutono pod on seed-on-runtime-cluster to the virtual garden's kube-apiserver
+# It is copied to the shoot control plane by referencing it in shoot.resources
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: egress-oidc-ext-to-virtual-garden-kube-apiserver
+spec:
+  podSelector:
+    matchLabels:
+      oidc-application-controller/component: pod
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: garden
+      podSelector:
+        matchLabels:
+          app: kubernetes
+          role: apiserver
+  policyTypes:
+  - Egress
 {{- end }}
