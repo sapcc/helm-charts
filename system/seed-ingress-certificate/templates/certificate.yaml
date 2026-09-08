@@ -1,0 +1,23 @@
+{{- if not .Values.gardener.seed.spec.dns.internal }}
+{{-   fail "seed has no spec.dns.internal configured" }}
+{{- end }}
+{{- $ingressDomain := .Values.gardener.seed.ingress.domain }}
+{{- $commonName := .Values.gardener.seed.spec.dns.internal.domain | trimPrefix "internal." }}
+apiVersion: cert.gardener.cloud/v1alpha1
+kind: Certificate
+metadata:
+  name: wildcard-ingress-tls
+  namespace: istio-ingress
+spec:
+  commonName: {{ $commonName | quote }}
+  dnsNames:
+    - {{ printf "*.%s" $ingressDomain | quote }}
+  secretName: {{ .Values.certificate.secretName }}
+  issuerRef:
+    group: {{ .Values.certificate.issuerRef.group }}
+    kind: {{ .Values.certificate.issuerRef.kind }}
+    name: {{ .Values.certificate.issuerRef.name }}
+  usages:
+  {{- range .Values.certificate.usages }}
+    - {{ . }}
+  {{- end }}
