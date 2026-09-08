@@ -85,16 +85,19 @@ true
 {{/*
 Render server selector matchExpressions from a serverFilters object.
 Expected input:
-  dict "serverFilters" (dict "included" (list ...) "excluded" (list ...))
+  dict "serverFilters" (dict "included" (list ...) "excluded" (list ...)) "labelKey" $.Values.labelKeys.serverName
+
+"labelKey" is optional and defaults to "kubernetes.metal.cloud.sap/name" if not provided.
 
 Returns empty string if both lists are empty.
 */}}
 {{- define "metal-settings.serverMatchExpressions" -}}
 {{- $serverFilters := .serverFilters -}}
+{{- $labelKey := .labelKey | default "kubernetes.metal.cloud.sap/name" -}}
 {{- if or $serverFilters.included $serverFilters.excluded -}}
 matchExpressions:
 {{- if $serverFilters.included }}
-  - key: kubernetes.metal.cloud.sap/name
+  - key: {{ $labelKey }}
     operator: In
     values:
 {{- range $serverFilters.included }}
@@ -102,7 +105,7 @@ matchExpressions:
 {{- end }}
 {{- end }}
 {{- if $serverFilters.excluded }}
-  - key: kubernetes.metal.cloud.sap/name
+  - key: {{ $labelKey }}
     operator: NotIn
     values:
 {{- range $serverFilters.excluded }}

@@ -35,7 +35,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
           (include "utils.proxysql.volumes" .)
           (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container")
       | join "\n" }}
-    {{- $hash := empty .Values.proxysql.mode | ternary "" $all | sha256sum }}
+    {{- $hash := $all | sha256sum }}
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersionBarbicanApi | required "Please set barbican.imageVersionBarbicanApi" }}
   {{- end }}
 {{- end }}

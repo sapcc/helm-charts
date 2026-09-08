@@ -17,10 +17,17 @@ metadata:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
-  replicas: 1
+  replicas: {{ $conductor.replicas | default 1 }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
+  {{- if gt (int ($conductor.replicas | default 1)) 1 }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  {{- else }}
     type: Recreate
+  {{- end }}
   selector:
     matchLabels:
     {{- if $conductor.name }}

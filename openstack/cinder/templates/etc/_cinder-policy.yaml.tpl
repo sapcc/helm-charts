@@ -84,7 +84,7 @@
 "volume_extension:services:index": "rule:context_is_admin"
 "volume_extension:services:update": "rule:context_is_admin"
 
-"volume_extension:volume_manage": "rule:context_is_admin"
+"volume_extension:volume_manage": "rule:context_is_admin or is_service_request:True"
 "volume_extension:volume_unmanage": "rule:context_is_admin"
 
 "volume_extension:capabilities": "rule:context_is_admin"

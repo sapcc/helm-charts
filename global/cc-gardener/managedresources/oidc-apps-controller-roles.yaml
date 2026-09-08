@@ -1,0 +1,72 @@
+{{- if .Values.extensions.oidcAppsController.enabled }}
+---
+# grants the controller's ServiceAccount permission to create SubjectAccessReviews
+# against the Gardener API server (virtual garden cluster)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: oidc-apps-subjectaccessreviews
+  annotations:
+    authorization.gardener.cloud/extensions-serviceaccount-selector: '{"matchLabels":{"oidc-apps.gardener.cloud/controller":"true"}}'
+  labels:
+    authorization.gardener.cloud/custom-extensions-permissions: "true"
+rules:
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+---
+# grants operator groups access to all observability endpoints
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gardener.cloud.sap:system:observabilityapps-operators
+rules:
+  - apiGroups: ["authorization.extensions.gardener.cloud"]
+    resources:
+      - observabilityapps/plutono
+      - observabilityapps/prometheus
+      - observabilityapps/alertmanager-shoot
+      - observabilityapps/prometheus-shoot
+      - observabilityapps/alertmanager-seed
+      - observabilityapps/prometheus-aggregate
+      - observabilityapps/prometheus-cache
+      - observabilityapps/prometheus-seed
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gardener.cloud.sap:system:observabilityapps-operators
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gardener.cloud.sap:system:observabilityapps-operators
+subjects:
+{{- range .Values.extensions.oidcAppsController.operatorGroups }}
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: {{ . }}
+{{- end }}
+---
+# grants Gardener project members/admins/viewers access to their shoot's observability endpoints
+# via Gardener's label-based ClusterRole aggregation
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gardener.cloud.sap:system:observabilityapps
+  labels:
+    rbac.gardener.cloud/aggregate-to-project-member: "true"
+    rbac.gardener.cloud/aggregate-to-project-admin: "true"
+    rbac.gardener.cloud/aggregate-to-project-viewer: "true"
+rules:
+  - apiGroups: ["authorization.extensions.gardener.cloud"]
+    resources:
+      - observabilityapps/plutono
+      - observabilityapps/prometheus
+      - observabilityapps/prometheus-shoot
+      - observabilityapps/alertmanager-shoot
+    verbs: ["get", "create"]
+{{- end }}

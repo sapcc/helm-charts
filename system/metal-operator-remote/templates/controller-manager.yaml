@@ -1,68 +1,152 @@
-{{- if .Values.controllerManager.enable }}
+{{- if or (not (hasKey .Values.manager "enabled")) (.Values.manager.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metal-operator-controller-manager
   labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     control-plane: controller-manager
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- with .Values.manager.labels }}
+    {{- with omit . "app.kubernetes.io/managed-by" "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "control-plane" }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- end }}
+  name: {{ include "chart.resourceName" (dict "suffix" "controller-manager" "context" $) }}
+  {{- if .Values.manager.annotations }}
+  annotations:
+    {{- toYaml .Values.manager.annotations | nindent 4 }}
+  {{- end }}
 spec:
-  replicas: {{ .Values.controllerManager.replicas }}
-  strategy:
-    type: {{ .Values.controllerManager.strategy.type | quote }}
+  {{- with .Values.manager.strategy }}
+  strategy: {{ toYaml . | nindent 6 }}
+  {{- end }}
+  replicas: {{ .Values.manager.replicas }}
   selector:
     matchLabels:
-      {{- include "chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "chart.name" . }}
       control-plane: controller-manager
   template:
     metadata:
-      labels:
-        control-plane: controller-manager
-        {{- include "chart.labels" . | nindent 8 }}
-        {{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}
-        {{- range $key, $value := .Values.controllerManager.pod.labels }}
-        {{ $key }}: {{ $value }}
-        {{- end }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
+        {{- with .Values.manager.pod }}
+        {{- with .annotations }}
+        {{- with omit . "kubectl.kubernetes.io/default-container" }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+      labels:
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        control-plane: controller-manager
+        {{- with .Values.manager.pod }}
+        {{- with .labels }}
+        {{- with omit . "app.kubernetes.io/name" "helm.sh/chart" "app.kubernetes.io/instance" "app.kubernetes.io/managed-by" "control-plane" }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
     spec:
+      {{- with .Values.manager.topologySpreadConstraints }}
+      topologySpreadConstraints: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.manager.tolerations }}
+      tolerations: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.affinity }}
+      affinity: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 10 }}
+      {{- end }}
+      {{- with .Values.manager.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
       {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}
       containers:
-      - name: manager
-        args:
-        {{- range .Values.controllerManager.manager.args }}
+      - args:
+        {{- if .Values.metrics.enable }}
+        - --metrics-bind-address=:{{ .Values.metrics.port }}
+        {{- if not .Values.metrics.secure }}
+        - --metrics-secure=false
+        {{- end }}
+        {{- else }}
+        # Bind to :0 to disable the controller-runtime managed metrics server
+        - --metrics-bind-address=0
+        {{- end }}
+        {{- range .Values.manager.args }}
         - {{ . }}
+        {{- end }}
+        {{- if and .Values.certManager.enable .Values.metrics.enable }}
+        - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
+        {{- end }}
+        {{- if .Values.certManager.enable }}
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         {{- end }}
         command:
         - /manager
-        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag }}
-        {{- if .Values.controllerManager.manager.env }}
         env:
-        {{- range $key, $value := .Values.controllerManager.manager.env }}
-        - name: {{ $key }}
-          value: {{ $value | quote}}
-        {{- end }}
+{{- if or .Values.manager.env (and (kindIs "map" .Values.manager.envOverrides) (not (empty .Values.manager.envOverrides))) }}
+          {{- if .Values.manager.env }}
+          {{- toYaml .Values.manager.env | nindent 10 }}
+          {{- end }}
+          {{- if kindIs "map" .Values.manager.envOverrides }}
+          {{- range $k, $v := .Values.manager.envOverrides }}
+          - name: {{ $k }}
+            value: {{ $v | quote }}
+          {{ end }}
+          {{- end }}
+          {{- else }}
+          []
+          {{- end }}
+        image: "{{ .Values.manager.image.repository }}{{- if not (contains "@" .Values.manager.image.repository) }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}{{- end }}"
+        {{- with .Values.manager.image.pullPolicy }}
+        imagePullPolicy: {{ . }}
         {{- end }}
         livenessProbe:
-          {{- toYaml .Values.controllerManager.manager.livenessProbe | nindent 10 }}
-        readinessProbe:
-          {{- toYaml .Values.controllerManager.manager.readinessProbe | nindent 10 }}
-        {{- if .Values.webhook.enable }}
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
         ports:
-        - containerPort: 9443
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        - containerPort: {{ .Values.webhook.port }}
           name: webhook-server
           protocol: TCP
-        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
         resources:
-          {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
+          {{- if .Values.manager.resources }}
+          {{- toYaml .Values.manager.resources | nindent 10 }}
+          {{- else }}
+          {}
+          {{- end }}
         securityContext:
-          {{- toYaml .Values.controllerManager.manager.securityContext | nindent 10 }}
+          {{- if .Values.manager.securityContext }}
+          {{- toYaml .Values.manager.securityContext | nindent 10 }}
+          {{- else }}
+          {}
+          {{- end }}
         volumeMounts:
-        - mountPath: /etc/macdb/
-          name: macdb
-        {{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
+        {{- if .Values.manager.dnsRecordTemplate.enabled }}
         - mountPath: /etc/metal-operator/dns
           name: dns-record-template
         {{- end }}
@@ -71,33 +155,33 @@ spec:
           mountPath: /etc/metal-operator
           readOnly: true
         {{- end }}
-        {{- if and .Values.webhook.enable .Values.certmanager.enable }}
-        - name: webhook-cert
-          mountPath: /tmp/k8s-webhook-server/serving-certs
-          readOnly: true
-        {{- end }}
-        {{- if and .Values.metrics.enable .Values.certmanager.enable }}
-        - name: metrics-certs
-          mountPath: /tmp/k8s-metrics-server/metrics-certs
-          readOnly: true
-        {{- end }}
-        {{- range $volume := .Values.controllerManager.manager.volumes }}
-        - name: {{ $volume.name }}
-          mountPath: {{ $volume.mountPath }}
-          {{- if $volume.readOnly }}
-          readOnly: true
+          {{- range .Values.manager.extraVolumeMounts }}
+          {{- if not (and $.Values.certManager.enable (eq .name "webhook-certs")) }}
+          {{- toYaml (list .) | nindent 8 }}
           {{- end }}
+          {{- end }}
+        {{- if and .Values.certManager.enable .Values.metrics.enable }}
+        - mountPath: /tmp/k8s-metrics-server/metrics-certs
+          name: metrics-certs
+          readOnly: true
+        {{- end }}
+        {{- if .Values.certManager.enable }}
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-certs
+          readOnly: true
         {{- end }}
       securityContext:
-        {{- toYaml .Values.controllerManager.podSecurityContext | nindent 8 }}
-      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
-      hostNetwork: {{ .Values.controllerManager.hostNetwork }}
-      terminationGracePeriodSeconds: {{ .Values.controllerManager.terminationGracePeriodSeconds }}
+        {{- if .Values.manager.podSecurityContext }}
+        {{- toYaml .Values.manager.podSecurityContext | nindent 8 }}
+        {{- else }}
+        {}
+        {{- end }}
+      serviceAccountName: {{ include "chart.serviceAccountName" . }}
+      {{- if and (hasKey .Values.manager "terminationGracePeriodSeconds") (ne .Values.manager.terminationGracePeriodSeconds nil) }}
+      terminationGracePeriodSeconds: {{ .Values.manager.terminationGracePeriodSeconds }}
+      {{- end }}
       volumes:
-      - name: macdb
-        secret:
-          secretName: macdb
-      {{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
+      {{- if .Values.manager.dnsRecordTemplate.enabled }}
       - name: dns-record-template
         configMap:
           name: dns-record-template
@@ -107,18 +191,27 @@ spec:
         configMap:
           name: {{ include "chart.name" . }}-ignition-template
       {{- end }}
-      {{- if and .Values.webhook.enable .Values.certmanager.enable }}
-      - name: webhook-cert
-        secret:
-          secretName: webhook-server-cert
+      {{- range .Values.manager.extraVolumes }}
+      {{- if not (and $.Values.certManager.enable (eq .name "webhook-certs")) }}
+      {{- toYaml (list .) | nindent 6 }}
       {{- end }}
-      {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+      {{- end }}
+      {{- if and .Values.certManager.enable .Values.metrics.enable }}
       - name: metrics-certs
         secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          optional: false
           secretName: metrics-server-cert
       {{- end }}
-      {{- range $volume := .Values.controllerManager.manager.volumes }}
-      - name: {{ $volume.name }}
-        {{- toYaml $volume.source | nindent 8 }}
+      {{- if .Values.certManager.enable }}
+      - name: webhook-certs
+        secret:
+          secretName: webhook-server-cert
       {{- end }}
 {{- end }}

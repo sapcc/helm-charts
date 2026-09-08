@@ -88,9 +88,12 @@ groups:
 
       # F2547
       # [qa-de-1-ccaci-2222-bm090][ACI Leaf] node-id to pod-id mapping is wrong: Pod 1
+      #
+      # Added label "reason" upon request of Arvind S.: when fault code F2547 event is fired, node details are unknown to the APIC controller
+      # and reason label is used to add event source details in incident tickets.
       - alert: APICWrongNodeIdPodIdMapping
         expr: |
-          sum by (node_name, node_pod) (aci_obs_wrong_mapping_node_id_pod_id{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+          sum by (node_name, node_pod, reason) (aci_obs_wrong_mapping_node_id_pod_id{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
         for: 1m
         labels:
           severity: critical

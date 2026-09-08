@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: managedcloudprofiles.cloudprofilesync.cobaltcore.dev
 spec:
   group: cloudprofilesync.cobaltcore.dev
@@ -60,7 +60,7 @@ spec:
                             description: Version of the machine image
                             type: string
                         required:
-                        - name
+                          - name
                         type: object
                       machineType:
                         description: MachineType contains the bastions machine type
@@ -70,7 +70,7 @@ spec:
                             description: Name of the machine type
                             type: string
                         required:
-                        - name
+                          - name
                         type: object
                     type: object
                   caBundle:
@@ -85,24 +85,53 @@ spec:
                         description: Versions is the list of allowed Kubernetes versions
                           with optional expiration dates for Shoot clusters.
                         items:
-                          description: ExpirableVersion contains a version and an
-                            expiration date.
+                          description: ExpirableVersion contains a version with associated
+                            lifecycle information.
                           properties:
                             classification:
                               description: |-
                                 Classification defines the state of a version (preview, supported, deprecated).
-                                To get the currently valid classification, use CurrentLifecycleClassification().
+
+                                Deprecated: Is replaced by Lifecycle. mutually exclusive with it.
                               type: string
                             expirationDate:
-                              description: ExpirationDate defines the time at which
-                                this version expires.
+                              description: |-
+                                ExpirationDate defines the time at which this version expires.
+
+                                Deprecated: Is replaced by Lifecycle; mutually exclusive with it.
                               format: date-time
                               type: string
+                            lifecycle:
+                              description: |-
+                                Lifecycle defines the lifecycle stages for this version.
+                                Mutually exclusive with Classification and ExpirationDate.
+                                This can only be used when the VersionClassificationLifecycle feature gate is enabled.
+                              items:
+                                description: |-
+                                  LifecycleStage describes a stage in the versions lifecycle.
+                                  Each stage defines the classification of the version (e.g. unavailable, preview, supported, deprecated, expired)
+                                  and the time at which this classification becomes effective.
+                                properties:
+                                  classification:
+                                    description: Classification is the category of
+                                      this lifecycle stage (unavailable, preview,
+                                      supported, deprecated, expired).
+                                    type: string
+                                  startTime:
+                                    description: |-
+                                      StartTime defines when this lifecycle stage becomes active.
+                                      StartTime can be omitted for the first lifecycle stage, implying a start time in the past.
+                                    format: date-time
+                                    type: string
+                                required:
+                                  - classification
+                                type: object
+                              type: array
                             version:
                               description: Version is the version identifier.
                               type: string
                           required:
-                          - version
+                            - version
                           type: object
                         type: array
                     type: object
@@ -137,8 +166,8 @@ spec:
                             type: string
                           type: array
                       required:
-                      - name
-                      - values
+                        - name
+                        - values
                       type: object
                     type: array
                   machineImages:
@@ -184,7 +213,8 @@ spec:
                               classification:
                                 description: |-
                                   Classification defines the state of a version (preview, supported, deprecated).
-                                  To get the currently valid classification, use CurrentLifecycleClassification().
+                                  
+                                  Deprecated: Is replaced by Lifecycle. mutually exclusive with it.
                                 type: string
                               cri:
                                 description: CRI list of supported container runtime
@@ -211,7 +241,7 @@ spec:
                                               Runtime.
                                             type: string
                                         required:
-                                        - type
+                                          - type
                                         type: object
                                       type: array
                                     name:
@@ -219,12 +249,14 @@ spec:
                                         values are `containerd`.
                                       type: string
                                   required:
-                                  - name
+                                    - name
                                   type: object
                                 type: array
                               expirationDate:
-                                description: ExpirationDate defines the time at which
-                                  this version expires.
+                                description: |-
+                                  ExpirationDate defines the time at which this version expires.
+                                  
+                                  Deprecated: Is replaced by Lifecycle; mutually exclusive with it.
                                 format: date-time
                                 type: string
                               inPlaceUpdates:
@@ -243,7 +275,7 @@ spec:
                                       version.
                                     type: boolean
                                 required:
-                                - supported
+                                  - supported
                                 type: object
                               kubeletVersionConstraint:
                                 description: |-
@@ -253,16 +285,42 @@ spec:
                                   - '>= 1.26' - supports only kubelet versions greater than or equal to 1.26
                                   - '< 1.26' - supports only kubelet versions less than 1.26
                                 type: string
+                              lifecycle:
+                                description: |-
+                                  Lifecycle defines the lifecycle stages for this version.
+                                  Mutually exclusive with Classification and ExpirationDate.
+                                  This can only be used when the VersionClassificationLifecycle feature gate is enabled.
+                                items:
+                                  description: |-
+                                    LifecycleStage describes a stage in the versions lifecycle.
+                                    Each stage defines the classification of the version (e.g. unavailable, preview, supported, deprecated, expired)
+                                    and the time at which this classification becomes effective.
+                                  properties:
+                                    classification:
+                                      description: Classification is the category
+                                        of this lifecycle stage (unavailable, preview,
+                                        supported, deprecated, expired).
+                                      type: string
+                                    startTime:
+                                      description: |-
+                                        StartTime defines when this lifecycle stage becomes active.
+                                        StartTime can be omitted for the first lifecycle stage, implying a start time in the past.
+                                      format: date-time
+                                      type: string
+                                  required:
+                                    - classification
+                                  type: object
+                                type: array
                               version:
                                 description: Version is the version identifier.
                                 type: string
                             required:
-                            - version
+                              - version
                             type: object
                           type: array
                       required:
-                      - name
-                      - versions
+                        - name
+                        - versions
                       type: object
                     type: array
                   machineTypes:
@@ -289,24 +347,35 @@ spec:
                           type: object
                         cpu:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: CPU is the number of CPUs for this machine
                             type.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                         gpu:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: GPU is the number of GPUs for this machine
                             type.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
+                        machineControllerManager:
+                          description: MachineControllerManagerSettings contains a
+                            subset of the MachineControllerManagerSettings which can
+                            be defaulted for a machine type in a CloudProfile.
+                          properties:
+                            machineCreationTimeout:
+                              description: MachineCreationTimeout is the period after
+                                which creation of a machine of this machine type is
+                                declared failed.
+                              type: string
+                          type: object
                         memory:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: Memory is the amount of memory for this machine
                             type.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
@@ -323,8 +392,8 @@ spec:
                               type: string
                             minSize:
                               anyOf:
-                              - type: integer
-                              - type: string
+                                - type: integer
+                                - type: string
                               description: |-
                                 MinSize is the minimal supported storage size.
                                 This overrides any other common minimum size configuration from `spec.volumeTypes[*].minSize`.
@@ -332,8 +401,8 @@ spec:
                               x-kubernetes-int-or-string: true
                             size:
                               anyOf:
-                              - type: integer
-                              - type: string
+                                - type: integer
+                                - type: string
                               description: StorageSize is the storage size.
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
@@ -341,18 +410,18 @@ spec:
                               description: Type is the type of the storage.
                               type: string
                           required:
-                          - class
-                          - type
+                            - class
+                            - type
                           type: object
                         usable:
                           description: Usable defines if the machine type can be used
                             for shoot clusters.
                           type: boolean
                       required:
-                      - cpu
-                      - gpu
-                      - memory
-                      - name
+                        - cpu
+                        - gpu
+                        - memory
+                        - name
                       type: object
                     type: array
                   providerConfig:
@@ -377,7 +446,7 @@ spec:
                                 description: Name is the name of the restriction.
                                 type: string
                             required:
-                            - name
+                              - name
                             type: object
                           type: array
                         labels:
@@ -414,11 +483,11 @@ spec:
                                   type: string
                                 type: array
                             required:
-                            - name
+                              - name
                             type: object
                           type: array
                       required:
-                      - name
+                        - name
                       type: object
                     type: array
                   seedSelector:
@@ -457,8 +526,8 @@ spec:
                               type: array
                               x-kubernetes-list-type: atomic
                           required:
-                          - key
-                          - operator
+                            - key
+                            - operator
                           type: object
                         type: array
                         x-kubernetes-list-type: atomic
@@ -495,8 +564,8 @@ spec:
                           type: string
                         minSize:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: MinSize is the minimal supported storage size.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
@@ -508,20 +577,20 @@ spec:
                             for shoot clusters.
                           type: boolean
                       required:
-                      - class
-                      - name
+                        - class
+                        - name
                       type: object
                     type: array
                 required:
-                - kubernetes
-                - type
+                  - kubernetes
+                  - type
                 type: object
               garbageCollection:
                 description: GarbageCollection contains configuration for automated
                   garbage collection
                 properties:
                   enabled:
-                    description: Enabled toggles garbage collection for this resource.
+                    description: Enabled toggles garbage collection for this image.
                     type: boolean
                   maxAge:
                     description: |-
@@ -529,8 +598,94 @@ spec:
                       now - MaxAge are eligible for deletion.
                     type: string
                     x-kubernetes-validations:
-                    - message: maxAge must not be negative
-                      rule: duration(self) >= duration('0s')
+                      - message: maxAge must not be negative
+                        rule: duration(self) >= duration('0s')
+                type: object
+              kubernetesUpdate:
+                description: KubernetesUpdate contains the source and provider information
+                  to automate Kubernetes version updates.
+                properties:
+                  expirationThreshold:
+                    description: |-
+                      ExpirationThreshold defines the grace period after a version's expiration date.
+                      Versions whose expiration date has passed by more than this duration will be
+                      removed from the CloudProfile.
+                    type: string
+                  landscapeSetup:
+                    description: LandscapeSetup contains the OCI source configuration
+                      for Kubernetes versions.
+                    properties:
+                      oci:
+                        description: OCI contains configuration for the OCI component-descriptor
+                          source.
+                        properties:
+                          featureToCapabilityMap:
+                            additionalProperties:
+                              type: string
+                            description: |-
+                              FeatureToCapabilityMap maps raw feature_set annotation values (e.g. "_usidev")
+                              to boolean CloudProfile capability names (e.g. "usidev"). For each entry,
+                              presence of the key in the annotation produces CapabilityName: [true],
+                              absence produces CapabilityName: [false].
+                            type: object
+                          imageFilter:
+                            description: |-
+                              ImageFilter defines criteria for filtering source images before they are
+                              written into the CloudProfile. Only applies when this OCI source is used
+                              for machine image updates (not for Kubernetes version sources).
+                            properties:
+                              requiredFeatureSetValues:
+                                description: |-
+                                  RequiredFeatureSetValues lists exact values that must all be present in the
+                                  image's feature_set OCI annotation (e.g. "_usi", "scibase"). Images missing
+                                  any of these values are excluded from the CloudProfile entirely.
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          insecure:
+                            description: Insecure disables TLS
+                            type: boolean
+                          password:
+                            description: Password for authentication
+                            properties:
+                              key:
+                                description: Key within the Secret to use for required
+                                  data.
+                                type: string
+                              name:
+                                description: Name of a Secret.
+                                type: string
+                              namespace:
+                                description: Namespace of a Secret.
+                                type: string
+                            required:
+                              - key
+                              - name
+                              - namespace
+                            type: object
+                          registry:
+                            description: Registry contains the hostname and port of
+                              the OCI registry
+                            type: string
+                          repository:
+                            description: Repository contains the monitored repository
+                            type: string
+                          username:
+                            description: Username for authentication
+                            type: string
+                        required:
+                          - registry
+                          - repository
+                        type: object
+                      provider:
+                        description: Provider is the provider name to select from
+                          the kubernetes-version-data blob,
+                        type: string
+                    required:
+                      - oci
+                      - provider
+                    type: object
                 type: object
               machineImageUpdates:
                 description: MachineImageUpdates contains the source and provider
@@ -558,17 +713,113 @@ spec:
                                 images
                               type: string
                           required:
-                          - registry
-                          - repository
+                            - registry
+                            - repository
+                          type: object
+                        openStack:
+                          description: OpenStack contains configuration to update
+                            provider.machineImages for OpenStack CloudProfiles.
                           type: object
                       type: object
                     source:
                       description: Source contains configuration for a source for
                         machine images.
                       properties:
+                        glance:
+                          description: Glance contains configuration for an OpenStack
+                            Glance source.
+                          properties:
+                            authURLFormat:
+                              description: AuthURLFormat is the Keystone endpoint
+                                format string with a single "%s" for the region.
+                              type: string
+                            keepLatest:
+                              description: KeepLatest limits results to the newest
+                                N versions.
+                              type: integer
+                            namePrefix:
+                              description: NamePrefix selects images by name prefix.
+                                Empty means the default.
+                              type: string
+                            parallel:
+                              description: Parallel bounds how many regions are queried
+                                concurrently.
+                              format: int64
+                              type: integer
+                            passwordSecret:
+                              description: PasswordSecret is a reference to a secret
+                                containing the OpenStack password.
+                              properties:
+                                key:
+                                  description: Key within the Secret to use for required
+                                    data.
+                                  type: string
+                                name:
+                                  description: Name of a Secret.
+                                  type: string
+                                namespace:
+                                  description: Namespace of a Secret.
+                                  type: string
+                              required:
+                                - key
+                                - name
+                                - namespace
+                              type: object
+                            projectDomainName:
+                              description: ProjectDomainName scopes the token domain.
+                              type: string
+                            projectName:
+                              description: ProjectName scopes the token.
+                              type: string
+                            regions:
+                              description: Regions is the list of OpenStack regions
+                                to query.
+                              items:
+                                type: string
+                              type: array
+                            userDomainName:
+                              description: UserDomainName is the domain of the authenticating
+                                user.
+                              type: string
+                            username:
+                              description: Username for authentication.
+                              type: string
+                          required:
+                            - authURLFormat
+                            - passwordSecret
+                            - projectDomainName
+                            - projectName
+                            - regions
+                            - userDomainName
+                            - username
+                          type: object
                         oci:
                           description: OCI contains configuration for an OCI source.
                           properties:
+                            featureToCapabilityMap:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                FeatureToCapabilityMap maps raw feature_set annotation values (e.g. "_usidev")
+                                to boolean CloudProfile capability names (e.g. "usidev"). For each entry,
+                                presence of the key in the annotation produces CapabilityName: [true],
+                                absence produces CapabilityName: [false].
+                              type: object
+                            imageFilter:
+                              description: |-
+                                ImageFilter defines criteria for filtering source images before they are
+                                written into the CloudProfile. Only applies when this OCI source is used
+                                for machine image updates (not for Kubernetes version sources).
+                              properties:
+                                requiredFeatureSetValues:
+                                  description: |-
+                                    RequiredFeatureSetValues lists exact values that must all be present in the
+                                    image's feature_set OCI annotation (e.g. "_usi", "scibase"). Images missing
+                                    any of these values are excluded from the CloudProfile entirely.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
                             insecure:
                               description: Insecure disables TLS
                               type: boolean
@@ -586,9 +837,9 @@ spec:
                                   description: Namespace of a Secret.
                                   type: string
                               required:
-                              - key
-                              - name
-                              - namespace
+                                - key
+                                - name
+                                - namespace
                               type: object
                             registry:
                               description: Registry contains the hostname and port
@@ -601,18 +852,18 @@ spec:
                               description: Username for authentication
                               type: string
                           required:
-                          - registry
-                          - repository
+                            - registry
+                            - repository
                           type: object
                       type: object
                   required:
-                  - imageName
-                  - provider
-                  - source
+                    - imageName
+                    - provider
+                    - source
                   type: object
                 type: array
             required:
-            - cloudProfile
+              - cloudProfile
             type: object
           status:
             properties:
@@ -657,9 +908,9 @@ spec:
                     status:
                       description: status of the condition, one of True, False, Unknown.
                       enum:
-                      - "True"
-                      - "False"
-                      - Unknown
+                        - "True"
+                        - "False"
+                        - Unknown
                       type: string
                     type:
                       description: type of condition in CamelCase or in foo.example.com/CamelCase.
@@ -667,11 +918,11 @@ spec:
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
                   required:
-                  - lastTransitionTime
-                  - message
-                  - reason
-                  - status
-                  - type
+                    - lastTransitionTime
+                    - message
+                    - reason
+                    - status
+                    - type
                   type: object
                 type: array
               status:
@@ -713,6 +964,13 @@ rules:
 - apiGroups: ["core.gardener.cloud"]
   resources:
   - shoots
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups: [""]
+  resources:
+  - secrets
   verbs:
   - get
   - list

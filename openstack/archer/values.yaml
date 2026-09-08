@@ -19,7 +19,9 @@ postgresql:
   alerts:
     support_group: containers
   databases:
-    archer: {}
+    archer:
+      sqlOnStartup: |
+        ALTER ROLE archer SET idle_in_transaction_session_timeout = '5min';
   extensions:
     pgcrypto: []
   persistence:
@@ -124,6 +126,11 @@ ingress:
 
 metrics:
   port: 9090
+
+# net/http/pprof profiling endpoints, bound to localhost (reach via `kubectl port-forward`).
+pprof:
+  enabled: true
+  port: 6060
 
 audit:
   enabled: true

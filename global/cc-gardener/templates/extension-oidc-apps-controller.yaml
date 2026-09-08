@@ -7,6 +7,7 @@ metadata:
 spec:
   deployment:
     extension:
+      injectGardenKubeconfig: {{ .injectGardenKubeconfig | default false }}
       helm:
         ociRepository:
 {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
@@ -16,13 +17,17 @@ spec:
         cacheSelectorStr: observability.gardener.cloud/app in (plutono, prometheus-shoot,
           alertmanager-seed, alertmanager-shoot)
         clients:
-        - clientId: {{ $.Values.garden.dashboard.oidc.clientIDPublic }}
+        - clientId: {{ .oidcClientId | default $.Values.garden.dashboard.oidc.clientIDPublic }}
           name: oidc-apps-controller-users
         global:
+          istioGateway:
+            enabled: true
+            selector:
+              istio: ingressgateway
           oauth2Proxy:
             insecureOidcSkipIssuerVerification: false
             insecureOidcSkipNonce: false
-            oidcIssuerUrl: {{ $.Values.garden.dashboard.oidc.issuerURL }}
+            oidcIssuerUrl: {{ .oidcIssuerUrl | default $.Values.garden.dashboard.oidc.issuerURL }}
             scope: openid email groups
             sslInsecureSkipVerify: false
         priorityClass:
@@ -33,15 +38,11 @@ spec:
             drop:
             - ALL
         targets:
-        - ingress:
-            create: true
-            ingressClassName: nginx-ingress-gardener
+        - istioGateway:
+            create: false
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: credativ--plutono
-# TODO: Clarify wildcard TLS secret deployment
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
           labelSelector:
             matchLabels:
               component: plutono
@@ -50,25 +51,15 @@ spec:
             matchLabels:
               gardener.cloud/role: shoot
           targetPort: 3000
-        - ingress:
-            annotations:
-              nginx.ingress.kubernetes.io/server-snippet: |-
-                location /-/reload {
-                  return 403;
-                }
-                location /-/quit {
-                  return 403;
-                }
-                location /api/v1/targets {
-                  return 403;
-                }
-            create: true
-            ingressClassName: nginx-ingress-gardener
+        - istioGateway:
+            create: false
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: prometheus--prometheus
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
+            deniedPaths:
+              - /-/reload
+              - /-/quit
+              - /api/v1/targets
           labelSelector:
             matchLabels:
               app: prometheus
@@ -77,14 +68,11 @@ spec:
             matchLabels:
               gardener.cloud/role: shoot
           targetPort: 9090
-        - ingress:
-            create: true
-            ingressClassName: nginx-ingress-gardener
+        - istioGateway:
+            create: false
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: prometheus--alertmanager
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
           labelSelector:
             matchLabels:
               component: alertmanager
@@ -93,12 +81,8 @@ spec:
             matchLabels:
               gardener.cloud/role: shoot
           targetPort: 9093
-        - ingress:
-            create: true
-            ingressClassName: nginx-ingress-gardener
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
-#              namespace: garden
+        - istioGateway:
+            create: false
           labelSelector:
             matchLabels:
               component: plutono
@@ -107,12 +91,8 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: garden
           targetPort: 3000
-        - ingress:
-            create: true
-            ingressClassName: nginx-ingress-gardener
-#            tlsSecretRef:
-#              name: ingress-wildcard-cert
-#              namespace: garden
+        - istioGateway:
+            create: false
           labelSelector:
             matchLabels:
               component: alertmanager
@@ -133,4 +113,28 @@ spec:
               - alertmanager-seed
               - alertmanager-shoot
 {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-oidc-ext-to-virtual-garden-kube-apiserver-from-shoot-rbac-proxy
+  namespace: garden
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    from:
+    - namespaceSelector:
+        matchLabels:
+          gardener.cloud/role: shoot
+      podSelector:
+        matchLabels:
+          oidc-application-controller/component: pod
+  policyTypes:
+  - Ingress
 {{- end }}
