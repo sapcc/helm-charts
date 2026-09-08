@@ -46,12 +46,18 @@ spec:
         {{- end }}
         command:
           - /go-pmtud
-          - --iface_names={{ required ".Values.pmtud.ifaceNames is required" .Values.pmtud.ifaceNames | join "," }}
           - --nodename=$(NODE_NAME)
           - --ttl={{ required ".Values.pmtud.ttl is required" .Values.pmtud.ttl }}
           - --nflog_group={{ required ".Values.pmtud.nflogGroup is required" .Values.iptables.nflogGroup }}
+          {{- if eq .Values.pmtud.relayBackend "udp" }}
+          - --relay-backend=udp
+          - --replication-port={{ .Values.pmtud.replicationPort | default 4390 }}
+          {{- else }}
+          - --relay-backend=l2
+          - --iface_names={{ required ".Values.pmtud.ifaceNames is required for l2 backend" .Values.pmtud.ifaceNames | join "," }}
           {{- if .Values.pmtud.ifaceMtu }}
           - --iface_mtu={{ .Values.pmtud.ifaceMtu }}
+          {{- end }}
           {{- end }}
         env:
         - name: NODE_NAME
