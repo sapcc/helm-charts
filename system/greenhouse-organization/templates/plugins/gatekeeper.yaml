@@ -1,0 +1,38 @@
+{{/*
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.gatekeeper.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: gatekeeper
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.gatekeeper.supportGroup | default .Values.global.supportGroup }}
+spec:
+  displayName: OPA Gatekeeper
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: gatekeeper
+  releaseName: gatekeeper
+  releaseNamespace: greenhouse
+  optionValues:
+    {{- if .Values.gatekeeper.replicas }}
+    - name: gatekeeper.replicas
+      value: {{ .Values.gatekeeper.replicas }}
+    {{- end }}
+    {{- if .Values.gatekeeper.auditInterval }}
+    - name: gatekeeper.auditInterval
+      value: {{ .Values.gatekeeper.auditInterval }}
+    {{- end }}
+    {{- if .Values.gatekeeper.validatingWebhookFailurePolicy }}
+    - name: gatekeeper.validatingWebhookFailurePolicy
+      value: {{ .Values.gatekeeper.validatingWebhookFailurePolicy | quote }}
+    {{- end }}
+    {{- if .Values.gatekeeper.logDenies }}
+    - name: gatekeeper.logDenies
+      value: {{ .Values.gatekeeper.logDenies }}
+    {{- end }}
+{{- end }}
