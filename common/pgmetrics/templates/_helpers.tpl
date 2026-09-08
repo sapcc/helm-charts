@@ -12,5 +12,5 @@ Converts to lowercase and replaces any non-compliant characters with hyphens.
 Usage: {{ include "pgmetrics.sanitizeName" "database_name" }}
 */}}
 {{- define "pgmetrics.sanitizeName" -}}
-{{- . | lower | regexReplaceAll "[^a-z0-9-]+" "-" -}}
+{{- regexReplaceAll "[^a-z0-9-]+" (lower .) "-" -}}
 {{- end -}}
