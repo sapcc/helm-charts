@@ -1,0 +1,30 @@
+{{- if .Values.extensions.seedIngressCertificates.enabled -}}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: ControllerDeployment
+metadata:
+  name: seed-ingress-certificates
+spec:
+  type: helm
+  providerConfig:
+    chart:
+      ociRepository:
+{{ toYaml .Values.extensions.seedIngressCertificates.helm.ociRepository | indent 8 }}
+    values:
+      certificate:
+        secretName: {{ .Values.extensions.seedIngressCertificates.certificate.secretName }}
+        issuerRef:
+{{ toYaml .Values.extensions.seedIngressCertificates.certificate.issuerRef | indent 10 }}
+        usages:
+{{ toYaml .Values.extensions.seedIngressCertificates.certificate.usages | indent 10 }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: ControllerRegistration
+metadata:
+  name: seed-ingress-certificates
+spec:
+  deployment:
+    deploymentRefs:
+      - name: seed-ingress-certificates
+    seedSelector: {}
+{{- end }}
