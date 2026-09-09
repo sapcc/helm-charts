@@ -1,5 +1,5 @@
 {{- if .Values.barbican_nanny.enabled }}
-{{- if .Values.barbican_nanny.db_secret_move.enabled }}
+{{- if or .Values.barbican_nanny.db_secret_move.enabled .Values.barbican_nanny.db_cleanup.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -107,6 +107,67 @@ spec:
           mountPath: /tmp
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+{{- end }}
+{{- if .Values.barbican_nanny.db_cleanup.enabled }}
+      - name: db-cleanup
+        image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+        command:
+        - dumb-init
+{{- if not .Values.barbican_nanny.debug }}
+        - /bin/bash
+        - /scripts/db-cleanup.sh
+{{- else }}
+        - sleep
+        - inf
+{{- end }}
+        env:
+        - name: BARBICAN_DB_CLEANUP_ENABLED
+          value: {{ .Values.barbican_nanny.db_cleanup.enabled | quote }}
+        - name: BARBICAN_DB_CLEANUP_BATCH_SIZE
+          value: {{ .Values.barbican_nanny.db_cleanup.batch_size | quote }}
+        - name: BARBICAN_DB_CLEANUP_MIN_NUM_DAYS
+          value: {{ .Values.barbican_nanny.db_cleanup.min_num_days | quote }}
+        - name: BARBICAN_DB_CLEANUP_CLEAN_UNASSOCIATED_PROJECTS
+          value: {{ .Values.barbican_nanny.db_cleanup.clean_unassociated_projects | quote }}
+        - name: BARBICAN_DB_CLEANUP_SOFT_DELETE_EXPIRED_SECRETS
+          value: {{ .Values.barbican_nanny.db_cleanup.soft_delete_expired_secrets | quote }}
+        - name: BARBICAN_NANNY_INTERVAL
+          value: {{ .Values.barbican_nanny.interval | quote }}
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: barbican.DSN.python
+        {{- end }}
+        resources:
+          requests:
+            memory: "250Mi"
+            cpu: "25m"
+          limits:
+            memory: "250Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: barbican-scripts
+          mountPath: /scripts/db-cleanup.sh
+          subPath: db-cleanup.sh
+          readOnly: true
+        - name: barbican-etc
+          mountPath: /etc/barbican/logging.ini
+          subPath: logging.ini
+          readOnly: true
+        - name: barbican-etc-confd
+          mountPath: /etc/barbican/barbican.conf.d
+          readOnly: true
+        - name: nanny-tmp
+          mountPath: /tmp
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+{{- end }}
       {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . 1 | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
@@ -124,6 +185,5 @@ spec:
         emptyDir: {}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
-{{- end }}
 {{- end }}
 {{- end }}
