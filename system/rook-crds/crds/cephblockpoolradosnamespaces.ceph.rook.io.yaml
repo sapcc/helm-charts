@@ -8,7 +8,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: cephblockpoolradosnamespaces.ceph.rook.io
 spec:
   group: ceph.rook.io
@@ -65,6 +65,18 @@ spec:
                   type: string
                   x-kubernetes-validations:
                     - message: blockPoolName is immutable
+                      rule: self == oldSelf
+                clusterID:
+                  description: |-
+                    ClusterID to be used for this RadosNamespace in the CSI configuration.
+                    It must be unique among all Ceph clusters managed by Rook.
+                    If not specified, the clusterID will be generated and can be found in the CR status.
+                  maxLength: 36
+                  minLength: 1
+                  pattern: ^[a-zA-Z0-9_-]+$
+                  type: string
+                  x-kubernetes-validations:
+                    - message: ClusterID is immutable
                       rule: self == oldSelf
                 mirroring:
                   description: Mirroring configuration of CephBlockPoolRadosNamespace
