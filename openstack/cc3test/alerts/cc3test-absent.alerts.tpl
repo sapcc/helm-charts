@@ -34,6 +34,18 @@ groups:
       description: "cc3test metrics for {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}} are absent for more than 30 minutes"
       summary: "cc3test metrics for {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}} are absent"
 
+  - alert: CC3TestApiMetricsAbsent
+    expr: absent(cc3test_status{type="api", phase="call"}) == 1
+    for: 1h
+    labels:
+      severity: critical
+      service: cc3test
+      playbook: "docs/support/playbook/cc3test/alerts/cc3test-alert-metrics-absent/"
+      meta: "cc3test api metrics (type=api/phase=call) are absent for more than 1 hour"
+    annotations:
+      description: "cc3test api metrics (type=api/phase=call) are absent for more than 1 hour - api tests are not reporting results"
+      summary: "cc3test api metrics are absent"
+
   - alert: CC3TestPurgeMetricsAbsent
     expr: absent(cc3test_status{type=~'(.+)purge$|purge', phase="call"}) == 1
     for: 30m
