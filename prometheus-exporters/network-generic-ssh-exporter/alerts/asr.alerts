@@ -240,3 +240,18 @@ groups:
       annotations:
         description: "Cisco ASR990x device `{{ $labels.name }}` has a high NTP offset."
         summary: "Cisco ASR990x device `{{ $labels.name }}` has a high NTP offset."
+
+    - alert: NetworkAsrNatRGSyncSendFailure
+      expr: rate(ssh_redundancy_send_fails_delete{name=~".*"}[5m]) > 1 or rate(ssh_redundancy_send_fails_add{name=~".*"}[5m]) > 1
+      for: 5m
+      labels:
+        severity: critical
+        support_group: network-data
+        tier: net
+        service: asr
+        context: asr
+        playbook: 'docs/network/playbooks/router#NetworkAsrNatRGSyncSendFailure'
+        dashboard: neutron-router
+      annotations:
+        summary: "NAT Session delete(sdel) or add(sadd) failure between Neutron Router Cluster `{{ $labels.name }}`"
+        description: "NAT Session sync failure between Neutron Router Cluster `{{ $labels.name }}`"
