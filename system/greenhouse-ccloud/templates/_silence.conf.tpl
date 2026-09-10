@@ -290,3 +290,32 @@
     - region
     - devicename
     - ifDescr
+- status: active
+  title: ACI Observability - VPC Configuration Inconsistency 
+  description: Silence alerts of VCP config inconsistency Specific Component
+  fixed_labels:
+    alertname: VPCConfigInconsistency
+    support_group: network-data-aci-obs
+    severity: warning
+  editable_labels:
+    - node_name
+    - node_intf
+- status: active
+  title: ACI Observability - APIC wrong Node_ID/POD_ID mapping
+  description: Silence alerts of APIC wrong Node_ID/POD_ID mapping Component
+  fixed_labels:
+    alertname: APICWrongNodeIdPodIdMapping
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - node_pod
+- status: active
+  title: ACI Observability - Port Down 
+  description: Silence alerts of Port Down 
+  fixed_labels:
+    alertname: PortDown
+    support_group: network-data-aci-obs
+    severity: warning
+  editable_labels:
+    - node_name
+    - node_intf
