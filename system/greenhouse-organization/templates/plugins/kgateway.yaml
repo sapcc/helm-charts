@@ -1,0 +1,31 @@
+{{/*
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.kgateway.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: kgateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.kgateway.supportGroup | default .Values.global.supportGroup }}
+spec:
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: kgateway
+  displayName: kgateway
+  releaseName: kgateway
+  releaseNamespace: kgateway-system
+  optionValues:
+    - name: controller.replicaCount
+      value: {{ .Values.kgateway.controller.replicaCount | default 1 }}
+    - name: controller.serviceMonitor.enabled
+      value: {{ .Values.kgateway.controller.serviceMonitor.enabled | default false }}
+    {{- if .Values.kgateway.controller.serviceMonitor.enabled }}
+    - name: controller.serviceMonitor.extraLabels
+      value:
+        {{- toYaml (.Values.kgateway.controller.serviceMonitor.extraLabels | default (dict "plugin" "kube-monitoring")) | nindent 8 }}
+    {{- end }}
+{{- end }}
