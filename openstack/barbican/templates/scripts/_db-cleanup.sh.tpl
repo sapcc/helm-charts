@@ -34,12 +34,12 @@ while true; do
     if [ "$BARBICAN_DB_CLEANUP_ENABLED" = "True" ] || [ "$BARBICAN_DB_CLEANUP_ENABLED" = "true" ]; then
         date
         /var/lib/openstack/bin/barbican-manage db clean \
-            --min-num-days "$BARBICAN_DB_CLEANUP_MIN_NUM_DAYS" \
+            --min-days "$BARBICAN_DB_CLEANUP_MIN_NUM_DAYS" \
             --batch-size "$BARBICAN_DB_CLEANUP_BATCH_SIZE" \
             --verbose \
             $EXTRA_FLAGS
     fi
-    echo -n "INFO: waiting $BARBICAN_NANNY_INTERVAL minutes before starting the next loop run - "
+    echo -n "INFO: waiting $BARBICAN_DB_CLEANUP_INTERVAL minutes before starting the next loop run - "
     date
-    sleep $(( 60 * $BARBICAN_NANNY_INTERVAL ))
+    sleep $(( 60 * $BARBICAN_DB_CLEANUP_INTERVAL ))
 done
