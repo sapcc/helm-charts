@@ -241,3 +241,98 @@ groups:
     annotations:
       description: "OIDC authentication through OpenStack API for {{`{{ $labels.service }}`}} is failing. CLI and SDK users cannot authenticate using OIDC tokens and automated workflows are broken."
       summary: "OIDC authentication using OpenStack api failed"
+
+  - alert: SAMLFederationAuthFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML federation authentication test failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML federation authentication test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Tenant users may be unable to authenticate via their IdP."
+      summary: "SAML federation authentication test failing"
+
+  - alert: SAMLBypassProtectionFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_(unauthenticated_redirect|header_injection_rejected)", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML bypass protection test failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML bypass protection test {{`{{ $labels.name }}`}} is failing. The unauthenticated redirect or header injection guard may be misconfigured — a BSI security control is not being enforced."
+      summary: "SAML bypass protection test failing"
+
+  - alert: SAMLTokenFederationInfoMissing
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_token_contains_federation_info", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML token missing OS-FEDERATION fields"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "The SAML token payload for {{`{{ $labels.service }}`}} is missing required OS-FEDERATION fields (identity_provider, protocol, groups). Token mapping or Keystone federation config may be broken."
+      summary: "SAML token missing OS-FEDERATION fields"
+
+  - alert: SAMLSignatureValidationFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLSignatureValidation_(unsigned_assertion_rejected|untrusted_key_rejected|corrupted_signature_rejected)", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML signature validation control not enforced"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "mod_shib accepted a SAML assertion with an invalid/missing/untrusted signature in {{`{{ $labels.name }}`}}. BSI control SF.Fas.1 is not being enforced — assertions may be accepted without valid cryptographic proof."
+      summary: "SAML SF.Fas.1 signature validation not enforced"
+
+  - alert: SAMLIssuerValidationFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLSignatureValidation_(wrong_issuer_rejected|wrong_audience_rejected)", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML issuer/audience validation control not enforced"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "mod_shib accepted a SAML assertion from an unknown issuer or with a wrong AudienceRestriction in {{`{{ $labels.name }}`}}. BSI control SF.Fas.2 is not being enforced — cross-SP or rogue-IdP assertions may be accepted."
+      summary: "SAML SF.Fas.2 issuer/audience validation not enforced"
