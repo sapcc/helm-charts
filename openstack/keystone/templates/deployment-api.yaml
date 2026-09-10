@@ -54,9 +54,15 @@ spec:
         {{- if .Values.federation.saml.enabled }}
         federation-saml-hash: {{ include (print $.Template.BasePath "/federation-saml.yaml") . | sha256sum }}
         {{- end }}
+        {{- if and .Values.api.apacheMetrics.enabled (not .Values.api.metrics.enabled) }}
+          {{- fail "api.apacheMetrics.enabled requires api.metrics.enabled (prometheus.io/scrape annotation is set by api.metrics)" }}
+        {{- end }}
         {{- if .Values.api.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- if .Values.api.apacheMetrics.enabled }}
+        prometheus.io/port_1: {{ .Values.api.apacheMetrics.port | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
@@ -248,6 +254,12 @@ spec:
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
               readOnly: true
+            {{- if .Values.api.apacheMetrics.enabled }}
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/status.conf
+              subPath: status.conf
+              readOnly: true
+            {{- end }}
             - name: keystone-etc
               mountPath: /etc/keystone/access_rules.json
               subPath: access_rules.json
@@ -289,6 +301,20 @@ spec:
           {{- if .Values.api.metrics.resources }}
           resources:
 {{ toYaml .Values.api.metrics.resources | indent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.api.apacheMetrics.enabled }}
+        - name: apache-exporter
+          image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.apacheMetrics.image }}:{{ .Values.api.apacheMetrics.imageTag }}"
+          imagePullPolicy: {{ .Values.api.apacheMetrics.imagePullPolicy | default "IfNotPresent" | quote }}
+          args:
+            - --scrape_uri=http://127.0.0.1:5000/server-status?auto
+          ports:
+            - name: apache-metrics
+              containerPort: {{ .Values.api.apacheMetrics.port }}
+          {{- if .Values.api.apacheMetrics.resources }}
+          resources:
+{{ toYaml .Values.api.apacheMetrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
       {{- if not .Values.osprofiler.redis.enabled }}
