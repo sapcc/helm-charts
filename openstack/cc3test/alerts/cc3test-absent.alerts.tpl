@@ -39,7 +39,7 @@ groups:
     for: 1h
     labels:
       severity: critical
-      service: cc3test
+      service: observability
       playbook: "docs/support/playbook/cc3test/alerts/cc3test-alert-metrics-absent/"
       meta: "cc3test api metrics (type=api/phase=call) are absent for more than 1 hour"
     annotations:
@@ -51,6 +51,7 @@ groups:
     for: 30m
     labels:
       severity: warning
+      support_group: observability
       service: cc3test
       meta: "purge metrics for {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}} are absent for more than 30 minutes"
     annotations:
