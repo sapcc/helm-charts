@@ -48,6 +48,10 @@ automountServiceAccountToken: false
 {{- if ne $kind "Deployment" }}
 restartPolicy: {{ $ctx.Values.agent.workload.restartPolicy }}
 {{- end }}
+{{- with $ctx.Values.agent.workload.affinity }}
+affinity:
+{{ toYaml . | indent 2 }}
+{{- end }}
 initContainers:
   - name: setup-agent-sandbox-iptables
     image: {{ $ctx.Values.iptables.image | quote }}
