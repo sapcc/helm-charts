@@ -1,0 +1,36 @@
+{{- if .Values.externalDns.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: external-dns
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.externalDns.supportGroup | default .Values.global.supportGroup }}
+spec:
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: external-dns
+  displayName: external-dns
+  releaseName: external-dns
+  releaseNamespace: external-dns
+  optionValues:
+    - name: openstack.enabled
+      value: {{ .Values.externalDns.openstack.enabled | default false }}
+    {{- if .Values.externalDns.openstack.enabled }}
+    - name: openstack.authURL
+      value: {{ required ".Values.externalDns.openstack.authURL missing" .Values.externalDns.openstack.authURL }}
+    - name: openstack.username
+      value: {{ required ".Values.externalDns.openstack.username missing" .Values.externalDns.openstack.username }}
+    - name: openstack.password
+      value: {{ required ".Values.externalDns.openstack.password missing" .Values.externalDns.openstack.password | quote }}
+    - name: openstack.userDomainName
+      value: {{ .Values.externalDns.openstack.userDomainName | default "Default" }}
+    - name: openstack.projectID
+      value: {{ required ".Values.externalDns.openstack.projectID missing" .Values.externalDns.openstack.projectID }}
+    - name: openstack.regionName
+      value: {{ required ".Values.externalDns.openstack.regionName missing" .Values.externalDns.openstack.regionName }}
+    {{- end }}
+    {{- with .Values.externalDns.options }}
+    {{- include "flattenOptionValues" (dict "prefix" "externaldns" "values" .) | nindent 4 }}
+    {{- end }}
+{{- end }}
