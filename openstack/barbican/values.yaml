@@ -499,12 +499,19 @@ ingress:
   enableConnectionsLimit: true
   limitConnections: 20
 
-# Pod-level TLS termination in Apache
+# Pod-level TLS termination in Apache.
+# tls.state is a state machine; allowed values, in order:
+#   disabled -> transition -> enabled (and back). Steps must be adjacent;
+#   going straight between disabled and enabled is refused. In transition the
+#   ingress and the pod TLS LoadBalancer both serve, so switches are downtime
+#   free. Moving forward creates the disco Record; moving back to disabled,
+#   repoint the endpoint DNS to the ingress manually.
 tls:
-  enabled: false
+  state: disabled
   # Name of the K8s Secret containing tls.key and tls.crt (created by TLS bootstrap Job)
   secretName: barbican-tls
-  # Per-region operator choices — all three are REQUIRED when tls.enabled: true.
+  # Per-region operator choices — all three are REQUIRED when TLS is serving
+  # (state: transition or enabled).
   # There are no defaults; the operator must make an explicit choice.
   # keyGeneration: go-crypto | hsm-entropy | hsm-full | tpm-entropy
   # keyWrapping: none | vault-transit | hsm | tpm

@@ -148,7 +148,7 @@ disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inacti
 [oslo_middleware]
 # When the pod terminates TLS directly there is no trusted proxy in front, so
 # Forwarded/X-Forwarded-* headers supplied by clients must not be trusted.
-enable_proxy_headers_parsing = {{ if .Values.tls.enabled }}false{{ else }}true{{ end }}
+enable_proxy_headers_parsing = {{ if include "keystone.tls.ingressActive" . }}true{{ else }}false{{ end }}
 
 [oslo_policy]
 # This option controls whether or not to enforce scope when evaluating

@@ -13,8 +13,9 @@ metadata:
     type: api
     component: barbican
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets{{- if .Values.tls.enabled }},{{ .Values.tls.secretName | default "barbican-tls" }}{{- end }}"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets{{- if (include "barbican.tls.serving" .) }},{{ .Values.tls.secretName | default "barbican-tls" }}{{- end }}"
     deployment.reloader.stakater.com/pause-period: "60s"
+    cloud.sap/tls-state: {{ .Values.tls.state | quote }}
 spec:
   replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -40,7 +41,7 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
-        {{- if .Values.tls.enabled }}
+        {{- if (include "barbican.tls.serving" .) }}
         config.linkerd.io/skip-inbound-ports: "443"
         {{- end }}
         {{- if .Values.proxysql.mode }}
@@ -49,7 +50,7 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
-      {{- if .Values.tls.enabled }}
+      {{- if (include "barbican.tls.serving" .) }}
       securityContext:
         # distroless "nonroot" gid of the tls-lifecycle-manager image; lets the
         # non-root tls-init container read the 0440 tls-input Secret while keeping
@@ -71,7 +72,7 @@ spec:
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
-      {{- if .Values.tls.enabled }}
+      {{- if (include "barbican.tls.serving" .) }}
       - name: tls-init
         image: {{ .Values.tls.lifecycle.image }}:{{ .Values.tls.lifecycle.imageTag }}
         imagePullPolicy: IfNotPresent
@@ -143,7 +144,7 @@ spec:
           ports:
             - name: barbican-api
               containerPort: {{.Values.api_port_internal}}
-            {{- if .Values.tls.enabled }}
+            {{- if (include "barbican.tls.serving" .) }}
             - name: barbican-tls
               containerPort: 443
             {{- end }}
@@ -170,7 +171,7 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
-            {{- if .Values.tls.enabled }}
+            {{- if (include "barbican.tls.serving" .) }}
             - name: tls-secrets
               mountPath: /mnt/secrets
               readOnly: true
@@ -383,7 +384,7 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
-        {{- if .Values.tls.enabled }}
+        {{- if (include "barbican.tls.serving" .) }}
         - name: tls-input
           secret:
             secretName: {{ .Values.tls.secretName | default "barbican-tls" }}

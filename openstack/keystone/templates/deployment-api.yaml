@@ -13,11 +13,12 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}{{- if .Values.tls.enabled }},{{ .Values.tls.secretName | default "keystone-tls" }}{{- end }}"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}{{- if (include "keystone.tls.serving" .) }},{{ .Values.tls.secretName | default "keystone-tls" }}{{- end }}"
     {{- if .Values.federation.saml.enabled }}
     configmap.reloader.stakater.com/reload: "keystone-saml-shibboleth-config,keystone-saml-federation-saml-tenants,{{ .Values.federation.saml.idp.metadataConfigMap }}"
     {{- end }}
     deployment.reloader.stakater.com/pause-period: "60s"
+    cloud.sap/tls-state: {{ .Values.tls.state | quote }}
 spec:
   replicas: {{ .Values.api.replicas }}
   minReadySeconds: {{ .Values.api.minReadySeconds | default 5}}
@@ -55,7 +56,7 @@ spec:
         {{- if .Values.federation.saml.enabled }}
         federation-saml-hash: {{ include (print $.Template.BasePath "/federation-saml.yaml") . | sha256sum }}
         {{- end }}
-        {{- if .Values.tls.enabled }}
+        {{- if (include "keystone.tls.serving" .) }}
         config.linkerd.io/skip-inbound-ports: "443"
         {{- end }}
         {{- if .Values.api.metrics.enabled }}
@@ -64,7 +65,7 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
-      {{- if .Values.tls.enabled }}
+      {{- if (include "keystone.tls.serving" .) }}
       securityContext:
         # distroless "nonroot" gid of the tls-lifecycle-manager image; lets the
         # non-root tls-init container read the 0440 tls-input Secret while keeping
@@ -119,7 +120,7 @@ spec:
           - name: saml-sp-tmpfs
             mountPath: /saml-sp-keys
       {{- end }}
-      {{- if .Values.tls.enabled }}
+      {{- if (include "keystone.tls.serving" .) }}
       - name: tls-init
         image: {{ .Values.tls.lifecycle.image }}:{{ .Values.tls.lifecycle.imageTag }}
         imagePullPolicy: IfNotPresent
@@ -184,7 +185,7 @@ spec:
           ports:
             - name: public
               containerPort: 5000
-            {{- if .Values.tls.enabled }}
+            {{- if (include "keystone.tls.serving" .) }}
             - name: public-tls
               containerPort: 443
             {{- end }}
@@ -247,7 +248,7 @@ spec:
               mountPath: /etc/apache2/conf-enabled/status-off.conf
               subPath: status-off.conf
               readOnly: true
-            {{- if .Values.tls.enabled }}
+            {{- if (include "keystone.tls.serving" .) }}
             - name: apache-sites
               mountPath: /etc/apache2/sites-enabled
             {{- end }}
@@ -284,7 +285,7 @@ spec:
               mountPath: /etc/shibboleth/metadata
               readOnly: true
             {{- end }}
-            {{- if .Values.tls.enabled }}
+            {{- if (include "keystone.tls.serving" .) }}
             - name: tls-secrets
               mountPath: /mnt/secrets
               readOnly: true
@@ -364,7 +365,7 @@ spec:
           emptyDir: {}
         - name: wsgi-keystone
           emptyDir: {}
-        {{- if .Values.tls.enabled }}
+        {{- if (include "keystone.tls.serving" .) }}
         - name: apache-sites
           emptyDir: {}
         {{- end }}
@@ -433,7 +434,7 @@ spec:
             name: keystone-sentry-filter-rules
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
-        {{- if .Values.tls.enabled }}
+        {{- if (include "keystone.tls.serving" .) }}
         - name: tls-input
           secret:
             secretName: {{ .Values.tls.secretName | default "keystone-tls" }}

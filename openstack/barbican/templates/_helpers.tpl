@@ -45,23 +45,50 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
   {{- end }}
 {{- end }}
 
+{{- define "barbican.tls.serving" -}}
+{{- if or (eq .Values.tls.state "transition") (eq .Values.tls.state "enabled") -}}true{{- end -}}
+{{- end -}}
+
+{{- define "barbican.tls.ingressActive" -}}
+{{- if or (eq .Values.tls.state "disabled") (eq .Values.tls.state "transition") -}}true{{- end -}}
+{{- end -}}
+
 {{- define "barbican.tls.validate" -}}
-{{- if .Values.tls.enabled }}
+{{- if not (has .Values.tls.state (list "disabled" "transition" "enabled")) }}
+  {{- fail "tls.state must be one of: disabled, transition, enabled" }}
+{{- end }}
+{{- if include "barbican.tls.serving" . }}
   {{- if not .Values.tls.keyGeneration }}
-    {{- fail "tls.keyGeneration is required when tls.enabled (options: go-crypto, hsm-entropy, hsm-full, tpm-entropy)" }}
+    {{- fail "tls.keyGeneration is required when TLS is serving (options: go-crypto, hsm-entropy, hsm-full, tpm-entropy)" }}
   {{- end }}
   {{- if not .Values.tls.keyWrapping }}
-    {{- fail "tls.keyWrapping is required when tls.enabled (options: none, vault-transit, hsm, tpm)" }}
+    {{- fail "tls.keyWrapping is required when TLS is serving (options: none, vault-transit, hsm, tpm)" }}
   {{- end }}
   {{- if not .Values.tls.keyStorage }}
-    {{- fail "tls.keyStorage is required when tls.enabled (options: internal-k8s-secret, k8s-secret, vault-secret)" }}
+    {{- fail "tls.keyStorage is required when TLS is serving (options: internal-k8s-secret, k8s-secret, vault-secret)" }}
   {{- end }}
   {{- if and (eq .Values.tls.keyWrapping "none") (eq .Values.tls.keyStorage "k8s-secret") (not .Values.tls.allowInsecureStorage) }}
     {{- fail "tls: unwrapped keys cannot be stored as plain-text K8s Secrets. Set tls.keyWrapping or tls.keyStorage, or set tls.allowInsecureStorage: true to acknowledge." }}
   {{- end }}
   {{- $svc := .Values.services | default dict }}
   {{- if not (.Values.global.barbican_external_ip | default $svc.externalip) }}
-    {{- fail "tls.enabled requires an external IP (global.barbican_external_ip or services.externalip): enabling TLS removes the ingress and the public TLS Service only renders once the external IP is set." }}
+    {{- fail "TLS serving requires an external IP (global.barbican_external_ip or services.externalip): the public TLS Service only renders once the external IP is set." }}
+  {{- end }}
+{{- end }}
+{{- $dep := lookup "apps/v1" "Deployment" .Release.Namespace "barbican-api" }}
+{{- if $dep }}
+  {{- $current := index (default dict $dep.metadata.annotations) "cloud.sap/tls-state" }}
+  {{- if has $current (list "disabled" "transition" "enabled") }}
+    {{- if or (and (eq $current "disabled") (eq .Values.tls.state "enabled")) (and (eq $current "enabled") (eq .Values.tls.state "disabled")) }}
+      {{- fail (printf "tls.state cannot change directly from %s to %s; move through transition first." $current .Values.tls.state) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if eq .Values.tls.state "disabled" }}
+  {{- $recName := include "barbican_api_endpoint_host_public" . }}
+  {{- $rec := lookup "disco.stable.sap.cc/v1" "Record" .Release.Namespace $recName }}
+  {{- if not (empty $rec) }}
+    {{- fail (printf "tls.state is disabled but the disco Record %s still exists. Delete it and point %s to the ingress address by hand, then re-run." $recName $recName) }}
   {{- end }}
 {{- end }}
 {{- end }}
