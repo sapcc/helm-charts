@@ -166,6 +166,7 @@ spec:
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
       {{- $workerChannel := coalesce $worker.channel $cluster.channel "release" }}
+      {{- $updateStrategy := coalesce $worker.updateStrategy $cluster.updateStrategy $.Values.defaultUpdateStrategy }}
       {{- $imageVersion:= "unset" }}
       {{- if eq $workerChannel "preRelease" }}
       {{- $imageVersion = coalesce $worker.preReleaseImageVersion $cluster.preReleaseImageVersion $.Values.preReleaseImageVersion }}
@@ -183,20 +184,23 @@ spec:
           type: baremetal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
+        {{- if not (has $updateStrategy (list "ManualInPlaceUpdate" "AutoInPlaceUpdate")) }}
         maxSurge: {{ $worker.maxSurge | default 0 }}
         maxUnavailable: {{ default 1 $worker.maxUnavailable }}
-        {{- if $worker.updateStrategy }}
-        updateStrategy: {{ $worker.updateStrategy }}
         {{- end }}
+        updateStrategy: {{ $updateStrategy }}
         zones:
         {{- toYaml $worker.zones | nindent 8 }}
         machineControllerManager:
+        {{- if eq $updateStrategy "AutoRollingUpdate" }}
           machineCreationTimeout: {{ coalesce $worker.machineCreationTimeout $cluster.machineCreationTimeout "1h20m0s" }}
           machineHealthTimeout: {{ coalesce $worker.machineHealthTimeout $cluster.machineHealthTimeout "1h0m0s" }}
           machineDrainTimeout: {{ coalesce $worker.machineDrainTimeout $cluster.machineDrainTimeout "240h0m0s" }}
-          {{- if $worker.inPlaceUpdateTimeout }}
-          inPlaceUpdateTimeout: {{ $worker.inPlaceUpdateTimeout }}
-          {{- end }}
+        {{- else if has $updateStrategy (list "ManualInPlaceUpdate" "AutoInPlaceUpdate") }}
+          inPlaceUpdateTimeout: {{coalesce $worker.inPlaceUpdateTimeout $cluster.inPlaceUpdateTimeout "1h20m0s" }}
+        {{- else }}
+          {{- fail (printf "worker %s has invalid updateStrategy '%s': must be either 'AutoRollingUpdate', 'ManualInPlaceUpdate' or 'AutoInPlaceUpdate'" $workerkey $updateStrategy) }}
+        {{- end }}
         sysctls:
           vm.hugetlb_shm_group: "64055"
           vm.unprivileged_userfaultfd: "1"
