@@ -76,7 +76,7 @@ WSGIServerMetrics On
 # Single WSGI daemon group shared by the internal (:5000) and, when enabled, the
 # external TLS (:443) vhosts. Defined at server scope so both can reference it
 # and the worker count (and thus the memory footprint) stays fixed regardless of
-# tls.enabled.
+# the TLS state.
 WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
 {{- if .Values.api.metrics.enabled }}
 # Load the worker-pool sampler into every keystone-public daemon process.
@@ -84,7 +84,7 @@ WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keys
 WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
 {{- end }}
 
-{{- if .Values.tls.enabled }}
+{{- if (include "keystone.tls.serving" .) }}
 # External HTTPS endpoint
 # mod_ssl is loaded via a conf-enabled snippet, which is parsed after
 # ports.conf, so its ssl_module-gated Listen 443 does not apply here.
