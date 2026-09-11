@@ -105,3 +105,17 @@ groups:
     annotations:
       description: "Maillog entries older than 30 days found in {{`{{ $labels.region }}`}}."
       summary: "Maillog compliance violation"
+
+  - alert: KeystoneSAMLSecurityEventLogged
+    expr: opensearch_logs_keystone_saml_errors_doc_count > 0
+    for: 0m
+    labels:
+      context: compliance
+      severity: warning
+      service: keystone
+      support_group: identity
+      tier: os
+      no_alert_on_absence: "true"
+    annotations:
+      summary: "SAML security event logged in keystone-api ({{`{{ $labels.region }}`}})"
+      description: "mod_shib logged a WARN/ERROR for Shibboleth or XMLTooling.Signature in monsoon3/keystone-api in the last 5m. Check OpenSearch logs-* for 'Shibboleth' + 'WARN'/'ERROR'."
