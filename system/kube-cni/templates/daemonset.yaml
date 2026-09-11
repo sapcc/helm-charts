@@ -34,13 +34,14 @@ spec:
         - name: cni-plugin
           mountPath: /opt/cni/bin
 {{- if .Values.plugins.multus }}
+      {{- $multusMajor := .Values.images.multus.tag | toString | trimPrefix "v" | splitList "." | first | int }}
       - name: install-multus-cni-plugin
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.multus.image }}:{{ .Values.images.multus.tag }}"
         command:
         - cp
         args:
         - -f
-        - /multus-cni/multus-cni
+        - {{ if ge $multusMajor 4 }}/multus-cni/multus{{ else }}/multus-cni/multus-cni{{ end }}
         - /opt/cni/bin/multus-cni
         volumeMounts:
         - name: cni-plugin
