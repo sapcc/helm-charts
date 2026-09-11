@@ -28,7 +28,7 @@ spec:
     spec:
       affinity:
         {{- toYaml $hypervisor.pod.affinity | nindent 8 }}
-      hostNetwork: true # TODO: replace with multus
+      hostNetwork: true
       hostAliases:
       {{- range $ip := .Values.rabbitmq.externalIPs }}
       - ip: {{ $ip }}
@@ -71,7 +71,7 @@ spec:
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
                 - SYS_PTRACE
-          command: ["sh", "-c"]
+          command: ["dumb-init", "/bin/bash", "-c"]
           args:
             - |
               set -xe
@@ -82,15 +82,10 @@ spec:
                 update-alternatives --set ebtables /usr/sbin/ebtables-legacy || true
               fi
 
+              export OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS="${HOSTNAME/*-}:bond0"
               # Start the linuxbridge agent
               exec neutron-linuxbridge-agent --debug
           env:
-            - name: BUILDING_BLOCK
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/bb']
-            - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
-              value: "$(BUILDING_BLOCK):bond0"
             - name: OS_SECURITYGROUP__FIREWALL_DRIVER
               value: "iptables"
           volumeMounts:
@@ -124,10 +119,75 @@ spec:
           - mountPath: /lib/modules
             name: modules
             readOnly: true
+        {{- if $hypervisor.deploy_dhcp_agent }}
+        - name: neutron-dhcp-agent
+          image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/az.conf"]
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: SPT_NOENV
+              value: "yes,please"
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
+          readinessProbe:
+            exec:
+              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+          securityContext:
+            privileged: true
+          resources:
+{{ toYaml $.Values.pod.resources.dhcp_agent | indent 12 }}
+          volumeMounts:
+            - name: metadata-proxy
+              mountPath: /run/metadata_proxy
+            - name: modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: logvol
+              mountPath: /dev/log
+              readOnly: false
+            - name: etc-neutron-dhcp-agent
+              mountPath: /etc/neutron
+              readOnly: true
+            - name: etc
+              mountPath: /etc/sudoers
+              subPath: sudoers
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: neutron-metadata-agent
+          image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets","--config-file", "/etc/neutron/metadata-agent.ini"]
+          env:
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: DEBUG_CONTAINER
+              value: "false"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
+          resources:
+{{  toYaml $.Values.pod.resources.metadata_agent | indent 12 }}
+          volumeMounts:
+            - name: metadata-proxy
+              mountPath: /run/metadata_proxy
+            - name: etc-neutron-metadata-agent
+              mountPath: /etc/neutron
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        {{- end }}
       dnsConfig:
         searches:
           - {{ .Values.global.region }}.{{ .Values.global.tld }}
       volumes:
+      - name: logvol
+        hostPath:
+          path: /dev/log
+      - name: metadata-proxy
+        emptyDir: {}
       - name: run
         hostPath:
           path: /run
@@ -152,3 +212,52 @@ spec:
       - name: host
         hostPath:
             path: "/"
+      - name: etc-neutron-dhcp-agent
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              name: {{ .Release.Name }}-etc
+              items:
+              - key: neutron.conf
+                path: neutron.conf
+              - key: logging.ini
+                path: logging.ini
+              - key: rootwrap.conf
+                path: rootwrap.conf
+              - key: dnsmasq.conf
+                path: dnsmasq.conf
+              - key: dhcp.filters
+                path: rootwrap.d/dhcp.filters
+              - key: dhcp-agent.ini
+                path: dhcp-agent.ini
+              - key: az.conf
+                path: az.conf
+          - secret:
+              name: neutron-common-secrets
+              items:
+                - key: neutron-common-secrets.conf
+                  path: secrets/neutron-common-secrets.conf
+      - name: etc-neutron-metadata-agent
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              name: {{ .Release.Name }}-etc
+              items:
+              - key: neutron.conf
+                path: neutron.conf
+              - key: logging.ini
+                path: logging.ini
+              - key: metadata-agent.ini
+                path: metadata-agent.ini
+          - secret:
+              name: neutron-common-secrets
+              items:
+                - key: neutron-common-secrets.conf
+                  path: secrets/neutron-common-secrets.conf
+          - secret:
+              name: neutron-metadata-secrets
+              items:
+                - key: neutron-metadata-secrets.conf
+                  path: secrets/neutron-metadata-secrets.conf
