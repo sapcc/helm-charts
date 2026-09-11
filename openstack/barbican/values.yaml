@@ -564,6 +564,16 @@ barbican_nanny:
   interval: 1
   db_secret_move:
     enabled: false
+  db_cleanup:
+    enabled: false
+    # Number of rows deleted per committed batch (see barbican-manage db clean --batch-size)
+    batch_size: 1000
+    # Minimum age of soft-deleted rows to hard-delete (days); -1 means all
+    min_num_days: 30
+    # Sleep time in minutes between cleanup runs
+    interval: 60
+    clean_unassociated_projects: false
+    soft_delete_expired_secrets: false
 
 # SCIBPL-218: restrict kubectl exec / port-forward / attach on the
 # barbican-api pods via a ValidatingAdmissionPolicy (K8s >= 1.30).
