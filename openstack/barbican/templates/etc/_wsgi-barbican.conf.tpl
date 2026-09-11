@@ -16,7 +16,7 @@ WSGIDaemonProcess barbican-api processes={{ .Values.api.processes | default 1 }}
 
 Listen 0.0.0.0:{{ .Values.api_port_internal }}
 
-{{- if .Values.tls.enabled }}
+{{- if (include "barbican.tls.serving" .) }}
 # External HTTPS endpoint
 # mod_ssl is loaded via a conf-enabled snippet, which is parsed after
 # ports.conf, so its ssl_module-gated Listen 443 does not apply here.
