@@ -12,6 +12,35 @@
 {{- end -}}
 {{- end -}}
 
+{{/* MariaDB data directory (datadir mount point). */}}
+{{- define "mariadb.dataDir" -}}
+/var/lib/mysql
+{{- end -}}
+
+{{/* Name of the data PVC; keeps the deployment claimName and the volume alert in sync. */}}
+{{- define "mariadb.dataPvcName" -}}
+{{- .Values.persistence_claim.name | default (include "fullName" .) -}}
+{{- end -}}
+
+{{/* Name of the dedicated slow-log PVC referenced by the deployment. */}}
+{{- define "mariadb.slowLogPvcName" -}}
+{{- .Values.slow_query_log.persistence.name | default (printf "%s-logs" (include "fullName" .)) -}}
+{{- end -}}
+
+{{/* Directory the slow query log lives in (dedicated volume mount point). */}}
+{{- define "mariadb.slowLogDir" -}}
+{{- .Values.slow_query_log.file | dir -}}
+{{- end -}}
+
+{{/* Directory scanned by the slow-log cleanup: the dedicated volume when enabled, else the datadir. */}}
+{{- define "mariadb.slowLogCleanupDir" -}}
+{{- if .Values.slow_query_log.persistence.enabled -}}
+{{- include "mariadb.slowLogDir" . -}}
+{{- else -}}
+{{- include "mariadb.dataDir" . -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "mariadb.resolve_secret_squote" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}

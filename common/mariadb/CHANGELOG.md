@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.43.0 - 2026/09/11
+* prune slow-query logs older than `slow_query_log.cleanup.max_age_days` (default 14) on pod init
+* optionally write the slow query log to a dedicated PVC (`slow_query_log.persistence`); it is written per-pod as `<dir>/<pod>-slow.log` so `cleanup` prunes it across restarts, and the PVC auto-provisions as `<release>-mariadb-logs` by default
+* opt-in data-PVC free-space warning at `alerts.pvc_free_enabled` (threshold `alerts.pvc_free_threshold`, default 0.20)
+* fix `context` label typo (`datbase`) on the too-many-connections alert
+* chart version bumped
+
 ## v0.42.2 - 2026/08/25
 * MariaDB version updated to [10.11.19](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.19)
 * `maria-back-me-up` updated to `10.11-20260825091346`
