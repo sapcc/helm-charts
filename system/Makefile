@@ -175,7 +175,7 @@ build-metal-operator-remote:
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml | \
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - | \
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration" and .kind != "DaemonSet")' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - \
 		> metal-operator-remote/managedresources/crds-and-rbac.yaml
