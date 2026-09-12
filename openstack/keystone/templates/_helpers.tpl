@@ -111,3 +111,63 @@ Empty values are skipped so callers may pass "" for optional dependencies.
         {{- printf "http://prodel.%s.svc/check-delete_project/%%(project_id)s" $ns -}}
     {{- end }}
 {{- end }}
+
+{{- define "keystone.tls.serving" -}}
+{{- if or (eq .Values.tls.state "transition") (eq .Values.tls.state "enabled") -}}true{{- end -}}
+{{- end -}}
+
+{{- define "keystone.tls.ingressActive" -}}
+{{- if or (eq .Values.tls.state "disabled") (eq .Values.tls.state "transition") -}}true{{- end -}}
+{{- end -}}
+
+{{- define "keystone.tls.validate" -}}
+{{- if not (has .Values.tls.state (list "disabled" "transition" "enabled")) }}
+  {{- fail "tls.state must be one of: disabled, transition, enabled" }}
+{{- end }}
+{{- if include "keystone.tls.serving" . }}
+  {{- if not .Values.tls.keyGeneration }}
+    {{- fail "tls.keyGeneration is required when TLS is serving (options: go-crypto, hsm-entropy, hsm-full, tpm-entropy)" }}
+  {{- end }}
+  {{- if not .Values.tls.keyWrapping }}
+    {{- fail "tls.keyWrapping is required when TLS is serving (options: none, vault-transit, hsm, tpm)" }}
+  {{- end }}
+  {{- if not .Values.tls.keyStorage }}
+    {{- fail "tls.keyStorage is required when TLS is serving (options: internal-k8s-secret, k8s-secret, vault-secret)" }}
+  {{- end }}
+  {{- if and (eq .Values.tls.keyWrapping "none") (eq .Values.tls.keyStorage "k8s-secret") (not .Values.tls.allowInsecureStorage) }}
+    {{- fail "tls: unwrapped keys cannot be stored as plain-text K8s Secrets. Set tls.keyWrapping or tls.keyStorage, or set tls.allowInsecureStorage: true to acknowledge." }}
+  {{- end }}
+  {{- if not .Values.global.keystone_external_ip }}
+    {{- fail "TLS serving requires global.keystone_external_ip: the public TLS Service only renders once the external IP is set." }}
+  {{- end }}
+  {{- /* Guard the CSP script-src hash against drift: the TLS vhost pins a
+         sha256 of the WebSSO callback's inline auto-submit script, and Helm
+         cannot recompute a base64 digest, so fail loudly if the script changes
+         and both pins must be refreshed together. */}}
+  {{- $ssoTpl := include (print $.Template.BasePath "/etc/_sso_callback_template.html.tpl") . }}
+  {{- $ssoParts := splitList "<script type=\"text/javascript\">" $ssoTpl }}
+  {{- if lt (len $ssoParts) 2 }}
+    {{- fail "SSO callback template: could not locate the <script> block; update the CSP script-src hash guard in keystone.tls.validate." }}
+  {{- end }}
+  {{- $ssoScript := index (splitList "</script>" (index $ssoParts 1)) 0 }}
+  {{- if ne (sha256sum $ssoScript) "a016a19411507a6fa732cd49c20701074dc7cbc9d18797bca8419339cc6602e3" }}
+    {{- fail "SSO callback inline script changed; recompute the CSP script-src hash (sha256/base64 of the <script> body) in etc/_wsgi-keystone.conf.tpl and update the pinned hash here." }}
+  {{- end }}
+{{- end }}
+{{- $dep := lookup "apps/v1" "Deployment" .Release.Namespace (printf "%s-api" .Release.Name) }}
+{{- if $dep }}
+  {{- $current := index (default dict $dep.metadata.annotations) "cloud.sap/tls-state" }}
+  {{- if has $current (list "disabled" "transition" "enabled") }}
+    {{- if or (and (eq $current "disabled") (eq .Values.tls.state "enabled")) (and (eq $current "enabled") (eq .Values.tls.state "disabled")) }}
+      {{- fail (printf "tls.state cannot change directly from %s to %s; move through transition first." $current .Values.tls.state) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if eq .Values.tls.state "disabled" }}
+  {{- $recName := printf "%s.%s.%s" .Values.services.public.host .Values.global.region .Values.global.tld }}
+  {{- $rec := lookup "disco.stable.sap.cc/v1" "Record" .Release.Namespace $recName }}
+  {{- if not (empty $rec) }}
+    {{- fail (printf "tls.state is disabled but the disco Record %s still exists. Delete it and point %s to the ingress address by hand, then re-run." $recName $recName) }}
+  {{- end }}
+{{- end }}
+{{- end }}
