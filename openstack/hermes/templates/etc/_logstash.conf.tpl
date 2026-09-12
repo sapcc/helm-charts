@@ -576,6 +576,7 @@ output {
   {{- if .Values.logstash.audit }}
   if [type] == 'audit' {
     if (([initiator][domain] == 'Default' and [initiator][name] == 'admin') or [initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') or [observer][typeURI] == 'service/data/security/keymanager' or [target][typeURI] ==  'data/security/project' {
+      {{- if .Values.logstash.octobus.enabled }}
       http {
         id => "output_octobus_audit"
         ssl_certificate_authorities => "/usr/share/logstash/config/ca.pem"
@@ -585,6 +586,7 @@ output {
         automatic_retries => 60
         retry_non_idempotent => true
       }
+      {{- end }}
       {{- if .Values.logstash.kafka.enabled }}
       # Kafka output mirroring the Octobus audit filter above.
       # Public CA, no client credentials at present (SSL server-auth only).
