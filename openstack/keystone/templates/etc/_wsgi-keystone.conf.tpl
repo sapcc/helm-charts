@@ -158,9 +158,15 @@ Listen 0.0.0.0:443
     </IfVersion>
     ErrorLog /dev/stdout
 
+    {{- if .Values.use_json }}
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout json_combined env=!forwarded
+    CustomLog /dev/stdout json_proxy env=forwarded
+    {{- else }}
     SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
     CustomLog /dev/stdout combined env=!forwarded
     CustomLog /dev/stdout proxy env=forwarded
+    {{- end }}
 
     KeepAliveTimeout 61
 
