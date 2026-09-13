@@ -4,6 +4,8 @@ kind: Secret
 metadata:
   name: {{ .Release.Namespace }}-auth
   namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
 type: greenhouse.sap/orgsecret
 data:
 {{- if .Values.global.oidc.enabled }}
@@ -28,6 +30,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: registry-mirrors
+  annotations:
+    "helm.sh/resource-policy": keep
 data:
   containerRegistryConfig: |
 {{- if and .Values.organization.registryAuth .Values.organization.registryAuth.secretName }}
@@ -47,6 +51,8 @@ kind: Secret
 metadata:
   name: {{ .Values.organization.registryAuth.secretName }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
 type: Opaque
 {{- end }}
 ---
@@ -55,6 +61,8 @@ apiVersion: greenhouse.sap/v1alpha1
 kind: Organization
 metadata:
   name: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   description: Greenhouse organization
   mappedOrgAdminIdPGroup: {{ required ".Values.teams.admin.mappedIdPGroup missing" .Values.teams.admin.mappedIdPGroup }}
