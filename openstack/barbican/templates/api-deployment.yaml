@@ -43,6 +43,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- if .Values.apacheMetrics.enabled }}
+        prometheus.io/port_1: {{ .Values.apacheMetrics.port | quote }}
+        {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- if .Values.rbac.enabled }}
@@ -145,6 +148,12 @@ spec:
               mountPath: /etc/apache2/conf-enabled/wsgi-barbican.conf
               subPath: wsgi-barbican.conf
               readOnly: true
+            {{- if .Values.apacheMetrics.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/status.conf
+              subPath: status.conf
+              readOnly: true
+            {{- end }}
             - name: wsgi-barbican
               mountPath: /var/www/cgi-bin/barbican
             - name: barbican-apache-run
@@ -274,6 +283,19 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
+        {{- if .Values.apacheMetrics.enabled }}
+        - name: apache-exporter
+          image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.apacheMetrics.image }}:{{ .Values.apacheMetrics.imageTag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --scrape_uri=http://127.0.0.1:{{ .Values.api_port_internal }}/server-status?auto
+          ports:
+            - name: apache-metrics
+              containerPort: {{ .Values.apacheMetrics.port }}
+          {{- if .Values.apacheMetrics.resources }}
+          resources: {{ toYaml .Values.apacheMetrics.resources | nindent 12 }}
+          {{- end }}
+        {{- end }}
       volumes:
         - name: barbican-etc
           configMap:
