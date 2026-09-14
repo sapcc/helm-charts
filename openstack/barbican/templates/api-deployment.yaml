@@ -38,6 +38,12 @@ spec:
         alert-service: barbican
         {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
         {{- include "utils.topology.pod_label" . | nindent 8 }}
+        {{- if (include "barbican.tls.serving" .) }}
+        # Marks pods that actually listen on :443 so the public TLS Service
+        # (which selects on this) never routes to old non-TLS pods still
+        # running during a disabled->transition rollout.
+        cloud.sap/tls-serving: "true"
+        {{- end }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
