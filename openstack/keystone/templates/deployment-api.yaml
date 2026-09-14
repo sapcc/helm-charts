@@ -43,6 +43,12 @@ spec:
         alert-tier: os
         alert-service: keystone
         app: keystone
+        {{- if (include "keystone.tls.serving" .) }}
+        # Marks pods that actually listen on :443 so the public TLS Service
+        # (which selects on this) never routes to old non-TLS pods still
+        # running during a disabled->transition rollout.
+        cloud.sap/tls-serving: "true"
+        {{- end }}
       annotations:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
