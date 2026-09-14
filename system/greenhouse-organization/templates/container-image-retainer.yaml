@@ -3,11 +3,15 @@ kind: ServiceAccount
 metadata:
   name: container-image-retainer
   namespace: greenhouse
+  annotations:
+    "helm.sh/resource-policy": keep
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: container-image-retainer
+  annotations:
+    "helm.sh/resource-policy": keep
 rules:
   - apiGroups:
       - ""
@@ -23,6 +27,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: container-image-retainer
+  annotations:
+    "helm.sh/resource-policy": keep
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -36,6 +42,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: container-image-retainer
+  annotations:
+    "helm.sh/resource-policy": keep
 data:
   retain.sh: |
     {{- .Files.Get "etc/retain.sh" | nindent 4 }}
@@ -44,6 +52,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: container-image-retainer
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   schedule: '0 1 * * *'
   concurrencyPolicy: Forbid

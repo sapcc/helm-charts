@@ -3,6 +3,8 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ingress-ca-cert
+  annotations:
+    "helm.sh/resource-policy": keep
 data:
   ca.crt: {{ required "missing ingress ca cert: .Values.global.caCert" .Values.global.caCert | b64enc | quote }}
 ---
@@ -11,6 +13,8 @@ kind: Plugin
 metadata:
   name: alerts
   namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
   labels:
     "greenhouse.sap/owned-by": {{ .Values.alerts.supportGroup | default .Values.global.supportGroup }}
 spec:
