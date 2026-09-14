@@ -39,7 +39,8 @@ spec:
             - ALL
         targets:
         - istioGateway:
-            create: false
+            create: true
+            tlsSecretRef: {{ .Values.extensions.oidcAppsController.tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: credativ--plutono
@@ -52,7 +53,8 @@ spec:
               gardener.cloud/role: shoot
           targetPort: 3000
         - istioGateway:
-            create: false
+            create: true
+            tlsSecretRef: {{ .Values.extensions.oidcAppsController.tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: prometheus--prometheus
@@ -69,7 +71,8 @@ spec:
               gardener.cloud/role: shoot
           targetPort: 9090
         - istioGateway:
-            create: false
+            create: true
+            tlsSecretRef: {{ .Values.extensions.oidcAppsController.tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
             labels:
               endpoint.shoot.gardener.cloud/advertise: "true"
               endpoint.shoot.gardener.cloud/application: prometheus--alertmanager
@@ -82,7 +85,8 @@ spec:
               gardener.cloud/role: shoot
           targetPort: 9093
         - istioGateway:
-            create: false
+            create: true
+            tlsSecretRef: {{ .Values.extensions.oidcAppsController.tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
           labelSelector:
             matchLabels:
               component: plutono
@@ -92,7 +96,8 @@ spec:
               kubernetes.io/metadata.name: garden
           targetPort: 3000
         - istioGateway:
-            create: false
+            create: true
+            tlsSecretRef: {{ .Values.extensions.oidcAppsController.tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
           labelSelector:
             matchLabels:
               component: alertmanager
@@ -147,6 +152,8 @@ kind: NetworkPolicy
 metadata:
   name: egress-oidc-apps-to-virtual-garden-kube-apiserver
   namespace: {{ .metadata.name }}
+  annotations:
+    description: Deployed for each shoot namespace to allow oidc-apps-controller controlled pods to reach the virtual garden kube-apiserver. Is created when new shoot namespaces are created and deleted when shoot namespaces are deleted.
 spec:
   podSelector:
     matchLabels:
