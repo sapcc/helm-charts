@@ -1,0 +1,67 @@
+# Throwaway workerless metalapi shoot for testing metal-operator-remote-v2 via the
+# dual-deployment-operator, WITHOUT touching the production metal shoot m-qa-de-1.
+#
+# Modeled on the live production shoot g-qa-de-1 / garden / m-qa-de-1 (an openstack,
+# workerless "control-plane only" metalapi cluster), with everything cluster-specific
+# renamed and the production observability/auth wiring stripped.
+#
+# CREATE IT:
+#   - Gardener dashboard (g-qa-de-1) -> project "cp" (namespace: garden) ->
+#     Create Cluster -> paste this YAML in the YAML editor, or use the
+#     workerless / control-plane-only flow and mirror these fields.
+#   - Or: u8s kubectl --context g-qa-de-1 -n garden apply -f shoot-test-qa-de-1.yaml
+#
+# NAMING (derived, do NOT hand-set spec.dns.domain — Gardener assigns it):
+#   - shoot name .......... test-qa-de-1
+#   - project ............. cp   (namespace "garden" -> CP-namespace prefix "shoot--cp--")
+#   - seed ................ rt-qa-de-1
+#   => seed CP namespace .. shoot--cp--test-qa-de-1   (use as the operator CR metadata.namespace)
+#   => apiserver host ..... api.test-qa-de-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap
+#      (read the real value after creation:
+#       u8s kubectl --context g-qa-de-1 -n garden get shoot test-qa-de-1 -o jsonpath='{.spec.dns.domain}')
+#
+# TEARDOWN (order matters): delete the operator CR on the seed first so the operator
+# tears down the objects it applied, THEN delete this shoot from the dashboard.
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: test-qa-de-1
+  namespace: garden
+  labels:
+    cluster-type: sci-k8s-metalapi
+    metadata.greenhouse.sap/region: qa-de-1
+    greenhouse.sap/owned-by: containers
+  annotations:
+    shoot.gardener.cloud/tasks: deployInfrastructure,deployDNSRecordIngress
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
+  provider:
+    type: openstack
+    # workerless: no workers, no infrastructureConfig — pure control plane (metalapi)
+  purpose: evaluation
+  region: qa-de-1
+  seedName: rt-qa-de-1
+  kubernetes:
+    version: "1.34.8"
+    kubeAPIServer:
+      encryptionConfig:
+        provider:
+          type: aescbc
+        resources:
+          - configmaps
+          - bmcsecrets
+  networking:
+    ipFamilies:
+      - IPv4
+    # Must NOT overlap the production shoot m-qa-de-1 (services: 10.55.0.0/16).
+    services: 10.56.0.0/16
+  hibernation:
+    enabled: false
+  maintenance:
+    autoUpdate:
+      kubernetesVersion: true
+    timeWindow:
+      begin: "030000+0000"
+      end: "040000+0000"
