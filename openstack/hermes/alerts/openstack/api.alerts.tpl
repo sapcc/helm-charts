@@ -283,7 +283,7 @@ groups:
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: warning
+      severity: critical
       support_group: observability
       tier: os
       meta: "Log Router admin-tier write errors — compliance audit copies may be missing from the admin bucket"
