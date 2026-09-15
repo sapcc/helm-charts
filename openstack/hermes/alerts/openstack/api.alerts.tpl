@@ -50,6 +50,7 @@ groups:
 
   - alert: OpenstackHermesRabbitMQUnack
     expr: sum(rabbitmq_queue_messages_unacked{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 10000
+    for: 15m
     labels:
       context: rabbitmq
       severity: warning
@@ -171,6 +172,7 @@ groups:
 
   - alert: OpenstackHermesLogstashPlugins
     expr: sum(increase(logstash_stats_pipeline_plugin_events_out[30m])) <= 0
+    for: 15m
     labels:
       context: logstash
       severity: warning
@@ -194,6 +196,7 @@ groups:
       tier: os
       support_group: observability
       service: hermes
+      no_alert_on_absence: "true" # kafka output is disabled by default; metric is absent when logstash.kafka.enabled=false
       dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash Kafka output plugin is failing to deliver audit events"
@@ -204,6 +207,7 @@ groups:
 
   - alert: OpenstackHermesLogstashPluginsJDBCStaticFailure
     expr: sum(rate(logstash_stats_pipeline_plugin_bulk_requests_errors{namespace=~"hermes",plugin="jdbc_static"}[10m])) + sum(rate(logstash_stats_pipeline_plugin_documents_non_retryable_failures{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
+    for: 5m
     labels:
       context: logstash
       severity: warning
@@ -262,7 +266,7 @@ groups:
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: critical
+      severity: warning
       support_group: observability
       tier: os
       meta: "Log Router is routing audit data to the DLQ after exhausting flush retries — data is not landing in the customer S3 bucket"

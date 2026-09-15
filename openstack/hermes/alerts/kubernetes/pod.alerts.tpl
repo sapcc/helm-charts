@@ -44,7 +44,7 @@ groups:
           support_group: observability
           tier: os
           service: hermes
-          severity: info
+          severity: warning
           context: memory
           dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
@@ -62,7 +62,7 @@ groups:
           support_group: observability
           tier: os
           service: hermes
-          severity: warning
+          severity: critical
           context: pod
           dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
