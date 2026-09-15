@@ -18,6 +18,9 @@ spec:
         type: dns
       annotations:
         checksum/unbound.config: {{ include "unbound/templates/config.yaml" . | sha256sum }}
+        {{- if hasPrefix "qa-" .Values.global.region }}
+        deployment/enforced-by-randomness: {{ randBytes 256 | sha256sum }}
+        {{- end }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
     spec:
