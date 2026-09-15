@@ -1,13 +1,15 @@
 - name: RAILS_ENV
   value: {{ .Values.rails_env | quote }}
+- name: ENFORCE_NATURAL_USER_LOGIN
+  value: {{ .Values.enforce_natural_user_login | quote }}
 - name: HAS_KEYSTONE_ROUTER
   value: {{ .Values.has_keystone_router | quote }}
 - name: MONSOON_DASHBOARD_REGION
   value: {{ .Values.monsoon_dashboard_region | quote }}
 - name: MONSOON_DASHBOARD_LANDSCAPE
   value: {{ .Values.monsoon_dashboard_landscape | quote }}
-- name: MONSOON_DASHBOARD_MAIL_SERVER
-  value: {{ .Values.monsoon_dashboard_mail_server | quote }}
+- name: LIMES_MAIL_SERVER_API_ENDPOINT
+  value: {{ .Values.limes_mail_server_endpoint | quote }}
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
 - name: MONSOON_DASHBOARD_CAM_URL
@@ -19,39 +21,54 @@
 - name: MONSOON_OPENSTACK_AUTH_API_ENDPOINT
   value: {{ include "keystone_url" . | quote }}
 {{- end }}
+- name: MONSOON_OPENSTACK_AUTH_API_PUBLIC_ENDPOINT
+  value: {{ .Values.keystone_public_endpoint | default (printf "https://identity-3.%s.%s/v3/auth/tokens" .Values.global.region .Values.global.tld) | quote }}
 - name: MONSOON_OPENSTACK_AUTH_API_USERID
   value: {{ .Values.monsoon_openstack_auth_api_userid | quote }}
+- name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: monsoon.openstack.auth.api.password } }
+- name: APP_CRED_ID
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_id, optional: true } }
+- name: APP_CRED_SECRET
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_secret, optional: true } }
 - name: MONSOON_OPENSTACK_AUTH_API_DOMAIN
   value: {{ .Values.monsoon_openstack_auth_api_domain | quote }}
+- name: MONSOON_OPENSTACK_SSO_STRICT_MODE
+  value: {{ .Values.monsoon_openstack_sso_strict_mode | quote }}
+- name: MONSOON_OPENSTACK_PASSWORD_SYNC_ONLY
+  value: {{ .Values.monsoon_openstack_password_sync_only | quote }}
 - name: TWO_FACTOR_AUTHENTICATION
   value: {{ .Values.two_factor_authentication | quote }}
 - name: TWO_FACTOR_RADIUS_SERVERS
   value: {{ .Values.two_factor_radius_servers | quote }}
 - name: TWO_FACTOR_RADIUS_SECRET
-  value: {{ .Values.two_factor_radius_secret | quote }}
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: two-factor-radius-secret } }
 - name: TWO_FACTOR_AUTH_DOMAINS
   value: {{ .Values.two_factor_auth_domains | quote }}
-- name: SWIFT_RESELLERADMIN_PROJECT
-  value: {{ .Values.swift_reselleradmin_project | quote }}
-- name: SWIFT_RESELLERADMIN_ROLE
-  value: {{ .Values.swift_reselleradmin_role | quote }}
-- name: SWIFT_RESELLERADMIN_PROJECT_DOMAIN
-  value: {{ .Values.swift_reselleradmin_project_domain | quote }}
-- name: SWIFT_RESELLERADMIN_REGION
-  value: {{ .Values.swift_reselleradmin_region | quote }}
+- name: MONSOON_DB_NAME
+  value: {{ .Values.postgresql.database_name | default "monsoon-dashboard_production" | quote }}
+- name: MONSOON_DB_USER
+  value: {{ .Values.postgresql.user | quote }}
 - name: MONSOON_DB_PASSWORD
-  valueFrom: { secretKeyRef:    { name: {{ template "postgresql.fullname" . }}, key: postgres-password } }
-- name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
-  valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.openstack.auth.api.password } }
+  valueFrom:
+    secretKeyRef:
+      name: '{{ $.Release.Name }}-pguser-{{ .Values.postgresql.user }}'
+      key: 'postgres-password'
 - name: MONSOON_RAILS_SECRET_TOKEN
-  valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.rails.secret.token } }
+  valueFrom: { secretKeyRef:    { name: elektra-token, key: token } }
 {{- if .Values.sentryDSN }}
 - name: SENTRY_DSN
 {{- if eq .Values.sentryDSN "auto" }}
   valueFrom: { secretKeyRef:    { name: sentry, key: elektra.DSN } }
 {{- else }}
-  valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: sentryDSN } }
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: sentryDSN } }
 {{- end }}
 {{- end }}
 - name: DOMAIN_MASTERDATA_INHERITANCE_BLACKLIST
   value: hcp03,monsoon3
+- name: CEREBRO_CUSTOM_ENDPOINT
+  value: {{ .Values.cerebro_custom_endpoint | quote }}
+- name: FEEDBACK_RECIPIENT_EMAIL
+  value: {{ .Values.feedback_recipient_email | quote }}
+- name: SSO_PRECHECK_ENABLED
+  value: {{ .Values.sso_precheck_enabled | quote }}  

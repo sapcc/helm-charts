@@ -1,6 +1,7 @@
 {{- define "ironic_deployment" -}}
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
+{{- $cellName := include "nova.helpers.cell_name" (tuple . "cell1") }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -9,6 +10,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-compute
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -25,75 +30,120 @@ spec:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
         name: nova-compute-{{$hypervisor.name}}
+        alert-tier: os
+        alert-service: nova
         hypervisor: "ironic"
       annotations:
+        {{- if $hypervisor.default.statsd_enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
+        secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1"))) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-compute
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-nova-compute:{{.Values.imageVersionNovaCompute | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersion or similar" }}
+          image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          command:
-            - dumb-init
-            - kubernetes-entrypoint
+          command: ["nova-compute"]
           env:
-            - name: COMMAND
-              value: "nova-compute"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: {{ .Chart.Name }}.DSN.python
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
 {{- if or $hypervisor.python_warnings .Values.python_warnings }}
-            - name: PYTHONWARNINGS
-              value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
+          - name: PYTHONWARNINGS
+            value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
 {{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           {{- if .Values.pod.resources.hv_ironic }}
           resources:
 {{ toYaml .Values.pod.resources.hv_ironic | indent 12 }}
           {{- end }}
           volumeMounts:
             - mountPath: /etc/nova
-              name: etcnova
-            - mountPath: /etc/nova/nova.conf
               name: nova-etc
-              subPath: nova.conf
-              readOnly: true
-            - mountPath: /etc/nova/policy.json
-              name: nova-etc
-              subPath: policy.json
-              readOnly: true
-            - mountPath: /etc/nova/logging.ini
-              name: nova-etc
-              subPath: logging.ini
-              readOnly: true
-            - mountPath: /etc/nova/nova-compute.conf
-              name: hypervisor-config
-              subPath: nova-compute.conf
-              readOnly: true
             - mountPath: /nova-patches
               name: nova-patches
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if $hypervisor.default.statsd_enabled }}
+        - name: statsd
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: {{ $hypervisor.default.statsd_port }}
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
+        {{- end }}
       volumes:
-        - name: etcnova
-          emptyDir: {}
-        - name: nova-etc
-          configMap:
-            name: nova-etc
-        - name: nova-patches
-          configMap:
-            name: nova-patches
-        - name: hypervisor-config
-          configMap:
-            name: nova-compute-{{$hypervisor.name}}
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key: nova.conf
+                path: nova.conf
+              - key: policy.yaml
+                path: policy.yaml
+              - key: logging.ini
+                path: logging.ini
+          - configMap:
+              name: nova-compute-{{$hypervisor.name}}
+              items:
+              - key: nova-compute.conf
+                path: nova-compute.conf
+          - configMap:
+              name: nova-console
+              items:
+              {{- range $type := list "serial" "shellinabox" }}
+              - key: console-{{ $cellName }}-{{ $type }}.conf
+                path: nova.conf.d/console-{{ $cellName }}-{{ $type }}.conf
+              {{- end }}
+          - secret:
+              name: nova-etc
+              items:
+              - key: {{ $cellName }}.conf
+                path: nova.conf.d/{{ $cellName }}-secrets.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
+      - name: nova-patches
+        projected:
+          sources:
+          - configMap:
+              name: nova-patches
+      {{- if $hypervisor.default.statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      {{- end }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
 {{- end -}}
 {{- end -}}

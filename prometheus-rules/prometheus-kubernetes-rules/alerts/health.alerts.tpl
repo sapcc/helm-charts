@@ -2,43 +2,61 @@
 groups:
 - name: kubernetes.alerts
   rules:
-  - alert: KubernetesNodeManyNotReady
-    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 0) > 2
-    for: 1h
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      severity: critical
-      context: node
-      meta: "{{`{{ $value }}`}} nodes NotReady"
-      dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
-    annotations:
-      summary: Many Nodes are NotReady
-      description: "{{`{{ $value }}`}} nodes are NotReady for more than an hour"
-
   - alert: KubernetesNodeNotReady
     expr: sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 0)
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       meta: "{{`{{ $labels.node }}`}} is NotReady"
       dashboard: nodes?var-server={{`{{$labels.node}}`}}
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready.html
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
       inhibited_by: node-maintenance
     annotations:
       summary: Node status is NotReady
       description: Node {{`{{ $labels.node }}`}} is NotReady for more than an hour
+
+  # Duplicated from maintenance.alerts. It has multiple occurrences; make sure you change all of them if you modify this.
+  - alert: NodeInMaintenance
+    expr: max by (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 1
+    for: 2m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: info
+      context: node
+      meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
+    annotations:
+      summary: Node in maintenance
+      description: "Node {{`{{ $labels.node }}`}} is in scheduled maintenance. Add the label `inhibited_by: node-maintenance` to alerts that should be inhibited while a node is in maintenance"
+
+  - alert: KubernetesNodeManyNotReady
+    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) == 0) > 4
+    for: 1h
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: critical
+      context: node
+      meta: "{{`{{ $value }}`}} nodes NotReady"
+      dashboard: kubernetes-health
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+    annotations:
+      summary: Many Nodes are NotReady
+      description: "{{`{{ $value }}`}} nodes are NotReady for more than an hour"
 
   - alert: KubernetesNodeNotReadyFlapping
     expr: changes(kube_node_status_condition{condition="Ready",status="true"}[15m]) > 2
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       meta: "{{`{{ $labels.node }}`}}"
@@ -48,11 +66,12 @@ groups:
       description: Node {{`{{ $labels.node }}`}} is flapping between Ready and NotReady
 
   - alert: KubernetesKubeStateMetricsScrapeFailed
-    expr: absent(up{app="kube-state-metrics"})
+    expr: up{job=~".*kube-state-metrics.*"} == 0 or absent(up{job=~".*kube-state-metrics.*"})
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       dashboard: kubernetes-health
@@ -61,24 +80,55 @@ groups:
       summary: Kube state metrics scrape failed
 
   - alert: KubernetesPodRestartingTooMuch
-    expr: (sum by(pod, namespace, container, ) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod, container) group_left(label_alert_tier, label_alert_service) kube_pod_labels{} > 0
+    expr: (sum by(pod, namespace, container) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod, namespace) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
     for: 1h
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
-      service: {{ include "alertServiceLabelOrDefault" "resources" }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
+      playbook: docs/support/playbook/kubernetes/k8s_pod_restarting
     annotations:
-      description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly
+      description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
       summary: Pod is in a restart loop
+
+  - alert: KubernetesPodCannotPullContainerImage
+    expr: max by (namespace, pod) (kube_pod_container_status_waiting_reason{reason="ImagePullBackOff"} == 1) * on (namespace, pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all container images
+
+  - alert: KubernetesPodCannotPullInitContainerImage
+    expr: max by (namespace, pod) (kube_pod_init_container_status_waiting_reason{reason="ImagePullBackOff"} == 1) * on (namespace, pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all init container images"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all init container images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all init container images
 
   - alert: KubernetesTooManyOpenFiles
     expr: 100*process_open_fds{job=~"kubernetes-kubelet|kubernetes-apiserver"} / process_max_fds > 50
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: system
       meta: "{{`{{ $labels.node }}`}}"
@@ -87,51 +137,57 @@ groups:
       description: "{{`{{ $labels.job }}`}} on {{`{{ $labels.node }}`}} is using {{`{{ $value }}`}}% of the available file/socket descriptors"
       summary: Too many open file descriptors
 
-  - alert: KubernetesPVCPendingOrLost
-    expr: kube_persistentvolumeclaim_status_phase{phase=~"Pending|Lost"} == 1
-    for: 15m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      severity: info
-      context: pvc
-    annotations:
-      description: "PVC {{`{{ $labels.namespace }}`}}/{{`{{ $labels.persistentvolumeclaim }}`}} stuck in phase {{`{{ $labels.phase }}`}} since 15 min"
-      summary: "PVC stuck in phase {{`{{ $labels.phase }}`}}"
-
   - alert: KubernetesDeploymentInsufficientReplicas
-    expr: sum(kube_deployment_status_replicas) by (namespace,deployment) < sum(kube_deployment_spec_replicas) by (namespace,deployment)
+    expr: (sum(kube_deployment_status_replicas) by (namespace,deployment) < sum(kube_deployment_spec_replicas) by (namespace,deployment)) * on (namespace, deployment) group_left(label_ccloud_support_group, label_ccloud_service) (kube_deployment_labels)
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: deployment
-      severity: info
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
       context: deployment
       meta: "{{`{{ $labels.namespace }}`}}/{{`{{ $labels.deployment }}`}} has insufficient replicas"
     annotations:
       description: Deployment {{`{{ $labels.namespace }}`}}/{{`{{ $labels.deployment }}`}} only {{`{{ $value }}`}} replica available, which is less then desired
       summary: Deployment has less than desired replicas since 10m
 
-  - alert: ManyPodsNotReadyOnNode
-    expr: sum by (node) (kube_pod_status_ready_normalized{condition="true"}) / sum by (node) (kube_pod_status_phase_normalized{phase="Running"}) < 0.75 and sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 1)
-    for: 30m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      severity: critical
-      playbook: docs/support/playbook/kubernetes/k8s-pods-not-ready-on-ready-node.html
-    annotations:
-      description: "{{`{{ humanizePercentage $value }}`}} of pods are ready on node {{`{{$labels.node}}`}}. This might by due to <https://github.com/kubernetes/kubernetes/issues/84931| kubernetes #84931>. In that case a restart of the kubelet is required."
-      summary: "Less then 75% of pods ready on node"
-
   - alert: PodNotReady
     # alert on pods that are not ready but in the Running phase on a Ready node
-    expr: kube_pod_status_phase_normalized{phase="Running"} * on (pod,node, namespace)kube_pod_status_ready_normalized{condition="false"} * on (node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1
+    expr: (kube_pod_status_phase_normalized{phase="Running"} * on(pod, node, namespace) kube_pod_status_ready_normalized{condition="false"} * on(node) group_left() sum by(node) (kube_node_status_condition{condition="Ready",status="true"}) == 1) * on(pod, namespace) group_left(label_alert_tier, label_alert_service, label_cc_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))
     for: 2h
     labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: info
     annotations:
       description: "The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is not ready for more then 2h."
       summary: "Pod not ready for a long time"
+
+  - alert: PodNotSchedulable
+    expr: max by (namespace, pod) (kube_pod_status_unschedulable > 0) * on (namespace, pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels))
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot be scheduled"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot be scheduled. Check its event log with "kubectl describe pod" to see why.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all container images
+
+  - alert: PrometheusMultiplePodScrapes
+    expr: sum by(pod, namespace, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod, namespace) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
+    for: 30m
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times
+      meta: 'Prometheus is scraping {{`{{ $labels.pod }}`}} pods more than once.'
+    annotations:
+      description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations.
+      summary: Prometheus scrapes pods multiple times

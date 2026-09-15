@@ -1,0 +1,62 @@
+{{- /*
+SCIBPL-218: deny `kubectl exec` / `kubectl port-forward` / `kubectl attach`
+on the barbican-api pods that belong to this release.
+
+Enforced by a ValidatingAdmissionPolicy (K8s >= 1.30 GA) — no operator
+required. Matches on `CONNECT` requests targeting the `pods/exec`,
+`pods/portforward`, and `pods/attach` subresources in this release's
+namespace, further narrowed to Pods whose name starts with
+`barbican-api-` (the deployment-generated pod-name prefix).
+
+Break-glass: any user whose Kubernetes group membership includes at least
+one entry from `.Values.restrictPodsExec.breakGlassGroups` bypasses the
+policy. Defaults to `system:masters`; operators can widen per-cluster in
+the secrets repo.
+*/ -}}
+{{- if .Values.restrictPodsExec.enabled }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ .Release.Name }}-restrict-barbican-api-exec.cloud.sap
+  labels:
+    app: {{ template "fullname" . }}
+    system: openstack
+    component: barbican
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups:   [""]
+        apiVersions: ["v1"]
+        operations:  ["CONNECT"]
+        resources:   ["pods/exec", "pods/portforward", "pods/attach"]
+  matchConditions:
+    - name: in-release-namespace
+      expression: "request.namespace == '{{ .Release.Namespace }}'"
+    - name: is-barbican-api-pod
+      expression: "request.name.startsWith('barbican-api-')"
+    - name: user-not-in-break-glass
+      expression: >-
+        !has(request.userInfo.groups) ||
+        !request.userInfo.groups.exists(g, g in {{ .Values.restrictPodsExec.breakGlassGroups | toJson }})
+  validations:
+    - expression: "false"
+      messageExpression: >-
+        'kubectl ' + request.subResource + ' on ' + request.namespace + '/' +
+        request.name + ' is not permitted (SCIBPL-218). Use the break-glass ' +
+        'procedure if shell access is truly required.'
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ .Release.Name }}-restrict-barbican-api-exec-binding.cloud.sap
+  labels:
+    app: {{ template "fullname" . }}
+    system: openstack
+    component: barbican
+spec:
+  policyName: {{ .Release.Name }}-restrict-barbican-api-exec.cloud.sap
+  validationActions: [Deny]
+  matchResources: {}
+{{- end }}

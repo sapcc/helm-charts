@@ -1,25 +1,44 @@
+owner-info:
+  support-group: compute-storage-api
+  maintainers:
+  - Tommy Sauer
+  - Walter Boring IV
+  - Johannes Kulik
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporter/openstack-exporter
 exporter:
-   prometheus_port: 9102
-   log_level: "DEBUG"
+  prometheus_port: 9102
+  log_level: "DEBUG"
 openstack:
-   enabled: false
-   image:
-      name: openstack-exporter
-      tag: DEFINED-IN-REGION-SECRETS
-   alerts:
-      enabled: false
-      prometheus: DEFINED-IN-REGION-SECRETS
-   limits:
-      memory: 200Mi
-      cpu: 300m
-   resources:
-      memory: 100Mi
-      cpu: 150m
-   username: openstack_exporter
-   user_domain_name: Default
-   project_domain_name: ccadmin
-   project_name: cloud_admin
+  enabled: false
+  imageName: openstack-exporter
+  # imageVersion:
+  alerts:
+    enabled: false
+    # prometheus: {}
+  limits:
+    memory: 200Mi
+    cpu: 300m
+  resources:
+    memory: 100Mi
+    cpu: 150m
+  username: openstack_exporter
+  user_domain_name: Default
+  project_domain_name: ccadmin
+  project_name: cloud_admin
 global:
-   region: DEFINED-IN-REGION-SECRETS
-   openstack_exporter_master_password: DEFINED-IN-REGION-SECRETS
-   registry: DEFINED-IN-REGION-SECRETS
+  # region:
+  # openstack_exporter_master_password:
+  # registry:
+  linkerd_requested: true
+
+collectors:
+  cinderbackend:
+    expected_sharding_backends: standard_hdd, vmware, vmware_fcd
+    set_allow_unexpected_backends: true
+    # Background collection settings:
+    # refresh_interval: Seconds between background collections (0 = disabled, synchronous)
+    # When enabled, metrics are collected in background and cached for instant Prometheus scrapes
+    refresh_interval: 120
+    # serve_stale_on_error: If true, serve previous cached data on collection failure
+    # If false, return empty metrics on failure (only health metrics are returned)
+    serve_stale_on_error: False

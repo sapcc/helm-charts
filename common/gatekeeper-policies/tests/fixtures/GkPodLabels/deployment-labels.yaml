@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy
+  labels:
+    ccloud/support-group: containers
+    ccloud/service: gatekeeper
+spec:
+  template:
+    metadata:
+      labels:
+        marker: 'pod in deployment'
+        # NOTE: We do not require labels on the pod spec (see comment in the policy code for details).
+    spec:
+      containers:
+      - name: alpine
+        image: alpine:3
+      - name: ubuntu
+        image: ubuntu:rolling
+      initContainers:
+      - name: init-busybox
+        image: busybox:latest

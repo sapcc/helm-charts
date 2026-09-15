@@ -1,0 +1,134 @@
+global:
+  region: '@/cc/secrets'
+  domain: '@/cc/secrets'
+
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
+ldap:
+  host: '@/cc/secrets'
+  port: 636
+  ssl: true
+  ssl_skip_verify: false
+  password: '@/cc/secrets'
+  suffix: '@/cc/secrets'
+  bind_dn: '@/cc/secrets'
+  filter: '@/cc/secrets'
+  group_search_base_dns: '@/cc/secrets'
+  search_filter: '@/cc/secrets'
+  search_base_dbs: '@/cc/secrets'
+  members: '@/cc/secrets'
+  monitoring_user: '@/cc/secrets'
+  monitoring_editor: '@/cc/secrets'
+  monitoring_admin: '@/cc/secrets'
+
+image:
+  pullPolicy: Always
+
+plutono:
+  tls: true
+  disco: true
+  image: credativ/plutono
+  image_version: latest
+  minitrue_version: v1.0.2
+  log_level: 'Info'
+  admin:
+    user: 'plutono_admin'
+    password: '@/cc/secrets'
+  local:
+    user: 'local'
+    password: '@/cc/secrets'
+  db:
+    type: 'postgres'
+    host: 'postgres.plutono'
+    ssl_mode: disable
+  role:
+    viewer: 'monitoring_viewer'
+    editor: 'monitoring_editor'
+    admin: 'monitoring_admin'
+  port:
+    public: '3000'
+  endpoint:
+    port:
+      public: '3000'
+    host:
+      public: '@/cc/secrets'
+  auth:
+    basic_auth:
+      enabled: true
+    tls_client_auth:
+      enabled: true
+      secret: "kube-system/ingress-cacrt"
+    ldap:
+      enabled: true
+    anonymous:
+      enabled: false
+  oauth:
+    enabled: false
+  content:
+    persistence:
+      enabled: false
+  gitsync:
+    repository: null
+
+ingress:
+  enabled: false
+  global: false
+
+# For kiosk mode
+nginx:
+  enabled: false
+  port:
+    public: '3001'
+  endpoint:
+    port:
+      public: '3001'
+    host:
+      public: '@/cc/secrets'
+
+postgresql:
+  persistence:
+    enabled: false
+  alerts:
+    support_group: observability
+  databases:
+    plutono: {}
+  users:
+    plutono: {}
+
+pgbackup:
+  enabled: false # can be enabled in values.yaml
+  alerts:
+    support_group: observability
+
+# certs required for some datasources
+authentication:
+  enabled: false
+  # defined via secrets.
+  # ssoCert:
+  # ssoKey:
+  # caCert:
+
+prometheus-monitors:
+  podMonitor:
+    enabled: true
+  prometheus: "openstack"
+  matchExpressions:
+    - key: "app"
+      operator: "In"
+      values:
+        - "plutono"
+
+alerts:
+  enabled: true
+  prometheus: openstack
+
+owner-info:
+  support-group: observability
+  service: plutono
+  maintainers:
+    - Akshay Iyyadurai Balasundaram
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/plutono

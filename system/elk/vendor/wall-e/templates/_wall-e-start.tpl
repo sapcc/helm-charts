@@ -38,20 +38,22 @@ function start_application {
   done
 
   echo "INFO: deleting old indexes in case we run out of space"
-  /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
+  /curator/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml
 
   echo "setting default index pattern for a couple of indexes"
-  curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -XPUT 'http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_template/logging' -H 'Content-Type: application/json' -d'
-  {
-    "index_patterns": ["kubernikus-*", "scaleout-*", "virtual-*", "syslog-*", "jump-*"],
-    "settings": {
-      "number_of_shards": 3,
-      "number_of_replicas": "1"
-  }
-  }'
+  for i in "kubernikus" "scaleout" "virtual" "syslog" "jump" "jaeger-span" "jaeger-service"
+
+  do
+    curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -XPUT http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_template/${i} -H 'Content-Type: application/json' -d @/wall-e-etc/$i.json
+  done
 
   echo "INFO: setting up cron jobs for index creation and purging"
-  cat <(crontab -l) <(echo "0 1,3,5,7,9,11,13,15,17,19,21,23 * * * export LC_ALL=C.UTF-8; export LANG=C.UTF-8; /usr/local/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 1,3,5,7,9,11,13,15,17,19,21,23 * * * export LC_ALL=C.UTF-8; export LANG=C.UTF-8; /curator/bin/curator --config /wall-e-etc/curator.yml  /wall-e-etc/delete_indices.yml > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+
+  echo "INFO: delete all kubernikus indexes from the future"
+  cat <(crontab -l) <(echo "0 1,13 * * * export LC_ALL=C.UTF-8; export LANG=C.UTF-8; curl -s -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_aliases?pretty=true|grep kuber|grep '20[3-9]'|awk '{ print \$1}'|tr -d '\"'|xargs -I {} curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -X DELETE "http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/{}?pretty"  > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 1,13 * * * export LC_ALL=C.UTF-8; export LANG=C.UTF-8; curl -s -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_aliases?pretty=true|grep kuber|grep '21[0-9]'|awk '{ print \$1}'|tr -d '\"'|xargs -I {} curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -X DELETE "http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/{}?pretty" > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
+  cat <(crontab -l) <(echo "0 1,13 * * * export LC_ALL=C.UTF-8; export LANG=C.UTF-8; curl -s -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/_aliases?pretty=true|grep kuber|grep '202[4-9]'|awk '{ print \$1}'|tr -d '\"'|xargs -I {} curl -u {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}} -X DELETE "http://{{.Values.endpoint_host_internal}}:{{.Values.http_port}}/{}?pretty" > ${STDOUT_LOC} 2> ${STDERR_LOC}") | crontab -
 
   echo "INFO: starting cron in foreground"
   exec cron -f

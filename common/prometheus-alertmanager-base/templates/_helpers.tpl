@@ -40,3 +40,11 @@ alertmanager-{{- (include "alertmanager.name" .) -}}
 {{- $root := index . 1 -}}
 {{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
 {{- end -}}
+
+{{- define "alerts.support_group" -}}
+{{- if .Values.global.support_group | default false }}
+{{- .Values.global.support_group -}}
+{{- else -}}
+{{- required "Either .Values.alerts.support_group or .Values.global.support_group must be set" .Values.alerts.support_group -}}
+{{- end -}}
+{{- end -}}

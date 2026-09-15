@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.prometheus.auth.tlsSecret missing" .Values.prometheus.auth.tlsSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.prometheus.auth.tlsSecret missing" .Values.prometheus.auth.tlsSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.prometheus.auth.tlsVerifyDepth missing" .Values.prometheus.auth.tlsVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.prometheus.auth.tlsVerifyDepth missing" .Values.prometheus.auth.tlsVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.prometheus.auth.tlsVerifyClient missing" .Values.prometheus.auth.tlsVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.prometheus.auth.tlsVerifyClient missing" .Values.prometheus.auth.tlsVerifyClient | quote }}
+
+    ingress.kubernetes.io/backend-protocol: GRPC
+    ingress.kubernetes.io/service-upstream: "true"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: GRPC
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  name: thanos-st1-grpc 
+  namespace: {{ required ".Values.thanos.namespace is unset" .Values.thanos.namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: thanos-st1-grpc.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: thanos-query
+            port:
+              name: grpc
+        path: /
+        pathType: Prefix 
+  tls:
+  - hosts:
+    - thanos-st1-grpc.{{ .Values.global.region }}.cloud.sap
+    secretName: tls-thanos-st1-grpc-cloud-sap

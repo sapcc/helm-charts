@@ -17,24 +17,24 @@ use = egg:Paste#urlmap
 
 # Use this pipeline for Barbican API - versions no authentication
 [pipeline:barbican_version]
-pipeline = cors healthcheck versionapp
+pipeline = cors healthcheck microversion versionapp
 
 # Use this pipeline for Barbican API - DEFAULT no authentication
 [pipeline:barbican_api]
-pipeline = cors unauthenticated-context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = cors unauthenticated-context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  microversion apiapp
 
 #Use this pipeline to activate a repoze.profile middleware and HTTP port,
 #  to provide profiling information for the REST API processing.
 [pipeline:barbican-profile]
-pipeline = cors unauthenticated-context egg:Paste#cgitb egg:Paste#httpexceptions profile {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = cors unauthenticated-context microversion egg:Paste#cgitb egg:Paste#httpexceptions profile {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
 
 #Use this pipeline for keystone auth
 [pipeline:barbican-api-keystone]
-pipeline = cors keystone_authtoken context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = cors keystone_authtoken microversion context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
 
 #Use this pipeline for keystone auth with audit feature
 [pipeline:barbican-api-keystone-audit]
-pipeline = keystone_authtoken context {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
+pipeline = keystone_authtoken context microversion {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }}  apiapp
 
 [app:apiapp]
 paste.app_factory = barbican.api.app:create_main_app
@@ -50,6 +50,9 @@ paste.filter_factory = barbican.api.middleware.context:UnauthenticatedContextMid
 
 [filter:context]
 paste.filter_factory = barbican.api.middleware.context:ContextMiddleware.factory
+
+[filter:microversion]
+paste.filter_factory = barbican.api.middleware.microversion:MicroversionMiddleware.factory
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -83,7 +86,7 @@ config_file = /etc/barbican/watcher.yaml
 [filter:audit]
 paste.filter_factory = auditmiddleware:filter_factory
 audit_map_file = /etc/barbican/barbican_audit_map.yaml
-ignore_req_list = GET
+ignore_req_list = HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- end }}
@@ -97,7 +100,8 @@ rate_limit_by = initiator_project_id
 max_sleep_time_seconds = 20
 clock_accuracy = 1ns
 log_sleep_time_seconds = 10
-backend_host = {{ .Release.Name }}-sapcc-rate-limit
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
 backend_port = 6379
+backend_secret_file = {{ .Values.sapcc_rate_limit.backend_secret_file }}
 backend_timeout_seconds = 1
 {{- end }}

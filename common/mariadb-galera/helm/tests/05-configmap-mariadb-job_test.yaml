@@ -1,0 +1,47 @@
+---
+suite: mariadb-galera-configmaps
+values:
+  - default_values.yaml
+set:
+  mariadb.galera.clustername: "testname"
+release:
+  name: testrelease
+  namespace: testnamespace
+templates:
+  - configmap-mariadb-job.yaml
+tests:
+  - it: ccroot user enabled
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-config-job-entrypoint-sh
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.ccroot_user.enabled: true
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - matchRegex:
+          path: data["entrypoint-job-config.sh"]
+          pattern: |
+            setupuser "ccroot" "" 'fullaccess' 0 '127.0.0.1' 'mysql_native_password' " "
+            setdefaultrole 'fullaccess' 'ccroot' '127.0.0.1'
+  - it: ccroot user disabled
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-config-job-entrypoint-sh
+    set:
+      mariadb.galera.clustername: "testname"
+      mariadb.ccroot_user.enabled: false
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - matchRegex:
+          path: data["entrypoint-job-config.sh"]
+          pattern: |
+            removeuser 'ccroot' '127.0.0.1'

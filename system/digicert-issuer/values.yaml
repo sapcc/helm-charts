@@ -1,9 +1,12 @@
 replicaCount: 1
 
 image:
-  repository: keppel.eu-de-1.cloud.sap/ccloud/digicert-issuer
-  tag: v1.0.25
+  repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sapcc/digicert-issuer
   pullPolicy: IfNotPresent
+  # tag: # defaults to appVersion
+
+# These labels will be set on the digicert deployment
+deploymentLabels: {}
 
 provisioner:
   disableRootCA: false
@@ -13,6 +16,11 @@ provisioner:
   paymentMethod: "balance"
   orderType: "private_ssl_plus"
 
+  # clusterIssuerNamespace: ""
+  # cacheSyncTimeout: 2m
+  # logLevel: "4"
+  # backoffDurationProvisionerNotReady: 10s
+  # backoffDurationRequestPending: 15m
   # apiToken: "superSecret!"
   # caCertID: "AB123456"
   # organizationID: "123456"
@@ -21,13 +29,13 @@ provisioner:
 
 metrics:
   port: 8080
-  prometheus: kubernetes
+  podMonitorSelector:
+    prometheus: kubernetes
 
 alerts:
   enabled: true
-  prometheus: kubernetes
-
-enableLeaderElection: "false"
+  ruleSelector:
+    prometheus: kubernetes
 
 resources:
   limits:
@@ -36,3 +44,11 @@ resources:
   requests:
     cpu: 100m
     memory: 100Mi
+
+# cert-manager configuration.
+certManager:
+  # The cert-manager controller requires permissions to set the 'approve' status condition of the digicert issuer.
+  # To grant these, the name and namespace of the cert-manager service account must be configured.
+  serviceAccount:
+    name: cert-manager
+    namespace: kube-system

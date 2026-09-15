@@ -1,3 +1,4 @@
+{{ $workerSecretsSum := include (print $.Template.BasePath "/worker-secrets.yaml") . | sha256sum }}
 {{ range .Values.teams }}
 {{ if eq .type "standalone" }}
 apiVersion: apps/v1
@@ -8,6 +9,9 @@ metadata:
     app: {{ $.Values.worker.name }}-{{ .name }}
     chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
     release: "{{ $.Release.Name }}"
+  # disabled for now, restarts all daemonsets on secret change in vault
+  #annotations:
+  #  secret.reloader.stakater.com/reload: "concourse-main-web,concourse-ci2-web,concourse-ci3-web"
 spec:
   updateStrategy:
     type: RollingUpdate
@@ -16,6 +20,8 @@ spec:
       app: {{ $.Values.worker.name }}-{{ .name }}
   template:
     metadata:
+      annotations:
+        checksum/secrets: {{ $workerSecretsSum }}
       labels:
         app: {{ $.Values.worker.name }}-{{ .name }}
         release: "{{ $.Release.Name }}"
@@ -39,7 +45,7 @@ spec:
         - -ce
         - |-
           # fix for cgroups v2, move process to own cgroup
-          mkdir /sys/fs/cgroup/entrypoint
+          mkdir -p /sys/fs/cgroup/entrypoint
           echo 1 > /sys/fs/cgroup/entrypoint/cgroup.procs
 
           update-ca-certificates

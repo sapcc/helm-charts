@@ -1,4 +1,7 @@
-{{- $domains := list "cc3test" "bs" "cis" "cp" "fsn" "hcm" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs" }}
+{{- $vbase    := .Values.global.vaultBaseURL                  | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region   := .Values.global.region                        | required "missing value for .Values.global.region"       -}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test") $cdomains -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -7,52 +10,79 @@ metadata:
 
 spec:
   requires:
-  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
   {{- range $domains }}
-  - monsoon3/domain-{{.}}-seed
+  - monsoon3/domain-{{replace "_" "-" .}}-seed
   {{- end }}
 
   roles:
     - name: cloud_registry_admin
     - name: cloud_registry_viewer
     - name: registry_admin
+    - name: registry_pusher
     - name: registry_viewer
-
-  services:
-    - name:        keppel
-      type:        keppel
-      description: 'Multi-tenant container image registry'
-      enabled:     true
-      endpoints:
-        - region:    '{{ $.Values.global.region }}'
-          interface: public
-          enabled:   true
-          url:       'https://keppel.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
-        - region:    '{{ $.Values.global.region }}'
-          interface: internal
-          enabled:   true
-          url:       'http://keppel-api.{{ $.Release.Namespace }}.svc'
 
   domains:
     - name: Default
       users:
         - name: keppel
           description: Keppel Service
-          password: '{{.Values.keppel.service_password}}'
+          password: {{ printf "%s/%s/keppel/keystone-user/service/password" $vbase $region | quote }}
           role_assignments:
             - project: service
               role:    service
             - project: service
-              role:    admin          # for keppel-health-monitor (creating a Keppel account includes creating role assignments)
-            - project: service
               role:    registry_admin # for keppel-health-monitor
-        {{- if .Values.keppel.e2e_test_password }}
+        {{- if eq $region "qa-de-1" }}
         - name: keppel_e2e
           description: Keppel End-to-End Test User
-          password: '{{.Values.keppel.e2e_test_password}}'
+          password: {{ printf "%s/%s/keppel/keystone-user/e2e-test/password" $vbase $region | quote }}
         {{- end }}
+        {{- if eq $region "eu-de-1" }}
+        - name: keppel-argo
+          description: Keppel Access User for Argo CD
+          password: {{ printf "%s/%s/keppel/keystone-user/argo/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        - name: keppel-concourse
+          description: Keppel Access User for Concourse CI
+          password: {{ printf "%s/%s/keppel/keystone-user/concourse/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        - name: keppel-greenhouse-ci
+          description: Keppel Access User for Greenhouse CI
+          password: {{ printf "%s/%s/keppel/keystone-user/greenhouse-ci/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        - name: keppel-github-actions
+          description: Keppel Access User for GitHub Actions
+          password: {{ printf "%s/%s/keppel/keystone-user/github-actions/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        {{- end }}
+      {{- if ne .Values.keppel.driver "swift" }}
+      projects:
+        - name: keppel-payloads # NOTE: in buildup, there is _probably_ a Limes dependency here, because the Ceph account for this project is probably only created once Limes assigns quota to it
+          role_assignments:
+            - user: keppel@Default
+              role: service           # to validate users' Keystone tokens
+            - user: keppel@Default
+              role: objectstore_admin # to read/write objects (blobs, manifests, reports) in this project's Ceph account
+            {{- if eq .Values.keppel.driver "both" }}
+            - user: keppel@Default
+              role: cloud_objectstore_admin # to read/write objects (blobs, manifests, reports) in customers' Swift accounts
+            {{- end }}
+            - group: CCADMIN_CLOUD_ADMINS@ccadmin
+              role: objectstore_viewer # to allow inspection by cloud admins into this project's Ceph account
+            - group: CCADMIN_CLOUD_ADMINS@ccadmin
+              role: objectstore_admin # TODO: remove once <https://github.com/cobaltcore-dev/cloud-storage/issues/468> is resolved and the above role assignment can be used instead
+      {{- end }}
 
     - name: ccadmin
       groups:
@@ -72,18 +102,28 @@ spec:
               role: registry_admin
             - domain: ccadmin
               role: registry_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
+        {{- if not ($region | hasPrefix "qa-") }}
+        - name: CCADMIN_KEPPEL_IMAGE_PUSHERS
+          role_assignments:
+            - project: master
+              role: registry_pusher
+            - project: master
+              role: registry_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
+        {{- end }}
       projects:
         - name: cloud_admin
+          {{- if ne .Values.keppel.driver "ceph" }}
           role_assignments:
             - user: keppel@Default
               role: service       # to validate users' Keystone tokens
             - user: keppel@Default
-              role: swiftreseller # to read/write blobs and manifests from/into customer's Swift accounts
+              role: cloud_objectstore_admin # to read/write blobs and manifests from/into customer's Swift accounts
+          {{- end }}
         - name: master
           role_assignments:
             - user: keppel@Default
-              role: swiftoperator # to write into the "keppel_federation_db" container
-            {{- if .Values.keppel.e2e_test_password }}
+              role: objectstore_admin # to write into the "keppel_federation_db" container
+            {{- if eq $region "qa-de-1" }}
             - user: keppel_e2e@Default
               role: admin # to create Keppel accounts
             - user: keppel_e2e@Default
@@ -93,7 +133,7 @@ spec:
     {{- range $domains }}
     - name: {{.}}
       groups:
-        - name: {{. | upper}}_DOMAIN_REGISTRY_ADMINS
+        - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_DOMAIN_REGISTRY_ADMINS
           role_assignments:
             - domain: {{.}}
               role: registry_admin

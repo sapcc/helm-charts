@@ -1,0 +1,55 @@
+{{ if .Values.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    app.kubernetes.io/name: ipmasq
+  name: ipmasq
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ipmasq
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ipmasq
+      annotations:
+        configmap-ipmasq-hash: {{ include (print $.Template.BasePath "/configmap-ipmasq.yaml") $ | sha256sum }}  
+    spec:
+      priorityClassName: system-node-critical
+      containers:
+      - name: ipmasq
+        image: "{{ required ".Values.images.image is missing" .Values.images.image }}:{{ required ".Values.images.tag is missing" .Values.images.tag }}"
+        securityContext:
+          privileged: false
+          capabilities:
+            add: ["NET_ADMIN", "NET_RAW"]
+        volumeMounts:
+          - name: ipmasq
+            mountPath: /etc/config
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+      hostNetwork: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 5
+      {{- with .Values.affinity }}
+      affinity:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      volumes:
+        - name: ipmasq
+          configMap:
+            name: ipmasq
+{{- end }}

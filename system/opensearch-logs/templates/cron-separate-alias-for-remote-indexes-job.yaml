@@ -1,0 +1,59 @@
+{{- if and .Values.global.data_stream.enabled .Values.s3.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "separate-alias-for-remote-indexes"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
+spec:
+  schedule: "15 * * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: separate-alias-for-remote-indexes 
+            image: {{ .Values.global.registry }}/opensearch-tools:{{ .Values.global.opensearchTools.tag }}
+            command: ["/bin/bash", "/scripts/separate-alias-for-remote-indexes.sh"]
+            env:
+              - name: DATA_STREAMS
+                value: "{{ .Values.global.data_stream.separate_remote_alias }}"
+              - name: ADMIN_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN_USER
+              - name: ADMIN_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN_PASSWORD
+              - name: ADMIN2_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN2_USER
+              - name: ADMIN2_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN2_PASSWORD
+              - name: CLUSTER_HOST
+                value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
+            volumeMounts:
+            - mountPath: /scripts/separate-alias-for-remote-indexes.sh
+              name: security-config
+              subPath: separate-alias-for-remote-indexes.sh
+          volumes:
+          - name: security-config
+            secret:
+              defaultMode: 420
+              secretName: security-config
+{{- end }}

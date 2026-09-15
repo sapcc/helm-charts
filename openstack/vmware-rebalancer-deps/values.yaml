@@ -1,0 +1,78 @@
+postgresql:
+  global:
+    imageRegistry: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror
+  fullnameOverride: postgresql
+  volumePermissions:
+    enabled: true
+  auth:
+    username: cerebro
+    existingSecret: schedulingservice-postgresql-secrets
+    secretKeys:
+      adminPasswordKey: adminPassword
+      userPasswordKey: userPassword
+      replicationPasswordKey: replicationPassword
+  service:
+    ports:
+      postgresql: 5432
+  #TODO implement a more siphisticated configuration to enable the network policy again
+  primary:
+    networkPolicy:
+      enabled: false
+
+redis:
+  global:
+    imageRegistry: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror
+  volumePermissions:
+    enabled: true
+  auth:
+    existingSecret: redis-password
+    existingSecretPasswordKey: password
+  networkPolicy:
+    enabled: false
+
+vernemq:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud/cerebro-vernemq
+    tag: 2.0.1-alpine
+  envFrom: []
+  statefulset:
+    livenessProbe:
+      initialDelaySeconds: 40
+    readinessProbe:
+      initialDelaySeconds: 20
+      failureThreshold: 6
+  additionalEnv:
+    - name: DOCKER_VERNEMQ_ALLOW_REGISTER_DURING_NETSPLIT
+      value: "on"
+    - name: DOCKER_VERNEMQ_ALLOW_PUBLISH_DURING_NETSPLIT
+      value: "on"
+    - name: DOCKER_VERNEMQ_ALLOW_SUBSCRIBE_DURING_NETSPLIT 
+      value: "on"
+    - name: DOCKER_VERNEMQ_ALLOW_UNSUBSCRIBE_DURING_NETSPLIT
+      value: "on"
+    - name: DOCKER_VERNEMQ_ALLOW_ANONYMOUS
+      value: "off"
+      # https://docs.vernemq.com/configuration/nonstandard#maximum-client-id-size
+    - name: DOCKER_VERNEMQ_MAX_CLIENT_ID_SIZE
+      value: "50" # migration recommender service uses 37 chars
+    - name: DOCKER_VERNEMQ_MAX_ONLINE_MESSAGES
+      value: "10000"
+    - name: DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES
+      value: "-1"
+    - name: DOCKER_VERNEMQ_USER_cerebro_vernemq_user
+      valueFrom:
+        secretKeyRef:
+          name: vernemq-secret
+          key: password
+
+owner-info:
+  helm-chart-url: "https://github.com/sapcc/helm-charts/openstack/vmware-rebalancer-deps"
+  support-group: "workload-management"
+  enabled: true
+
+# See https://github.com/sapcc/helm-charts/blob/c9d815/common/linkerd-support/README.md
+global:
+  linkerd_requested: true
+  linkerd_enabled: true
+linkerd-support:
+  annotate_namespace: true

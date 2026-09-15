@@ -1,19 +1,114 @@
-image_bind: bind
-image_bind_exporter: bind_exporter
-image_bind_tag: "20211102151001"
-image_bind_exporter_tag: "20201112130820"
-image_pullPolicy: IfNotPresent
+name: bind
+
+# make sure we do pull the images
+image_pullPolicy: Always
+
+# the images we use
+images:
+  # it's a good idea to override with more stable tags
+  bind:
+    image: bind
+    image_tag: latest
+
+  bind_exporter:
+    image: bind_exporter
+    image_tag: latest
+
+  zabbix_agent:
+    image: bind_zabbix_agent
+    image_tag: latest
+
+  sshd:
+    image: bind_sshd
+    image_tag: latest
+
+exporter_stats_url: "http://localhost:8053/"
+
+# if configs in the image should be overridden
+override_conf: true
+
 externalIP: DEFINED-REGION-CHART
 allow_notify: DEFINED-REGION-CHART
 master_server: DEFINED-REGION-CHART
 rndc_allow: DEFINED-REGION-CHART 
 rndc_key: DEFINED-REGION-CHART
 tsig_key: DEFINED-REGION-CHART
+
+# lets allow more outgoing SOA queries:
+serial_query_rate: 50
+
+# but don't overwhelm secondaries:
+notify_rate: 20
+
+# slow the rate of notifications to downstream servers on restart,
+# They will be removed from the start-up notify queue if their zone
+# is updated as part of regular zone maintenance, and we don't need
+# to flood them on each pod/container restart
+startup_notify_rate: 10
+
+# should be set to different AZs; this is used to select the nodes for the bind pods
 failure_domain_zone: a
+
+# PVC size and whether AZ enforced
 pvc_size: "1Gi"
 pvc_zone_selector: false
-name: bind
+
+resources:
+  bind:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+  metric:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+  zabbix:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+  sshd:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+
+# container specific pvc options
+pvc:
+  bind:
+    accessModes:
+      - ReadWriteMany
+  sshd:
+    accessModes:
+      - ReadWriteMany
+
+# if true, the load balancer will be created with the calico annotations
+# see templates/service.yaml
+# and
+# https://github.com/projectcalico/calico/issues/11815
+calicoLoadBalancer : false
 
 alerts:
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+# optional zabbix agent for core dns
+zabbix:
+  enabled: false
+  tls_ca: null
+  tls_crt: null
+  tls_key: null
+  server: null
+
+sshd:
+  enabled: false
+  sixc: {}
+
+owner-info:
+  support-group: coredns
+  service: bind
+  maintainers:
+    - David Hoeller
+    - Benjamin Tinney
+    - Florian Streibelt
+    - Matthias Braun
+    - Vassil Dimitrov
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/bind

@@ -48,6 +48,9 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "-config=/cronus-simulator/config.yaml"
+          envFrom:
+            - secretRef:
+                name: cronus-simulator-secret
           volumeMounts:
             - name: cronus-simulator-config
               mountPath: "/cronus-simulator/config.yaml"
@@ -58,6 +61,9 @@ spec:
               protocol: TCP
       volumes:
         - name: cronus-simulator-config
-          secret:
-            secretName: cronus-simulator-config
+          configMap:
+            name: cronus-simulator-config
+            items:
+              - key: config.yaml
+                path: config.yaml
 {{ end -}}

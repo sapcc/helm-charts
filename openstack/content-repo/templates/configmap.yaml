@@ -22,6 +22,8 @@ data:
 
     gpg:
       cache_container_name: repo-gpg-cache
+      keyserver_urls:
+        - "https://keyserver.ubuntu.com/pks/lookup?search=0x{keyid}&options=mr&op=get"
 
     statsd:
       hostname: {{$.Values.statsd_hostname}}
@@ -43,6 +45,9 @@ data:
           {{- end }}
           {{- if $job.from.dist }}
           dist: {{ toJson $job.from.dist }}
+          {{- end }}
+          {{- if $job.from.token }}
+          token: {{ toJson $job.from.token }}
           {{- end }}
           {{- if or (eq $type "yum") (eq $type "debian") }}
           verify_signature: {{ toJson $job.from.verify_signature }}
@@ -80,9 +85,21 @@ data:
         cleanup:
           strategy: {{ $config.cleanup_strategy }}
         {{- end }}
-        except:    {{ coalesce $job.except $config.except "''" }}
-        only:      {{ coalesce $job.only $config.only "''" }}
-        immutable: {{ coalesce $job.immutable $config.immutable "''" }}
+        {{- if $job.match }}
+        match:
+          {{- if $job.match.not_older_than }}
+          not_older_than: {{ $job.match.not_older_than }}
+          {{- end }}
+        {{- end }}
+        {{- if or $job.except $config.except }}
+        except:    {{ coalesce $job.except $config.except }}
+        {{- end }}
+        {{- if or $job.only $config.only }}
+        only:      {{ coalesce $job.only $config.only }}
+        {{- end }}
+        {{- if or $job.immutable $config.immutable }}
+        immutable: {{ coalesce $job.immutable $config.immutable }}
+        {{- end }}
       {{- end }}
 {{ end }}
 {{ end }}

@@ -1,0 +1,119 @@
+global:
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
+owner-info:
+  support-group: containers
+  service: tenso
+  maintainers:
+    - Stefan Majewsky
+    - Sandro Jäckel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/tenso
+
+# NOTE: This chart shares the regional values.yaml file with the `system/tenso-seeds` chart.
+
+tenso:
+  image_tag: null         # provided by pipeline
+  service_password: null  # provided by regional values.yaml
+  elk_logstash_host: null # provided by regional values.yaml
+  openstack_region: null  # provided by regional values.yaml, defaults to .Values.global.region (qa-de-2 uses this to deploy into s-qa-de-1 without triggering GkRegionValueMismatch)
+
+  # all provided by regional values.yaml (or, if not given, ServiceNow delivery is disabled)
+  servicenow:
+    secrets: {}
+    mapping_config: {} # will be written into $TENSO_SERVICENOW_MAPPING_CONFIG_PATH
+
+prometheus:
+  targets:
+    openstack: infra-frontend # there is no prometheus-openstack in scaleout, so we need to improvise :|
+
+postgresql:
+  postgresVersion: 18
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  databases:
+    tenso: {}
+  users:
+    tenso: {}
+
+  config:
+    log_min_duration_statement: 250
+    # less than the postgresql chart's default; I want to know early when connections start getting out of hand
+    max_connections: 128
+
+  alerts:
+    prometheus: infra-frontend # see above
+    support_group: containers
+
+  resources:
+    # estimated based on resource usage of other Postgres instances; may be
+    # useful to adjust later on
+    limits:
+      memory: 512Mi
+      cpu: '0.5'
+    requests:
+      memory: 512Mi
+      cpu: '0.5'
+
+pgbackup:
+  alerts:
+    prometheus: infra-frontend # see above
+    support_group: containers
+
+pgmetrics:
+  alerts:
+    prometheus: infra-frontend # see above
+    support_group: containers
+
+  collectors:
+    stat_bgwriter: false
+
+  databases:
+    tenso:
+      customMetrics:
+        tenso_events:
+          # The final UNION SELECT adds a dummy row to ensure that all derived
+          # timeseries always exist.  Therefore we can have absence alerts that are
+          # useful, but do not mis-trigger when the event queue is empty.
+          query: >
+            SELECT payload_type, COUNT(*) AS count, EXTRACT(epoch FROM MIN(created_at)) AS min_created_at
+              FROM events
+             GROUP BY payload_type
+             UNION SELECT 'none' AS payload_type, 0 AS count, EXTRACT(epoch FROM NOW()) as min_created_at
+          metrics:
+            - payload_type:
+                usage: LABEL
+                description: "Payload type of ingested event"
+            - count:
+                usage: GAUGE
+                description: "Total number of events currently enqueued in the Tenso database"
+            - min_created_at:
+                usage: GAUGE
+                description: "UNIX timestamp on oldest event that currently exists in the Tenso database"
+        tenso_pending_deliveries:
+          # See above for why we have a UNION SELECT at the end.
+          query: >
+            SELECT d.payload_type AS payload_type, COUNT(*) AS count, EXTRACT(epoch FROM MIN(e.created_at)) AS min_created_at, SUM(failed_conversions) AS conversion_failures, SUM(failed_deliveries) AS delivery_failures
+              FROM pending_deliveries d JOIN events e ON d.event_id = e.id
+             GROUP BY d.payload_type
+             UNION SELECT 'none' AS payload_type, 0 AS count, EXTRACT(epoch FROM NOW()) AS min_created_at, 0 AS conversion_failures, 0 AS delivery_failures
+          metrics:
+            - payload_type:
+                usage: LABEL
+                description: "Deliverable payload type"
+            - count:
+                usage: GAUGE
+                description: "Total number of deliveries currently enqueued in the Tenso database"
+            - min_created_at:
+                usage: GAUGE
+                description: "UNIX timestamp on oldest ingested event that did not have its converted payload delivered"
+            - failed_conversions:
+                usage: GAUGE
+                description: "Total number of failed conversion operations for payloads of this type that are still pending delivery"
+            - failed_deliveries:
+                usage: GAUGE
+                description: "Total number of failed delivery operations for payloads of this type that are still pending delivery"

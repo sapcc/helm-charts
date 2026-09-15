@@ -12,7 +12,7 @@ function cleanup_tempest_leftovers() {
   export OS_TENANT_NAME=$TEMPESTPROJECT
   export OS_PROJECT_NAME=$TEMPESTPROJECT
   openstack baremetal node list -f value -c UUID -c Name -c 'Instance UUID' -c 'Provisioning State' | awk 'BEGIN { FS=" "} { if ($2 == "None") system("openstack baremetal node maintenance set "$1" && openstack baremetal node delete "$1) }'
-  
+  for chassis in $(openstack baremetal chassis list | grep -E "tempest-test-chassis-" | awk '{ print $2 }'); do openstack baremetal chassis delete ${chassis}; done
 }
 
 {{- include "tempest-base.function_main" . }}

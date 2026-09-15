@@ -1,0 +1,1 @@
+{{- .Values.console.ssl_dhparam }}

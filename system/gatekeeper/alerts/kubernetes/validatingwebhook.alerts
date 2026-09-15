@@ -1,0 +1,25 @@
+# vim: set ft=yaml:
+
+# NOTE: This alert group is only deployed when the validating webhook is enabled.
+groups:
+- name: gatekeeper-validatingwebhook.alerts
+  rules:
+
+    - alert: GatekeeperValidatingWebhookInactive
+      expr: sum(rate(gatekeeper_validation_request_count_total[5m])) == 0 or absent(gatekeeper_validation_request_count_total)
+      for: 3m
+      labels:
+        context: gatekeepervalidatingwebhook
+        support_group: containers
+        tier: k8s
+        service: gatekeeper
+        severity: info # TODO: raise to warning/critical when playbook is ready
+        meta: 'Kubernetes is not using Gatekeeper policies for validation'
+      annotations:
+        summary: Kubernetes is not using Gatekeeper policies for validation.
+        description: |
+          Gatekeeper is not reporting any validations being performed on behalf
+          of Kubernetes. Please check if the gatekeeper-controller-manager pods
+          in the kube-system namespace are working properly. Also have a look at
+          "kubectl get validatingwebhookconfigurations" to see if Gatekeeper is
+          correctly configured as a validating webhook.

@@ -1,0 +1,34 @@
+{{- $tld    := $.Values.global.tld         | required "missing value for .Values.global.tld"       -}}
+{{- $region := $.Values.global.region      | required "missing value for .Values.global.region"    -}}
+{{- $dbRegion := $.Values.global.db_region | required "missing value for .Values.global.db_region" -}}
+
+{{- $domain := printf "%s.%s.%s" (and (contains "qa" $dbRegion) .Values.global.is_global_region | ternary "limes-campfire-qa" "limes-campfire") $region $tld -}}
+
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: campfire
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+
+spec:
+  tls:
+    - secretName: tls-campfire
+      hosts: [ {{ $domain }} ]
+  rules:
+    - host: {{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: campfire
+                port:
+                  number: 80

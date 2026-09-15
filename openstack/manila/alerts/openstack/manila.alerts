@@ -1,0 +1,330 @@
+groups:
+- name: openstack-manila.alerts
+  rules:
+  - alert: OpenstackManilaSharesStuck
+    expr: (sum(manila_shares_stuck_count_gauge) BY (manila_host, status)) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/shares_stuck
+      service: manila
+      context: manila-shares-stuck
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Sum of Openstack Manila Shares Stuck is more than 1
+      summary: Manila shares in stuck state
+
+  - alert: OpenstackManilaShareSnapshotsStuck
+    expr: (sum(manila_snapshot_stuck_count_gauge) BY (share_id, status)) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/shares_stuck
+      service: manila
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+      context:  manila-snapshots-stuck
+    annotations:
+      description: Sum of Openstack Manila Share Snapshots Stuck is more than 1
+      summary: Manila share snapshots in stuck state
+
+  - alert: OpenstackManilaShareSnapshotsMissing
+    expr: sum(manila_nanny_missing_snapshot_instance{status!~"error|creating|deleting"}) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      service: manila
+      severity: critical
+      tier: os
+      playbook: docs/support/playbook/manila/snapshots_missing
+      support_group: compute-storage-api
+      context:  manila-snapshots-missing
+    annotations:
+      description: Share Snapshot does not exist on backend filer
+      summary: Manila Share Snapshots missing
+
+  - alert: OpenstackManilaSharesStuckCreate
+    expr: max(manila_shares_stuck_max_duration_gauge{status="creating"})
+      BY (manila_host) > 900
+    for: 90m
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/shares_stuck
+      service: manila
+      context: manila-shares-stuck
+      severity: warning
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Shares taking more than 15 minutes to create in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 15 minutes to create
+
+  - alert: OpenstackManilaSharesStuckDelete
+    expr: max(manila_shares_stuck_max_duration_gauge{status="deleting"})
+      BY (manila_host) > 900
+    for: 90m
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/shares_stuck
+      service: manila
+      context: manila-shares-stuck
+      severity: warning
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Shares taking more than 15 minutes to delete in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 15 minutes to delete
+
+  - alert: OpenstackManilaSharesStuckErrorDelete
+    expr: max(manila_shares_stuck_max_duration_gauge{status="error_deleting"})
+      BY (manila_host) > 900
+    for: 90m
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/shares_stuck
+      service: manila
+      context: manila-shares-stuck
+      severity: warning
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Shares taking more than 15 minutes to delete in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 15 minutes to delete
+
+  - alert: OpenstackManilaSharesStuckResize
+    expr: max(manila_shares_stuck_max_duration_gauge{status=~"shrinking|extending"})
+      BY (manila_host) > 120
+    for: 5m
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/shares_stuck
+      service: manila
+      context: manila-shares-stuck
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Shares taking more than 2 minutes to resize in {{ $labels.manila_host }}
+      summary: Manila Shares taking more than 2 minutes to resize
+
+  - alert: OpenstackManilaSharesResizeError
+    expr: sum(manila_shares_stuck_count_gauge{status=~"shrinking_error|extending_error"}) > 0
+    for: 5m
+    labels:
+      dashboard: manila
+      service: manila
+      context: manila-shares-stuck
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Shares resize error
+      summary: Multiple Manila Shares resize error
+
+  - alert: OpenstackManilaShareServersStuck
+    expr: max by (id, manila_host) (manila_share_servers_stuck_duration_seconds) > 24*3600 <= 2*24*3600
+    for: 15m
+    labels:
+      dashboard: manila
+      service: manila
+      context: manila-share-server-stuck
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Share server {{ $labels.id }} got stuck on {{ $labels.manila_host }} since yesterday
+      summary: Manila share servers in stuck state
+
+  - alert: OpenstackManilaShareServersStuckHigh
+    expr: sum(manila_share_servers_stuck_count_gauge)/sum(manila_share_servers_count_gauge) > 0.05
+    for: 12h
+    labels:
+      dashboard: manila
+      service: manila
+      context: manila-share-server-stuck
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: More than 5 percent of total Share servers stuck
+      summary: Manila share servers in stuck state
+
+  - alert: OpenstackManilaShareServersStuckCreate
+    expr: max(manila_share_servers_stuck_duration_seconds{status="creating"}) BY (id, manila_host) > 120
+    for: 24h
+    labels:
+      dashboard: manila
+      service: manila
+      context: manila-share-server-stuck
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Manila Share server {{ $labels.id }} stuck in creating on {{ $labels.manila_host }} for a day
+      summary: Manila Share servers taking too long to create
+
+  - alert: OpenstackManilaSharesError
+    expr: count(openstack_manila_shares_size_gauge{status='error'})/count(openstack_manila_shares_size_gauge) > 0.01
+    for: 12h
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+      context: manila-shares-error
+    annotations:
+      description: More than 1 percent of total shares are in error state
+      summary: Manila shares in error
+
+  - alert: OpenstackManilaShareReplicasError
+    expr: >
+      sum(openstack_manila_replicas_count_gauge{status='error', replica_state!='active'})/sum(openstack_manila_replicas_count_gauge{replica_state!='active'}) > 0.05 OR
+      sum(openstack_manila_replicas_count_gauge{replica_state='error'})/sum(openstack_manila_replicas_count_gauge{replica_state!='active'}) > 0.05
+    for: 12h
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+      context: manila-replicas-error
+    annotations:
+      description: More than 5 percent of total share replicas are in error state
+      summary: Manila share replicas in error
+
+  - alert: OpenstackManilaSnapshotsError
+    expr: count(openstack_manila_snapshot_count_gauge{status='error'})/count(openstack_manila_snapshot_count_gauge) > 0.05
+    for: 12h
+    labels:
+      dashboard: manila
+      service: manila
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+      context: manila-snapshot-error
+    annotations:
+      description: More than 5 percent of total snapshots are in error state
+      summary: Manila share snapshots in error
+
+  - alert: OpenstackManilaShareServerHigh
+    expr: label_replace(count(manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+      "short_hostname", "$1", "manila_host", "(.*)@.*") >= 240
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/backend_full
+      service: manila
+      severity: warning
+      tier: os
+      context: manila-share-server-limit
+      support_group: compute-storage-api
+    annotations:
+      description: 'Panel: Share Server netapp host distribution'
+      summary: High number of share servers on {{ $labels.short_hostname }}
+
+  - alert: OpenstackManilaShareServerFull
+    expr: label_replace(count(manila_share_servers_count_gauge{status!="deleted"}) BY (manila_host),
+      "short_hostname", "$1", "manila_host", "(.*)@.*") >= 250
+    labels:
+      dashboard: manila
+      playbook: docs/support/playbook/manila/backend_full
+      service: manila
+      severity: critical
+      tier: os
+      context: manila-share-server-limit
+      support_group: compute-storage-api
+    annotations:
+      description: 'Panel: Share Server netapp host distribution'
+      summary: Share servers on {{ $labels.short_hostname }} exhausted
+
+  - alert: OpenstackManilaApiPodDown
+    expr: up{component="manila",type="api"} == 0
+    for: 10m
+    labels:
+      context: manila-availability
+      dashboard: manila
+      meta: a manila api instance went down
+      service: manila
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: "{{ $labels.pod }} pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "A manila api pod is DOWN"
+
+  # Use rate() to make spiky signals flatter, so that the alert can be fired
+  - alert: OpenstackManilaApiRatelimitExceeded
+    expr: sum by (action, target_type_uri, project_id) (
+      label_replace(rate(openstack_ratelimit_requests_ratelimit_total{service="share"}[5m]), "project_id", "$0", "target_project_id", ".*")
+      ) * on(project_id) group_left(project_name, domain_name)(openstack_projects_count_gauge) > 0
+    for: 2m
+    labels:
+      context: manila-rate-limit
+      dashboard: manila
+      meta: manila api rate limits exceeded
+      service: manila
+      severity: info
+      no_alert_on_absence: "true"
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: "Rate limit for {{ $labels.target_type_uri }} with action {{ $labels.action }} exceeded. Target project: {{ $labels.domain_name }}/{{ $labels.project_name }} ({{ $labels.project_id }})."
+      summary: Manila API rate limit exceeded
+
+  - alert: OpenstackManilaUnresolvedSentryIssues
+    expr: delta(sentry_unresolved_issues_count{project="manila"}[1d]) > 0
+    for: 10m
+    labels:
+      context: manila-sentry-metrics
+      service: manila
+      severity: info
+      tier: os
+      sentry: 'manila/?query=is%3Aunresolved+firstSeen%3A-24h'
+      support_group: compute-storage-api
+    annotations:
+      description: manila has encountered new unexpected errors and reported
+        them to Sentry. Please have a look at the list of unresolved issues,
+        it has been growing in the last 24 hours.
+      summary: manila has reported new issues to Sentry
+
+  - alert: OpenstackManilaServiceDown
+    expr: manila_service_status{service="manila-share"} - manila_service_state{service="manila-share"} > 0
+    for: 20m
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: manila
+      context: manila-service-status
+    annotations:
+      description: '{{ $labels.host }}: host has status enabled but is in state down for 20 minutes. Either the pod should be scaled up or the service be disabled!'
+      summary: '{{ $labels.host }}: host is enabled but is down'
+
+  - alert: OpenstackManilaServiceUpButDisabled
+    expr: manila_service_status{service="manila-share"} - manila_service_state{service="manila-share"} < 0
+    for: 20m
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: manila
+      context: manila-service-status
+    annotations:
+      description: '{{ $labels.host }}: host has status disabled but is in state up for 20 minutes. Either the pod should be scaled down or the service be enabled!'
+      summary: '{{ $labels.host }}: host is disabled but is up'
+
+  - alert: OpenstackManilaPurgeBroken
+    expr: manila_oldest_soft_deleted_share{region!="qa-de-1"} > 15
+    for: 4h
+    labels:
+      severity: info
+      tier: os
+      service: manila
+      context: manila-db-purge
+      support_group: compute-storage-api
+    annotations:
+      description: manila has a soft deleted share that is older than 15 days, check the db-consistency-and-purge container of manila-nanny
+      summary: manila db purger not working

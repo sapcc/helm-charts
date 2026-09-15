@@ -1,0 +1,177 @@
+{{ if .Values.extensions.oidcAppsController.enabled -}}
+{{- with .Values.extensions.oidcAppsController -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: oidc-apps-controller
+spec:
+  deployment:
+    extension:
+      injectGardenKubeconfig: {{ .injectGardenKubeconfig | default false }}
+      helm:
+        ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
+      policy: {{ .policy | default "OnDemand" }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | indent 8 }}
+        cacheSelectorStr: observability.gardener.cloud/app in (plutono, prometheus-shoot,
+          alertmanager-seed, alertmanager-shoot)
+        clients:
+        - clientId: {{ .oidcClientId | default $.Values.garden.dashboard.oidc.clientIDPublic }}
+          name: oidc-apps-controller-users
+        global:
+          istioGateway:
+            enabled: true
+            selector:
+              istio: ingressgateway
+          oauth2Proxy:
+            insecureOidcSkipIssuerVerification: false
+            insecureOidcSkipNonce: false
+            oidcIssuerUrl: {{ .oidcIssuerUrl | default $.Values.garden.dashboard.oidc.issuerURL }}
+            scope: openid email groups
+            sslInsecureSkipVerify: false
+        priorityClass:
+          name: gardener-system-500
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        targets:
+        - istioGateway:
+            create: true
+            tlsSecretRef: {{ .tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
+            labels:
+              endpoint.shoot.gardener.cloud/advertise: "true"
+              endpoint.shoot.gardener.cloud/application: credativ--plutono
+          labelSelector:
+            matchLabels:
+              component: plutono
+          name: shoot--plutono
+          namespaceSelector:
+            matchLabels:
+              gardener.cloud/role: shoot
+          targetPort: 3000
+        - istioGateway:
+            create: true
+            tlsSecretRef: {{ .tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
+            labels:
+              endpoint.shoot.gardener.cloud/advertise: "true"
+              endpoint.shoot.gardener.cloud/application: prometheus--prometheus
+            deniedPaths:
+              - /-/reload
+              - /-/quit
+              - /api/v1/targets
+          labelSelector:
+            matchLabels:
+              app: prometheus
+          name: shoot--prometheus
+          namespaceSelector:
+            matchLabels:
+              gardener.cloud/role: shoot
+          targetPort: 9090
+        - istioGateway:
+            create: true
+            tlsSecretRef: {{ .tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
+            labels:
+              endpoint.shoot.gardener.cloud/advertise: "true"
+              endpoint.shoot.gardener.cloud/application: prometheus--alertmanager
+          labelSelector:
+            matchLabels:
+              component: alertmanager
+          name: shoot--alertmanager
+          namespaceSelector:
+            matchLabels:
+              gardener.cloud/role: shoot
+          targetPort: 9093
+        - istioGateway:
+            create: true
+            tlsSecretRef: {{ .tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
+          labelSelector:
+            matchLabels:
+              component: plutono
+          name: garden--plutono
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: garden
+          targetPort: 3000
+        - istioGateway:
+            create: true
+            tlsSecretRef: {{ .tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
+          labelSelector:
+            matchLabels:
+              component: alertmanager
+              role: monitoring
+          name: garden--alertmanager
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: garden
+          targetPort: 9093
+        webhook:
+          objectSelector:
+            matchExpressions:
+            - key: observability.gardener.cloud/app
+              operator: In
+              values:
+              - plutono
+              - prometheus-shoot
+              - alertmanager-seed
+              - alertmanager-shoot
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-oidc-ext-to-virtual-garden-kube-apiserver-from-shoot-rbac-proxy
+  namespace: garden
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    from:
+    - namespaceSelector:
+        matchLabels:
+          gardener.cloud/role: shoot
+      podSelector:
+        matchLabels:
+          oidc-application-controller/component: pod
+  policyTypes:
+  - Ingress
+
+{{- $namespaces := lookup "v1" "Namespace" "" "" }}
+{{- range $namespaces.items }}
+{{- if eq (index .metadata.labels "gardener.cloud/role") "shoot" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: egress-oidc-apps-to-virtual-garden-kube-apiserver
+  namespace: {{ .metadata.name }}
+  annotations:
+    description: Deployed for each shoot namespace to allow oidc-apps-controller controlled pods to reach the virtual garden kube-apiserver. Is created when new shoot namespaces are created and deleted when shoot namespaces are deleted.
+spec:
+  podSelector:
+    matchLabels:
+      oidc-application-controller/component: pod
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: garden
+      podSelector:
+        matchLabels:
+          app: kubernetes
+          role: apiserver
+{{- end }}
+{{- end }}
+{{- end }}

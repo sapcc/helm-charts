@@ -1,0 +1,13 @@
+{{ if .Values.bgp.enabled }}
+apiVersion: crd.projectcalico.org/v1
+kind: BGPFilter
+metadata:
+  name: out-reject-service-subnets
+spec:
+  exportV4:
+  {{- range $cidr := .Values.bgp.serviceExternalIPs }}
+    - action: Reject
+      matchOperator: Equal
+      cidr: {{ $cidr }}
+  {{- end }}
+{{ end }}

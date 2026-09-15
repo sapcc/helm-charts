@@ -1,0 +1,24 @@
+{{- if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "haproxy") }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name:  {{ include "commonPrefix" $ }}-haproxy-config
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "noversion" "haproxy" "cm" "config") | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/haproxy/haproxy.cfg").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name:  {{ include "commonPrefix" $ }}-haproxy-probes-sh
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "noversion" "haproxy" "cm" "probes") | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/haproxy/startup.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/haproxy/liveness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/haproxy/readiness.sh").AsConfig . | indent 2 }}
+{{- end }}

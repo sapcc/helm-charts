@@ -1,5 +1,5 @@
 {{- if .Values.nebula.enabled -}}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: nebula
@@ -7,6 +7,9 @@ metadata:
     kubernetes.io/tls-acme: "true"
     {{- range $key, $value := .Values.nebula.ingressAnnotations }}
     {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- if .Values.nebula.gateway.enabled }}
+    nginx.ingress.kubernetes.io/add-hosts: sc.nebula.{{ .Values.global.region }}.cm.net.sap
     {{- end }}
   labels:
     app: nebula
@@ -16,11 +19,29 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: nebula
-              servicePort: {{ .Values.nebula.http }}
+              service:
+                name: nebula
+                port:
+                  number: {{ .Values.nebula.http }}
             path: /
+            pathType: Prefix
+  {{- if .Values.nebula.gateway.enabled }}
+    - host: sc.nebula.{{ .Values.global.region }}.cm.net.sap
+      http:
+        paths:
+          - backend:
+              service:
+                name: nebula-gateway
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+    {{- end }}
   tls:
     - hosts:
       - nebula.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    {{- if .Values.nebula.gateway.enabled }}
+      - sc.nebula.{{ .Values.global.region }}.cm.net.sap
+    {{- end }}
       secretName: tls-secret-nebula
 {{- end -}}

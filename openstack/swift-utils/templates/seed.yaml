@@ -1,3 +1,6 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin" "Default") $cdomains -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -13,22 +16,8 @@ metadata:
 spec:
   requires:
     - swift/swift-seed #  and all its dependencies
-    - monsoon3/domain-default-seed
-    - monsoon3/domain-bs-seed
-    - monsoon3/domain-cis-seed
-    - monsoon3/domain-cp-seed
-    - monsoon3/domain-ccadmin-seed
-    - monsoon3/domain-fsn-seed
-    - monsoon3/domain-hcp03-seed
-    - monsoon3/domain-hcm-seed
-    - monsoon3/domain-hec-seed
-    - monsoon3/domain-monsoon3-seed
-    - monsoon3/domain-neo-seed
-    - monsoon3/domain-s4-seed
-    - monsoon3/domain-wbs-seed
-    - monsoon3/domain-cc3test-seed
-    {{- if eq "qa-de-1" .Values.global.region }}
-    - monsoon3/domain-tempest-seed
+    {{- range $domains }}
+    - monsoon3/domain-{{replace "_" "-" .|lower}}-seed
     {{- end }}
 
   domains:
@@ -44,41 +33,8 @@ spec:
         description: 'Swift Account Caretaker'
         password: {{ $.Values.swift_account_caretaker.password }}
         role_assignments:
-          - project: service
-            role: service
-          # needs to be admin in all domains to list projects
-          - domain: Default
+          - project: cloud_admin@ccadmin
             role: admin
-          - domain: ccadmin
-            role: admin
-          - domain: bs
-            role: admin
-          - domain: cis
-            role: admin
-          - domain: cp
-            role: admin
-          - domain: fsn
-            role: admin
-          - domain: hcp03
-            role: admin
-          - domain: hcm
-            role: admin
-          - domain: hec
-            role: admin
-          - domain: monsoon3
-            role: admin
-          - domain: neo
-            role: admin
-          - domain: s4
-            role: admin
-          - domain: wbs
-            role: admin
-          - domain: cc3test
-            role: admin
-          {{- if eq "qa-de-1" .Values.global.region }}
-          - domain: tempest
-            role: admin
-          {{- end }}
       {{- if $.Values.velero_backup_password }}
       - name: velero_backup
         description: 'Velero Backup'
@@ -90,7 +46,7 @@ spec:
         - name: master
           role_assignments:
             - user: repo@Default
-              role: swiftoperator # required for repo sync (but seeded here because content-repo runs in scaleout)
+              role: objectstore_admin # required for repo sync (but seeded here because content-repo runs in scaleout)
           {{- if .Values.velero_backup_password }}
             - user: velero_backup@Default
               role: service
@@ -116,14 +72,14 @@ spec:
           description: 'dispersion of objects and containers'
           role_assignments:
             - user: swift_dispersion@Default
-              role: swiftoperator
+              role: objectstore_admin
           swift:
             enabled: true
         - name: swift_test
           description: 'used by automatic tests for Swift and related components'
           role_assignments:
             - user: swift_caretaker@Default
-              role: swiftoperator
+              role: objectstore_admin
           swift:
             enabled: true
             containers:
@@ -137,8 +93,14 @@ spec:
             - project: swift_test
               role: admin
             - project: swift_test
-              role: swiftoperator
+              role: objectstore_admin
             - project: swift_dispersion
               role: admin
             - project: swift_dispersion
-              role: swiftoperator
+              role: objectstore_admin
+        - name: CC3TEST_STORAGE_SUPPORT
+          role_assignments:
+            - project: swift_test
+              role: objectstore_admin
+            - project: swift_dispersion
+              role: objectstore_admin

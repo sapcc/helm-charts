@@ -15,11 +15,12 @@ groups:
       dashboard: limes-overview
       service: limes
       severity: info
+      support_group: containers
       tier: os
       meta: 'DB connection pool nearly full on {{ $labels.kubernetes_pod_name }}'
     annotations:
       summary: 'DB connection pool nearly full on {{ $labels.kubernetes_pod_name }}'
-      description: |
+      description: >
         The DB connection pool on pod {{ $labels.kubernetes_pod_name }} is filling up. It can
         go up to 16 connections, but during regular operations we should not go
         over 3-5 connections to retain some budget for request spikes. Going
@@ -27,26 +28,28 @@ groups:
         starved for CPU time, so try checking the CPU throttling metrics.
 
   - alert: OpenstackLimesHttpErrors
-    expr: sum(increase(http_requests_total{kubernetes_namespace="limes",code=~"5.*"}[1h])) by (kubernetes_name) > 0
+    expr: sum(increase(http_requests_total{kubernetes_namespace=~"limes.*",code=~"5.*"}[1h])) by (kubernetes_namespace, kubernetes_name) > 0
     for: 5m
     labels:
       context: api
       dashboard: limes-overview
       service: limes
       severity: info
+      support_group: containers
       tier: os
     annotations:
-      description: "{{ $labels.kubernetes_name }} is producing HTTP responses with 5xx status codes."
-      summary: Server errors on {{ $labels.kubernetes_name }}
+      description: "{{ $labels.kubernetes_namespace }}/{{ $labels.kubernetes_name }} is producing HTTP responses with 5xx status codes."
+      summary: Server errors on {{ $labels.kubernetes_namespace }}/{{ $labels.kubernetes_name }}
 
   - alert: OpenstackLimesNotScraping
-    expr: absent(rate(limes_successful_scrapes[30m]) > 0)
+    expr: absent(rate(limes_scrapes{task_outcome="success"}[30m]) > 0)
     for: 5m
     labels:
       context: failedscrapes
       dashboard: limes-overview
       service: limes
       severity: warning
+      support_group: containers
       tier: os
     annotations:
       description: There have been no successful scrapes in the last hour,
@@ -54,29 +57,28 @@ groups:
       summary: Limes is not scraping
 
   - alert: OpenstackLimesFailedCapacityScrapes
-    expr: sum(increase(limes_failed_capacity_scrapes[5m])) BY (capacitor) > 0
+    expr: sum(increase(limes_capacity_scrapes{task_outcome="failure"}[5m])) BY (service_type, namespace) > 0
     for: 1h
     labels:
       context: failedcapacityscrapes
       dashboard: limes-overview
       service: limes
       severity: warning
+      support_group: containers
       tier: os
     annotations:
-      description: Limes cannot scrape capapcity from {{ title $labels.capacitor }}
+      description: >
+        {{ title $labels.namespace }} cannot scrape capacity from {{ title $labels.service_type }}
         for more than an hour.
         The `kubectl logs` for limes-collect-ccloud contain additional info.
-      summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
+      summary: "{{ title $labels.namespace }} cannot scrape capacity {{ title $labels.service_type }}"
 
   - alert: OpenstackLimesMissingCapacity
-    # This ignores baremetal capacity ("compute/instances_<flavorname>")
-    # since many of these are zero legitimately (we do not have all BM server
-    # types in all regions).
-    #
-    # The check for non-zero domain quota skips resources that only report
-    # usage, not quota nor capacity (at the moment, those are
-    # "compute/{cores,ram}_{bigvm,regular}").
-    expr: global:limes_consolidated_cluster_capacity{full_resource!~"compute/instances_.*"} == 0 and on (full_resource) global:limes_consolidated_domain_quota{full_resource!~"compute/instances_*"} > 0
+    # This excludes:
+    # - (explicitly) NoQuota resources
+    # - (implicitly) resources that technically exist, but legitimately do not have capacity
+    #   (e.g. HANA flavors for hypervisor types that do not exist in the region)
+    expr: (global:limes_consolidated_cluster_capacity{full_resource!="sharev2/snapmirror_capacity"} == 0) and (max by (full_resource) (global:limes_consolidated_domain_usage) > 0)
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -84,122 +86,60 @@ groups:
       service: limes
       severity: info
       meta: 'no capacity for {{ $labels.full_resource }}'
+      support_group: containers
       tier: os
     annotations:
-      description: Limes reports no capacity for {{ $labels.full_resource }}.
-        This usually means that the backend service reported weirdly-shaped data
-        to Limes' capacity scanner.
+      description: Limes reports no capacity for {{ $labels.full_resource }} even though there is assigned domain quota and/or usage.
+        This usually happens because the backend service reported weirdly-shaped data to Limes' capacity scanner.
         The `kubectl logs` for limes-collect-ccloud may contain additional info.
+        If not, running `limes test-scan-capacity` on the respective region and service_type may provide additional insight.
       summary: Limes reports zero capacity for {{ $labels.full_resource }}
 
   - alert: OpenstackLimesFailedScrapes
-    expr: sum(increase(limes_failed_scrapes[5m])) BY (service, service_name, region) > 0
+    expr: sum(increase(limes_scrapes{task_outcome="failure"}[5m])) BY (service_type, service_name, region, namespace) > 0
     for: 1h
     labels:
       context: failedscrapes
       dashboard: limes-overview
       service: '{{ $labels.service_name }}'
       severity: info
+      support_group: '{{ if eq $labels.service_name "cinder" "ironic" "nova" "manila" -}} compute-storage-api {{- else if eq $labels.service_name "archer" "designate" "neutron" "octavia" -}} network-api {{- else if eq $labels.service_name "ceph" "swift" -}} storage {{- else -}} containers {{- end -}}'
       tier: os
-      playbook: docs/support/playbook/limes/failed_scrapes.html
+      playbook: 'https://operations.global.cloud.sap/docs/resources/limes/playbooks/failed_scrapes'
     annotations:
-      description: Limes cannot scrape data from {{ title $labels.service_name }}
+      description: >
+        {{ title $labels.namespace }} cannot scrape data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
         Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/scrape-errors|the Limes Errors view in Elektra>.
-      summary: Limes cannot scrape {{ title $labels.service_name }}
+      summary: "{{ title $labels.namespace }} cannot scrape {{ title $labels.service_name }}"
 
   - alert: OpenstackLimesFailingScrapes
-    expr: max(limes_failing_scrapes_gauge) BY (service_name, region) > 0
+    expr: max(limes_failing_scrapes_gauge) BY (service_name, region, namespace) > 0
     for: 1h
     labels:
       context: failedscrapes
       dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
+      service: limes
       severity: warning
+      support_group: containers
       tier: os
-      playbook: docs/support/playbook/limes/failed_scrapes.html
+      playbook: 'https://operations.global.cloud.sap/docs/resources/limes/playbooks/failed_scrapes'
     annotations:
-      description: Limes cannot scrape data for projects from {{ title $labels.service_name }}
+      description: >
+        {{ title $labels.namespace }} cannot scrape data for projects from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
         Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/scrape-errors|the Limes Errors view in Elektra>.
-      summary: Limes cannot scrape {{ title $labels.service_name }}
-
-  - alert: OpenstackLimesSuspendedScrapes
-    # this has [15m] instead of [5m] because suspensions last for 10 minutes,
-    # therefore the limes_suspended_scrapes counter only increments that often
-    expr: sum(increase(limes_suspended_scrapes[15m])) BY (service, service_name) > 0
-    for: 1h
-    labels:
-      context: failedscrapes
-      dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
-      severity: warning
-      tier: os
-    annotations:
-      description: Limes has suspended scraping from {{ title $labels.service_name }}
-        for more than an hour. Please check if the internal endpoint for
-        {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
-        The `kubectl logs` for limes-collect-ccloud contain additional info.
-      summary: Limes cannot find {{ title $labels.service_name }} endpoint
-
-  - alert: OpenstackLimesFailedRateScrapes
-    expr: sum(increase(limes_failed_rate_scrapes[5m])) BY (service, service_name, region) > 0
-    for: 1h
-    labels:
-      context: failedratescrapes
-      dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
-      severity: info
-      tier: os
-      playbook: docs/support/playbook/limes/failed_scrapes.html
-    annotations:
-      description: Limes cannot scrape rate data from {{ title $labels.service_name }}
-        for more than an hour. Please check if {{ title $labels.service_name }} is working.
-        Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/rate-scrape-errors|the Limes Errors view in Elektra>.
-      summary: Limes cannot scrape {{ title $labels.service_name }}
-
-  - alert: OpenstackLimesFailingRateScrapes
-    expr: max(limes_failing_rate_scrapes_gauge) BY (service_name, region) > 0
-    for: 1h
-    labels:
-      context: failedscrapes
-      dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
-      severity: warning
-      tier: os
-      playbook: docs/support/playbook/limes/failed_scrapes.html
-    annotations:
-      description: Limes cannot scrape rate data for projects from {{ title $labels.service_name }}
-        for more than an hour. Please check if {{ title $labels.service_name }} is working.
-        Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/scrape-errors|the Limes Errors view in Elektra>.
-      summary: Limes cannot scrape {{ title $labels.service_name }}
-
-  - alert: OpenstackLimesSuspendedRateScrapes
-    # this has [15m] instead of [5m] because suspensions last for 10 minutes,
-    # therefore the limes_suspended_rate_scrapes counter only increments that often
-    expr: sum(increase(limes_suspended_rate_scrapes[15m])) BY (service, service_name) > 0
-    for: 1h
-    labels:
-      context: failedratescrapes
-      dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
-      severity: warning
-      tier: os
-    annotations:
-      description: Limes has suspended rate scraping from {{ title $labels.service_name }}
-        for more than an hour. Please check if the internal endpoint for
-        {{ title $labels.service_name }} is correctly entered in the Keystone catalog.
-        The `kubectl logs` for limes-collect-ccloud contain additional info.
-      summary: Limes cannot find {{ title $labels.service_name }} endpoint
+      summary: "{{ title $labels.namespace }} cannot scrape {{ title $labels.service_name }}"
 
   - alert: OpenstackLimesMissingSwiftMetrics
-    expr: (limes_project_usage{service="object-store",resource="capacity"} > 0) unless on(project_id) (limes_plugin_metrics_ok{service="object-store"} == 1)
+    expr: (limes_project_usage{service="object-store",resource="capacity"} > 0) unless on(project_id) (limes_usage_collection_metrics_ok{service="swift"} == 1)
     for: 5m
     labels:
       context: swiftmetrics
       dashboard: limes-overview
       service: limes
       severity: warning
+      support_group: containers
       tier: os
       meta: "project {{ $labels.project_id }}"
     annotations:
@@ -208,78 +148,149 @@ groups:
         Check the `kubectl logs` for limes-collect-ccloud for additional info.
       summary: Limes cannot submit Swift usage metrics
 
-  - alert: OpenstackLimesFailedDomainDiscoveries
-    expr: sum(increase(limes_failed_domain_discoveries[5m])) > 0
+  - alert: OpenstackLimesFailedKeystoneSyncs
+    expr: sum by (namespace) (increase(limes_keystone_syncs{task_outcome="failure"}[5m])) > 0 or sum by (namespace) (increase(limes_keystone_syncs{task_outcome="success"}[5m])) == 0
     for: 30m
     labels:
-      context: faileddiscoveries
+      context: keystonesync
       dashboard: limes-overview
       service: limes
       severity: warning
+      support_group: containers
       tier: os
     annotations:
-      description: Limes cannot discover domains.
-        Please check if "openstack domain list" is working.
-      summary: Limes cannot discover domains.
+      description: >
+        {{ title $labels.namespace }} cannot sync domains and projects from Keystone.
+        Check the `kubectl logs` for limes-collect-ccloud for additional info.
+      summary: "{{ title $labels.namespace }} cannot sync from Keystone."
 
-  - alert: OpenstackLimesFailedProjectDiscoveries
-    expr: sum(increase(limes_failed_project_discoveries[5m])) BY (domain) > 0
-    for: 30m
+  - alert: OpenstackLimesFailedQuotaOverrideSyncs
+    expr: sum by (namespace) (increase(limes_quota_override_syncs{task_outcome="failure"}[10m])) > 0 or sum by (namespace) (increase(limes_quota_override_syncs{task_outcome="success"}[10m])) == 0
+    for: 10m
     labels:
-      context: faileddiscoveries
+      context: quotaoverridesync
       dashboard: limes-overview
       service: limes
       severity: warning
-      tier: os
+      support_group: containers
     annotations:
-      description: Limes cannot discover projects in domain {{ $labels.domain }}.
-        Please check if "openstack project list --domain {{ $labels.domain }}" is working.
-      summary: Limes cannot discover projects.
+      description: >
+        {{ title $labels.namespace }} cannot sync quota overrides from its config into the DB.
+        Check the `kubectl logs` for limes-collect-ccloud for errors (esp. from parsing the overrides file).
+      summary: "{{ title $labels.namespace }} cannot sync quota overrides."
 
   - alert: OpenstackLimesAuditEventPublishFailing
-    # Usually, you would check increase() here, but audit events *can* be quite
-    # rare, so we alert if there are any failed audit events at all. To clear this alert,
-    # delete the respective
-    expr: max by (pod) (limes_failed_auditevent_publish > 0)
-    for: 1h
+    # The underlying metric counts failed submission attempts, e.g. because the hermes-rabbitmq server is restarting.
+    # These are not necessarily fatal because the process will hold them in memory to retry the submission later.
+    # The alert will clear up on its own once submissions start working again.
+    expr: sum by (pod, namespace) (changes(audittools_failed_submissions{namespace=~"limes.*"}[1h]) > 0)
+    for: 5m
     labels:
       context: auditeventpublish
       dashboard: limes-overview
       service: limes
       severity: info
+      support_group: containers
       tier: os
-      meta: '{{ $labels.pod }}'
+      meta: '{{ $labels.namespace }}/{{ $labels.pod }}'
     annotations:
-      summary: "{{ $labels.pod }} cannot publish audit events"
-      description: "Audit events could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
+      summary: "{{ $labels.namespace }}/{{ $labels.pod }} cannot publish audit events"
+      description: "Audit events from {{ $labels.namespace }}/{{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for detailed error messages. Affected audit events are held in memory until publishing succeeds."
 
-  - alert: OpenstackLimesPodSchedulingFailedInsufficientCPU
-    expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"limes-.+"}[30m])) by (pod_name) > 0
+  - alert: OpenstackLimesMismatchProjectQuota
+    expr: max by (service_name, namespace) (limes_mismatch_project_quota_count > 0)
+    for: 60m # every 30m, limes-collect scrapes quota/usage on each project service and at the same time tries to rectify this error; give it 1-2 chances before alerting
+    labels:
+      severity: info
+      support_group: containers
+      tier: os
+      service: limes
+    annotations:
+      summary: Mismatched Project Quota
+      description: >
+        {{ title $labels.namespace }} detected that the quota of some {{ $labels.service_name }} resource(s) in some project differ from the backend quota for that resource and project.
+        This may happen when {{ title $labels.namespace }} is unable to write a changed quota value into the backend, for example because of a service downtime.
+
+        More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
+
+  - alert: OpenstackLimesOverspentProjectQuota
+    expr: max by (namespace) (limes_overspent_project_quota_count > 0)
+    for: 60m # every 30m, limes-collect scrapes quota/usage on each project service; give it 1-2 chances to observe a consistent usage value before alerting
+    labels:
+      severity: info
+      support_group: containers
+      tier: os
+      service: limes
+    annotations:
+      summary: Overspent Project Quota
+      description: >
+        {{ title $labels.namespace }} detected that the quota of some resource in some project is lower than the usage of that resource in that project.
+        This may happen when someone else changes the quota in the backend service directly and increases usage before {{ title $labels.namespace }} intervenes, or when a cloud administrator changes quota constraints.
+
+        More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
+
+  - alert: OpenstackNonGrowingQuotaAlmostExhausted
+    expr: max by (support_group, service_name, service, resource, domain, project_id, project, namespace) (
+        ((limes_project_usage{resource!~"instances_.*"} > 0.9 * limes_project_quota) and on (service, resource, namespace) (limes_autogrow_growth_multiplier == 1)) * on (service_name, namespace) group_left (support_group) (limes_support_group_mapping)
+      ) unless on (service, resource, namespace) (limes_available_commitment_duration == 1)
+    for: 5m
+    labels:
+      severity: warning
+      support_group: '{{ $labels.support_group }}'
+      tier: os
+      service: '{{ $labels.service_name }}'
+      playbook: 'https://operations.global.cloud.sap/docs/resources/limes/playbooks/non_growing_quota'
+    annotations:
+      summary: Non-growing quota almost exhausted
+      description: >
+        The quota for {{ title $labels.namespace }} resource {{ $labels.service }}/{{ $labels.resource }} in project {{ $labels.project_id }} ("{{ $labels.domain }}/{{ $labels.project }}") is more than 90% used.
+        This quota does not grow automatically, so care should be taken now to ensure that the customer does not run out of quota.
+        Please check the playbook for which options you have to resolve this issue.
+
+  - alert: OpenstackLimesIneffectiveQuotaOverride
+    expr: 'max by (region, domain, project, project_id, service, resource, namespace) (limes_project_quota != limes_project_override_quota_from_config)'
+    for: 60m
+    labels:
+      severity: warning
+      support_group: containers
+      tier: os
+      service: limes
+    annotations:
+      summary: "{{ title $labels.namespace }} quota override is ineffective"
+      description: >
+        In the project {{ $labels.project_id }} ({{ $labels.domain }}/{{ $labels.project }}), the {{ title $labels.namespace }} quota override for {{ $labels.service }}/{{ $labels.resource }} is ineffective.
+        The actual quota is {{ $value }}, which differs from the configured quota override.
+        Please check the <https://dashboard.{{ $labels.region }}.cloud.sap/_/{{ $labels.project_id }}/resources/v2/project|Resource Management UI of the project>. If the quota override cannot be enforced because commitments or usage are higher than it, the override needs to be removed (from quota-overrides.yaml in cc/secrets).
+        The opposite case (a quota below the configured override) needs to be triaged by a Limes expert.
+
+  - alert: OpenstackLimesCinderCapacityWithUnknownVolumeType
+    # NOTE: This alert is disabled in QA because Tempest runs create private volume types all the time.
+    expr: 'sum by (project_id) ((liquid_cinder_snapshots_with_unknown_volume_type_size{region!~"qa.*"} > 0) + (liquid_cinder_volumes_with_unknown_volume_type_size{region!~"qa.*"} > 0))'
     for: 15m
     labels:
       severity: warning
+      support_group: containers
       tier: os
       service: limes
-      context: cpu
-      dashboard: limes-overview
-      meta: "{{ $labels.pod_name }}"
-      no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
     annotations:
-      summary: Scheduling failed due to insufficient cpu
-      description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
+      summary: Cinder capacity with unknown volume type
+      description: >
+        The project {{ $labels.project_id }} contains Cinder volumes and/or snapshots whose volume types are not known to Limes (which usually means that they are private).
+        This might be bad because payload without a known volume type is not billed.
+        Please check the log of the liquid-cinder pod in the limes namespace to find out which volumes/snapshots are problematic and which volume types they are using.
 
-  - alert: OpenstackLimesSeesHypervisorWithoutAZ
-    # The max_over_time() is used to avoid alert flapping when the collector restarts e.g. after an OOM kill.
-    expr: max by (hypervisor, hostname) (max_over_time(limes_nova_hypervisor_has_az{region!~"qa-de-.*"}[10m])) == 0 # only active in prod regions
-    for: 15m
+  - alert: OpenstackLimesFailedMailDeliveries
+    expr: sum by (namespace) (increase(limes_mail_deliveries{task_outcome="failure"}[5m])) > 0
+    for: 1h
     labels:
-      severity: info
-      tier: os
+      context: failedmaildeliveries
       service: limes
-      context: nova-hypervisor
-      meta: "Nova hypervisor {{$labels.hypervisor}} is not assigned to any AZ."
+      severity: warning
+      support_group: containers
+      tier: os
     annotations:
-      summary: Unmatched Nova hypervisors
-      description: Limes cannot determine the AZ of the hypervisor
-        {{$labels.hypervisor}}. Its capacity will be reported in the AZ
-        "unknown" in the resource management UI until this issue is fixed.
+      description: >
+        {{ title $labels.namespace }} cannot send mails to recipients
+        for more than an hour.
+        The `kubectl logs` for campfire and limes-collect-ccloud contain additional info.
+      summary: "{{ title $labels.namespace }} cannot send mails to recipients"

@@ -11,15 +11,17 @@ spec:
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '20%' # these pods can be rolled rather quickly since they are not in the hot path
   selector:
     matchLabels:
       component: swift-rsyncd
+      from: daemonset
+      restart: directly
   template:
     metadata:
       labels:
         component: swift-rsyncd
-        alert-tier: os
-        alert-service: swift
         from: daemonset
         restart: directly
       annotations:
@@ -49,6 +51,7 @@ spec:
             - /usr/bin/rsyncd-start
           # privileged access required for /usr/bin/unmount-helper (TODO: use shared/slave mount namespace instead)
           securityContext:
+            runAsUser: 0
             privileged: true
           env:
             - name: DEBUG_CONTAINER
@@ -60,3 +63,6 @@ spec:
               name: swift-drives
             - mountPath: /swift-drive-state
               name: swift-drive-state
+
+---
+{{ include "swift_vpa_no_autoupdates" "swift-rsyncd" }}

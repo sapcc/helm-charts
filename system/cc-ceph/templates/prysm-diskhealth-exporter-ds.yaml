@@ -1,0 +1,62 @@
+{{- if .Values.objectstore.prysm.diskHealth.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Values.objectstore.name }}-diskhealth-exporter
+  labels:
+    app: {{ .Values.objectstore.name }}-diskhealth-exporter
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.objectstore.name }}-diskhealth-exporter
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.objectstore.name }}-diskhealth-exporter
+    spec:
+      containers:
+      - name: prysm
+        image: {{ .Values.objectstore.prysmDiskHealth.repository.image }}:{{ .Values.objectstore.prysmDiskHealth.repository.tag }}
+        imagePullPolicy: {{ .Values.objectstore.prysmDiskHealth.repository.pullPolicy }}
+        args:
+        - "local-producer"
+        - "disk-health-metrics"
+        - '--disks={{ .Values.objectstore.prysm.diskHealth.disks }}'
+        - '--interval={{ .Values.objectstore.prysm.diskHealth.interval }}'
+        - '--prometheus=true'
+        - '-v=warn'
+        securityContext:
+          privileged: true # Required to access host devices
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName # Helps the exporter identify the node
+        volumeMounts:
+          - name: host-dev
+            mountPath: /dev
+          - name: host-proc
+            mountPath: /host/proc
+            readOnly: true
+          - name: host-rook-ceph
+            mountPath: /var/lib/rook/rook-ceph
+            readOnly: true
+        ports:
+        - containerPort: 8080
+          name: metrics
+      volumes:
+        - name: host-dev
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: host-proc
+          hostPath:
+            path: /proc
+            type: Directory
+        - name: host-rook-ceph
+          hostPath:
+            path: /var/lib/rook/rook-ceph
+            type: Directory
+      nodeSelector:
+{{ toYaml .Values.objectstore.prysm.diskHealth.nodeSelector | indent 8 }}
+{{- end }}

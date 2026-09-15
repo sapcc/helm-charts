@@ -1,0 +1,66 @@
+{{- if .Values.seed }}
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-global-seed
+  labels:
+    app: "{{ .Release.Name }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+    {{- if eq .Values.global.region "global" }}
+    - {{ .Release.Namespace }}/domain-default-seed
+    - {{ .Release.Namespace }}/domain-cc3test-seed
+    - {{ .Release.Namespace }}/domain-ccadmin-seed
+    - {{ .Release.Namespace }}/domain-global-seed
+    {{- else }}
+    - {{ .Release.Namespace }}/keystone-seed
+    {{- end }}
+
+  roles:
+    - name: gtm_admin
+      description: "Manage GTM objects, create/delete"
+    - name: gtm_viewer
+      description: "Andromeda Read-Only. View GTM objects"
+    - name: resource_service
+      description: "Manage quota: gets project quota (globally), sets project quota (globally)"
+
+  services:
+    - name: andromeda
+      type: gtm
+      description: GTM - Global load balancer as a Service
+      endpoints:
+        - interface: public
+          region: '{{.Values.global.region}}'
+          url: 'https://{{include "andromeda_api" .}}/v1'
+    - name: liquid-andromeda
+      type: liquid-andromeda
+      description: GTM - Global load balancer as a Service liquid api
+      endpoints:
+        - interface: public
+          region: '{{.Values.global.region}}'
+          url: 'https://{{include "andromeda_liquid_server_api" .}}'
+
+
+  domains:
+    - name: Default
+      users:
+        - name: admin
+          role_assignments:
+            - domain: Default
+              role: gtm_admin
+            - domain: Default
+              role: gtm_admin
+              inherited: true
+            - project: admin
+              role: gtm_admin
+        - name: andromeda
+          description: 'Andromeda Service User'
+          password: {{ printf "%s/%s/andromeda/keystone-user/service/password" .Values.global.vaultBaseURL .Values.global.region | quote }}
+          role_assignments:
+            - project: service
+              role: service
+{{- end }}

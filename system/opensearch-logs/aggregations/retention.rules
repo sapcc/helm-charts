@@ -1,0 +1,11 @@
+groups:
+- name: opensearch_metrics
+  rules:
+  - record:  opensearch_index_size_mb
+    expr: sum by (index_docs)(opensearch_index_store_size_bytes{job="opensearch-logs-master-exporter",context="total"} / 1024 / 1024)
+  - record:  opensearch_retention_alerts
+    expr: count(opensearch_index_doc_number{index=~"alerts.+", pod="opensearch-logs-master-0", context="primaries"})
+  - record:  opensearch_retention_deployments
+    expr: count(opensearch_index_doc_number{index=~"deployments.+", pod="opensearch-logs-master-0", context="primaries"})
+  - record:  opensearch_retention_maillog
+    expr: count(opensearch_index_doc_number{index=~"maillog.+", pod="opensearch-logs-master-0", context="primaries"})

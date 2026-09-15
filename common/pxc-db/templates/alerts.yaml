@@ -1,0 +1,18 @@
+{{- if .Values.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "pxc-db.fullname" . }}-alerts
+  labels:
+    app: {{ include "pxc-db.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  groups:
+{{ include (print .Template.BasePath "/alerts/_pxc.alerts.tpl") . | indent 2 }}
+{{- if .Values.backup.enabled }}
+{{ include (print .Template.BasePath "/alerts/_backup.alerts.tpl") . | indent 2 }}
+{{- end }}
+{{- end }}

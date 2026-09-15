@@ -1,12 +1,12 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: openstack-exporter 
+  name: openstack-exporter
   namespace: monsoon3
 spec:
   selector:
     matchLabels:
-      app: openstack-exporter 
+      app: openstack-exporter
       type: exporter
   template:
     metadata:
@@ -15,20 +15,22 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port | quote }}
         prometheus.io/targets: {{ required ".Values.openstack.alerts.prometheus missing" .Values.openstack.alerts.prometheus }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       containers:
          - name: openstack-exporter
-           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.openstack.image.name missing" .Values.openstack.image.name }}:{{ required ".Values.openstack.image.tag missing" .Values.openstack.image.tag  }}
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.openstack.imageName missing" .Values.openstack.imageName }}:{{ required ".Values.openstack.imageVersion missing" .Values.openstack.imageVersion  }}
            ports:
              - name: metrics
                containerPort: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port }}
            command:
-             - /usr/bin/openstack_exporter 
+             - /usr/bin/openstack_exporter
            args:
              - -c
              - /openstack-config/openstack-config.yaml
+             - --secrets
+             - /openstack-secrets/openstack-secrets.yaml
            resources:
              limits:
                 memory: {{ required ".Values.openstack.limits.memory missing" .Values.openstack.limits.memory }}
@@ -39,6 +41,9 @@ spec:
            volumeMounts:
              - mountPath: /openstack-config
                name: openstack-config
+               readOnly: true
+             - mountPath: /openstack-secrets
+               name: openstack-secrets
                readOnly: true
            #livenessProbe:
               #httpGet:
@@ -51,3 +56,6 @@ spec:
         - configMap:
             name: openstack-exporter-openstack-config
           name: openstack-config
+        - secret:
+            secretName: openstack-exporter-openstack-secrets
+          name: openstack-secrets

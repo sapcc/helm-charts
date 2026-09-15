@@ -1,0 +1,13 @@
+{{- if .Values.policies.regionValueMissing.enabled }}
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRegionValueMissing
+metadata:
+  name: region-value-missing
+  labels:
+    severity: 'warning'
+spec:
+  enforcementAction: {{ .Values.policies.regionValueMissing.enforcementAction }}
+  match: {{ include "gatekeeper-policies.match-active-helm-releases" . | indent 4 }}
+  parameters:
+    helmManifestParserURL: {{ required "policies.regionValueMissing.helmManifestParserURL is required when policies.regionValueMissing.enabled=true" .Values.policies.regionValueMissing.helmManifestParserURL | quote }}
+{{- end }}

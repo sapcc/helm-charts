@@ -1,0 +1,19 @@
+{{- range $service, $service_config := .Values.config -}}
+{{- range $domain, $domain_config := $service_config -}}
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: layer-2-only-vlan{{ $domain_config.multus_vlan }}
+  namespace: px
+spec:
+  config: |
+    {
+        "cniVersion": "0.3.0",
+        "type": "macvlan",
+        "master": "vlan_{{ required "multus_vlan is required for every domaim" $domain_config.multus_vlan }}",
+        "mode": "bridge",
+        "ipam": {}
+    }
+{{ end }}
+{{- end }}

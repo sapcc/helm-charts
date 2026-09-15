@@ -1,0 +1,75 @@
+{{- range $name, $config := .Values.limes.local_liquids }}
+{{- if not $config.skip }}
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: liquid-{{ $name }}
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      name: liquid-{{ $name }}
+  template:
+    metadata:
+      labels:
+        name: liquid-{{ $name }}
+      annotations:
+        checksum/configmap: {{ include "limes/templates/configmap-liquids.yaml" $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: liquid
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: limes-liquids
+      containers:
+        - name: liquid
+          image: {{ include "limes_image" $ }}
+          imagePullPolicy: IfNotPresent
+          args: [ liquid, "{{ $name }}" ]
+          env:
+            {{ include "limes_openstack_envvars" $ | indent 12 }}
+            - name: LIQUID_CONFIG_PATH
+              value: "/etc/liquid/{{ $name }}.json"
+              # ^ NOTE: For liquids that do not take config (e.g. liquid-swift), this variable is ignored,
+              # so it is not an error that the respective file does not exist in the configmap.
+            - name: LIQUID_POLICY_PATH
+              value: "/etc/liquid/policy.json"
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/liquid
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: '1'
+              memory: {{ $config.memory_limit }}
+            requests:
+              cpu: {{ $config.cpu_request }}
+              memory: {{ $config.memory_limit }}
+
+{{- end }}
+{{- end }}

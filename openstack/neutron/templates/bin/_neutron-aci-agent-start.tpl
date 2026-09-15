@@ -12,13 +12,13 @@ function process_config {
     cp /neutron-etc/ml2-conf.ini  /etc/neutron/plugins/ml2/ml2_conf.ini
     cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
-    cp /neutron-etc-region/ml2-conf-aci.ini  /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+    cat /neutron-etc-aci/ml2-conf-aci-*.ini > /etc/neutron/plugins/ml2/ml2-conf-aci.ini
 }
 
 
 
 function _start_application {
-    exec neutron-aci-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+    exec neutron-aci-agent --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini
 }
 
 

@@ -1,41 +1,46 @@
+---
 apiVersion: v2
-appVersion: "1.0"
+appVersion: "epoxy"
 description: A Helm chart for OpenStack Octavia
 home: https://docs.openstack.org/octavia/latest/
 icon: https://www.openstack.org/themes/openstack/images/project-mascots/Octavia/OpenStack_Project_Octavia_vertical.png
-maintainers:
-  - name: OpenStack-Helm Authors
 name: octavia
 sources:
   - https://git.openstack.org/cgit/openstack/octavia
   - https://git.openstack.org/cgit/openstack/openstack-helm
-version: 0.1.11
+# The versions are defined in the changelog: https://docs.openstack.org/releasenotes/octavia/yoga.html
+version: 10.1.12
 dependencies:
   - condition: mariadb.enabled
     name: mariadb
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.3.50
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.42.2
+  - condition: pxc_db.enabled
+    name: pxc-db
+    alias: pxc_db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.4.1
   - name: memcached
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.0.10
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.6.12
   - condition: mariadb.enabled
     name: mysql_metrics
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.2.7
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.2
   - name: rabbitmq
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.3.2
-  - alias: rabbitmq_notifications
-    condition: audit.enabled
-    name: rabbitmq
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.2.12
-  - name: region_check
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.1.2
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.22.1
   - name: utils
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.3.3
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.37.1
   - name: owner-info
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.1.2
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 1.0.0
+  - name: linkerd-support
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 1.1.1
+  - name: redis
+    alias: api-ratelimit-redis
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 2.2.19
+    condition: rate_limit.enabled

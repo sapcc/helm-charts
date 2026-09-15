@@ -1,0 +1,61 @@
+{{- if .Values.monitoring.createClusterFilters -}}
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  labels:
+    fluentbit.gardener/type: "seed"
+    fluentbit.gardener.cloud/type: "seed"
+  name: cloud-controller-manager-openstack-cloud-controller-manager
+spec:
+  filters:
+  - parser:
+      keyName: log
+      parser: kube-apiserver-parser
+      reserveData: true
+  match: kubernetes.*cloud-controller-manager*openstack-cloud-controller-manager*
+---
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  labels:
+    fluentbit.gardener/type: "seed"
+    fluentbit.gardener.cloud/type: "seed"
+  name: csi-driver-controller-openstack-csi
+spec:
+  filters:
+  - parser:
+      keyName: log
+      parser: kube-apiserver-parser
+      reserveData: true
+  match: kubernetes.*csi-driver-controller*openstack-csi*
+---
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  labels:
+    fluentbit.gardener/type: "seed"
+    fluentbit.gardener.cloud/type: "seed"
+  name: csi-driver-manila-controller-openstack-csi
+spec:
+  filters:
+    - parser:
+        keyName: log
+        parser: kube-apiserver-parser
+        reserveData: true
+  match: kubernetes.*csi-driver-manila-controller*openstack-csi*
+---
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  labels:
+    fluentbit.gardener/type: "seed"
+    fluentbit.gardener.cloud/type: "seed"
+  name: csi-snapshot-openstack-csi
+spec:
+  filters:
+  - parser:
+      keyName: log
+      parser: kube-apiserver-parser
+      reserveData: true
+  match: kubernetes.*csi-snapshot*openstack-csi*
+{{- end -}}

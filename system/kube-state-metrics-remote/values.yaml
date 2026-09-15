@@ -1,0 +1,44 @@
+kubeStateMetrics:
+  container:
+    args:
+      - --port=30090
+      - --telemetry-port=30091
+      - --custom-resource-state-config-file=/etc/config/custom-resource-state.yaml
+      - --custom-resource-state-only=true
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    env:
+      kubernetesServiceHost: kube-apiserver
+    image:
+      repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-state-metrics/kube-state-metrics
+      tag: v2.15.0
+  nodeSelector:
+    kubernetes.io/os: linux
+  ports:
+  - name: metrics
+    port: 30090
+    targetPort: metrics
+  - name: telemetry
+    port: 30091
+    targetPort: telemetry
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+  strategy:
+    type: Recreate
+  type: ClusterIP
+
+config:
+  customResourceStateYaml: ""
+
+fullnameOverride: kube-state-metrics-remote
+greenhouseScrapeTarget: kube-monitoring
+remoteRBACNamespace: kube-system

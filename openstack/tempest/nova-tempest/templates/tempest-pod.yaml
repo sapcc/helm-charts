@@ -11,14 +11,10 @@ spec:
   containers:
     - name: {{ .Chart.Name }}
       # As nova has no tempest plugin project we use standard tempest tests for compute -> use neutron-tempest-plugin image
-      image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/neutron-tempest-plugin:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
+      image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/nova-tempest-plugin-python3:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
       command:
-        - kubernetes-entrypoint
+        - /container.init/tempest-start-and-cleanup.sh
       env:
-        - name: COMMAND
-          value: "/container.init/tempest-start-and-cleanup.sh"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
         - name: OS_REGION_NAME
           value: {{ required "Missing region value!" .Values.global.region }}
         - name: OS_USER_DOMAIN_NAME
@@ -26,27 +22,42 @@ spec:
         - name: OS_PROJECT_DOMAIN_NAME
           value: "tempest"
         - name: OS_INTERFACE
-          value: "internal"
+          value: "public"
         - name: OS_ENDPOINT_TYPE
-          value: "internal"
+          value: "public"
         - name: OS_PASSWORD
-          value: {{ .Values.tempestAdminPassword | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: OS_PASSWORD
+        - name: SLACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: SLACK_URL
+        - name: CC_SLACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: CC_SLACK_URL
         - name: OS_IDENTITY_API_VERSION
           value: "3"
         - name: OS_AUTH_URL
           value: "http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{ required "Missing clusterDomain value!" .Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{required "Missing region value!" .Values.global.region}}.{{ required "Missing tld value!" .Values.global.tld}}{{end}}:5000/v3"
       resources:
         requests:
-          memory: "1024Mi"
-          cpu: "750m"
-        limits:
           memory: "2048Mi"
           cpu: "1000m"
+        limits:
+          memory: "8192Mi"
+          cpu: "2000m"
       volumeMounts:
         - mountPath: /{{ .Chart.Name }}-etc
           name: {{ .Chart.Name }}-etc
         - mountPath: /container.init
           name: container-init
+        - mountPath: /{{ .Chart.Name }}-etc-secret
+          name: {{ .Chart.Name }}-etc-secret
   volumes:
     - name: {{ .Chart.Name }}-etc
       configMap:
@@ -55,4 +66,14 @@ spec:
       configMap:
         name: {{ .Chart.Name }}-bin
         defaultMode: 0755
+    - name: {{ .Chart.Name }}-etc-secret
+      secret:
+        secretName: {{ .Chart.Name }}-etc-secret
+        items:
+        - key: tempest_accounts.yaml
+          path: tempest_accounts.yaml
+        - key: tempest_deployment_config.json
+          path: tempest_deployment_config.json
+        - key: tempest_extra_options
+          path: tempest_extra_options
 {{- end }}

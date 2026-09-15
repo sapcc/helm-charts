@@ -1,0 +1,26 @@
+{{- range $cluster := .Values.clusters }}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: IroncoreMetalMachineTemplate
+metadata:
+  name: controlplane-{{ $cluster.name }}-{{ include "cc-runtime-cluster.imageHash" $ }}
+  namespace: {{ $cluster.namespace }}
+  labels:
+    cc.sap/template-image-hash: {{ include "cc-runtime-cluster.imageHash" $ }}
+spec:
+  template:
+    spec:
+      serverSelector:
+        matchLabels:
+          kubernetes.metal.cloud.sap/cluster: {{ $cluster.name }}
+          kubernetes.metal.cloud.sap/role: runtime-controlplane
+      image: {{ $.Values.machineTemplate.image }}
+      metadata:
+{{ toYaml (default $.Values.machineTemplate.metadata $cluster.machineTemplateMetadata) | indent 8 }}
+      ipamConfig:
+      - metadataKey: bond
+        ipamRef:
+          apiGroup: ipam.cluster.x-k8s.io
+          kind: GlobalInClusterIPPool
+          name: globalinclusterippool-{{ $cluster.name }}
+{{- end }}

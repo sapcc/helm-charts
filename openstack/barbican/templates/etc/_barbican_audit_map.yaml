@@ -5,6 +5,10 @@ prefix: '/v1'
 
 resources:
   secrets:
+    payloads:
+      # Payload can include sensitive info
+      exclude:
+        - payload
     custom_id: secret_ref
     children:
       metadata:
@@ -13,6 +17,12 @@ resources:
         type_name: meta
       acl:
         singleton: true
+      payload:
+        singleton: true
+        payloads:
+          # Disable payload recording for this endpoint
+          enabled: false
+      consumers:
   secret-stores:
     children:
       preferred:
@@ -22,6 +32,13 @@ resources:
     children:
       secrets:
       acl:
+        singleton: true
+      consumers:
   project-quotas:
-  consumers:
+  quotas:
+    singleton: true
   orders:
+  transport-keys:
+    api_name: transport_keys
+  versions:
+    singleton: true

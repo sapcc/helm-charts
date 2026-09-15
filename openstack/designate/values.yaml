@@ -5,18 +5,16 @@
 #
 debug: "True"
 
-global_setup: false
 tempest_enabled: false
+
+dbType: "mariadb"
 
 sentry:
   enabled: true
 
 global:
-  dbPassword: DEFINED-IN-REGION-CHART
   db_region: ""
-  imageRegistry: DEFINED-IN-OPENSTACK-CHART
-  image_namespace: DEFINED-IN-OPENSTACK-CHART
-  registry: DEFINED-IN-OPENSTACK-CHART
+  dbUser: "designate"
   designate_api_endpoint_protocol_admin: http
   designate_api_endpoint_protocol_internal: http
   designate_api_endpoint_protocol_public: https
@@ -26,19 +24,24 @@ global:
   designate_api_port_public: '443'
   designate_metrics_port: '9102'
   designate_mdns_port_public: '5354'
-  designate_mdns_external_ip: DEFINED-IN-REGION-CHART
   designate_mdns_service_ip:
   designate_mdns_akamai_ip:
   designate_service_user: designate
-  designate_service_password: DEFINED-IN-REGION-CHART
+  is_global_region: false
+  domain_seeds:
+    customer_domains: []
+  linkerd_requested: false
 
 pod:
+  pdb:
+    enabled: true
+    min_available: 1
   replicas:
     api: 3
-    central: 2
+    central: 3
     mdns: 2
     poolmanager: 1
-    producer: 1
+    producer: 2
     worker: 3
     sink: 1
   lifecycle:
@@ -50,37 +53,19 @@ pod:
           max_unavailable: 0
           max_surge: 1
 
+mdns_workers: 2
+producer_workers: 2
+worker_workers: 2
+central_workers: 2
+api_workers: 4
+
 # image_version_designate:  DEFINED-IN-REGION-CHART
 imageVersionTempest: "latest"
 
 bind_pools:
   - name: default
-    nameservers:
-      - hostname: DEFINED-IN-REGION-CHART
-        ip:  DEFINED-IN-REGION-CHART
-      - hostname: DEFINED-IN-REGION-CHART
-        ip:  DEFINED-IN-REGION-CHART
-      - hostname: DEFINED-IN-REGION-CHART
-        ip:  DEFINED-IN-REGION-CHART
-    options:
-      tsig_key_name: DEFINED-IN-REGION-CHART
-      tsig_key_secret: DEFINED-IN-REGION-CHART
-      tsig_key_algorithm: DEFINED-IN-REGION-CHART
-## Akamai Pool values if needed
-#akamai_pools:
-#  - name: akamai_pool
-#    nameservers:
-#      - hostname: DEFINED-IN-REGION-CHART
-#        ip: DEFINED-IN-REGION-CHART
-#    options:
-#      username: DEFINED-IN-REGION-CHART
-#      password: DEFINED-IN-REGION-CHART
-#      tsig_key_name: DEFINED-IN-REGION-CHART
-#      tsig_key_secret: DEFINED-IN-REGION-CHART
-#      tsig_key_algorithm: DEFINED-IN-REGION-CHART
-#    also_notifies:
-#      - host: DEFINED-IN-REGION-CHART
-#        port: DEFINED-IN-REGION-CHART
+    nameservers: []
+    options: {}
 
 rndc_keys:
 - name: DEFINED-IN-REGION-CHART
@@ -90,34 +75,64 @@ rndc_keys:
 db_name: designate
 pool_id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
 scheduler_filters: attribute, pool_id_attribute, in_doubt_default_pool, fallback
+scheduler_filters_shared_pools: attribute, pool_id_attribute, domain_id
+shared_pools_enabled: false
+
 sink_enabled: False
 
 quota_api_export_size: 100000
 
 worker_enabled: True
 worker_notify: True
-worker_poll_timeout: '15'
-worker_poll_retry_interval: '10'
-worker_poll_max_retries: '80'
+worker_poll_timeout: '30'
+worker_poll_retry_interval: '15'
+worker_poll_max_retries: '100'
 worker_threshold_percentage: '100'
+worker_poll_max_prop_time: '100'
+worker_poll_delay: '3'
 worker_all_tcp: True
+
+zone_purge:
+  interval: '3600'
+  per_page: '200'
+  time_threshold: '2592000'
+  batch_size: '200'
 
 percona_cluster:
   enabled: false
   db_name: designate
   db_user: designate
+  alerts:
+    support_group: coredns
+
+proxysql:
+  mode: host_alias
+  connect_retries_delay: 1000
+  max_connections_per_proc: 20
+  native_sidecar: true
 
 mariadb:
   enabled: true
   name: designate
-  initdb_configmap: designate-initdb
+  initdb_secret: designate-initdb
   persistence_claim:
     name: db-designate-pvclaim
+  alerts:
+    support_group: coredns
   backup:
     enabled: false
+  ccroot_user:
+    enabled: true
+  databases:
+  - designate
+  users:
+    designate:
+      name: designate
+      grants:
+      - "ALL PRIVILEGES on designate.*"
   backup_v2:
     verification:
-      enabled: true
+      enabled: false
       run_after_inc_backups: 12
     enabled: true
     databases:
@@ -128,10 +143,43 @@ mariadb:
     oauth:
       client_id: "designate"
 
+pxc_db:
+  enabled: false
+  name: designate
+  initdb_job: true
+  alerts:
+    support_group: coredns
+  ccroot_user:
+    enabled: true
+  databases:
+    - designate
+  users:
+    designate:
+      name: designate
+      grants:
+      - "ALL PRIVILEGES on designate.*"
+  pxc:
+    resources:
+      requests:
+        memory: 1Gi
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: false
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+      config:
+        region:  DEFINED-IN-SECRETS
+        endpointUrl: DEFINED-IN-SECRETS
+    pitr:
+      enabled: false
+
 mysql_metrics:
   enabled: true
   db_name: designate
-  db_user: root
+  db_user: designate
   customMetrics:
     - name: openstack_designate_zones
       help: "zones grouped by status and project"
@@ -199,19 +247,39 @@ mysql_metrics:
     - name: openstack_designate_records
       help: "records count grouped by status"
       labels:
-        - "status"
         - "zone_id"
+        - "project_id"
+        - "status"
       values:
         - "count_gauge"
       query:  |
               SELECT
                 zone_id,
+                tenant_id AS project_id,
                 status,
                 count(id) AS count_gauge
               FROM records
               GROUP BY
                 zone_id,
+                project_id,
                 status
+
+    - name: openstack_designate_recordsets
+      help: "recordsets count grouped by project and zone id"
+      labels:
+        - "zone_id"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                zone_id,
+                tenant_id AS project_id,
+                count(id) AS count_gauge
+              FROM recordsets
+              GROUP BY
+                zone_id,
+                project_id
 
 cors:
   enabled: false
@@ -268,9 +336,21 @@ audit:
   metrics_enabled: true
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
+  central_service:
+    user: rabbitmq
+    password: null
+
+memcached:
+  server_ips_ports: []
+  alerts:
+    support_group: coredns
 
 rabbitmq:
+  enabled: true
   use_alternate_registry: true
+  ports:
+    public: 5672
+    management: 15672
   name: designate
   users:
     default:
@@ -279,6 +359,18 @@ rabbitmq:
     admin:
       user: admin
       password: secret
+  alerts:
+    support_group: coredns
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+  # backward compatibility with the existing deployments
+  # using the older rabbitmq helm chart which defaulted to SSL disabled
+  enableSsl: false
 
 rabbitmq_notifications:
   use_alternate_registry: true
@@ -298,21 +390,21 @@ resources:
       cpu: "100m"
     limits:
       memory: "2048Mi"
-      cpu: "2000m"
+      cpu: "4000m"
   central:
     requests:
       cpu: "250m"
       memory: "256Mi"
     limits:
-      cpu: "4000m"
-      memory: "2048Mi"
+      cpu: "5000m"
+      memory: "8192Mi"
   mdns:
     requests:
       memory: "256Mi"
       cpu: "250m"
     limits:
-      memory: "2048Mi"
-      cpu: "4000m"
+      memory: "4096Mi"
+      cpu: "5000m"
   worker:
     requests:
       memory: "256Mi"
@@ -328,8 +420,138 @@ watcher:
 rbac:
   enabled: true
 
+metrics:
+  prometheus: openstack
+
 # Deploy Designate Prometheus alerts.
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
-  prometheus: openstack
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+  support_group: coredns
+
+osprofiler:
+  enabled: false
+
+coordinationBackend: "file"
+coordination:
+  central:
+    enabled: false
+
+owner-info:
+  support-group: coredns
+  service: designate
+  maintainers:
+    - Matthias Braun
+    - Soenke Lange
+    - Florian Streibelt
+    - Vassil Dimitrov
+    - Torsten Sachse
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate
+
+utils:
+  trust_bundle:
+    enabled: true
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true
+
+# used to set the PYTHONWARNINGS environment variable everywhere
+python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# openstack-rate-limit
+api-ratelimit-redis:
+  persistence:
+    enabled: false
+  alerts:
+    support_group: coredns
+
+rate_limit:
+  enabled: true
+  backend_secret_file: /etc/designate/ratelimit-backend-secret.conf
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - tempest/performance-testing
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      zones:
+        - action: read/list
+          limit: 200r/m
+        - action: create
+          limit: 100r/m
+      zones/zone:
+        - action: read/list
+          limit: 200r/m
+        - action: write
+          limit: 100r/m
+      zones/zone/*:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      recordsets:
+        - action: read/list
+          limit: 100r/m
+      reverse/floatingips:
+        - action: read/list
+          limit: 100r/m
+      reverse/floatingips/*:
+        - action: read/list
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      tsigkeys:
+        - action: read/list
+          limit: 100r/m
+      blacklists:
+        - action: read/list
+          limit: 100r/m
+      tlds:
+        - action: read/list
+          limit: 100r/m
+      pools:
+        - action: read/list
+          limit: 100r/m
+      limits:
+        - action: read/list
+          limit: 100r/m
+      quotas:
+        - action: read/list
+          limit: 100r/m
+      service_statuses/*:
+        - action: read/list
+          limit: 100r/m
+      service_statuses:
+        - action: read/list
+          limit: 100r/m
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
+
+# if true, the mdns load balancer service will be created using calico annotations
+# see templates/mdns-service.yaml
+# https://github.com/projectcalico/calico/issues/11815
+calicoLoadBalancer: false

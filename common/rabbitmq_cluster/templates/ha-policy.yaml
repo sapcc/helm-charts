@@ -1,0 +1,21 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: Policy
+metadata:
+  name: {{ template "fullname" . }}-ha-policy
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: rabbitmq
+    component: {{ .Release.Name }}
+    system: openstack
+spec:
+  name: "ha"
+  vhost: "/"
+  pattern: ".*"
+  applyTo: "all"
+  definition:
+    ha-mode: "all"
+  rabbitmqClusterReference:
+    name: {{ template "fullname" . }}

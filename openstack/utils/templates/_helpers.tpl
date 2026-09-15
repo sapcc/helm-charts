@@ -34,8 +34,8 @@ propagate=0
 {{- if .Values.osprofiler.enabled }}
 [profiler]
 enabled = true
-connection_string = jaeger://localhost:6831
-hmac_keys = {{ .Values.global.osprofiler.hmac_keys }}
+connection_string = {{ .Values.osprofiler.connection_string | default "jaeger://localhost:6831" }}
+hmac_keys = {{ .Values.global.osprofiler.hmac_keys | include "resolve_secret" }}
 trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 {{- end }}
@@ -45,8 +45,8 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 
 {{- define "jaeger_agent_sidecar" }}
-{{- if .Values.osprofiler.enabled }}
-- image: jaegertracing/jaeger-agent:{{ .Values.global.osprofiler.jaeger.version }}
+{{- if and .Values.osprofiler.enabled (hasPrefix "jaeger://" (.Values.osprofiler.connection_string | default "jaeger://localhost:6831")) }}
+- image: {{.Values.global.dockerHubMirrorAlternateRegion}}/jaegertracing/jaeger-agent:{{ .Values.global.osprofiler.jaeger.version }}
   name: jaeger-agent
   ports:
     - containerPort: 5775
@@ -69,3 +69,24 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
     - --log-level=debug
 {{- end }}
 {{- end }}
+
+# Place this in job scripts when your script stops normally, but not abnormally
+# as this causes the side-car pod finish normally, but we need it for the re-runs
+{{- define "utils.script.job_finished_hook" }}
+{{- include "utils.proxysql.proxysql_signal_stop_script" . }}
+{{- include "utils.linkerd.signal_stop_script" . }}
+{{- end }}
+
+{{- define "utils.sentry_config" -}}
+{{- if .Values.sentry.enabled }}
+- name: SENTRY_DSN
+  valueFrom:
+    secretKeyRef:
+      name: sentry
+      key: {{ .Chart.Name }}.DSN.python
+{{- if .Values.sentry.release }}
+- name: SENTRY_RELEASE
+  value: {{ .Values.sentry.release }}
+{{- end -}}
+{{- end -}}
+{{- end -}}

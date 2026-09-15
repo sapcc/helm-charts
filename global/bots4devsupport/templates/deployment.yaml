@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bots4devsupport
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "name" . }}
+    helm.sh/chart: {{ include "chart" $ }}
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: "{{ $.Values.imageTag }}"
+    app.kubernetes.io/component: "app"
+    app.kubernetes.io/part-of: "bots4devsupport"
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    alert-service: "bots4devsupport"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "name" . }}
+      app.kubernetes.io/component: "app"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "name" . }}
+        app.kubernetes.io/version: "{{ $.Values.imageTag }}"
+        app.kubernetes.io/component: "app"
+      annotations:
+        checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
+        checksum/config: {{ include ( print $.Template.BasePath "/config.yaml" ) . | sha256sum }}
+    spec:
+      containers:
+        - name: bots4devsupport
+          image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ $.Values.imageTag }}"
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8501
+              initialDelaySeconds: 30
+              timeoutSeconds: 5
+              periodSeconds: 10
+              failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8501
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            limits:
+              memory: 500Mi
+              cpu: 500m
+            requests:
+              memory: 500Mi
+              cpu: 500m
+          env:
+            - name: AICORE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bots4devsupport
+                  key: aicoreId
+            - name: AICORE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bots4devsupport
+                  key: aicoreSecrets
+            - name: AICORE_AUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bots4devsupport
+                  key: aicoreAuthUrl
+            - name: AICORE_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bots4devsupport
+                  key: aicoreBaseUrl
+            - name: AICORE_RESOURCE_GROUP
+              valueFrom:
+                secretKeyRef:
+                  name: bots4devsupport
+                  key: aicoreResourceGroup
+            - name: RAQ_HANA_DBADMIN_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: bots4devsupport
+                  key: hanaDbPassword
+
+          volumeMounts:
+              - name: bots4devsupport-config-volume
+                mountPath: /etc/config
+      volumes:
+        - name: bots4devsupport-config-volume
+          configMap:
+            name: bots4devsupport

@@ -1,0 +1,17 @@
+groups:
+- name: neutron.alerts
+  rules:
+  - alert: OpenstackNeutronNetworkCountAsync
+    expr: kube_pod_container_status_ready{container="neutron-dhcp-agent"} == 0
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.context }}'
+      meta: 'Not all networks have been synced by agent: {{ $labels.pod }}'
+      playbook: docs/support/playbook/neutron/dhcp_down
+    annotations:
+      description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
+      summary: Openstack Neutron DHCP Agent lost private networks

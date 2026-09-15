@@ -1,0 +1,94 @@
+{{- $root := . }}
+{{- range $target := .Values.global.targets }}
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "vropsInventory.fullName" (list $target $root) }}
+  namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
+  labels:
+    type: vrops-inventory
+    shard: {{ include "vropsExporter.name" (list $target $root) }}
+  annotations:
+    vpa-butler.cloud.sap/update-mode: Auto
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "vropsInventory.fullName" (list $target $root) }}
+      type: inventorycollector
+  template:
+    metadata:
+      labels:
+        app: {{ include "vropsInventory.fullName" (list $target $root) }}
+        shard: {{ include "vropsExporter.name" (list $target $root) }}
+        type: inventorycollector
+        alert-tier: vmware
+        alert-service: vrops
+      annotations:
+        kubectl.kubernetes.io/default-container: vrops-inventory
+    spec:
+      volumes:
+        - name: vrops-exporter-inventory-config
+          configMap:
+            name: vrops-exporter-inventory-config
+      containers:
+         - name: vrops-inventory
+           image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" $.Values.vrops.inventory.tag }}
+           imagePullPolicy: {{ required ".Values.vrops.image.pullPolicy variable missing" $.Values.vrops.image.pullPolicy }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.vrops.inventory.port_number missing" $.Values.vrops.inventory.port_number }}
+           command:
+             - ./inventory.py
+           args:
+             - -m
+             - /config/inventory_config.yaml
+           env:
+           - name: USER
+             value: {{ required ".Values.vrops.user variable is missing" $.Values.vrops.user }}
+           - name: PASSWORD
+             valueFrom:
+               secretKeyRef:
+                 name: vrops-exporter
+                 key: vrops_password
+           - name: PORT
+             value: {{ required ".Values.vrops.inventory.port_number missing" $.Values.vrops.inventory.port_number | quote }}
+           - name: DEBUG
+             value: {{ $.Values.vrops.debug | quote }}
+           - name: SLEEP
+             value: {{ $.Values.vrops.inventory.sleep | quote }}
+           - name: TARGET
+             value: {{ $target }}
+           resources:
+             {{- if (default false $.Values.vrops.inventory.resources) }}
+             limits:
+               memory: {{ required ".Values.vrops.inventory.resources.limits.memory missing" $.Values.vrops.inventory.resources.limits.memory }}
+               cpu: {{ required ".Values.vrops.inventory.resources.limits.cpu missing" $.Values.vrops.inventory.resources.limits.cpu }}
+             requests:
+               memory: {{ required ".Values.vrops.inventory.resources.requests.memory missing" $.Values.vrops.inventory.resources.requests.memory }}
+               cpu: {{ required ".Values.vrops.inventory.resources.requests.cpu missing" $.Values.vrops.inventory.resources.requests.cpu }}
+             {{- end }}
+           volumeMounts:
+             - name: vrops-exporter-inventory-config
+               mountPath: "/config"
+               readOnly: true
+           livenessProbe:
+             httpGet:
+               path: /target
+               port: {{ required ".Values.vrops.inventory.port_number missing" $.Values.vrops.inventory.port_number }}
+             initialDelaySeconds: 5
+             timeoutSeconds: 10
+             periodSeconds: 15
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "vropsInventory.fullName" (list $target $root) }}
+  namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
+spec:
+  selector:
+    app: {{ include "vropsInventory.fullName" (list $target $root) }}
+  ports:
+    - name: metrics
+      port: {{ $.Values.vrops.inventory.port_number }}
+{{- end }}

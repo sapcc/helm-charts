@@ -1,5 +1,5 @@
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: nova-api
@@ -8,8 +8,9 @@ metadata:
     type: api
     component: nova
   annotations:
-    ingress.kubernetes.io/configuration-snippet: |
-      {{- include "utils.snippets.set_openstack_request_id" . | indent 6 }}
+    disco: "true"
+    {{- include "utils.snippets.set_ingress_cors_annotations" . | indent 4 }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
   {{- if .Values.use_tls_acme }}
     kubernetes.io/tls-acme: "true"
   {{- end }}
@@ -22,6 +23,9 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: nova-api
-            servicePort: {{.Values.global.novaApiPortInternal}}
+            service:
+              name: nova-api
+              port:
+                number: {{.Values.global.novaApiPortInternal}}

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: manila-etc
+  name: {{ .Release.Name }}-etc
   labels:
     app: {{ template "fullname" . }}
     release: "{{ .Release.Name }}"
@@ -30,6 +30,10 @@ data:
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
 {{- end }}
+{{- if .Values.api_rate_limit.enabled }}
+  ratelimit.yaml: |
+{{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
+{{- end }}
   statsd-exporter.yaml: |
     defaults:
       timer_type: histogram
@@ -37,3 +41,10 @@ data:
       match_type: glob
       glob_disable_ordering: false
       ttl: 0 # metrics do not expire
+  statsd-rpc-exporter.yaml: |
+    mappings:
+    - match: "oslo.messaging.*.*"
+      name: "oslo_messaging_events"
+      labels:
+        method: "$1"
+        type: "$2"

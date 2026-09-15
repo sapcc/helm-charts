@@ -1,0 +1,2 @@
+- name: kopia.alerts
+  rules:

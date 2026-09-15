@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: wormhole-capi
+spec:
+  selector:
+    matchLabels:
+      name: wormhole
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: wormhole
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+{{- end }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernikus.cloud.sap/cni
+                operator: DoesNotExist
+{{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
+      priorityClassName: system-node-critical
+{{- end }}
+      hostNetwork: true
+      containers:
+      - name: wormhole
+        image: "{{ .Values.image.repository }}/kubernikus:{{ .Values.image.tag }}"
+        command:
+          - "sh"
+          - "-ec"
+          - |
+{{- if .Values.restartOnFileChange }}
+            cp ${KUBE_CLIENT_CERT} /tmp/client-cert.livenessprobe
+{{- end }}
+            exec wormhole client --listen={{ if .Values.interface.listen }}{{ .Values.interface.ipAddress }}:{{ .Values.interface.port }}{{ end }} --health-check={{ .Values.healthCheck }} --kubeconfig={{ .Values.kubeConfig }}
+        volumeMounts:
+          - mountPath: {{ .Values.kubeHostPath }}
+            name: kubernetes
+            readOnly: true
+        securityContext:
+          privileged: true
+{{- if .Values.restartOnFileChange }}
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              cmp -s ${KUBE_CLIENT_CERT} /tmp/client-cert.livenessprobe
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 3
+        env:
+        - name: KUBE_CLIENT_CERT
+          value: {{ .Values.restartOnFileChange }}
+{{- end }}
+      tolerations:
+      - operator: Exists
+      volumes:
+        - name: kubernetes
+          hostPath:
+            path: {{ .Values.kubeHostPath }}

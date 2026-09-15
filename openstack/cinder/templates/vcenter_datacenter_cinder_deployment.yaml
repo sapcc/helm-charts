@@ -8,6 +8,9 @@ options:
   jinja2_options:
     variable_start_string: '{='
     variable_end_string: '=}'
+    {{- if .Values.manage_service_user_passwords }}
+    uses-service-user: cinder
+    {{- end }}
 template: |
   kind: Deployment
   apiVersion: apps/v1
@@ -17,6 +20,11 @@ template: |
       system: openstack
       type: backend
       component: cinder
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
+    annotations:
+      secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+      deployment.reloader.stakater.com/pause-period: "60s"
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -31,15 +39,38 @@ template: |
     template:
       metadata:
         labels:
-          application: cinder
-          component: volume-vmware
           name: cinder-volume-vmware-{= name =}
+          {{- tuple . "cinder" "volume-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 10 }}
+          vcenter: {= host =}
+          datacenter: {= availability_zone =}
+          {{- if .Values.manage_service_user_passwords }}
+          vcenter-operator-secret-version: {= service_user_version | quote =}
+          {{- end }}
         annotations:
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-          configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-configmap.yaml.j2" | render | sha256sum =}
+          configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-secret.yaml.j2" | render | sha256sum =}
+          secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+          {{- if .Values.proxysql.mode }}
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+          {{- end }}
+          {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
+          {{- if .Values.manage_service_user_passwords }}
+          uses-service-user: cinder
+          {{- end }}
       spec:
+{{- if .Values.rbac.enabled }}
+        serviceAccountName: {{ .Release.Name }}
+{{- end }}
+        terminationGracePeriodSeconds: {{ .Values.pod.terminationGracePeriodSeconds.volume }}
         hostname: cinder-volume-vmware-{= name =}
-{{ tuple "{= availability_zone =}" | include "kubernetes_pod_az_affinity" | indent 8 }}
+        {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
+        {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
+        initContainers:
+        {{- tuple . (dict "service" (include "cinder.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . (.Values.proxysql.volume.scale | default 1 | int) | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
         containers:
         - name: cinder-volume-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -49,12 +80,9 @@ template: |
               add: ["SYS_ADMIN"]
           command:
           - dumb-init
-          - kubernetes-entrypoint
+          - --single-child
+          - cinder-volume
           env:
-          - name: COMMAND
-            value: 'cinder-volume'
-          - name: NAMESPACE
-            value: {= namespace =}
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
             valueFrom:
@@ -64,11 +92,9 @@ template: |
           {{- end }}
           - name: PYTHONWARNINGS
             value: 'ignore:Unverified HTTPS request'
-          - name: PGAPPNAME
-            value: cinder-volume-vmware-{= name =}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf"]
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder.conf.d/secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -83,9 +109,11 @@ template: |
             mountPath: /etc/cinder/cinder.conf
             subPath: cinder.conf
             readOnly: true
+          - name: cinder-etc-confd
+            mountPath: /etc/cinder/cinder.conf.d
           - name: cinder-etc
-            mountPath: /etc/cinder/policy.json
-            subPath: policy.json
+            mountPath: /etc/cinder/policy.yaml
+            subPath: policy.yaml
             readOnly: true
           - name: cinder-etc
             mountPath: /etc/cinder/rootwrap.conf
@@ -107,13 +135,24 @@ template: |
             mountPath: /etc/sudoers
             subPath: sudoers
             readOnly: true
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+          {{- include "utils.coordination.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- tuple . (.Values.proxysql.volume.scale | default 1 | int) | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
         volumes:
         - name: etccinder
           emptyDir: {}
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: volume-config
-          configMap:
-            name:  volume-vmware-{= name =}
+          secret:
+            secretName: volume-vmware-{= name =}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.coordination.volumes" . | indent 8 }}
 {{- end }}

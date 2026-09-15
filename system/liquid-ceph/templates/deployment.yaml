@@ -1,0 +1,78 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: liquid-ceph
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      name: liquid-ceph
+  template:
+    metadata:
+      labels:
+        name: liquid-ceph
+      annotations:
+        kubectl.kubernetes.io/default-container: liquid
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      volumes:
+      - name: liquid-conf
+        configMap:
+          name: liquid-config
+      - name: ceph-conf
+        configMap:
+          name: liquid-ceph-conf
+      - name: keyring
+        secret:
+          defaultMode: 420
+          optional: false
+          secretName: {{ required ".Values.ceph.secretName missing" .Values.ceph.secretName }}
+      containers:
+        - name: liquid
+          image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+          {{- if .Values.ceph.enableDebug }}
+          - -d
+          {{- end }}
+          - server
+          - --ceph-conf=/etc/ceph/ceph.conf
+          - --zone-mapping=/etc/liquid/zone-mapping.yaml
+          env:
+          - name: OS_AUTH_URL
+            value: "https://identity-3.{{ .Values.global.region }}.cloud.sap/v3"
+          - name: OS_USER_DOMAIN_NAME
+            value: "Default"
+          - name: OS_USERNAME
+            value: "liquid-ceph"
+          - name: OS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: liquid-ceph-openstack
+                key: password
+          - name: OS_PROJECT_DOMAIN_NAME
+            value: "Default"
+          - name: OS_PROJECT_NAME
+            value: "service"
+          - name: OS_REGION_NAME
+            value: {{ quote $.Values.global.region }}
+          - name: LIQUID_POLICY_PATH
+            value: "/etc/liquid/policy.yaml"
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+          - mountPath: /etc/liquid
+            name: liquid-conf
+          - mountPath: /etc/ceph
+            name: ceph-conf
+          - mountPath: /etc/ceph-keyring
+            name: keyring

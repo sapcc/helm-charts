@@ -1,4 +1,51 @@
 {{- define "tempest-base.tempest_pod" }}
+{{- if .Values.tempestKubectlAccess }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}
+rules:
+- apiGroups:
+  - extensions
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - "pods/exec"
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Chart.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Chart.Name }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+---
 apiVersion: v1
 kind: Pod
 metadata:
@@ -8,9 +55,12 @@ metadata:
     type: configuration
 spec:
   restartPolicy: Never
+  {{- if .Values.tempestKubectlAccess }}
+  serviceAccountName: {{ .Chart.Name }}
+  {{- end }}
   containers:
     - name: {{ .Chart.Name }}
-      image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
+      image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin-python3:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
       command:
         - kubernetes-entrypoint
       env:
@@ -25,11 +75,24 @@ spec:
         - name: OS_PROJECT_DOMAIN_NAME
           value: "tempest"
         - name: OS_INTERFACE
-          value: "internal"
+          value: "public"
         - name: OS_ENDPOINT_TYPE
-          value: "internal"
+          value: "public"
         - name: OS_PASSWORD
-          value: {{ .Values.tempestAdminPassword | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: OS_PASSWORD
+        - name: SLACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: SLACK_URL
+        - name: CC_SLACK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: CC_SLACK_URL
         - name: OS_IDENTITY_API_VERSION
           value: "3"
         - name: OS_AUTH_URL
@@ -39,11 +102,13 @@ spec:
           memory: "1024Mi"
           cpu: "750m"
         limits:
-          memory: "2048Mi"
-          cpu: "1000m"
+          memory: "4096Mi"
+          cpu: "2000m"
       volumeMounts:
         - mountPath: /{{ .Chart.Name }}-etc
           name: {{ .Chart.Name }}-etc
+        - mountPath: /{{ .Chart.Name }}-etc-secret
+          name: {{ .Chart.Name }}-etc-secret
         - mountPath: /container.init
           name: container-init
   volumes:
@@ -54,4 +119,14 @@ spec:
       configMap:
         name: {{ .Chart.Name }}-bin
         defaultMode: 0755
+    - name: {{ .Chart.Name }}-etc-secret
+      secret:
+        secretName: {{ .Chart.Name }}-etc-secret
+        items:
+        - key: tempest_accounts.yaml
+          path: tempest_accounts.yaml
+        - key: tempest_deployment_config.json
+          path: tempest_deployment_config.json
+        - key: tempest_extra_options
+          path: tempest_extra_options
 {{ end }}

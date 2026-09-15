@@ -1,5 +1,9 @@
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+
+---
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: keppel-api
@@ -7,33 +11,84 @@ metadata:
     kubernetes.io/tls-acme: "true"
     disco: "true"
     ingress.kubernetes.io/proxy-request-buffering: "off" # to improve push performance
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off" # to improve push performance
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 
 spec:
   tls:
     - secretName: tls-keppel-api
       hosts:
-        - 'keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
-        - '*.keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+        - 'keppel.{{ $region }}.{{ $tld }}'
+        - '*.keppel.{{ $region }}.{{ $tld }}'
   rules:
-    - host: 'keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+    - host: 'keppel.{{ $region }}.{{ $tld }}'
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
-              serviceName: keppel-api
-              servicePort: 80
-    - host: '*.keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+              service:
+                name: keppel-api
+                port:
+                  number: 80
+          - path: /healthcheck # this is used by the loadbalancer for keppel.global to monitor the health of this region
+            pathType: Exact
+            backend:
+              service:
+                name: keppel-health-monitor
+                port:
+                  number: 8080
+    - host: '*.keppel.{{ $region }}.{{ $tld }}'
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
-              serviceName: keppel-api
-              servicePort: 80
+              service:
+                name: keppel-api
+                port:
+                  number: 80
 
-{{- if .Values.keppel.anycast_domain_name }}
 ---
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: keppel-liquid-api
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+
+spec:
+  tls:
+    - secretName: tls-keppel-liquid-api
+      hosts:
+        - 'keppel-liquid.{{ $region }}.{{ $tld }}'
+  rules:
+    - host: 'keppel-liquid.{{ $region }}.{{ $tld }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keppel-liquid-api
+                port:
+                  number: 80
+
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $has_anycast := $peer_group.exclude_from_anycast | has $region | not -}}
+{{- if $has_anycast }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: keppel-api-san
@@ -45,21 +100,28 @@ spec:
   tls:
     - secretName: tls-keppel-api-san
       hosts:
-        - '{{ .Values.keppel.anycast_domain_name }}'
-        - '*.{{ .Values.keppel.anycast_domain_name }}'
+        - '{{ $peer_group.anycast_domain_name }}'
+        - '*.{{ $peer_group.anycast_domain_name }}'
+  # TODO: remove
   rules:
-    - host: '{{ .Values.keppel.anycast_domain_name }}'
+    - host: '{{ $peer_group.anycast_domain_name }}'
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
-              serviceName: keppel-api
-              servicePort: 80
-    - host: '*.{{ .Values.keppel.anycast_domain_name }}'
+              service:
+                name: keppel-api
+                port:
+                  number: 80
+    - host: '*.{{ $peer_group.anycast_domain_name }}'
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
-              serviceName: keppel-api
-              servicePort: 80
+              service:
+                name: keppel-api
+                port:
+                  number: 80
 {{ end }}

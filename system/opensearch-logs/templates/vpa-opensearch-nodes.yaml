@@ -1,0 +1,80 @@
+{{- if .Values.vpa.enabled }}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: opensearch-logs-client-statefulset-custom
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: opensearch-logs-client
+  updatePolicy:
+    updateMode: "Off"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: opensearch-logs-data-statefulset-custom
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: opensearch-logs-data
+  updatePolicy:
+    updateMode: "Off"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: opensearch-logs-master-statefulset-custom
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: opensearch-logs-master
+  updatePolicy:
+    updateMode: "Off"
+{{- if .Values.opensearch_snapshots.enabled }}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: opensearch-logs-snapshots-statefulset-custom
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: opensearch-logs-snapshots
+  updatePolicy:
+    updateMode: "Off"
+{{- end }}
+{{- end }}

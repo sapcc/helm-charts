@@ -1,0 +1,17 @@
+{{- if and .Values.backup.enabled .Values.backup.claimName }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "fullName" . }}-{{ .Values.backup.claimName }}
+spec:
+{{- if .Values.persistence.accessMode }}
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+{{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: .Values.persistence.storage_class
+  {{- end }}
+{{ end }}

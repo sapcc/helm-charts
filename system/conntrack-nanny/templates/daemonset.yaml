@@ -1,51 +1,47 @@
+{{ if .Values.enabled -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    app: conntrack-nanny
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app.kubernetes.io/name: conntrack-nanny
   name: conntrack-nanny
 spec:
-  revisionHistoryLimit: 3
-  updateStrategy:
-    type: RollingUpdate
   selector:
     matchLabels:
-      app: conntrack-nanny
+      app.kubernetes.io/name: conntrack-nanny
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
   template:
     metadata:
       labels:
-        app: conntrack-nanny
-      #annotations:
-      #  prometheus.io/scrape: "true"
-      #  prometheus.io/port: "9191"
-      name: conntrack-nanny
+        app.kubernetes.io/name: conntrack-nanny
     spec:
-      hostNetwork: true
+      priorityClassName: system-node-critical
+      serviceAccountName: conntrack-nanny
       containers:
-      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        #ports:
-        #- containerPort: 9191
-        #  name: metrics
-        #  protocol: TCP
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-
-        name: nanny
+      - name: nanny
+        imagePullPolicy: IfNotPresent
+        image: "{{ required ".Values.images.image is missing" .Values.images.image }}:{{ required ".Values.images.tag is missing" .Values.images.tag }}"
         securityContext:
           capabilities:
-            add: ["NET_ADMIN"]
-          #privileged: true
+            add:
+            - NET_ADMIN
         resources:
 {{ toYaml .Values.resources | indent 12 }}
-    {{- with .Values.nodeSelector }}
+      hostNetwork: true
+      {{- with .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- with .Values.affinity }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 5
+      {{- with .Values.affinity }}
       affinity:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-    {{- with .Values.tolerations }}
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
       tolerations:
-{{ toYaml . | indent 8 }}
-    {{- end }}
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+{{- end }}

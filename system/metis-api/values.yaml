@@ -1,0 +1,41 @@
+namespace: metis
+global:
+  linkerd_requested: false
+
+alerts:
+  prometheus: "infra-collector"
+
+owner-info:
+  support-group: containers
+  service: metis
+  maintainers:
+    - "Ivo Gosemann"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/metis"
+
+prometheus-monitors:
+  podMonitor:
+    enabled: true
+  prometheus: "infra-collector"
+  matchExpressions:
+    - key: "app.kubernetes.io/name"
+      operator: "In"
+      values:
+        - "metis-api"
+  metricsPort: "http"
+  nameOverride: "metis-api"
+
+metisAPI:
+  enabled: false
+  port: 8080
+  image: metis-api
+  imageTag: "<DEFINED-IN-PIPELINE>"
+  alerts:
+    enabled: false
+    prometheus: "infra-collector"
+  resources:
+    limits:
+      memory: 250Mi
+      cpu: 400m
+    requests:
+      memory: 75Mi
+      cpu: 200m

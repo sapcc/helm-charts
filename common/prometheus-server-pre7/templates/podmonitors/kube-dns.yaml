@@ -1,0 +1,36 @@
+{{- if .Values.serviceDiscoveries.kubeDNS.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" . }}-kubernetes-dns
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  jobLabel: kubernetes-dns
+
+  # Selector not used but required in k8s 1.10+ .
+  selector:
+    matchLabels:
+      k8s-app: kube-dns
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    any: true
+
+  podMetricsEndpoints:
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+      scheme: http
+      port: metrics
+      relabelings:
+        - targetLabel: component
+          replacement: dns
+        - targetLabel: node
+          sourceLabels: [__meta_kubernetes_pod_node_name]
+        - action: replace
+          sourceLabels: [__address__]
+          targetLabel: instance
+{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{- end }}

@@ -34,14 +34,6 @@ backlog = 4096
 max_allowed_secret_in_bytes = 20000
 max_allowed_request_size_in_bytes = 1000000
 
-{{ if eq .Values.postgresql.enabled false }}
-sql_connection = {{ include "db_url_mysql" . }}
-{{ else }}
-sql_connection = {{ include "db_url" . }}
-{{ end }}
-
-{{ include "ini_sections.default_transport_url" . }}
-
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
 
@@ -49,14 +41,14 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 10 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
+max_limit_paging = 3000
+
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.barbican_service_password is missing" .Values.global.barbican_service_password }}
 user_domain_id = default
 project_name = service
 project_domain_id = default
@@ -67,17 +59,38 @@ token_cache_time = 600
 include_service_catalog = true
 service_type = key-manager
 
-{{- if .Values.audit.enabled }}
-# Defines CADF Audit Middleware section
-[audit_middleware_notifications]
-topics = notifications
-driver = messagingv2
-transport_url = rabbit://rabbitmq:{{ .Values.rabbitmq_notifications.users.default.password }}@barbican-rabbitmq-notifications:5672/
-mem_queue_size = 1000
-{{- end }}
-
 {{- include "ini_sections.cache" . }}
 
 [oslo_policy]
-
 policy_file = /etc/barbican/policy.yaml
+enforce_new_defaults=False
+enforce_scope=False
+
+{{- if .Values.hsm.multistore.enabled }}
+[secretstore]
+enable_multiple_secret_stores = True
+{{- if .Values.hsm.utimaco_hsm.enabled }}
+stores_lookup_suffix = software, pkcs11, utimaco_hsm
+{{- else }}
+stores_lookup_suffix = software, pkcs11
+{{- end }}
+namespace = barbican.secretstore.plugin
+
+[secretstore:software]
+secret_store_plugin = store_crypto
+crypto_plugin = simple_crypto
+
+[secretstore:pkcs11]
+secret_store_plugin = store_crypto
+crypto_plugin = p11_crypto
+global_default = True
+
+{{- if .Values.hsm.utimaco_hsm.enabled }}
+
+[secretstore:utimaco_hsm]
+secret_store_plugin = store_crypto
+crypto_plugin = utimaco_hsm_crypto
+
+{{- end }}
+{{- end }}
+

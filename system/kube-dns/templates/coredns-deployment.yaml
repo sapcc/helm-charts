@@ -10,7 +10,7 @@ metadata:
     addonmanager.kubernetes.io/mode: Reconcile
     kubernetes.io/name: "CoreDNS"
 spec:
-  replicas: 2
+  replicas: 4
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -24,6 +24,8 @@ spec:
         k8s-app: kube-dns
       annotations:
         seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     spec:
       affinity:
         podAntiAffinity:
@@ -40,15 +42,13 @@ spec:
       tolerations:
         - key: "CriticalAddonsOnly"
           operator: "Exists"
-      nodeSelector:
-        beta.kubernetes.io/os: linux
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 8 }}
       {{- end }}
       containers:
       - name: coredns
-        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.coredns.image }}:{{ .Values.images.coredns.tag }}"
+        image: "{{ required ".Values.images.coredns.image is missing" .Values.images.coredns.image }}:{{ required ".Values.images.coredns.tag is missing" .Values.images.coredns.tag }}"
         imagePullPolicy: IfNotPresent
         resources:
           limits:

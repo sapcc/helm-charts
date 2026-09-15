@@ -1,34 +1,37 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: manila-migration
+  name: {{ tuple . "migration" | include "job_name" }}
   labels:
     system: openstack
     type: configuration
     component: manila
     alert-tier: os
     alert-service: manila
-  annotations:
-    "helm.sh/hook": "post-install,pre-upgrade"
-    "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      priorityClassName: {{ .Values.pod.priority_class.low }}
+      initContainers:
+      {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: manila-migration
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/db-migrate
           env:
-            - name: COMMAND
-              value: "/container.init/db-migrate"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:
@@ -45,6 +48,8 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
             - name: manila-etc
               mountPath: /etc/manila/policy.yaml
               subPath: policy.yaml
@@ -55,13 +60,23 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
         - name: manila-etc
           configMap:
-            name: manila-etc
+            name: {{ .Release.Name }}-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: container-init
           configMap:
-            name: manila-bin
+            name: {{ .Release.Name }}-bin
             defaultMode: 0755
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}

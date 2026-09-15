@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch-hermes
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: elasticsearch-cluster
+spec:
+  serviceName: elasticsearch-hermes
+  replicas: {{.Values.replicas}}
+  selector:
+    matchLabels:
+      component: elasticsearch-cluster
+  template:
+    metadata:
+      labels:
+        component: elasticsearch-cluster
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/elasticsearch.yml: {{ include  (print $.Template.BasePath "/_elasticsearch.yml.tpl") . | sha256sum }}
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: elasticsearch-hermes-etc
+          configMap:
+            name: elasticsearch-hermes-etc
+      initContainers:
+      - name: sysctl # NOTE: This task is separated from the init-volumes task to separate privileged system access and data access from each other.
+        image: {{ .Values.global.dockerHubMirror }}/library/busybox:latest
+        imagePullPolicy: IfNotPresent
+        command: ['sysctl', '-w', 'vm.max_map_count=262144']
+        securityContext:
+          runAsUser: 0
+          privileged: true
+      - name: init-volumes
+        image: {{ .Values.global.dockerHubMirror }}/library/busybox:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+          - chown -R 1000:1000 /data &&
+            mkdir -p /data/es-config &&
+            chown -R 1000:1000 /data/es-config &&
+            cp /es-etc/* /data/es-config &&
+            mkdir -p /data/es-config/scripts &&
+            mkdir -p /data/snapshots &&
+            chown -R 1000:1000 /data/snapshots &&
+            touch /data/es-config/elasticsearch.keystore && rm /data/es-config/elasticsearch.keystore
+        volumeMounts:
+          - mountPath: /data
+            name: elasticsearch-hermes
+          - mountPath: /es-etc
+            name: elasticsearch-hermes-etc
+        securityContext:
+          runAsUser: 0
+      containers:
+        - name: elasticsearch-hermes
+          image: {{.Values.global.elasticCoMirror}}/elasticsearch/elasticsearch:{{.Values.hermes_image_version_elasticsearch}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+            - elasticsearch-plugin install -b https://github.com/vvanholl/elasticsearch-prometheus-exporter/releases/download/7.17.2.0/prometheus-exporter-7.17.2.0.zip && elasticsearch
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBERNETES_CA_CERTIFICATE_FILE
+              value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_MASTER
+              value: "true"
+            - name: NODE_INGEST
+              value: "true"
+            - name: NODE_DATA
+              value: "true"
+            - name: HTTP_ENABLE
+              value: "true"
+            - name: ES_JAVA_OPTS
+              value: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=20g -XX:MaxGCPauseMillis=500 -Xms16g -Xmx16g"
+            - name: READONLYREST_ENABLE
+              value: "true"
+            - name: ES_JVM_OPTS
+              value: "/data/es-config/jvm.options"
+            - name: ES_PATH_CONF
+              value: "/data/es-config/"
+          securityContext:
+            runAsUser: 1000
+            capabilities:
+              add:
+                - IPC_LOCK
+                - SYS_RESOURCE
+          volumeMounts:
+            - mountPath: /data
+              name: elasticsearch-hermes
+            - mountPath: /es-etc
+              name: elasticsearch-hermes-etc
+          ports:
+            - name: transport
+              containerPort: {{.Values.cluster_port}}
+              protocol: TCP
+            - name: noscheduleport
+              hostPort: {{.Values.noschedule_port}}
+              hostIP: 127.0.0.1
+              containerPort: {{.Values.noschedule_port}}
+            - name: http
+              containerPort: {{.Values.http_port}}
+              protocol: TCP
+  volumeClaimTemplates:
+  - metadata:
+      name: elasticsearch-hermes
+      namespace: hermes
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{.Values.data_volumesize}}

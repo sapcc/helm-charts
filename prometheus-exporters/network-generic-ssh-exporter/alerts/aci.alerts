@@ -1,0 +1,17 @@
+groups:
+  - name: ssh-aci
+    rules:
+    - alert: NetworkAciZmqErrorsRate
+      expr: rate(ssh_zmq_errors[5m]) > 0
+      for: 5m
+      labels:
+        severity: info
+        tier: net
+        service: aci
+        context: aci
+        meta: "ACI leaf Endpoint sync issue. ZMQ errors rate over 0 in 5 minutes."
+        playbook: ''
+      annotations:
+        description: "ACI leaf Endpoint sync issue on {{ $labels.name }}. ZMQ errors rate over 0 in 5 minutes."
+        summary: "ACI ZMQ errors."
+        

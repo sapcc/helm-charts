@@ -1,0 +1,30 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: placement-api
+  labels:
+    system: openstack
+    type: api
+    component: placement
+  annotations:
+    disco: "true"
+  {{- if .Values.use_tls_acme }}
+    kubernetes.io/tls-acme: "true"
+  {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+  tls:
+  - secretName: tls-{{include "placement_api_endpoint_host_public" . | replace "." "-" }}
+    hosts: [{{include "placement_api_endpoint_host_public" .}}]
+  rules:
+  - host: {{include "placement_api_endpoint_host_public" .}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: placement-api
+            port:
+              number: {{ .Values.global.placementApiPortInternal }}

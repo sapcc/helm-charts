@@ -1,0 +1,21 @@
+{{/* Generate Prometheus Aggregation Rules */}}
+{{- $values := .Values.aggregations }}
+{{- if $values.enabled }}
+{{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    type: aggregation-rules
+    thanos-ruler: regional
+    # Disable absent-metrics-operator (AMO) for Thanos-Ruler alerts.
+    absent-metrics-operator/disable: "true"
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}

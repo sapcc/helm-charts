@@ -1,3 +1,4 @@
+{{- $values := .Values }}
 {{- if .Values.updater.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -23,6 +24,9 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include "cronus-updater/templates/_config.yaml.tpl" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.updater.prometheusPort | quote}}
+        prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
       labels:
         app.kubernetes.io/name: cronus-updater
         app.kubernetes.io/instance: cronus-updater
@@ -34,13 +38,23 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "-config=/cronus-updater/config.yaml"
+          envFrom:
+            - secretRef:
+                name: cronus-updater-secret
           volumeMounts:
             - name: cronus-updater-config
               mountPath: "/cronus-updater/config.yaml"
               subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.updater.prometheusPort }}
+              protocol: TCP
       restartPolicy: Always
       volumes:
         - name: cronus-updater-config
-          secret:
-            secretName: cronus-updater-config
+          configMap:
+            name: cronus-updater-config
+            items:
+              - key: config.yaml
+                path: config.yaml
 {{ end -}}

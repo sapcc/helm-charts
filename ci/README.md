@@ -21,22 +21,11 @@ Assuming a chart looks like this:
 
 A `Chart.yaml` must have the following mandatory attributes:
 ```yaml
-# The chart API version. 
-apiVersion: v1
-
-# Version of the application deployed with this chart.
+apiVersion: v2
 appVersion: "1.0"
-
-# A short description of the chart.
 description: mychart
-
-# The name of the chart.
 name: chart-name
-
-# The version of the chart.
 version: 0.1.0
-
-# List of maintainers for this chart.
 maintainers:
   - name: github-handle
 ```
@@ -54,7 +43,6 @@ The chart test toolkit will use every `*-values.yaml` provided in the `ci` folde
 2. Prometheus alert- & aggregation rules
 
     If Prometheus alert- (`*.alerts`) or aggregation rules `(*.rules)` are part of the Helm chart, they are validated using the [promtool](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#syntax-checking-rules).
-
 
 # Running the tests locally
 

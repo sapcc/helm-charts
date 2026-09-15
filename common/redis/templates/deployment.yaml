@@ -1,46 +1,73 @@
+{{- $fullname := include "redis.fullname" . -}}
+
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "redis.fullname" . }}
-  labels:
-    app: {{ template "redis.fullname" . }}
-    chart: "{{ .Chart.Name }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+  name: {{ $fullname }}
 spec:
+{{- if .Values.persistence.enabled }}
+  strategy:
+    type: Recreate
+{{- end }}
   selector:
     matchLabels:
-      app: {{ template "redis.fullname" . }}
+      app: {{ $fullname }}
   template:
     metadata:
       labels:
-        app: {{ template "redis.fullname" . }}
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ include "alerts.service" . }}
+        app: {{ $fullname }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ $fullname }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        {{- if .Values.config }}
+        checksum/configmap: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.redisPassword }}
+        checksum/secrets: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- end }}
     spec:
+      {{- if not .Values.redisPassword }}
+      initContainers:
+      - name: generate-secrets
+        image: {{ include "redis.shared-app-images.ref" (tuple . "alpine-kubectl" "latest") }}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DEBUG
+          value: 'false'
+        - name: DEPLOYMENT_NAME
+          value: {{ $fullname }}
+        - name: USERS
+          value: 'default'
+        - name: ANNOTATE_FOR_RELOADER
+          value: {{ .Values.reloader.annotateGeneratedSecrets | quote }}
+        command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
+      {{- end }}
       containers:
-      - name: {{ template "redis.fullname" . }}
-        image: {{ template "redis.image" . }}
-        imagePullPolicy: {{ default "" .Values.image.pullPolicy | quote }}
+      - name: {{ $fullname }}
+        image: {{ include "redis.shared-app-images.ref" (tuple . "alpine-valkey" "9.1") }}
+        imagePullPolicy: IfNotPresent
         args:
         {{- if .Values.config }}
         - /etc/redis/redis.conf
         {{- end }}
-        {{- if .Values.redisPassword }}
         - --requirepass
         - $(REDIS_PASSWORD)
         env:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "redis.fullname" . }}
+              {{- if .Values.redisPassword }}
+              name: {{ $fullname }}
               key: redis-password
-        {{ end }}
+              {{- else }}
+              name: {{ $fullname }}-user-default
+              key: password
+              {{- end }}
         ports:
         - name: redis
-          containerPort: {{ required ".Values.redisPort missing" .Values.redisPort }}
+          containerPort: 6379
         livenessProbe:
           exec:
             command:
@@ -48,6 +75,13 @@ spec:
             - ping
           initialDelaySeconds: 30
           timeoutSeconds: 5
+        startupProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          failureThreshold: 600 # consider to lower this?
         readinessProbe:
           exec:
             command:
@@ -55,8 +89,7 @@ spec:
             - ping
           initialDelaySeconds: 5
           timeoutSeconds: 1
-        resources:
-{{ toYaml .Values.resources | indent 10 }}
+        resources: {{ toYaml .Values.resources | nindent 10 }}
         volumeMounts:
         - name: redis-data
           mountPath: /data
@@ -64,11 +97,14 @@ spec:
         - name: redis-config
           mountPath: /etc/redis
       {{- end }}
+      {{- if not .Values.redisPassword }}
+      serviceAccountName: {{ $fullname }}
+      {{- end }}
       volumes:
       - name: redis-data
       {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "redis.fullname" . }}
+          claimName: {{ $fullname }}
       {{- else }}
         emptyDir:
           medium: Memory
@@ -76,6 +112,6 @@ spec:
       {{- if .Values.config }}
       - name: redis-config
         configMap:
-          name: {{ template "redis.fullname" . }}
+          name: {{ $fullname }}
           defaultMode: 0444
       {{- end }}

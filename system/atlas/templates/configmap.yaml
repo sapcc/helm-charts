@@ -1,0 +1,29 @@
+{{- $root := . -}}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name:  {{ include "atlas.fullname" . }}
+  labels:
+    app: {{ include "atlas.name" . }}
+    chart: {{ include "atlas.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  #annotations:
+    #"helm.sh/hook": "pre-install"
+    #"helm.sh/hook": "pre-upgrade"
+data:
+  atlas.yaml: |
+    discoveries:
+      netbox:
+        refresh_interval: {{ .Values.refresh_interval }}
+        rate_limit: {{ .Values.rate_limit }}
+        targets_file_name: "./targets/netbox.json"
+        {{- if eq .Values.global.region "qa-de-2" }}
+        netbox_host: "{{ .Values.netbox_host_staging }}"
+        {{- else }}
+        netbox_host: "{{ .Values.netbox_host }}"
+        {{- end }}
+        dcim:
+          devices:

@@ -18,7 +18,6 @@ spec:
         app: {{ template "blackbox-exporter.name" . }}
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: {{ required ".Values.service.port missing" .Values.service.port | quote }}
         prometheus.io/targets: "kubernetes,openstack"
     spec:
       containers:
@@ -27,6 +26,7 @@ spec:
           imagePullPolicy: {{ required ".Values.image.pullPolicy missing" .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ required ".Values.service.port missing" .Values.service.port }}
+              name: {{ required ".Values.service.name missing" .Values.service.name }}
           args:
             - --config.file=/etc/blackbox-exporter/blackbox.yaml
             - --web.external-url={{ include "hostname" . }}
@@ -36,7 +36,7 @@ spec:
             - name: config
               mountPath: /etc/blackbox-exporter
         - name: {{ .Chart.Name }}-configmap-reloader
-          image: {{ if and .Values.global .Values.global.dockerHubMirror }}{{.Values.global.dockerHubMirror}}/{{ end }}{{ required ".Values.configmapReload.image.repository missing" .Values.configmapReload.image.repository }}:{{ required ".Values.configmapReload.image.tag missing" .Values.configmapReload.image.tag }}
+          image: {{ if and .Values.global .Values.global.ghcrIoMirror }}{{.Values.global.ghcrIoMirror}}/{{ end }}{{ required ".Values.configmapReload.image.repository missing" .Values.configmapReload.image.repository }}:{{ required ".Values.configmapReload.image.tag missing" .Values.configmapReload.image.tag }}
           args:
             - --volume-dir=/etc/blackbox-exporter
             - --webhook-url=http://localhost:{{ required ".Values.service.port missing" .Values.service.port }}/-/reload

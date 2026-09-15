@@ -1,0 +1,42 @@
+{{ range $lg, $lg_config := .Values.looking_glass -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $lg }}
+  namespace: px
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    {{- if $lg_config.authenticate }}
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    ingress.kubernetes.io/auth-tls-verify-client: "true"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "true"
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    ingress.kubernetes.io/auth-url: https://ccauth.{{ $.Values.global.region }}.cloud.sap/v1/query?authentication-method=ingress-certificate&authorization-method=ldap&authorization-groups=CP_NETWORK_SUPPORT,CP_API_SUPPORT
+    nginx.ingress.kubernetes.io/auth-url: https://ccauth.{{ $.Values.global.region }}.cloud.sap/v1/query?authentication-method=ingress-certificate&authorization-method=ldap&authorization-groups=CP_NETWORK_SUPPORT,CP_API_SUPPORT
+    ingress.kubernetes.io/auth-response-headers: "CC-Authorization-Status,CC-Authorization-Response-Groups,CC-Authentication-Status"
+    nginx.ingress.kubernetes.io/auth-response-headers: "CC-Authorization-Status,CC-Authorization-Response-Groups,CC-Authentication-Status"
+    {{- end }}
+spec:
+  rules:
+  - host: {{ $lg_config.subdomain }}.{{ $.Values.global.region }}.cloud.sap
+    http:
+      paths:
+        - pathType: Prefix
+          path: /
+          backend:
+            service:
+              name: {{ $lg }}
+              port:
+                number: 80
+
+  tls:
+  - hosts:
+    - {{ $lg_config.subdomain }}.{{ $.Values.global.region }}.cloud.sap
+    secretName: {{ $lg }}
+{{ end -}}

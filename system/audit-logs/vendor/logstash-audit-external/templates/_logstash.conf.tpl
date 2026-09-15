@@ -1,28 +1,47 @@
 input {
 {{- if .Values.syslog.enabled }}
   udp {
+    id => "input_udp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
   tcp {
+    id => "input_tcp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
 {{- end }}
+{{- if .Values.http.enabled }}
   http {
+    id => "input_http"
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
-    user => '{{.Values.global.elk_elasticsearch_http_user}}'
-    password => '{{.Values.global.elk_elasticsearch_http_password}}'
-{{ if eq .Values.global.clusterType "metal" -}}
-    ssl => true
+    user => '${AUDIT_HTTP_USER}'
+    password => '${AUDIT_HTTP_PWD}'
+{{ if ne .Values.global.clusterType "scaleout" -}}
+    ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
     threads => 12
 {{- end }}
   }
+{{- end }}
+{{- if .Values.mtls.enabled }}
+  http {
+    id => "input_mtls"
+    port  => {{.Values.input_mtls_port}}
+    tags => ["kube-api"]
+    ssl_enabled => true
+    ssl_certificate => '/tls-secret/tls.crt'
+    ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
+    threads => 12
+  }
+{{- end }}
 {{- if .Values.beats.enabled }}
   beats {
+    id => "input_beats"
     port => {{ .Values.beats.port }}
     tags => ["audit"]
   }
@@ -49,7 +68,7 @@ filter {
         "message" => [
                       "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_process}: %{SYSLOGCISCOSTRING}: %{GREEDYDATA:syslog_message}",
-                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} Severity: (?<syslog_severity>\w+), Category: (?<syslog_category>\w+), MessageID: (?<syslog_messageid>\w+), Message: %{GREEDYDATA:syslog_message}",
+                      "<%{NONNEGINT:syslog_pri}>(?:%{SYSLOGTIMESTAMP:syslog_timestamp}|%{TIMESTAMP_ISO8601:syslog_timestamp}) %{SYSLOGHOST:syslog_hostname} Severity: (?<syslog_severity>\w+), Category: (?<syslog_category>\w+), MessageID: (?<syslog_messageid>\w+), Message: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_process}: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>%{PROG:syslog_process}\[%{POSINT:pid}\]: %{GREEDYDATA:syslog_message}",
                       "<%{NONNEGINT:syslog_pri}>Severity: (?<syslog_severity>\w+), Category: (?<syslog_category>\w+), MessageID: (?<syslog_messageid>\w+), Message: %{GREEDYDATA:syslog_message}",
@@ -77,11 +96,6 @@ filter {
       replace => { "type" => "audit" }
       add_field => { "[sap][cc][audit][source]" => "remoteboard"}
     }
-    {{- if .Values.syslog.elk_output_enabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
 
 # Set source for ucs central instances
@@ -99,37 +113,27 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "ucsm" }
       }
-    {{- if .Values.syslog.elk_output_enabled }}
-      clone {
-        clones => ['audit', 'syslog']
-      }
-    {{- end }}
     }
   }
 
 # Change type of audit relevant HSM syslogs
-  if [syslog_hostname] and [syslog_hostname] == "hsm01" {
+  if [syslog_hostname] and [syslog_hostname] =~ /hsm/ {
     mutate {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
-    {{- if .Values.syslog.elk_output_enabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
-  {{- if .Values.syslog.elk_output_enabled }}
-  if [type] == "syslog" and [sap][cc][audit][source] {
-    mutate{
-      remove_field => "[sap][cc][audit][source]"
+  if [hostname] and [hostname] =~ /hsm/ {
+    mutate {
+        replace => { "type" => "audit" }
+        add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
   }
-  {{- else}}
   if [type] == "syslog" {
-    drop{}
+    mutate {
+      add_tag => ["dropped_syslog"]
+    }
   }
-  {{- end }}
  }
  {{- end }}
  {{- if eq .Values.global.clusterType "metal" }}
@@ -181,10 +185,13 @@ filter {
         {{ end -}}
       }
 
-      if "awx" in [cluster_host_id] {
+      if "awx" in [logger_name] {
         mutate {
           add_field => { "[sap][cc][audit][source]"  => "awx" }
-          remove_field => [ "event_data" ]
+          remove_field => [ "[event_data][artifact_data]", "[event_data][changed]", "[event_data][dark]",
+                            "[event_data][failures]", "[event_data][ignored]", "[event_data][ok]",
+                            "[event_data][processed]", "[event_data][res]", "[event_data][rescued]",
+                            "[event_data][skipped]" ]
         }
       }
 
@@ -202,44 +209,108 @@ filter {
         }
       }
     }
-  }
+    if ("kube-api" in [tags]) {
+            split {
+              field => "items"
+          }
+
+          if [items][annotations][shoot.gardener.cloud/name] {
+            grok {
+              match => { "[items][annotations][shoot.gardener.cloud/name]" => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
+            }
+          }
+
+          mutate {
+            add_field => { "[sap][cc][cluster]" => "%{[items][annotations][shoot.gardener.cloud/name]}"}
+            add_field => { "[sap][cc][audit][source]" => "kube-api"}
+            add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
+          }
+          # ---- flatten items ----
+          ruby {
+                 code => '
+                      event.get("items").each { |k, v|
+                          event.set(k,v)
+                          }
+                          event.remove("items")
+                '
+         }
+
+          # ---- remove managedFields entirely (contains dot-only keys that ES rejects) ----
+          # Must be AFTER items flatten so the field paths are correct
+          mutate {
+            remove_field => [
+              "[requestObject][metadata][managedFields]",
+              "[responseObject][metadata][managedFields]"
+            ]
+          }
+
+          # ---- fix responseObject.status type conflict ----
+          # When responseObject is a K8s Status (error response), the "status" field
+          # is a string ("Failure"/"Success") which conflicts with the object mapping
+          # from Shoot resources where status is a complex object.
+          if [responseObject][kind] == "Status" {
+            mutate {
+              rename => { "[responseObject][status]" => "[responseObject][statusText]" }
+            }
+          }
+          if [responseStatus][status] {
+            mutate {
+              rename => { "[responseStatus][status]" => "[responseStatus][statusText]" }
+            }
+          }
+
+          # ---- use API server timestamp for correct event ordering ----
+          # requestReceivedTimestamp is when the API server received the request,
+          # which is the authoritative "when did this happen" time.
+          # Without this, @timestamp reflects batching/forwarding time which
+          # causes events from different API servers to appear out of order.
+          date {
+            match => ["requestReceivedTimestamp", "ISO8601"]
+            target => "@timestamp"
+            tag_on_failure => ["_dateparsefailure_requestReceivedTimestamp"]
+          }
+        }
+      }
 
 
 output {
   if [sap][cc][audit][source] == "awx" {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      id => "output_awx"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
       format => "json"
       http_method => "post"
     }
   } else if [sap][cc][audit][source] == "flatcar" {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      id => "output_flatcar"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
       format => "json"
       http_method => "post"
     }
   } else if [type] == "audit" or "audit" in [tags] {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      id => "output_else_audit"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
       http_method => "post"
     }
-  }
-{{- if .Values.syslog.elkOutputEnabled }}
-  elseif [type] == "syslog" {
-    elasticsearch {
-      index => "syslog-%{+YYYY.MM.dd}"
-      template => "/audit-etc/syslog.json"
-      template_name => "syslog"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
+  } else if [type] == "kube-api" or "kube-api" in [tags] {
+    http {
+      id => "output_kube-api"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
+      url => "https://{{ .Values.global.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if "dropped_syslog" in [tags] {
+    file {
+      id => "output_dropped_syslog"
+      path => "/dev/stdout"
+      codec => json_lines
     }
   }
-{{- end }}
 }

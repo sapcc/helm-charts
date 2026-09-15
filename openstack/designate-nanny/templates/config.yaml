@@ -1,0 +1,18 @@
+{{- if .Values.nannies }}
+{{- $defaults :=  (default (dict) .Values.nanny_defaults).config  }}
+{{- $release_name := .Release.Name }}
+{{- range $name, $settings := .Values.nannies }}
+{{- if $settings.enabled }}
+{{- $release := printf "%s-%s" $release_name $name }}
+{{- $settings := merge $settings.config $defaults }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $release }}
+data:
+  nanny.yaml: |
+{{ toYaml $settings | indent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

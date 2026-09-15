@@ -1,0 +1,72 @@
+groups:
+- name: maia-prom.alerts
+  rules:
+  - alert: MaiaPrometheusFederationDown
+    expr: up{exported_job=~"prometheus-openstack|prometheus-infra-collector|prometheus-vmware.+|cronus-reputation-statistics"} == 0
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: maia
+      meta: 'Maia Prometheus `{{ $labels.exported_job }}` federation is down'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-federation/'
+    annotations:
+      description: 'Maia Prometheus `{{ $labels.exported_job }}` federation is down'
+      summary: 'One or more Maia Prometheus federation targets are down'
+
+  - alert: MaiaPrometheusDown
+    # This up metric is scraped from Maia Prometheus. As the job label is already occupied,
+    # label conflicts are resolved by renaming the scraped data to “exported_<original-label>”
+    # (e.g. “exported_instance”, “exported_job”) and then attaching server-side labels.
+    expr: up{job="maia/prometheus-maia-oprom", exported_job=""} == 0 or absent(up{job="maia/prometheus-maia-oprom", exported_job=""})
+    for: 15m
+    labels:
+      severity: critical
+      support_group: observability
+      service: maia
+      meta: 'Maia Prometheus is down.'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Prometheus is down.'
+      summary: 'Maia Prometheus is down.'
+
+  - alert: MaiaThanosQueryDown
+    expr: up{job=~"prometheus-maia-oprom-thanos-query"} == 0 or absent(up{job=~"prometheus-maia-oprom-thanos-query"})
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: maia
+      meta: 'Maia Thanos Querier is down. Maia is unable to return metrics'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Thanos Querier is down. Maia is unable to return metrics'
+      summary: 'Maia Thanos Querier is down'
+
+  - alert: MaiaThanosStoreDown
+    expr: up{job=~"prometheus-maia-oprom-thanos-store"} == 0 or absent(up{job=~"prometheus-maia-oprom-thanos-store"})
+    for: 15m
+    labels:
+      severity: warning
+      support_group: observability
+      service: maia
+      meta: 'Maia Thanos Store API service is down, long term storage results will be unavailable.'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Thanos Store API is down.'
+      summary: 'Maia Thanos Store API is down.'
+
+  - alert: MaiaThanosCompactorDown
+    expr: up{job=~"prometheus-maia-oprom-thanos-compactor"} == 0 or absent(up{job=~"prometheus-maia-oprom-thanos-compactor"})
+    for: 15m
+    labels:
+      severity: info
+      support_group: observability
+      service: maia
+      meta: 'Maia Thanos Compactor is down, query speed for range queries will degrade, but there is no downtime.'
+      playbook: 'docs/support/playbook/maia/alerts/maia-prom-alert-service/'
+    annotations:
+      description: 'Maia Thanos Compactor is down, query speed for range queries will degrade, but there is no downtime.'
+      summary: 'Maia Thanos Compactor is down.'
+
+

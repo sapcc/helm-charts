@@ -1,7 +1,5 @@
-{{- $ussuri := hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI) -}}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
-
 metadata:
   name: neutron-server
   labels:
@@ -10,8 +8,8 @@ metadata:
     component: neutron
   annotations:
     kubernetes.io/tls-acme: "true"
-    ingress.kubernetes.io/configuration-snippet: |
-      {{- include "utils.snippets.set_openstack_request_id" . | indent 6 }}
+    disco: "true"
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
      - secretName: tls-{{include "neutron_api_endpoint_host_public" . | replace "." "-" }}
@@ -20,16 +18,17 @@ spec:
     - host: {{include "neutron_api_endpoint_host_public" .}}
       http:
         paths:
-        {{- if $ussuri }}
         - path: /v2.0/lbaas
-          {{- if ge (.Capabilities.KubeVersion.Minor | atoi) 18 }}
           pathType: Prefix
-          {{- end }}
           backend:
-            serviceName: octavia-api
-            servicePort: {{.Values.global.octavia_api_port_internal | default 9876}}
-        {{- end }}
+            service:
+              name: octavia-api
+              port:
+                number: {{.Values.global.octavia_api_port_internal | default 9876}}
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: neutron-server
-            servicePort: {{.Values.global.neutron_api_port_internal | default 9696}}
+            service:
+              name: neutron-server
+              port:
+                number: {{.Values.global.neutron_api_port_internal | default 9696}}

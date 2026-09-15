@@ -1,0 +1,9 @@
+{{ $envAll := . }}
+{{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+  {{- range $type, $config := $envAll.Values.consoles }}
+    {{- if and $config.enabled (not $config.custom_deployment) }}
+---
+{{ tuple $envAll $cellId $type $config | include "nova.console_deployment" }}
+    {{- end }}
+  {{- end }}
+{{- end }}

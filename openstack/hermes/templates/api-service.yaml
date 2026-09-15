@@ -1,3 +1,4 @@
+{{- if .Values.hermes.api_enabled }}
 kind: Service
 apiVersion: v1
 
@@ -8,7 +9,7 @@ metadata:
     system: openstack
     component: hermes
   annotations:
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus }}
     prometheus.io/scrape: "true"
     prometheus.io/port: "80"
 spec:
@@ -16,5 +17,4 @@ spec:
     name: hermes-api
   ports:
     - port: 80
-
----
+{{- end }}

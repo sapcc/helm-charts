@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: limes-liquids
+
+data:
+  policy.json: |
+    {
+      "readwrite": "role:cloud_resource_admin or (user_name:limes and user_domain_name:Default)",
+      "readonly": "role:cloud_resource_viewer or rule:readwrite",
+
+      "liquid:get_info": "rule:readonly",
+      "liquid:get_capacity": "rule:readonly",
+      "liquid:get_usage": "rule:readonly",
+      "liquid:set_quota": "rule:readwrite",
+      "liquid:change_commitments": "rule:readwrite"
+    }
+
+  {{- range $name, $config := .Values.limes.local_liquid_configs }}
+  {{- if not (index $.Values.limes.local_liquids $name "skip") }}
+  {{ $name }}.json: {{ $config | toJson | quote }}
+  {{- end }}
+  {{- end }}

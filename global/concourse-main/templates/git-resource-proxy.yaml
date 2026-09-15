@@ -30,6 +30,10 @@ spec:
       app: git-resource-proxy
   template:
     metadata:
+      {{- if .Values.gitResourceProxy.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.gitResourceProxy.podAnnotations | nindent 8 }}
+      {{- end }}
       labels:
         app: git-resource-proxy
     spec:
@@ -53,6 +57,7 @@ metadata:
   name: git-resource-proxy
   annotations:
     ingress.kubernetes.io/load-balance: "leastconn"
+    nginx.ingress.kubernetes.io/load-balance: "leastconn"
 spec:
   ingressClassName: git-proxy
   rules:
@@ -75,7 +80,7 @@ spec:
   ports:
   - port: 8080
     protocol: TCP
-    targetPort: 80
+    targetPort: 8080
   selector:
     app.kubernetes.io/name: kubernetes-ingress
     app.kubernetes.io/instance: {{ .Release.Name }}

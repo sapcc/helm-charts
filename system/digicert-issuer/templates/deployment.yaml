@@ -1,10 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    secret.reloader.stakater.com/reload: "digicertissuer-secret"
   labels:
     app.kubernetes.io/name: digicert-issuer
+    {{- with .Values.deploymentLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   name: digicert-issuer
-  namespace: kube-system
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -14,21 +19,39 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: digicert-issuer
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
-        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- with .Values.deploymentLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       containers:
         - args:
-            - --enable-leader-election={{ default "true" .Values.enableLeaderElection }}
             - --metrics-addr=:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
             - --disable-root-ca={{ default "false" .Values.provisioner.disableRootCA }}
+{{- if .Values.provisioner.clusterIssuerNamespace }}
+            - --cluster-issuer-namespace={{ .Values.provisioner.clusterIssuerNamespace }}
+{{- end }}
+{{- if .Values.provisioner.cacheSyncTimeout }}
+            - --cache-sync-timeout={{ .Values.provisioner.cacheSyncTimeout }}
+{{- end }}
+{{- if .Values.provisioner.logLevel }}
+            - --zap-log-level={{ .Values.provisioner.logLevel }}
+{{- end }}
+{{- if .Values.provisioner.backoffDurationProvisionerNotReady }}
+            - --backoff-duration-provisioner-not-ready={{ .Values.provisioner.backoffDurationProvisionerNotReady }}
+{{- end }}
+{{- if .Values.provisioner.backoffDurationRequestPending }}
+            - --backoff-duration-request-pending={{ .Values.provisioner.backoffDurationRequestPending }}
+{{- end }}
           command:
             - /digicert-issuer
-          image: {{ include "image" . }}
+          image: {{ include "digicert-issuer.image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
           name: digicert-issuer
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
 {{- if .Values.resources }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
@@ -37,5 +60,4 @@ spec:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
       terminationGracePeriodSeconds: 10
-      serviceAccount: digicert-issuer
       serviceAccountName: digicert-issuer

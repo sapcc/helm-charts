@@ -5,13 +5,14 @@ groups:
   rules:
 
   - alert: OpenstackKeppelNotCleaningAbandonedUploads
-    expr: keppel_upload_min_updated_at > 0 and time() - keppel_upload_min_updated_at > 90000
+    expr: max(keppel_upload_min_updated_at) > 0 and time() - max(keppel_upload_min_updated_at) > 90000
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Abandoned uploads are not getting cleaned up'
@@ -20,13 +21,14 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotValidatingBlobs
-    expr: time() - keppel_blobs_min_validated_at > 691200 # 8 days (in seconds)
+    expr: time() - max(keppel_blobs_min_next_validation_at) > 7200 # 2 hours (in seconds)
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are not being validated'
@@ -39,29 +41,31 @@ groups:
   # If we alerted on a single failed validation, we'd get spurious alerts every
   # time Swift has a hiccup.
   - alert: OpenstackKeppelBlobValidationFailed
-    expr: keppel_blobs_validation_errors > 0
+    expr: max(keppel_blobs_validation_errors) > 0
     for: 15m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are failing validation'
       description: |
         Some blobs stored in Keppel have failed their routine validation.
         This could hint at the blob contents being corrupted.
-        The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM blobs`.
+        The detailed errors are in the Keppel DB under `SELECT * FROM blobs WHERE validation_error_message != ''`.
 
   - alert: OpenstackKeppelNotValidatingManifests
-    expr: time() - keppel_manifests_min_validated_at > 90000
+    expr: time() - max(keppel_manifests_min_next_validation_at) > 1800 # 30 minutes (in seconds)
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests are not being validated'
@@ -74,49 +78,69 @@ groups:
   # If we alerted on a single failed validation, we'd get spurious alerts every
   # time Swift has a hiccup.
   - alert: OpenstackKeppelManifestValidationFailed
-    expr: keppel_manifests_validation_errors > 0
+    expr: max(keppel_manifests_validation_errors) > 0
     for: 15m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests are failing validation'
       description: |
         Some manifests stored in Keppel have failed their routine validation.
         This could hint at the manifests or their metadata being corrupted.
-        The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM manifests`.
+        The detailed errors are in the Keppel DB under `SELECT * FROM manifests WHERE validation_error_message != ''`.
 
   # This alert is less sensitive than the other "janitor task is running behind
   # schedule" checks, since this task quite often gets stuck on Docker Hub's
   # restrictive rate limits, and those short-lived alerts just generate useless
   # noise.
   - alert: OpenstackKeppelNotSyncingReplicatedManifests
-    expr: keppel_replicated_repos_count > 0 and time() - keppel_replicated_repos_min_next_manifest_sync_at > 3600
+    expr: max(keppel_replicated_repos_count) > 0 and time() - max(keppel_replicated_repos_min_next_manifest_sync_at) > 3600
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests in replicated repos are not being synced'
       description: |
-        In replica accounts, each repository should run through a manifest sync once per hour to replicate manifest deletions from the primary account.
+        In replica accounts, each repository should go through a manifest sync once per hour to replicate manifest deletions and tag updates from the primary account.
         However, some repositories have not had their manifests synced on schedule, so it looks like manifest syncing is having issues.
         Check the logs of keppel-janitor for details.
 
+  - alert: OpenstackKeppelReplicatedManifestSyncFailed
+    expr: rate(keppel_manifest_syncs{task_outcome="failure"}[5m]) > 0
+    for: 15m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Manifest sync in replicated repos is failing'
+      description: |
+        Repositories in replica accounts go through a manifest sync once per hour to replicate manifest deletions and tag updates from the primary account.
+        However, some of these manifest syncs are failing.
+        Check the logs of keppel-janitor for details.
+
   - alert: OpenstackKeppelNotSweepingBlobMounts
-    expr: keppel_repos_count > 0 and time() - keppel_repos_min_next_blob_mount_sweep_at > 600
+    expr: max(keppel_repos_count) > 0 and time() - max(keppel_repos_min_next_blob_mount_sweep_at) > 600
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blob mounts are not being sweeped'
@@ -127,29 +151,48 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotGarbageCollectingImages
-    expr: keppel_repos_count > 0 and time() - keppel_repos_min_next_gc_at > 600
+    expr: max(keppel_repos_count) > 0 and time() - max(keppel_repos_min_next_gc_at) > 600
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'GC policies are not being executed'
       description: |
-        In each repository, customers' GC policies should be executed once per hour.
+        In each repository, customers' GC policies should be evaluated once per hour.
         However, some repos have not been garbage-collected on schedule, so it looks like the GC is having issues.
         Check the logs of keppel-janitor for details.
 
-  - alert: OpenstackKeppelNotDeletingBlobMounts
-    expr: keppel_blob_mounts_min_can_be_deleted_at > 0 and time() - keppel_blob_mounts_min_can_be_deleted_at > 7200
+  - alert: OpenstackKeppelManagedAccountsNotEnforced
+    expr: max(keppel_managed_accounts_count) > 0 and time() - max(keppel_accounts_min_next_enforcement_at) > 600
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Managed accounts are not being enforced'
+      description: |
+        Managed accounts (eg. ccloud or ccloud-dockerhub-mirror) are enforced via the keppel-managed-accounts.yaml config file
+        normally once every 5 minutes. However, some accounts seem to have problems, maybe a bad config got deployed?
+        Either way, check the logs of keppel-janitor for details.
+
+  - alert: OpenstackKeppelNotDeletingBlobMounts
+    expr: max(keppel_blob_mounts_min_can_be_deleted_at) > 0 and time() - max(keppel_blob_mounts_min_can_be_deleted_at) > 7200
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blob mounts are marked for deletion, but do not get deleted'
@@ -159,13 +202,14 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotSweepingBlobs
-    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_next_blob_sweep_at > 600
+    expr: max(keppel_accounts_count) > 0 and time() - max(keppel_accounts_min_next_blob_sweep_at) > 600
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are not being sweeped'
@@ -175,13 +219,14 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingBlobs
-    expr: keppel_blobs_min_can_be_deleted_at > 0 and time() - keppel_blobs_min_can_be_deleted_at > 7200
+    expr: max(keppel_blobs_min_can_be_deleted_at) > 0 and time() - max(keppel_blobs_min_can_be_deleted_at) > 7200
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Blobs are marked for deletion, but do not get deleted'
@@ -191,29 +236,31 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotSweepingStorage
-    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_next_storage_sweep_at > 600
+    expr: max(keppel_accounts_count) > 0 and time() - max(keppel_accounts_min_next_storage_sweep_at) > 600
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Storages are not being sweeped'
       description: |
         In each account, the backing storage should be sweeped every 6 hours.
-        However, some accounts have not been sweeped on schedule, so it looks like blob sweeping is having issues.
+        However, some accounts have not been sweeped on schedule, so it looks like storage sweeping is having issues.
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingUnknownBlobs
-    expr: keppel_unknown_blobs_min_can_be_deleted_at > 0 and time() - keppel_unknown_blobs_min_can_be_deleted_at > 28800
+    expr: max(keppel_unknown_blobs_min_can_be_deleted_at) > 0 and time() - max(keppel_unknown_blobs_min_can_be_deleted_at) > 28800
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Unknown blobs exist, but do not get deleted'
@@ -223,13 +270,14 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotDeletingUnknownManifests
-    expr: keppel_unknown_manifests_min_can_be_deleted_at > 0 and time() - keppel_unknown_manifests_min_can_be_deleted_at > 28800
+    expr: max(keppel_unknown_manifests_min_can_be_deleted_at) > 0 and time() - max(keppel_unknown_manifests_min_can_be_deleted_at) > 28800
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Unknown manifests exist, but do not get deleted'
@@ -239,29 +287,32 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotAnnouncingAccountsToFederation
-    expr: keppel_accounts_count > 0 and time() - keppel_accounts_min_next_federation_announcement_at > 600
+    expr: max(keppel_accounts_count) > 0 and time() - max(keppel_accounts_min_next_federation_announcement_at) > 600
     for: 5m
     labels:
       context: janitor
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
-      summary: 'Accounts are not being announced to Dynomite'
+      summary: 'Accounts are not being announced to federation'
       description: |
-        Each existing account should be announced to the Dynomite database once every hour.
-        However, some accounts have not been announced on schedule, so it looks like Dynomite is having issues.
+        Each existing account should be announced to the federation database once every hour.
+        However, some accounts have not been announced on schedule, so it looks like federation is having issues.
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotCheckingVulnerabilities
-    expr: keppel_manifests_count > 0 and time() - keppel_manifests_min_next_vuln_check_at > 7200
+    # 7200 seconds = 2 hours
+    expr: max(keppel_manifests_count) > 0 and time() - max(keppel_manifests_min_next_trivy_check_at) > 7200
     for: 5m
     labels:
-      context: janitor
+      context: trivy-check
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
     annotations:
       summary: 'Manifests are not being checked for vulnerabilities'
@@ -270,17 +321,48 @@ groups:
         However, some manifests have not had their vulnerability status checked on schedule, so it looks like vulnerability checking is having issues.
         Check the logs of keppel-janitor for details.
 
-  - alert: OpenstackKeppelClairIndexingErrors
-    expr: 'keppel_vuln_scan_error_counts{message!="",status!="Unsupported"} > 0'
+  - alert: OpenstackKeppelTrivyIndexingErrors
+    expr: 'max (keppel_trivy_scan_error_counts{vuln_status!="Unsupported"} > 0)'
+    for: 15m
+    labels:
+      context: trivy-check
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Trivy check failed on some images'
+      description: |
+        Keppel observed some errors while checking the vulnerability status for {{ $value }} images.
+        Check the logs of keppel-janitor for more details.
+
+  - alert: OpenstackKeppelManagedAccountsErrors
+    expr: 'rate(keppel_managed_account_creations{task_outcome="failure"}[10m]) > 0'
+    for: 15m
+    labels:
+      context: trivy-check
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Enforcing managed accounts is failing for some accounts'
+      description: |
+        Keppel observed some errors while enforcing managed accounts.
+        Check the logs of keppel-janitor for more details.
+
+  - alert: OpenstackKeppelTrivyIndexingFailsAtHighRate
+    expr: 'max(increase(keppel_trivy_security_status_checks{task_outcome="success"}[5m])) < max(increase(keppel_trivy_security_status_checks{task_outcome="failure"}[5m]))'
     for: 5m
     labels:
-      context: clair-indexing
+      context: trivy-check
       service: keppel
-      severity: warning
+      severity: info
+      support_group: containers
       tier: os
       meta: "{{ $labels.message }}"
-      playbook: 'docs/support/playbook/keppel/clairindexingerrors.html'
     annotations:
-      summary: 'Clair failed to index some images'
+      summary: 'Most Trivy checks are failing'
       description: |
-        Clair reported the indexing error "{{ $labels.message }}" for {{ $value }} images.
+        Keppel observes that currently more Trivy checks are failing than succeed.
+        Check the logs of keppel-janitor for more details, and the logs of the pods in scaleout namespace trivy for any errors.

@@ -10,6 +10,7 @@ groups:
       service: keystone
       severity: warning
       tier: os
+      support_group: identity
     annotations:
       description: Keystone failed to be scraped. Monitoring might miss metrics it needs to alert on.
       summary: Keystone cannot be scraped
@@ -27,7 +28,7 @@ groups:
       description: Keystones database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
       summary: Keystone database cannot be scraped
 
-  - alert: OpenstackKeystoneApiUp
+  - alert: OpenstackKeystoneApiPodIsDown
     expr: up{component="keystone",type="api"} == 0
     for: 5m
     labels:
@@ -37,6 +38,8 @@ groups:
       service: keystone
       severity: info
       tier: os
+      support_group: identity
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-api'
     annotations:
       description: "A keystone-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A keystone server is DOWN"
@@ -50,7 +53,8 @@ groups:
       severity: critical
       tier: os
       dashboard: mariadb-overview?var-host=keystone-mariadb
-      playbook: 'docs/devops/alert/keystone/#database_down'
+      support_group: identity
+      playbook: 'docs/support/playbook/database'
     annotations:
       description: "Keystone database on {{ $labels.instance }} is DOWN."
       summary: "Keystone Database is DOWN"
@@ -65,22 +69,25 @@ groups:
       severity: critical
       tier: os
       dashboard: keystone
-      playbook: 'docs/devops/alert/keystone/#api_down'
+      support_group: identity
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-api'
     annotations:
       description: All keystone-api server pods are down.
       summary: Keystone is unavailable.
 
-  - alert: OpenstackKeystoneDatabaseSize
-    expr: predict_linear(pg_database_size_bytes{datname="keystone"}[1h], 24 * 3600) >= 10 * 1024^3
-    for: 5m
+
+  - alert: OpenstackKeystoneApiRequestsExceeded
+    expr: sum(irate(openstack_watcher_api_requests_total{service="identity"} [1m])) by (status) > 300
+    for: 1m
     labels:
-      tier: k8s
-      service: keystone
-      severity: warning
       context: availability
-      dashboard: postgres?var-database=keystone
-      meta: "The keystone database is predicted to run out of space in the next 24h"
-      playbook: 'docs/devops/alert/keystone/#database_size'
+      meta: Api Requests to Keystone Exceeds 300ops
+      service: keystone
+      severity: info
+      tier: os
+      support_group: identity
+      dashboard: keystone
     annotations:
-      description: "The keystone database is predicted to exceed the PV size in the next 24h"
-      summary: Keystone database is running out of PV space
+      description: Api Requests to Keystone is {{ $value }}ops/s
+      summary: Api Requests to Keystone is {{ $value }}ops/s
+

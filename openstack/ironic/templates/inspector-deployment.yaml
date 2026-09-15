@@ -6,7 +6,10 @@ metadata:
   labels:
     system: openstack
     type: backend
-    component: none
+    component: ironic
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.pod.replicas.inspector }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -26,10 +29,26 @@ spec:
         name: ironic-inspector
 {{ tuple . "ironic" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: ironic-inspector
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-inspector-etc-hash: {{ include (print $.Template.BasePath "/inspector-etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if or .Values.inspector.rpc_statsd_enabled .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ tuple . "ironic" "inspector" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-inspector
         {{- if .Values.oslo_metrics.enabled }}
@@ -40,34 +59,26 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - ironic-inspector
         securityContext:
           capabilities:
             add:
               - NET_ADMIN
         env:
-        - name: COMMAND
-          value: "ironic-inspector --config-file /etc/ironic-inspector/ironic-inspector.conf"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-api,ironic-rabbitmq"
-        {{- if .Values.logging.handlers.sentry }}
-        - name: SENTRY_DSN
-          valueFrom:
-            secretKeyRef:
-              name: sentry
-              key: {{ .Chart.Name }}.DSN.python
-        {{- end }}
-        - name: PGAPPNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+        # workaround for OSSN-0099
+        - name: IRONIC_THREAD_STACK_SIZE
+          value: "8388608"
+        {{- include "utils.sentry_config" . | indent 8 }}
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         resources:
 {{ toYaml .Values.pod.resources.inspector | indent 10 }}
         volumeMounts:
         - mountPath: /etc/ironic-inspector
           name: etcironic
+        - mountPath: /etc/ironic-inspector/ironic-inspector.conf.d
+          name: ironic-inspector-etc-confd
         - mountPath: /etc/ironic-inspector/ironic-inspector.conf
           name: ironic-inspector-etc
           subPath: ironic-inspector.conf
@@ -92,6 +103,11 @@ spec:
           name: ironic-etc
           subPath: ironic-inspector.filters
           readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp
         image: {{ .Values.global.registry }}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}
@@ -117,25 +133,23 @@ spec:
         - mountPath: /conf
           name: dhcp-config
       {{- end }}
-      {{- if .Values.oslo_metrics.enabled }}
+      {{- if .Values.inspector.rpc_statsd_enabled }}
       - name: oslo-exporter
-        image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         args:
-        - --web.listen-address=:9102
-        - --web.telemetry-path=/metrics
-        - --statsd.listen-udp=:8125
-        - --statsd.listen-tcp=
-        - --statsd.cache-size=1000
-        - --statsd.event-queue-size=10000
-        - --statsd.event-flush-threshold=1000
-        - --statsd.event-flush-interval=200ms
+        - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:
-        - name: web
+        - name: metrics
           containerPort: 9102
           protocol: TCP
         - name: statsd-udp
-          containerPort: 8125
+          containerPort: {{ .Values.inspector.rpc_statsd_port }}
           protocol: UDP
+        volumeMounts:
+        - name: ironic-etc
+          mountPath: /etc/statsd/statsd-rpc-exporter.yaml
+          subPath: statsd-rpc-exporter.yaml
+          readOnly: true
       {{- end }}
       volumes:
       - name: etcironic
@@ -144,6 +158,12 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
+      - name: ironic-inspector-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: inspector_secrets.conf
+            path: inspector_secrets.conf
       - name: ironic-inspector-etc
         configMap:
           name: ironic-inspector-etc
@@ -158,3 +178,5 @@ spec:
           name: ironic-inspector-dhcp
           defaultMode: 0444
       {{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

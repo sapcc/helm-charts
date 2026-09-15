@@ -24,6 +24,8 @@ function start () {
     cp -a $(type -p ${MANILA_WSGI_SCRIPT}) /var/www/cgi-bin/manila/
   done
 
+  a2dismod status
+
   if [ -f /etc/apache2/envvars ]; then
      # Loading Apache2 ENV variables
      source /etc/apache2/envvars
@@ -44,6 +46,7 @@ function start () {
 }
 
 function stop () {
+  sleep {{ coalesce .Values.shutdownDelaySeconds .Values.global.shutdownDelaySeconds 10 }}
   apachectl -k graceful-stop
 }
 

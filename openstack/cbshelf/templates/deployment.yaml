@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{.Chart.Name}}
+  template:
+    metadata:
+      labels:
+        app: {{.Chart.Name}}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: shelfback
+          image: "{{ .Values.global.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: cbshelf
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: cbshelfdb-config
+            - configMapRef:
+                name: backend-config
+          volumeMounts:
+            - name: vol-cbshelfapp
+              mountPath: "/monsoon/cbshelf"
+            - name: gitconfig
+              mountPath: "/root"
+              readOnly: true
+            - name: shared-data
+              mountPath: "/app/public/nginx"
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "cp -r /app/public/assets /app/public/nginx"]
+        - name: nginx
+          image: {{ .Values.global.registry }}/openresty:bionic-ssl-1.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: web
+              containerPort: 8080
+          volumeMounts:
+            - name: vol-cbshelfapp
+              mountPath: /monsoon/cbshelf
+            - name: nginx-conf
+              mountPath: /usr/local/openresty/nginx/conf/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: gitconfig
+              mountPath: "/root"
+              readOnly: true
+            - name: shared-data
+              mountPath: "/app/public"
+              readOnly: true
+      volumes:
+        - name: vol-cbshelfapp
+          persistentVolumeClaim:
+            claimName: cookbooks
+        - name: shared-data
+          emptyDir: {}
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+        - name: gitconfig
+          secret:
+            secretName: gitshelf
+            defaultMode: 0400

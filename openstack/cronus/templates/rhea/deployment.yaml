@@ -1,0 +1,80 @@
+{{- if .Values.rhea.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rhea
+  {{- if .Values.rhea.annotations }}
+  annotations:
+    {{ toYaml .Values.rhea.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.rhea.labels }}
+  labels:
+    {{ toYaml .Values.rhea.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ default .Values.rhea.deployment.replicas }}
+  strategy:
+{{- if eq "RollingUpdate" .Values.rhea.updateStrategy }}
+    rollingUpdate:
+      maxSurge: {{ .Values.rhea.maxSurge }}
+      maxUnavailable: {{ .Values.rhea.maxUnavailable }}
+{{- end }}
+    type: {{ .Values.rhea.updateStrategy }}
+  selector:
+    matchLabels:
+      name: rhea
+      instance: rhea
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/rhea/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: rhea
+        instance: rhea
+    spec:
+      serviceAccountName: rhea
+{{- if .Values.rhea.affinity }}
+      affinity: {{ toYaml .Values.rhea.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: rhea
+          image: "{{ .Values.rhea.image.name }}:{{ .Values.rhea.image.tag }}"
+          imagePullPolicy: {{ .Values.rhea.image.pullPolicy }}
+          args:
+            - "-config=/rhea/config.yaml"
+          env:
+          - name: GODEBUG
+            value: {{ .Values.rhea.godebug | quote }}
+          envFrom:
+            - secretRef:
+                name: rhea-secret
+          volumeMounts:
+            - name: rhea-config
+              mountPath: "/rhea/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.rhea.server.http }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+{{- if .Values.rhea.tls }}
+              scheme: HTTPS
+{{- end }}
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 2
+      terminationGracePeriodSeconds: {{ .Values.rhea.terminationGracePeriod | default 60 }}
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
+      volumes:
+        - name: rhea-config
+          configMap:
+            name: rhea-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+{{- end -}}

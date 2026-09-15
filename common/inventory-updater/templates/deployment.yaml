@@ -1,0 +1,36 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "fullname" . }}
+  namespace: {{ required ".Values.updater.namespace missing" .Values.updater.namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: {{ .Release.Name }}
+    app: {{ include "fullname" . }}
+spec:
+  replicas: {{ required ".Values.updater.replicas missing" .Values.updater.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullname" . }}
+        release: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        rollme: {{ required ".Values.updater.image.tag missing" .Values.updater.image.tag | quote }}
+
+    spec:
+      volumes:
+        - name: updater-config
+          configMap:
+            name: {{ include "fullname" . }}
+
+      containers:
+{{- if .Values.updater.enabled }}
+{{- include "inventory-updater.container" (dict "root" . "name" (include "fullname" .) "args" (list "main.py" "-c" (printf "/%s/config/config.yaml" (include "fullname" .)))) | nindent 6 }}
+{{- end }}
+{{- if .Values.updater.api.enabled }}
+{{- include "inventory-updater.container" (dict "root" . "name" (printf "%s-api" (include "fullname" .)) "args" (list "main.py" "-c" (printf "/%s/config/config.yaml" (include "fullname" .)) "--api") "ports" (list (dict "name" "http" "containerPort" (required ".Values.updater.api.port missing" .Values.updater.api.port) "protocol" "TCP"))) | nindent 6 }}
+{{- end }}

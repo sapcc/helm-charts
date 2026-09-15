@@ -1,0 +1,75 @@
+# Test values for AWS extension with full configuration
+# Tests: extension.values with image and images array, runtimeClusterValues, helm.ociRepository
+
+global:
+  registry: example.com
+  region: qa-de-1
+  cluster: test-cluster
+
+garden:
+  name: garden
+  backup:
+    provider: aws
+    accessKeyID: "test-access"
+    secretAccessKey: "test-secret"
+    region: "eu-central-1"
+    bucket: "test-bucket"
+  runtimeCluster:
+    zones: ["qa-de-1a"]
+    networking:
+      pods: ["10.42.0.0/16"]
+      services: ["10.43.0.0/16"]
+  virtualCluster:
+    version: "1.29.6"
+
+secretsInjector:
+  enabled: false
+
+extensions:
+  storage:
+    provisioner: "rancher.io/local-path"
+    parameters: {}
+
+  aws:
+    version: v1.67.2
+
+    # Test extension.values with main image and images dict (alpine, pause)
+    values:
+      image:
+        repository: custom-aws-repo/aws-controller
+        tag: v1.67.3
+      images:
+        alpine:
+          repository: custom-aws-repo/alpine
+          tag: v3.19.0
+        pause:
+          repository: custom-aws-repo/pause
+          # tag omitted - should fallback to version v1.67.2
+      replicaCount: 2
+      resources:
+        limits:
+          memory: "1Gi"
+      imageVectorOverwrite:
+        images:
+          - name: cloud-controller-manager
+            repository: custom-repo/aws-ccm
+            tag: v1.30.0
+
+    # Test runtimeClusterValues with cascading fallback
+    runtimeClusterValues:
+      image:
+        # repository explicitly null - should fallback to values.image.repository
+        repository: null
+        tag: v1.67.3-runtime
+      replicaCount: 3
+      imageVectorOverwrite:
+        images:
+          - name: csi-driver
+            repository: custom-repo/aws-csi
+            tag: v1.5.0
+
+    # Test extension helm.ociRepository
+    helm:
+      ociRepository:
+        repository: keppel.example.com/aws-extension
+        # tag omitted - should fallback to version v1.67.2

@@ -1,10 +1,12 @@
+{{- if .Values.sftp.swift.enabled }}
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: neutron-sftp-backup
   labels:
     release: "{{.Release.Name}}"
+  annotations:
+    vpa-butler.cloud.sap/main-container: sftp
 spec:
   revisionHistoryLimit: 5
   replicas: 1
@@ -18,7 +20,9 @@ spec:
       labels:
         component: neutron-sftp-backup
       annotations:
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: sftp
+        secret-sftp-secrets-hash: {{ include (print $.Template.BasePath "/sftp-secrets.yaml") $ | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       containers:
         - name: sftp
@@ -30,6 +34,7 @@ spec:
                 secretKeyRef:
                   name: neutron-sftp-backup
                   key: password
+            {{- include "utils.trust_bundle.env" . | indent 12 }}
           resources:
 {{ toYaml .Values.pod.resources.sftp_backup | indent 12 }}
           volumeMounts:
@@ -47,9 +52,12 @@ spec:
               readOnly: true
             - mountPath: /tmp
               name: cache-volume
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: neutron-sftp-backup
-          configMap:
-            name: neutron-sftp-backup
+          secret:
+            secretName: neutron-sftp-backup
         - name: cache-volume
           emptyDir: {}
+{{- end -}}
+

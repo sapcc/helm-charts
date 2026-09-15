@@ -1,11 +1,14 @@
+{{- $root := . }}
 {{- if .Values.serviceDiscoveries.kubeDNS.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 
 metadata:
-  name: {{ include "prometheus.fullName" . }}-kubernetes-dns
+  name: {{ include "prometheus.fullName" (list $name $root) }}-kubernetes-dns
   labels:
-    prometheus: {{ include "prometheus.name" . }}
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
 
 spec:
   jobLabel: kubernetes-dns
@@ -20,8 +23,8 @@ spec:
     any: true
 
   podMetricsEndpoints:
-    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" .Values.serviceDiscoveries.scrapeInterval }}
-      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" .Values.serviceDiscoveries.scrapeTimeout }}
+    - interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
       scheme: http
       port: metrics
       relabelings:
@@ -32,5 +35,6 @@ spec:
         - action: replace
           sourceLabels: [__address__]
           targetLabel: instance
-{{ include "prometheus.defaultRelabelConfig" . | indent 8 }}
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
+{{- end }}
 {{- end }}

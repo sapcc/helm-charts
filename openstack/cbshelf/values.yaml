@@ -1,0 +1,59 @@
+# fields without a value and env specific and need to be set
+replicaCount: 1
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud/cookbook-shelf
+  tag: latest
+service:
+  port: 81
+  targetport: 8080
+dbHost: shelfapp-postgresql
+ingressSecret: tls-cbshelf-ingress
+ingress:
+  host:
+
+volume:
+  backup:
+    pvcName: cookbooks
+    resticPassword:
+    password:
+    app: "{{ .Release.Name }}"
+    pruneSchedule: 1d
+    schedule: '0 0 * * 1' #At 12:00 AM, only on Monday
+vault:
+  railsSecret:
+  dbPassword:
+  certKey:
+  gitToken:
+
+# For the chart dependency "postgresql"
+postgresql:
+  postgresPassword:
+  postgresUser: cbshelf
+  postgresDatabase: cbshelf
+  global:
+    registry: keppel.eu-de-1.cloud.sap/ccloud
+  imageTag: 9.5
+  persistence:
+    enabled: true
+    size: 10Gi
+  alerts:
+    enabled: false
+
+# For the chart dependency "pgbackup"
+pgbackup:
+  database:
+    name: cbshelf
+    host: "shelfapp-postgresql"
+    username: cbshelf    # name of database user (this user must have full admin access to the DB)
+    password:
+  swift:
+    os_password:
+  alerts:
+    enabled: false
+
+owner-info:
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/openstack/cbshelf"
+  maintainers:
+    - Corey Aloia
+  support-group: email
+  service: cbshelf

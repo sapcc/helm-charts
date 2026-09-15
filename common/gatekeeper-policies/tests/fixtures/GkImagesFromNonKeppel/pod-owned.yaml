@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dummy-10468171-f184g
+  labels:
+    ccloud/support-group: foo-group
+    ccloud/service: dummy
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: dummy-10468171
+    uid: 3ea510d7-9dde-45b0-9426-f06efe23a2de
+spec:
+  containers:
+  - name: dummy-big
+    image: alpine:3 # This is a violation, but it does not get reported here because of the owner reference.
+    args: [ "sleep", "86400" ]
+  - name: dummy-small
+    image: keppel.global.cloud.sap/alpine:3
+    args: [ "sleep", "86400" ]

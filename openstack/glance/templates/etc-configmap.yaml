@@ -14,12 +14,6 @@ data:
 {{ include (print .Template.BasePath "/etc/_glance-api.conf.tpl") . | indent 4 }}
   glance-api-paste.ini: |
 {{ include (print .Template.BasePath "/etc/_glance-api-paste.ini.tpl") . | indent 4 }}
-{{- if (or .Values.imageVersionGlanceRegistry .Values.imageVersion .Values.image_version) }}
-  glance-registry.conf: |
-{{ include (print .Template.BasePath "/etc/_glance-registry.conf.tpl") . | indent 4 }}
-  glance-registry-paste.ini: |
-{{ include (print .Template.BasePath "/etc/_glance-registry-paste.ini.tpl") . | indent 4 }}
-{{- end }}
   policy.yaml: |
 {{ include (print .Template.BasePath "/etc/_glance-policy.yaml.tpl") . | indent 4 }}
   logging.ini: |
@@ -27,16 +21,6 @@ data:
 {{- if and .Values.swift.enabled (not .Values.swift.multi_tenant)}}
   swift-store.conf: |
 {{ include (print .Template.BasePath "/etc/_swift-store.conf.tpl") . | indent 4 }}
-{{- end }}
-{{- if .Values.tempest.enabled }}
-  tempest_accounts.yaml: |
-{{ include (print .Template.BasePath "/etc/_tempest_accounts.yaml.tpl") . | indent 4 }}
-  tempest_deployment_config.json: |
-{{ include (print .Template.BasePath "/etc/_tempest_deployment_config.json.tpl") . | indent 4 }}
-  tempest_extra_options: |
-{{ include (print .Template.BasePath "/etc/_tempest_extra_options.tpl") . | indent 4 }}
-  tempest_expected_failures.yaml: |
-{{- include (print .Template.BasePath "/etc/_tempest_expected_failures.yaml.tpl") . | indent 4 }}
 {{- end }}
 {{- if .Values.watcher.enabled }}
   watcher.yaml: |
@@ -58,4 +42,10 @@ data:
 {{- if .Values.sapcc_rate_limit.enabled }}
   ratelimit.yaml: |
 {{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
+{{- end }}
+{{- if .Values.ceph.enabled }}
+  ceph.conf: |
+{{ include (print .Template.BasePath "/etc/_ceph.conf.tpl") . | indent 4 }}
+  ceph.client.glance.keyring: |
+{{ include (print .Template.BasePath "/etc/_ceph.client.glance.keyring.tpl") . | indent 4 }}
 {{- end }}

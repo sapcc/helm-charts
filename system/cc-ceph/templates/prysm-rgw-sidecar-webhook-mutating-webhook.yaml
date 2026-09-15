@@ -1,0 +1,27 @@
+{{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: prysm-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: "{{ .Release.Namespace }}/{{ .Values.objectstore.prysm.rgwSidecarWebhook.certSecretName }}"
+webhooks:
+  - name: prysm-webhook.injector.webhook
+    clientConfig:
+      service:
+        name: prysm-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: "/mutate"
+      # cert-manager automatically injects the CA bundle
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    rules:
+      - operations: ["CREATE","UPDATE"]
+        apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        resources: ["deployments"]
+    objectSelector:
+      matchExpressions:
+        - key: prysm-sidecar
+          operator: Exists
+{{- end }}

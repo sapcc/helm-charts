@@ -1,0 +1,98 @@
+poller:
+  enabled: false
+  replicas: 1
+  image:
+    name: cronus-poller-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  serviceAccount: poller
+  pollInterval: 8s
+  maxThreads: 1
+  action: forwardEmail
+  forwardEmail:
+    postgres:
+    maxSendThreads: 1
+    maxBounceThreads: 1
+    bounceSender: bounce@example.com
+    mtaName: dns; cronus-poller.example.com
+    smtpPorts:
+      - 25000
+    localName:
+  sesCredentials:
+  activateEmail:
+  dumpContainer:
+    name: dump
+  quarContainer:
+    name: quarantine
+  errContainer:
+    name: error
+  prettyPrint: false
+  printMessage: false
+  rebuildDSN: false
+  rhea:
+    queueName:
+  emailPassVerdicts:
+    spam:
+      - PASS
+      #- FAIL
+      #- GRAY
+      #- PROCESSING_FAILED
+    virus:
+      - PASS
+      #- FAIL
+      #- GRAY
+      #- PROCESSING_FAILED
+    spf:
+      - PASS
+      #- FAIL
+      #- GRAY
+      #- PROCESSING_FAILED
+    dkim:
+      - PASS
+      #- FAIL
+      #- GRAY
+      #- PROCESSING_FAILED
+    dmarc:
+      - PASS
+      #- FAIL
+      #- GRAY
+      #- PROCESSING_FAILED
+  debug: false
+  retry:
+    maxConnectionRetries: 5 # 5 retries per connection
+    retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds
+  endpoint:
+  aws:
+  # dnsResolvers:
+  #   - 10.47.10.20:53
+  # dnsResolversTimeouts:
+    # timeout: 0s
+    # dialTimeout: 2s
+    # readTimeout: 2s
+    # writeTimeout: 2s
+  # dnsExpose: :5353
+  ldap:
+  keystone:
+    authUrl:
+    endpointType: public
+    # the following values are optional depending on how you are authenticating
+    # projectDomainName: default
+    # projectName:
+    # region:
+    # username:
+    # password:
+    # applicationCredentialID:
+    # applicationCredentialSecret:
+  # use mxrecords only if ldap is not configured
+  # mxrecords: |
+  #    {
+  #        "name": {
+  #            "10": [
+  #                "domain"
+  #            ]
+  #        }
+  #    }
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/openstack/poller'
+  support-group: email

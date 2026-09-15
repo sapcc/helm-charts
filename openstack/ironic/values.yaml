@@ -2,21 +2,75 @@
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
 # name: value
-#
+
+owner-info:
+  support-group: foundation
+  service: ironic
+  maintainers:
+    - Stefan Hipfel
+    - Bernd Kuespert
+    - Jens Sandmann
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/ironic
+
+rbac:
+  enabled: true
+
 global:
-  ironicApiPortInternal: '6385'
-  #ironic_tftp_ip: null
-  ironictftpPortPublic: '69'
-  ironic_pxe_port_public: '69'
-  osprofiler: {}
+  ironicApiPortInternal: "6385"
+  # ironic_tftp_ip: null
+  ironicServiceUser: ironic
+  ironictftpPortPublic: "69"
+  ironic_pxe_port_public: "69"
   dbUser: ironic
-  pgbouncer:
-    enabled: true
   fernetRouter:
     image: "monsoon/fernet-router:latest"
+  domain_seeds:
+    skip_hcm_domain: false
+  linkerd_requested: false
 
 imageVersion: rocky-20200214123740
 imageVersionStaticdhcpd: rocky-20201012110713
+
+debug: "True"
+
+kos_conductor: true
+
+cert_robot:
+  bmc_certrobot_username: ipmi_dummy_user
+  bmc_certrobot_passwd: null
+  netbox_url: null
+  image_tag: "latest"
+  schedule: "13 8,14 * * 1-5" # Monday till Friday at 8:13 and 14:13
+  timezone: "Etc/UTC"
+  env:
+    issuer:
+    designate:
+      polling_interval: 5
+      propagation_timeout: 1200
+    dns_resolvers:
+    acme_server:
+    csr:
+      country:
+      state:
+      city:
+      organization:
+      organizational_unit:
+    os_cloud: default  # Needs to match the name of the cloud in cloud_common and cloud_secure
+  cloud_common:
+    clouds:
+      default:
+        auth:
+          auth_url: http://keystone:5000/v3
+          username:
+          password:
+          user_domain_name: ccadmin
+          project_name: master
+          project_domain_name: ccadmin
+  cloud_sdk:
+    clouds:
+      default:
+        auth:
+          project_name: cloud_admin
 
 tempest:
   enabled: false
@@ -25,10 +79,12 @@ osprofiler:
   enabled: false
 
 statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
   port: 9102
-  image:
-    repository:  prom/statsd-exporter
-    tag: v0.8.1
+
+hpa:
+  enabled: false
 
 oslo_metrics:
   enabled: false
@@ -41,25 +97,25 @@ pod:
   resources:
     api:
       limits:
-        memory: 4Gi
-        cpu: "2"
-      requests:
         memory: 3Gi
-        cpu: 1500m
+        cpu: "4500m"
+      requests:
+        memory: 2Gi
+        cpu: 4000m
     inspector:
       limits:
+        memory: 1Gi
+        cpu: 1000m
+      requests:
         memory: 512Mi
         cpu: 500m
-      requests:
-        memory: 256Mi
-        cpu: 100m
     conductor:
       limits:
         memory: 1.5Gi
-        cpu: 1500m
+        cpu: 2000m
       requests:
         memory: 1Gi
-        cpu: 1000m
+        cpu: 1500m
     pxe:
       limits:
         memory: 256Mi
@@ -89,7 +145,6 @@ pod:
         memory: 24Mi
         cpu: 10m
 
-
   lifecycle:
     upgrades:
       deployments:
@@ -99,30 +154,21 @@ pod:
           maxUnavailable: 0
           maxSurge: 1
 
-#imageVersion: null
-#imageVersionIronicApi: null
-#imageVersionIronicConductor: null
-#imageVersionIronicInspector: null
-#imageVersionIronicPxe: null
 swift_multi_tenant: true
-
-debug: "True"
-dbName: ironic
-#dbPassword: null
-
-inspectordbName: ironic_inspector
-inspectordbUser: ironic_inspector
 
 api:
   override: {}
-  api_workers: 0
+  api_workers: 4
 
 inspector:
   standalone: true
-  port_internal: '5050'
+  port_internal: "5050"
+  rpc_statsd_port: 9125
+  # enables collecting metrics for rpc calls
+  rpc_statsd_enabled: true
   dhcp:
-    port: '67'
-    proxy_port: '4011'
+    port: "67"
+    proxy_port: "4011"
     ip: null
     range: null
     options:
@@ -131,18 +177,51 @@ inspector:
 conductor:
   hosts: []
   deploy:
-    protocol: 'http'
+    protocol: "http"
     port: 8088
+    erase_devices_priority: 0
   defaults:
-    deploy:
-      default_boot_option: 'local'
-    conductor: {}
+    replicas: 2
+    default:
+      enabled_hardware_types: ipmi, idrac, redfish
+      enabled_boot_interfaces: pxe, ipxe, idrac-redfish-virtual-media, redfish-virtual-media
+      enabled_bios_interfaces: no-bios, idrac-redfish, redfish
+      enabled_deploy_interfaces: direct
+      enabled_inspect_interfaces: inspector, no-inspect
+      enabled_management_interfaces: ipmitool, idrac-redfish, redfish
+      enabled_power_interfaces: ipmitool, idrac-redfish, redfish
+      enabled_console_interfaces: no-console, ipmitool-shellinabox, idrac-redfish-kvm
+      enabled_raid_interfaces: no-raid, agent, idrac-redfish, redfish
+      enabled_vendor_interfaces: no-vendor, ipmitool, idrac-redfish, redfish
+      enabled_network_interfaces: neutron
+      enabled_storage_interfaces: cinder,noop
+
+      # enables collecting metrics for rpc calls
+      statsd_enabled: false
+      statsd_port: 9125
+
+      # That depends on os version used in the bootloader image / inspector
+      # Since the our loci images are based on ubuntu default to that for now
+      # Cross-check os name with `esp_image_path`
+      grub_config_path: 'EFI/ubuntu/grub.cfg'
     dhcp: {}
     pxe:
-      ipxe_enabled: true
+      kernel_append_params: "ipa-hardware-initialization-delay=120 console=tty0 console=ttyS0,115200 nofb nomodeset vga=normal"
+
       ipxe_use_swift: true
       pxe_bootfile_name: "undionly.kpxe"
+      ipxe_bootfile_name: "undionly.kpxe"
       uefi_pxe_bootfile_name: "ipxe.efi"
+      uefi_ipxe_bootfile_name: "ipxe.efi"
+    redfish:
+      use_swift: false
+    conductor:
+      conductor_always_validates_images: false # We only use the direct interface, so leave it to the agent
+      permitted_image_formats: 'raw,qcow2,iso,vmdk'
+      # HDA has a parallelism of 50 nodes, but with deleting they ran into the limit of 60, so increasing to 90. The network in the biggest
+      # region only has a /25 (126) & /26 (62) so ~188 useable IPs but each node uses 2, so enough for ~94 nodes. But we need some for the router
+      # as well and want a small puffer so 90 it is.
+      max_concurrent_clean: 90
 
 agent:
   deploy_logs:
@@ -152,22 +231,23 @@ agent:
 
 console:
   ssh_loglevel: error
-  #secret: null
+  nginx_workers: 5
 
 tftp_ip: null
 tftp_files:
   undionly.kpxe: https://repo.eu-de-1.cloud.sap/ironic-tftp/undionly.kpxe
   ipxe.efi: https://repo.eu-de-1.cloud.sap/ironic-tftp/ipxe.efi
 
-portmetrics: '9102'
+portmetrics: "9102"
 
-#network_management_uuid: DEFINE_IN_REGION_CHART
-#network_cleaning_uuid: DEFINE_IN_REGION_CHART
+# network_management_uuid: null
+# network_cleaning_uuid: null
 neutron_url_timeout: 210
 neutron_port_setup_delay: 0
+neutron_connect_retries: 3
 
-#swift_account: null
-#swift_tempurl: null
+# swift_account: null
+# swift_tempurl: null
 
 mysql_metrics:
   enabled: true
@@ -177,55 +257,57 @@ mysql_metrics:
     - name: openstack_ironic_nodes_list_gauge
       help: Ironic Node list
       labels:
-      - "uuid"
-      - "name"
-      - "instance_uuid"
-      - "power_state"
-      - "provision_state"
-      - "last_error"
+        - "uuid"
+        - "name"
+        - "instance_uuid"
+        - "power_state"
+        - "provision_state"
+        - "retired"
+        - "last_error"
       query: |
         SELECT
           uuid,
           name,
           COALESCE(instance_uuid, "") AS instance_uuid,
-          power_state,
+          COALESCE(power_state, 'unknown') AS power_state,
           provision_state,
-          COALESCE(last_error, "no error") AS last_error,
+          COALESCE(retired, 'unknown') AS retired,
+          COALESCE(last_error, 'unknown') AS last_error,
           COUNT(*) AS gauge
         FROM nodes
-        GROUP BY uuid, name, instance_uuid, power_state, provision_state, last_error;
+        GROUP BY uuid;
       values:
-      - "gauge"
+        - "gauge"
     - name: openstack_ironic_nodes_updated_in_24hrs_gauge
       help: Ironic updated nodes
       labels:
-      - "uuid"
-      - "name"
-      - "provision_state"
+        - "uuid"
+        - "name"
+        - "provision_state"
       query: |
-        SELECT 
-          uuid, 
-          name, 
+        SELECT
+          uuid,
+          name,
           provision_state,
           COUNT(*) AS in_24hrs_gauge
-        FROM nodes 
-        WHERE updated_at >= NOW() - INTERVAL 1 DAY 
+        FROM nodes
+        WHERE updated_at >= NOW() - INTERVAL 1 DAY
         GROUP BY uuid, provision_state, name;
       values:
-      - "in_24hrs_gauge"
+        - "in_24hrs_gauge"
     - name: openstack_ironic_nodes_nodenotinmaint
       help: Ironic nodes not in maintenance
       labels:
-      - "maintenance_reason"
-      - "uuid"
-      - "name"
+        - "maintenance_reason"
+        - "uuid"
+        - "name"
       values:
-      - "node_not_in_maint"
+        - "node_not_in_maint"
       query: |
-        SELECT 
-          COUNT(case when maintenance = 0 then 1 end) AS node_not_in_maint, 
-          uuid, 
-          name, 
+        SELECT
+          COUNT(case when maintenance = 0 then 1 end) AS node_not_in_maint,
+          uuid,
+          name,
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
         FROM nodes
         GROUP BY
@@ -235,16 +317,16 @@ mysql_metrics:
     - name: openstack_ironic_nodes_nodeinmaint
       help: Ironic nodes in maintenance
       labels:
-      - "maintenance_reason"
-      - "uuid"
-      - "name"
+        - "maintenance_reason"
+        - "uuid"
+        - "name"
       values:
-      - "node_in_maint"
+        - "node_in_maint"
       query: |
-        SELECT 
-          COUNT(case when maintenance = 1 then 1 end) AS node_in_maint, 
-          uuid, 
-          name, 
+        SELECT
+          COUNT(case when maintenance = 1 then 1 end) AS node_in_maint,
+          uuid,
+          name,
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
         FROM nodes
         GROUP BY
@@ -254,29 +336,51 @@ mysql_metrics:
     - name: openstack_ironic_nodes_conductor_group
       help: Ironic updated nodes
       labels:
-      - "uuid"
-      - "name"
-      - "conductor_group"
+        - "uuid"
+        - "name"
+        - "conductor_group"
       query: |
-        SELECT 
-          uuid, 
-          name, 
+        SELECT
+          uuid,
+          name,
           conductor_group,
           COUNT(conductor_group) AS groups
         FROM nodes
-        GROUP BY 
-          name, 
-          uuid, 
+        GROUP BY
+          name,
+          uuid,
           conductor_group;
       values:
-      - "groups"
+        - "groups"
+
+proxysql:
+  mode: ""
+  native_sidecar: true
+
+dbType: "mariadb"
 
 mariadb:
-  enabled: false
+  enabled: true
+  name: ironic
+  databases:
+    - ironic
+    - ironic_inspector
+  users:
+    backup:
+      name: backup
+    ironic:
+      name: ironic
+      grants:
+        - "ALL PRIVILEGES on ironic.*"
+    ironic_inspector:
+      name: ironic_inspector
+      grants:
+        - "ALL PRIVILEGES on ironic_inspector.*"
   alerts:
     service: ironic
+    support_group: foundation
   backup_v2:
-    enabled: false
+    enabled: true
     backup_dir: ./backup
     databases:
       - ironic
@@ -284,21 +388,49 @@ mariadb:
     verify_tables:
       - ironic.nodes
       - ironic_inspector.nodes
-  backup:
-    enabled: false
-    metrics: false
-    image_version: v0.5.15
-    os_password: "AHardPa55w0rd!"
-  root_password: "AHardPa55w0rd!"
-  buffer_pool_size: "8192M"
-  log_file_size: "2048M"
-  name: ironic
-  initdb_configmap: ironic-mariadb-init
+  root_password: null
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-ironic-pvclaim
 
-sentry:
-  enabled: true
+pxc_db:
+  alerts:
+    support_group: foundation
+  enabled: false
+  name: ironic
+  initdb_job: true
+  ccroot_user:
+    enabled: true
+  databases:
+    - ironic
+    - ironic_inspector
+  users:
+    ironic:
+      name: ironic
+      grants:
+        - "ALL PRIVILEGES on ironic.*"
+    ironic_inspector:
+      name: ironic_inspector
+      grants:
+        - "ALL PRIVILEGES on ironic_inspector.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+dbName: ironic
+# dbPassword: null
+max_pool_size: 1
+max_overflow: 50
 
 rabbitmq:
   name: ironic
@@ -308,6 +440,17 @@ rabbitmq:
     requests:
       memory: 756Mi
       cpu: 1000m
+  alerts:
+    support_group: foundation
+  metrics:
+    enabled: true
+    addMetricsUser: true
+    sidecar:
+      enabled: false
+
+# use sentry via openstack/utils
+sentry:
+  enabled: true
 
 logging:
   formatters:
@@ -318,32 +461,71 @@ logging:
       class: StreamHandler
       args: "(sys.stdout,)"
       formatter: context
-    sentry:
-      class: raven.handlers.logging.SentryHandler
+    sentry_events:
+      class: "sapcc_sentrylogger.handler.EventHandler"
       level: ERROR
+      args: "()"
+    sentry_breadcrumbs:
+      class: "sapcc_sentrylogger.handler.BreadcrumbHandler"
+      level: INFO
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: WARNING
     ironic:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
     auditmiddleware:
-      handlers: stdout, sentry
+      handlers: stdout, sentry_events, sentry_breadcrumbs
       level: INFO
+
+memcached:
+  alerts:
+    support_group: foundation
 
 watcher:
   enabled: false
 
 audit:
-  enabled: false
+  central_service:
+    user: rabbitmq
+    password: null
+  enabled: true
+  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
+  mem_queue_size: 1000
+  record_payloads: false
+  metrics_enabled: true
+
+flavors:
+  extra_specs:
+    baremetal:
+      "capabilities:cpu_arch": "x86_64"
+      "capabilities:hypervisor_type": "ironic"
+      "quota:separate": "true"
+      "quota:instance_only": "true"
+      "resources:MEMORY_MB": "0"
+      "resources:DISK_GB": "0"
+      "resources:VCPU": "0"
+    bame:
+      "capabilities:hypervisor_type": "VMware vCenter Server"
+      "vmware:hv_enabled": "True"
+      "hw_video:ram_max_mb": "16"
 
 # Deploy Ironic Prometheus alerts.
 alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+  support_group: foundation
+
+utils:
+  trust_bundle:
+    enabled: true
+
+nginx:
+  image: 'shared-app-images/alpine-nginx'
+  imageTag: 'mainline-slim-latest'

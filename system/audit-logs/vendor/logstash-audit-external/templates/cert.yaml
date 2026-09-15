@@ -1,14 +1,15 @@
-{{ if .Values.syslog.enabled -}}
-apiVersion: cert-manager.io/v1alpha3
+{{- if or (eq .Values.http.enabled true) (eq .Values.mtls.enabled true) }}
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: tls-logstash-audit-external
 spec:
   dnsNames:
+  - audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
   - logstash-audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
   issuerRef:
     group: certmanager.cloud.sap
-    kind: DigicertIssuer
+    kind: ClusterIssuer
     name: digicert-issuer
   secretName: tls-logstash-audit-external
 {{- end }}

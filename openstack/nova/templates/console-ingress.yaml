@@ -1,5 +1,7 @@
+{{- $cellsNonzero := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+{{- $envAll := . }}
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: nova-console
@@ -8,17 +10,15 @@ metadata:
     type: backend
     component: nova
   annotations:
+    disco: "true"
     ingress.kubernetes.io/use-regex: "true"
-    ingress.kubernetes.io/configuration-snippet: |
-      {{- range $name, $config := .Values.consoles }}
-        {{- if $config.enabled }}
-      rewrite "(?i)/{{ $name }}/(.*)" /$1 break;
-      rewrite "(?i)/{{ $name }}$" / break;
-        {{- end }}
-      {{- end }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    ingress.kubernetes.io/rewrite-target: "/$1"
+    nginx.ingress.kubernetes.io/rewrite-target: "/$1"
   {{- if .Values.use_tls_acme }}
     kubernetes.io/tls-acme: "true"
   {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
   - secretName: tls-{{include "nova_console_endpoint_host_public" . | replace "." "-" }}
@@ -27,19 +27,29 @@ spec:
   - host: {{include "nova_console_endpoint_host_public" .}}
     http:
       paths:
-      {{- range $name, $config := .Values.consoles }}
-        {{- if $config.enabled }}
-      - path: /{{ $name }}/?(.*)
+      {{- range $cellId := $cellsNonzero }}
+        {{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+        {{- range $type, $config := $envAll.Values.consoles }}
+          {{- if $config.enabled }}
+            {{- $name := print $cellName "-" $type }}
+      - path: /{{ $cellName }}/{{ $type }}/?(.*)
+        pathType: ImplementationSpecific
         backend:
-          serviceName: nova-console-{{ $name }}
-          servicePort: {{ $name }}
+          service:
+            name: nova-console-{{ $name }}
+            port:
+              name: {{ $type }}
+          {{- end }}
         {{- end }}
       {{- end }}
 
-{{ $envAll := . }}
-{{- range $name, $config := .Values.consoles }}
-  {{- if $config.enabled }}
+{{- range $cellId := $cellsNonzero }}
+  {{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+  {{- range $type, $config := $envAll.Values.consoles }}
+    {{- if $config.enabled }}
+      {{- $name := print $cellName "-" $type }}
 ---
-{{ tuple $envAll $name $config | include "nova.console_service"  }}
+{{ tuple $envAll $name $type $config | include "nova.console_service"  }}
+    {{- end }}
   {{- end }}
 {{- end }}

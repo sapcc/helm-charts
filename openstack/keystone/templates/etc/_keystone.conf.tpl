@@ -3,13 +3,17 @@ debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
 verbose = true
 
+{{- with .Values.max_db_limit }}
+max_db_limit = {{ . }}
+{{- end }}
+
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
 
 log_config_append = /etc/keystone/logging.conf
 logging_context_format_string = %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
 logging_default_format_string = %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
 logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
-logging_user_identity_format = usr %(user)s prj %(tenant)s dom %(domain)s usr-dom %(user_domain)s prj-dom %(project_domain)s
+logging_user_identity_format = usr %(user)s prj %(project)s dom %(domain)s usr-dom %(user_domain)s prj-dom %(project_domain)s
 
 notification_format = {{ .Values.api.notifications.format | default "cadf" | quote }}
 {{ range $message_type := .Values.api.notifications.opt_out }}
@@ -29,7 +33,12 @@ default_tag = vc-{{ $az }}-0
 
 {{- if .Values.api.auth }}
 [auth]
-methods = {{ .Values.api.auth.methods | default "password,token,application_credential" }}
+{{- /*
+Note: the federation-related methods must be in the beginning of the list.
+This goes against the official keystone documentation.
+This allows them to work even if the "external" method is present.
+*/}}
+methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ if .Values.federation.saml.enabled }}saml2,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
@@ -43,27 +52,9 @@ url = {{ required "missing global.api.cc_password.url" .Values.global.api.cc_pas
 {{- end }}
 
 [cc_x509]
-trusted_issuer = CN=SSO_CA,O=SAP-AG,C=DE
 trusted_issuer = CN=SAP SSO CA G2,O=SAP SE,L=Walldorf,C=DE
 user_domain_id_header: HTTP_X_USER_DOMAIN_ID
 user_domain_name_header: HTTP_X_USER_DOMAIN_NAME
-
-{{ if .Values.api.cc_external }}
-[cc_external]
-user_name_header = {{ .Values.api.cc_external.user_name_header | default "HTTP_X_USER_NAME" }}
-user_domain_name_header = {{ .Values.api.cc_external.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
-{{- if .Values.api.cc_external.trusted_key }}
-trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HTTP_X_TRUSTED_KEY" }}
-trusted_key_value = {{ .Values.api.cc_external.trusted_key_value }}
-{{- end }}
-{{- end }}
-
-{{ if .Values.api.cc_radius }}
-[cc_radius]
-host = {{ .Values.api.cc_radius.host | default "radius" }}
-port = {{ .Values.api.cc_radius.port | default "radius" }}
-secret = {{ .Values.api.cc_radius.secret }}
-{{ end }}
 
 {{- if .Values.services.ingress.x509.trusted_issuer }}
 [tokenless_auth]
@@ -79,11 +70,17 @@ access_token_duration = {{ .Values.api.oauth1.access_token_duration | default "0
 {{- end }}
 
 [cache]
+{{- if and .Values.memcached.auth.username .Values.memcached.auth.password }}
+backend = dogpile.cache.bmemcached
+{{- else }}
 backend = dogpile.cache.memcached
-{{- if .Values.memcached.host }}
+{{- end }}
+{{- if .Values.global.is_global_region }}
+memcache_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
+{{- else if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
 {{ else }}
-memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
+memcache_servers = {{ include "keystone.memcached_host" . }}:{{.Values.memcached.port | default 11211}}
 {{- end }}
 config_prefix = cache.keystone
 expiration_time = {{ .Values.cache.expiration_time | default 600 }}
@@ -112,26 +109,13 @@ expiration_buffer = 3600
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
 
-{{- if ne .Values.release "rocky" }}
 [fernet_receipts]
 key_repository = /fernet-keys
 max_active_keys = {{ .Values.api.fernet.maxActiveKeys | default 3 }}
-{{- end }}
 
-{{- if ne .Values.release "rocky" }}
 [access_rules_config]
 rules_file = /etc/keystone/access_rules.json
 permissive = true
-{{- end }}
-
-[database]
-# Database connection string - MariaDB for regional setup
-# and Percona Cluster for inter-regional setup:
-{{ if .Values.percona_cluster.enabled -}}
-connection = {{ include "db_url_pxc" . }}
-{{- else }}
-connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
-{{- end }}
 
 [assignment]
 driver = sql
@@ -161,14 +145,6 @@ unique_last_password_count = 5
 disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
 {{- end }}
 
-[oslo_messaging_notifications]
-{{- if .Values.rabbitmq.host }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
-{{ else }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
-{{- end }}
-driver = messaging
-
 [oslo_middleware]
 enable_proxy_headers_parsing = true
 
@@ -181,18 +157,14 @@ enable_proxy_headers_parsing = true
 # mismatching scope. (boolean value)
 enforce_scope = false
 
-{{- if ne .Values.api.policy "json" }}
 policy_file = /etc/keystone/policy.yaml
-{{- else }}
-policy_file = /etc/keystone/policy.json
-{{- end }}
 
 [lifesaver]
 enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}
 memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211}}
 {{ else }}
-memcached = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
+memcached = {{ include "keystone.memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
 {{- end }}
 # deprecated
 domain_whitelist = {{ .Values.lifesaver.domain_allowlist | default "Default, tempest" }}
@@ -205,7 +177,7 @@ user_blocklist = {{ .Values.lifesaver.user_blocklist | default "" }}
 # initial user credit
 initial_credit = {{ .Values.lifesaver.initial_credit | default 500 }}
 # how often do we refill credit
-refill_seconds = {{ .Values.lifesaver.refill_seconds | default 60 }}
+refill_seconds = {{ .Values.lifesaver.refill_seconds | default 1 }}
 # and with what amount
 refill_amount = {{ .Values.lifesaver.refill_amount | default 5 }}
 # cost of each status
@@ -218,7 +190,23 @@ allow_credentials = true
 expose_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token
 allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token,X-Project-Id,X-Project-Name,X-Project-Domain-Id,X-Project-Domain-Name,X-Domain-Id,X-Domain-Name,X-User-Id,X-User-Name,X-User-Domain-name
 {{- end }}
-
-{{- if .Values.osprofiler.enabled }}
-{{- include "osprofiler" . }}
+{{- if or .Values.federation.oidc.enabled .Values.federation.saml.enabled }}
+[federation]
+{{- if and .Values.federation.oidc.enabled (not .Values.federation.saml.enabled) }}
+remote_id_attribute = HTTP_OIDC_ISS
+{{- else if and .Values.federation.saml.enabled (not .Values.federation.oidc.enabled) }}
+remote_id_attribute = Shib-Identity-Provider
+{{- else }}
+# Both OIDC and SAML are enabled; remote_id_attribute is set per-protocol
+# via the federation protocol configuration in Keystone, not globally.
+# Default to OIDC here; SAML uses Shib-Identity-Provider via protocol config.
+remote_id_attribute = HTTP_OIDC_ISS
+{{- end }}
+trusted_dashboard = https://dashboard.{{ .Values.global.region }}.cloud.sap/verify-auth-token
+{{- if .Values.debug }}
+trusted_dashboard = http://localhost:4001/verify-auth-token
+trusted_dashboard = https://localhost:4001/verify-auth-token
+trusted_dashboard = http://127.0.0.1:4001/verify-auth-token
+trusted_dashboard = https://127.0.0.1:4001/verify-auth-token
+{{- end }}
 {{- end }}

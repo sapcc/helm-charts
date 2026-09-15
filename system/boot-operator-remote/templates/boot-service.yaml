@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "boot-operator-remote.fullname" . }}-boot-service
+  labels:
+  {{- include "boot-operator-remote.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.bootService.type }}
+  selector:
+    control-plane: controller-manager
+    app.kubernetes.io/instance: boot-operator-remote
+    app.kubernetes.io/name: boot-operator-core
+  ports:
+  {{- .Values.bootService.ports | toYaml | nindent 2 }}

@@ -1,9 +1,41 @@
-credentials:
-  default:
-    username: {{ .Values.network_generic_ssh_exporter.user }}
-    password: {{ .Values.network_generic_ssh_exporter.password }}
-
 metrics:
+  zmq_errors:
+    regex: >-
+      ^ZmQ\:\s*(RX|TX)\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
+    multi_value: true
+    value: $2
+    labels:
+      direction: $1
+    description: check for zmq  errors
+    metric_type_name: counter
+    command: show system internal epm counters zmq
+    timeout_secs: 5
+
+  xr_tcam_learn_disabled: &xr_tcam_learn_disabled
+    regex: |
+      ^Xr tcam limit learn disabled\s*:\s+(\w+)$
+    value: $1
+    map_values:
+    - regex: No
+      value: 0
+    - regex: Yes
+      value: 1
+    description: linecard xr learning state
+    metric_type_name: string
+    command: vsh_lc -c 'show system internal epmc global-info'
+    timeout_secs: 5
+  hal_learn_disabled:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^Hal Learn Disabled\s*:\s+(\w+)$
+    description: linecard hal learning state
+  epm_pending_epreg:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^EPM pending epreq\s*:\s+(\d+)$
+    metric_type_name: gauge
+    description: linecard pending EP requests
+
   nat_static:
     regex: >-
       Total active translations: (\d+) \((\d+) static, (\d+) dynamic; (\d+) extended\)
@@ -22,11 +54,34 @@ metrics:
     command: show ip nat statistic | include active
     timeout_secs: 3
 
-  nat_misses:
+  nat_limits_use: &nat_limits_use
+    regex: >-
+      ^(([a-z0-9]{8})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{12}))\n\s+(\d+)\s+(\d+)\s+(\d+)
+    multi_value: true
+    metric_type_name: gauge
+    value: $8
+    labels:
+        vrf: $1
+        router_id: $2-$3-$4-$5-$6
+    command: show ip nat limits all-vrf
+    description: The number of dynamic translatrions in a VRF if any
+    timeout_secs: 5
+    label_lookups:
+      - label_name: project_id
+        lookup_source: metis
+        lookup_mapping: router_project
+        key: $2-$3-$4-$5-$6
+
+  nat_limits_miss:
+    <<: *nat_limits_use
+    description: The number of tranlations that hit the limit
+    value: $9
+
+  nat_misses: &nat_misses
     regex: >-
       Hits:\s+(\d+)\s+Misses:\s(\d+)
     value: $2
-    description: Indicates how many packets did not find a match in the current NAT database
+    description: Indicates how many packets did find a match in the current NAT database
     metric_type_name: gauge
     command: show ip nat statistics | incl Misses
     timeout_secs: 3
@@ -315,15 +370,15 @@ metrics:
 
   qfp_nat_datapath_stats:
     regex: >-
-      Subcode #(\d+)\s+(\S+)\s+(\d+)
-    value: $3
+      SC#(\d+)\s+([A-Z_]+)\s+(\d+)\s+(\d+)\s+(\d+)
+    value: $4
     multi_value: true
     labels:
       subcode: $1
       reason: $2
-    description: Drop subcodes and counters for QFP NAT processing
+    description: Drop subcodes and counters for QFP NAT Stats
     metric_type_name: counter
-    command: show platform hardware qfp active feature nat datapath stats
+    command: show platform hardware qfp active feature nat datapath stats diff
     timeout_secs: 10
 
   qfp_nat_datapath_gatein:
@@ -385,6 +440,27 @@ metrics:
     command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
     timeout_secs: 4
 
+  bgp_sessions_admin_down:
+    regex: >-
+      ^BGP neighbor is (\S+),(\s+vrf (\S+),)?\s+remote AS (\d+),.*?((\w+) link).*?(\n\sAdministratively \S+ \S+)?\n\s{2,}(\w+.*?$)
+    multi_value: true
+    value: $7
+    labels:
+      vrf: $3
+      peer_ip: $1
+      remote_as: $4
+      peer_type: $6
+      local_as: $4
+    map_values:
+      - regex: Administratively.*
+        value: 5
+      - regex: .*
+        value: 6
+    description: Indicates if a session is Administratively shutdown or not
+    metric_type_name: string
+    command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state|Administratively shut)
+    timeout_secs: 4
+
   arp_drop_input_queue_full:
     regex: "Drop due to input queue full: (\\d+)"
     value: $1
@@ -392,6 +468,24 @@ metrics:
     metric_type_name: gauge
     command: show ip traffic | in Drop due to input queue
     timeout_secs: 5
+
+  memory_util_stats:
+    regex: >-
+      \s+RP0 Healthy (\d+)\s+(\d+)\s+\((\d+)\%\)\s+\d+\s+\((\d+)\%\)\s+\d+\s\((\d+)\%\)
+    value: $3
+    description: Used memory statistics of RP0 processor
+    metric_type_name: gauge
+    command: show platform software status control-processor brief | sec Memory
+    timeout_secs: 5
+
+  dynamic_mac_count:
+    regex: >-
+      ^Number of lines which match regexp = (\d+)
+    value: $1
+    description: Counts the number of dynamically learned mac address from all bridge domain on the router
+    metric_type_name: gauge
+    command: show bridge-domain | count dynamic
+    timeout_secs: 10
 
   firewall_vrf_stats_total:
     regex: >-
@@ -439,6 +533,20 @@ metrics:
     description: Indicates the connections in a half open state
     metric_type_name: gauge
     command: show policy-firewall stats vrf | in (VRF|Total|UDP|ICMP|TCP)
+    timeout_secs: 4
+  
+  logging_dmiauthd_sync:
+    regex: >-
+      ^(\d+/\d+/\d+\s\d+:\d+\d:\d+\.\d+)\s.*%DMI-5-(\w+)(?:.+?Configuration change requiring running configuration sync detected - '(.+)')?
+    multi_value: true
+    value: $1
+    labels:
+      action: $2
+      reason: $3
+    description: Parse timestamp of sync needed messages
+    metric_type_name: time
+    time_format: 2006/01/02 15:04:05.999999
+    command: show logging process dmiauthd start last 180
     timeout_secs: 4
 
   nx_ntp_configured:
@@ -569,12 +677,43 @@ metrics:
     command: show run ntp | in "peer|server"
     timeout_secs: 5
 
+  xr_icmp_frag_drop_count:
+    regex: >-
+      ^(\S+)\s+\S+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*$
+    multi_value: true
+    value: $3
+    labels:
+      accepted_count: $2
+      drop_reason: $1
+    description: ICMP Type 3 Code 4 drop rate monitoring
+    metric_type_name: gauge
+    command: show lpts pifib hardware static-police location 0/0/CPU0 | include "PUNT_FRAG_NEEDED"
+    timeout_secs: 5
+
+  xr_icmp_frag_accepted_count:
+    regex: >-
+      ^(\S+)\s+\S+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*$
+    multi_value: true
+    value: $2
+    labels:
+      drop_count: $3
+      drop_reason: $1
+    description: ICMP Type 3 Code 4 accept rate monitoring
+    metric_type_name: gauge
+    command: show lpts pifib hardware static-police location 0/0/CPU0 | include "PUNT_FRAG_NEEDED"
+    timeout_secs: 5
+
 batches:
-  test:
-    - redundancy_send_queue
+  aci-leaf:
+    - xr_tcam_learn_disabled
+    - hal_learn_disabled
+    - epm_pending_epreg
+    - zmq_errors
   neutron-router:
     - nat_dynamic
     - nat_static
+    - nat_limits_use
+    - nat_limits_miss
     - nat_misses
     - nat_hits
     - nat_portblock_tcp_start
@@ -610,6 +749,10 @@ batches:
     - firewall_vrf_stats_half_open_tcp
     - firewall_vrf_stats_half_open_icmp
     - arp_drop_input_queue_full
+    - memory_util_stats
+    - dynamic_mac_count
+    - logging_dmiauthd_sync
+    - bgp_sessions_admin_down
 
 
   cisco-nx-os_core-router:
@@ -627,14 +770,18 @@ batches:
     - xr_ntp_peer_offset
     - xr_ntp_peer_dispersion
     - xr_ntp_configured
+    - xr_icmp_frag_drop_count
+    - xr_icmp_frag_accepted_count
 
 devices:
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
+  cisco-aci:
+    prompt_regex: ^\S+\# $
   cisco-nx-os:
     prompt_regex: ^\S+\# $
     init_command: terminal length 0
   cisco-ios-xr:
     prompt_regex: ^\S+\#$
-    init_command: terminal length 0
+    init_command: terminal length 0 ; terminal width 0

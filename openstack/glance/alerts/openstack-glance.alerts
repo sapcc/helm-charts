@@ -2,21 +2,23 @@ groups:
 - name: openstack-glance.alerts
   rules:
   - alert: OpenstackGlanceImageInQueuedState
-    expr: count(openstack_glance_image_gauge{status="queued"})by(id,name,project_id, created_at) > 0
-    for: 30m
+    expr: count(openstack_glance_image_gauge{status="queued"})by(id,image_name,project_id, created_at) > 0
+    for: 1d
     labels:
       severity: info
       tier: os
+      support_group: compute-storage-api
       service: glance
       context: glance
       dashboard: glance
-      meta: 'Image {{ $labels.name }} is in Queued State'
+      no_alert_on_absence: "true"
+      meta: 'Image {{ $labels.image_name }} is in Queued State'
     annotations:
-      description: 'Image {{ $labels.name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Queued'
+      description: 'Image {{ $labels.image_name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Queued since {{ $labels.created_at}}'
       summary: 'Image is in Queued State'
 
   - alert: OpenstackGlanceImageInKilledState
-    expr: count(openstack_glance_image_gauge{status="killed"})by(id,name,project_id) > 0
+    expr: count(openstack_glance_image_gauge{status="killed"})by(id,image_name,project_id) > 0
     for: 30m
     labels:
       severity: info
@@ -24,20 +26,24 @@ groups:
       service: glance
       context: glance
       dashboard: glance
-      meta: 'Image {{ $labels.name }} is in Killed State'
+      meta: 'Image {{ $labels.image_name }} is in Killed State'
+      no_alert_on_absence: "true"
+      support_group: compute-storage-api
     annotations:
-      description: 'Image {{ $labels.name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Killed'
+      description: 'Image {{ $labels.image_name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Killed'
       summary: 'Image is in Killed State'
 
   - alert: OpenstackGlanceUnresolvedSentryIssues
     expr: sentry_unresolved_issues_count{project="glance"} > 0
-    for: 10m
+    for: 3d
     labels:
       context: sentry-metrics
       service: glance
       severity: info
       tier: os
       sentry: 'glance/'
+      support_group: compute-storage-api
+      no_alert_on_absence: "true"
     annotations:
       description: glance has encountered unexpected errors and reported
         them to Sentry. Please have a look at the list of unresolved issues
@@ -45,30 +51,18 @@ groups:
       summary: glance has reported issues to Sentry
 
   - alert: OpenstackGlanceRateLimitActionIsAbove50
-    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="api"}[2m]) * 60) > 50
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: glance
-      no_alert_on_absence: "true"
-      meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations' 
-    annotations:
-      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
-      summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
-
-  - alert: OpenstackGlanceContainerOOMKilled
-    expr: sum(rate(klog_pod_oomkill{namespace="monsoon3", pod_name=~"glance.*"}[30m]))by (container_name, pod_name) > 0
+    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_requests_ratelimit_total{service="image", container="glance-api"}[2m]) * 60) > 50
     for: 5m
     labels:
+      severity: info
       tier: os
       service: glance
-      severity: info
-      context: memory
+      context: glance
       dashboard: glance
-      meta: "Glance Container {{ $labels.container_name }}"
-      no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+      no_alert_on_absence: "true"
+      meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
+      support_group: compute-storage-api
     annotations:
-      summary: Glance Container was oomkilled
-      description: Glance Container {{ $labels.container_name }} in Pod {{ $labels.pod_name }} was oomkilled recently
+      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations'
+      summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
+

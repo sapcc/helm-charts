@@ -1,0 +1,27 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: prometheus-{{ include "prometheus.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: prometheus-{{ include "prometheus.name" . }}
+  updatePolicy:
+    updateMode: "Initial"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: 'prometheus'
+        controlledValues: RequestsOnly
+        controlledResources:
+          - cpu
+          - memory
+{{- if and .Values.resources .Values.resources.requests }}
+        minAllowed:
+{{ toYaml .Values.resources.requests | indent 10 }}
+{{- end }}
+{{- if and .Values.resources .Values.resources.limits }}
+        maxAllowed:
+{{ toYaml .Values.resources.limits | indent 10 }}
+{{- end }}

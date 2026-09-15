@@ -26,7 +26,9 @@ spec:
         name: ironic-pxe
 {{ tuple . "ironic" "pxe" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: ironic-tftp
         configmap-pxe-hash: {{ include (print $.Template.BasePath "/pxe-configmap.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       containers:
       - name: ironic-tftp
@@ -40,10 +42,11 @@ spec:
         volumeMounts:
         - mountPath: /tftpboot
           name: ironic-tftp
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
         resources:
 {{ toYaml .Values.pod.resources.pxe | indent 10 }}
       - name: ironic-ipxe
-        image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.nginx.image is missing" .Values.nginx.image }}:{{ required ".Values.nginx.imageTag is missing" .Values.nginx.imageTag }}
         imagePullPolicy: IfNotPresent
         ports:
         - name: ironic-ipxe
@@ -54,6 +57,9 @@ spec:
           name: ironic-tftp
         - mountPath: /etc/nginx/conf.d
           name: ironic-pxe
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
         livenessProbe:
           httpGet:
             path: /tftpboot/
@@ -70,3 +76,4 @@ spec:
         configMap:
           name: ironic-pxe
           defaultMode: 0444
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

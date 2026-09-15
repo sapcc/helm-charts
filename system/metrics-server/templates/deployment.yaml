@@ -29,24 +29,26 @@ spec:
           image: {{ include "metrics-server.image" . }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
           livenessProbe:
-            failureThreshold: 3
             httpGet:
               path: /livez
               port: https
               scheme: HTTPS
+            initialDelaySeconds: 0
             periodSeconds: 10
+            failureThreshold: 3
           name: metrics-server
           ports:
             - containerPort: 4443
               name: https
               protocol: TCP
           readinessProbe:
-            failureThreshold: 3
             httpGet:
               path: /readyz
               port: https
               scheme: HTTPS
+            initialDelaySeconds: 20
             periodSeconds: 10
+            failureThreshold: 3
           securityContext:
             readOnlyRootFilesystem: true
             runAsNonRoot: true
@@ -61,3 +63,12 @@ spec:
       volumes:
         - emptyDir: {}
           name: tmp-dir
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  k8s-app: metrics-server
+              namespaces:
+                - kube-system
+              topologyKey: kubernetes.io/hostname

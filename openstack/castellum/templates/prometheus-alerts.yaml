@@ -1,6 +1,4 @@
-{{- $values := .Values }}
-{{- if $values.alerts.enabled }}
-{{- range $target, $unused := $values.alerts.prometheus }}
+{{- range $target := list "kubernetes" "openstack" }}
 {{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -12,11 +10,10 @@ metadata:
     app: castellum
     tier: os
     type: alerting-rules
-    prometheus: {{ index $values.alerts.prometheus $target | required (printf "$values.alerts.prometheus.%s missing" $target) }}
+    prometheus: {{ $target }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
-{{- end }}
 {{- end }}
 {{- end }}

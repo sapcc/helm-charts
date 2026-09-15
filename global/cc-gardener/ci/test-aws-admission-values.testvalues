@@ -1,0 +1,69 @@
+# Test values for AWS extension with admission configuration
+# Tests: admission.values, admission.runtimeCluster, admission.virtualCluster
+
+global:
+  registry: example.com
+  region: qa-de-1
+  cluster: test-cluster
+
+garden:
+  name: garden
+  backup:
+    provider: aws
+    accessKeyID: "test-access"
+    secretAccessKey: "test-secret"
+    region: "eu-central-1"
+    bucket: "test-bucket"
+  runtimeCluster:
+    zones: ["qa-de-1a"]
+    networking:
+      pods: ["10.42.0.0/16"]
+      services: ["10.43.0.0/16"]
+  virtualCluster:
+    version: "1.29.6"
+
+secretsInjector:
+  enabled: false
+
+extensions:
+  storage:
+    provisioner: "rancher.io/local-path"
+    parameters: {}
+
+  aws:
+    version: v1.67.2
+
+    # Test admission configuration
+    admission:
+      values:
+        image:
+          repository: custom-aws-repo/aws-admission
+          tag: v1.0.0
+        replicaCount: 2
+      runtimeCluster:
+        helm:
+          ociRepository:
+            repository: keppel.example.com/aws-admission-runtime
+            tag: v1.0.1
+      virtualCluster:
+        helm:
+          ociRepository:
+            repository: keppel.example.com/aws-admission-virtual
+            # tag omitted - should fallback to version v1.67.2
+
+    # Test extension.values
+    values:
+      image:
+        repository: custom-aws-repo/aws-controller
+        tag: v1.67.3
+
+    # Test runtimeClusterValues
+    runtimeClusterValues:
+      image:
+        tag: v1.67.3-runtime
+
+    # Test helm.ociRepository
+    helm:
+      ociRepository:
+        repository: keppel.example.com/aws-extension
+        tag: v1.67.2

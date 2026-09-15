@@ -5,16 +5,17 @@ groups:
   rules:
 
   - alert: OpenstackKeppelDown
-    expr: keppel_healthmonitor_result != 1 or absent(keppel_healthmonitor_result)
-    for: 3m
+    expr: max(keppel_healthmonitor_result) != 1 or absent(keppel_healthmonitor_result)
+    for: 10m
     labels:
       context: api
       dashboard: keppel-overview
       service: keppel
-      severity: warning # TODO raise to critical at some point
+      severity: critical
+      support_group: containers
       tier: os
       meta: 'Keppel health check is not reporting success'
-      playbook: docs/support/playbook/keppel/down.html
+      playbook: 'https://operations.global.cloud.sap/docs/container/keppel/playbooks/down'
     annotations:
       summary: Keppel health check is not reporting success.
       description: |
@@ -25,30 +26,34 @@ groups:
   # This alert is disabled for QA because the lab regions are literal testbeds
   # and therefore have connectivity issues all the time.
   - alert: OpenstackKeppelAnycastDown
-    expr: keppel_anycastmonitor_result{region!~"qa-.*"} != 1
+    expr: max by (account) (keppel_anycastmonitor_result{region!~"qa-.*"}) != 1
     for: 30m # triggers rather slowly because it does not make sense to ping the Keppel team for short-term network issues
     labels:
       context: anycast-api
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
+      # meta is part of an alertmanager inhibition rule
       meta: 'Keppel anycast health check failing for {{ $labels.account }}'
     annotations:
       summary: 'Keppel anycast health check failing for {{ $labels.account }}'
       description: |
-        The Keppel anycast health check is failing for some peers. Check the
-        logs of the "keppel-anycast-monitor" pod for details.
+        The Keppel anycast health check is failing for some peers.
+        If there are other alerts for {{ $labels.account }} itself being down, this is probably an aftereffect; please investigate the broken region first.
+        If only anycast is broken, check the logs of the "keppel-anycast-monitor" pod for details.
 
   # This alert is disabled for QA because the QA anycast looks kind of broken.
   - alert: OpenstackKeppelAnycastMembership
-    expr: keppel_anycastmonitor_membership{region!~"qa-.*"} != 1
+    expr: max(keppel_anycastmonitor_membership{region!~"qa-.*"}) != 1
     for: 10m
     labels:
       context: anycast-membership
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: 'Keppel anycast membership check failing'
     annotations:
@@ -61,14 +66,16 @@ groups:
         of the "keppel-anycast-monitor" pod for details.
 
   - alert: OpenstackKeppelSlowPeering
-    expr: time() - keppel_peers_last_peered_at > 1800
+    expr: time() - max by (hostname) (keppel_peers_last_peered_at) > 1800
     for: 5m
     labels:
       context: api
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
+      # meta is part of an alertmanager inhibition rule
       meta: 'Keppel cannot peer with {{ $labels.hostname }}'
     annotations:
       summary: 'Keppel cannot peer with {{ $labels.hostname }}'
@@ -79,13 +86,14 @@ groups:
         additional information or error messages.
 
   - alert: OpenstackKeppelSlowBlobReplication
-    expr: keppel_blob_replication_min_started_at > 0 and time() - keppel_blob_replication_min_started_at > 900
+    expr: max(keppel_blob_replication_min_started_at) > 0 and time() - max(keppel_blob_replication_min_started_at) > 900
     for: 5m
     labels:
       context: api
       dashboard: keppel-overview
       service: keppel
-      severity: info
+      severity: warning
+      support_group: containers
       tier: os
       meta: 'Blob replication is taking a long time'
     annotations:
@@ -93,15 +101,23 @@ groups:
       description: |
         A blob replication has been running in this Keppel instance for more
         than 15 minutes. This could indicate that the region interconnect is slow.
+        Check the "pending_blobs" DB table to see which blobs are affected.
+        Entries with a "last_seen_at" timestamp older than a few minutes can
+        be deleted in order to allow another replication attempt to take place.
+        (In fact, Keppel should do so automatically.)
+
+        This is a warning alert because stuck blob replications may block other
+        background tasks like vulnerability status checks.
 
   - alert: OpenstackKeppelDBConnectionPoolNearlyFull
-    expr: avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 8
+    expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 12)
     for: 5m
     labels:
       context: dbconnpool
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: 'DB connection pool nearly full on {{ $labels.pod }}'
     annotations:
@@ -114,18 +130,19 @@ groups:
         starved for CPU time, so try checking the CPU throttling metrics.
 
   - alert: OpenstackKeppelAuditEventPublishFailing
-    # Usually, you would check increase() here, but audit events *can* be quite
-    # rare, so we alert if there are any failed audit events at all. To clear this alert,
-    # delete the respective
-    expr: max by (pod) (keppel_failed_auditevent_publish > 0)
-    for: 1h
+    # The underlying metric counts failed submission attempts, e.g. because the hermes-rabbitmq server is restarting.
+    # These are not necessarily fatal because the process will hold them in memory to retry the submission later.
+    # The alert will clear up on its own once submissions start working again.
+    expr: sum by (pod) (changes(audittools_failed_submissions{namespace="keppel"}[1h]) > 0)
+    for: 5m
     labels:
       context: auditeventpublish
       dashboard: keppel-overview
       service: keppel
       severity: info
+      support_group: containers
       tier: os
       meta: '{{ $labels.pod }}'
     annotations:
       summary: "{{ $labels.pod }} cannot publish audit events"
-      description: "Audit events could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
+      description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for detailed error messages. Affected audit events are held in memory until publishing succeeds."

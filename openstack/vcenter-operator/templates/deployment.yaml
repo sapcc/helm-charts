@@ -19,6 +19,8 @@ spec:
     metadata:
       labels:
         name: vcenter-operator
+        alert-tier: os
+        alert-service: nova
 {{ tuple . "vcenter-operator" "operator" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
       serviceAccountName: {{ .Chart.Name }}
@@ -27,7 +29,6 @@ spec:
         image: {{required ".Values.global.registry is missing" .Values.global.registry}}/vcenter-operator:{{ .Values.imageVersionVcenterOperator | default .Values.imageVersion | required "Please set imageVersion or similar"}}
         imagePullPolicy: IfNotPresent
         command:
-        - dumb-init
         - vcenter-operator
         env:
         - name: SERVICE_DOMAIN

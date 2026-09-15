@@ -33,7 +33,7 @@ api_paste_config = /etc/designate/api-paste.ini
 network_api = neutron
 
 # Supported record types
-#supported_record_type = A, AAAA, CNAME, MX, SRV, TXT, SPF, NS, PTR, SSHFP, SOA
+#supported_record_type = A,AAAA,CNAME,MX,SRV,TXT,SPF,NS,PTR,SSHFP,SOA,NAPTR,CAA,CERT,HTTPS,SVCB
 
 # Setting SOA defaults
 default_soa_refresh_min = 3500
@@ -44,28 +44,36 @@ default_soa_minimum = 300
 
 # Setting default quotas
 # most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
-quota_zones = 0
-quota_zone_recordsets = 0
-quota_zone_records = 0
-quota_recordset_records = 20
+quota_zones = {{ .Values.quota_zones | default 0 }}
+quota_zone_recordsets = {{ .Values.quota_zone_recordsets | default 0 }}
+quota_zone_records = {{ .Values.quota_zone_records | default 0 }}
+quota_recordset_records = {{ .Values.quota_recordset_records | default 20 }}
 quota_api_export_size = {{ .Values.quota_api_export_size | default 1000 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
-rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+
+rpc_ping_enabled = true
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size | default 10 }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
-
-
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}/
 
 [oslo_policy]
-policy_file = policy.json
+policy_file = policy.yaml
+enforce_scope = false
+enforce_new_defaults = false
+
+[oslo_messaging_rabbit]
+heartbeat_in_pthread = false
+rabbit_interval_max = 3
+rabbit_retry_backoff = 1
+kombu_reconnect_delay = 0.1
+heartbeat_timeout_threshold = 30
+heartbeat_rate = 3
 
 [oslo_messaging_notifications]
 driver = noop
+
+[heartbeat_emitter]
+heartbeat_interval = 30.0
 
 ########################
 ## Service Configuration
@@ -75,7 +83,7 @@ driver = noop
 #-----------------------
 [service:central]
 # Number of central worker processes to spawn
-workers = 2
+workers = {{ .Values.central_workers }}
 
 # Number of central greenthreads to spawn
 #threads = 1000
@@ -98,24 +106,24 @@ default_pool_id = '794ccc2c-d751-44fe-b57f-8894c9f5c842'
 #managed_resource_email = hostmaster@example.com.
 
 # Tenant ID to own all managed resources - like auto-created records etc.
-#managed_resource_tenant_id = 123456
-
+managed_resource_tenant_id = {{ .Values.managed_resource_tenant_id | default "00000000-0000-0000-0000-000000000000" }}
 # What filters to use. They are applied in order listed in the option, from
 # left to right
-scheduler_filters = {{ .Values.scheduler_filters }}
+
+scheduler_filters = {{ if .Values.shared_pools_enabled }}{{ .Values.scheduler_filters_shared_pools }}{{ else }}{{ .Values.scheduler_filters }}{{ end }}
 
 #-----------------------
 # API Service
 #-----------------------
 [service:api]
 # Number of api worker processes to spawn
-workers = 2
+workers = {{ .Values.api_workers }}
 
 # Number of api greenthreads to spawn
 #threads = 1000
 
 # Enable host request headers
-#enable_host_header = False
+enable_host_header = false
 
 # Make Zone description field mandatory
 #description_field_mandatory = False
@@ -149,10 +157,10 @@ enabled_extensions_v2 = quotas, reports
 
 # Default per-page limit for the V2 API, a value of None means show all results
 # by default
-#default_limit_v2 = 20
+default_limit_v2 = 200
 
 # Max page size in the V2 API
-#max_limit_v2 = 1000
+max_limit_v2 = 1000
 
 # Enable Admin API (experimental)
 #enable_api_admin = True
@@ -175,30 +183,62 @@ enabled_extensions_v2 = quotas, reports
 #pecan_debug = False
 
 #-----------------------
+# Keystone
+#-----------------------
+[keystone]
+# The maximum number of retries that should be attempted for connection errors.
+# (integer value)
+connect_retries = 20
+
+# Delay (in seconds) between two retries for connection errors. If not set,
+# exponential retry starting with 0.5 seconds up to a maximum of 60 seconds is
+# used. (floating point value)
+connect_retry_delay = 0.5
+
+# The maximum number of retries that should be attempted for retriable HTTP
+# status codes. (integer value)
+status_code_retries = 20
+
+# Delay (in seconds) between two retries for retriable status codes. If not set,
+# exponential retry starting with 0.5 seconds up to a maximum of 60 seconds is
+# used. (floating point value)
+status_code_retry_delay = 0.5
+
+# List of retriable HTTP status codes that should be retried. If not set default
+# to  [503] (list value)
+retriable_status_codes = 500, 502, 503, 504
+
+#-----------------------
 # Keystone Middleware
 #-----------------------
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
+{{- if .Values.global.is_global_region }}
+auth_interface = public
+{{- else }}
 auth_interface = internal
+{{- end }}
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
-{{- if .Values.global_setup }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+{{- if .Values.global.is_global_region }}
+auth_url = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 {{- else }}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
-username = {{ .Values.global.designate_service_user }}
-password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- else }}
-memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = {{.Release.Name}}-memcached.{{ include "svc_fqdn" . }}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
+{{- if .Values.global.is_global_region }}
+insecure = False
+{{- else }}
 insecure = True
+{{- end }}
 token_cache_time = 600
 include_service_catalog = true
 service_type = dns
@@ -260,7 +300,7 @@ allow_headers = X-Auth-Token,X-Auth-Sudo-Tenant-ID,X-Auth-Sudo-Project-ID,X-Auth
 #-----------------------
 [service:mdns]
 # Number of mdns worker processes to spawn
-workers = 2
+workers = {{ .Values.mdns_workers }}
 
 # Number of mdns greenthreads to spawn
 threads = 1000
@@ -297,36 +337,77 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 #transfer_source = None
 #notify_delay = 0
 
-#------------------------
-# Deleted domains purging
-#------------------------
-[producer_task:zone_purge]
-#
-# From designate.producer
-#
+#-----------------------
+# Producer Service
+#-----------------------
+[service:producer]
+# Number of Producer worker processes to spawn (integer value)
+workers = {{ .Values.producer_workers }}
 
+# Number of Producer greenthreads to spawn (integer value)
+#threads = 1000
+
+# Enabled tasks to run (list value)
+#enabled_tasks = <None>
+
+# DEPRECATED: Whether to allow synchronous zone exports (boolean value)
+# This option is deprecated for removal.
+# Its value may be silently ignored in the future.
+# Reason: Migrated to designate-worker
+#export_synchronous = true
+
+# RPC topic name for producer (string value)
+topic = producer
+
+[producer_task:delayed_notify]
 # Run interval in seconds (integer value)
-interval = 3600
+#interval = 5
 
 # Default amount of results returned per page (integer value)
-per_page = 200
+#per_page = 100
+
+# How many zones to receive NOTIFY on each run (integer value)
+#batch_size = 100
+
+[producer_task:periodic_exists]
+# Run interval in seconds (integer value)
+#interval = 3600
+
+# Default amount of results returned per page (integer value)
+#per_page = 100
+
+[producer_task:periodic_secondary_refresh]
+# Run interval in seconds (integer value)
+#interval = 3600
+
+# Default amount of results returned per page (integer value)
+#per_page = 100
+
+[producer_task:worker_periodic_recovery]
+# Run interval in seconds (integer value)
+#interval = 120
+
+# Default amount of results returned per page (integer value)
+#per_page = 100
+
+[producer_task:zone_purge]
+# Run interval in seconds (integer value)
+interval = {{ .Values.zone_purge.interval }}
+
+# Default amount of results returned per page (integer value)
+per_page = {{ .Values.zone_purge.per_page }}
 
 # How old deleted zones should be (deleted_at) to be purged, in seconds (integer
 # value)
-time_threshold = 604800
+time_threshold = {{ .Values.zone_purge.time_threshold }}
 
 # How many zones to be purged on each run (integer value)
-batch_size = 200
+batch_size = {{ .Values.zone_purge.batch_size }}
 
-#------------------------
-# Delayed zones NOTIFY
-#------------------------
-[zone_manager_task:delayed_notify]
-# How frequently to scan for zones pending NOTIFY, in seconds
-#interval = 5
-
-# How many zones to receive NOTIFY on each run
-#batch_size = 100
+[producer_task:periodic_check_service_status]
+# How old service entries not reporting heartbeat should be deleted, in seconds (integer
+# value)
+service_time_threshold = 600
 
 #-----------------------
 # Worker Service
@@ -336,10 +417,10 @@ batch_size = 200
 enabled = {{.Values.worker_enabled}}
 
 # Number of Worker processes to spawn
-workers = 2
+workers = {{ .Values.worker_workers }}
 
 # Number of Worker greenthreads to spawn
-threads = 1000
+threads = 200
 
 # The percentage of servers requiring a successful update for a zone change
 # to be considered active
@@ -356,11 +437,27 @@ poll_retry_interval = {{ .Values.worker_poll_retry_interval }}
 # response from a server
 poll_max_retries = {{ .Values.worker_poll_max_retries }}
 
+# The maximum times to consider PENDING zone as stale and try recovery
+poll_max_prop_time = {{ .Values.worker_poll_max_prop_time }}
+
 # The time to wait before sending the first request to a server
-poll_delay = 2
+poll_delay = {{ .Values.worker_poll_delay }}
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
+
+# Timeout in seconds for XFR's. (integer value)
+#xfr_timeout = 10
+
+# The maximum number of times to retry fetching a zones serial. (integer value)
+#serial_max_retries = 3
+
+# The time to wait before retrying a zone serial request. (integer value)
+#serial_retry_delay = 1
+
+# Timeout in seconds before giving up on fetching a zones serial. (integer
+# value)
+#serial_timeout = 1
 
 # Whether to enforce worker to send messages over TCP
 all_tcp = {{ .Values.worker_all_tcp }}
@@ -370,18 +467,12 @@ all_tcp = {{ .Values.worker_all_tcp }}
 ##############
 [network_api:neutron]
 # Comma separated list of values, formatted "<name>|<neutron_uri>"
-{{- if eq .Values.global_setup false }}
+{{- if not .Values.global.is_global_region }}
 endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
-timeout = 20
+timeout = 30
 insecure = True
 {{- end }}
-#admin_username = designate
-#admin_password = designate
-#admin_tenant_name = designate
-#auth_url = http://localhost:35357/v2.0
-#auth_strategy = keystone
-#ca_certificates_file =
 
 ########################
 ## Storage Configuration
@@ -390,22 +481,38 @@ insecure = True
 # SQLAlchemy Storage
 #-----------------------
 [storage:sqlalchemy]
-# Database connection string - MariaDB for regional setup
-# and Percona Cluster for inter-regional setup:
-{{ if .Values.percona_cluster.enabled -}}
-connection = {{ include "db_url_pxc" . }}
-{{- else }}
-connection = {{ include "db_url_mysql" . }}
-{{- end }}
-
 mysql_sql_mode = TRADITIONAL
 
-#connection_debug = 0
-#connection_trace = False
-#sqlite_synchronous = True
-#idle_timeout = 3600
-#max_retries = 10
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
+
 retry_interval = 1
+db_max_retry_interval = 1
+
+[healthcheck]
+# DEPRECATED: The path to respond to healtcheck requests on. (string value)
+# This option is deprecated for removal.
+# Its value may be silently ignored in the future.
+path = /healthcheck
+
+# Show more detailed information as part of the response. Security note:
+# Enabling this option may expose sensitive details about the service being
+# monitored. Be sure to verify that it will not violate your security policies.
+# (boolean value)
+detailed = false
+
+# Additional backends that can perform health checks and report that information
+# back as part of a request. (list value)
+#backends =
+
+# Check the presence of a file to determine if an application is running on a
+# port. Used by DisableByFileHealthcheck plugin. (string value)
+disable_by_file_path = /etc/designate/healthcheck_disable
+
+# Check the presence of a file based on a port to determine if an application is
+# running on a port. Expects a "port:path" list of strings. Used by
+# DisableByFilesPortsHealthcheck plugin. (list value)
+#disable_by_file_paths =
 
 ########################
 ## Handler Configuration
@@ -460,9 +567,7 @@ retry_interval = 1
 ########################
 ## Coordination
 ########################
-[coordination]
-# URL for the coordination backend to use.
-#backend_url = kazoo://127.0.0.1/
+{{ include "ini_sections.coordination" . }}
 
 ########################
 ## Hook Points
@@ -483,4 +588,3 @@ retry_interval = 1
 #   name = '%s.%s' % (func.__module__, func.__name__)
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
-{{ include "ini_sections.audit_middleware_notifications" . }}

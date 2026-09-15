@@ -1,5 +1,5 @@
 kind: Ingress
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 
 metadata:
   name: barbican-api
@@ -12,9 +12,17 @@ metadata:
     system: openstack
     type: api
     component: barbican
-  {{- if .Values.tlsacme }}
   annotations:
+  {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
+    disco: "true"
+  {{- end }}
+  {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+  {{- if .Values.ingress.enableRequestSizeLimit }}
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.ingress.maxRequestBodySize | quote }}
+  {{- end }}
+  {{- if .Values.ingress.enableConnectionsLimit }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ .Values.ingress.limitConnections | quote }}
   {{- end }}
 spec:
   tls:
@@ -25,6 +33,9 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: barbican-api
-            servicePort: {{.Values.api_port_internal}}
+            service:
+              name: barbican-api
+              port:
+                number: {{.Values.api_port_internal}}

@@ -1,0 +1,188 @@
+{{- if $.Values.cloudProviderMetal.enabled }}
+{{- range $cluster := .Values.clusters }}
+---
+# ClusterRole for accessing metal Server resources cluster-wide
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-controller-manager-metal-{{ $cluster.name }}
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - servers
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-controller-manager-metal-{{ $cluster.name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-controller-manager-metal-{{ $cluster.name }}
+subjects:
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: {{ $cluster.namespace }}
+---
+# Role for metal resources in the CAPI namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-controller-manager-metal
+  namespace: {{ $cluster.namespace }}
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - serverclaims
+    verbs:
+      - get
+      - watch
+      - list
+      - update
+      - patch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - servermaintenances
+    verbs:
+      - get
+      - watch
+      - list
+      - create
+      - delete
+      - update
+      - patch
+  - apiGroups:
+      - ipam.cluster.x-k8s.io
+    resources:
+      - ipaddressclaims
+      - ipaddresses
+    verbs:
+      - get
+      - watch
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-controller-manager-metal
+  namespace: {{ $cluster.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-controller-manager-metal
+subjects:
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: {{ $cluster.namespace }}
+---
+# Role for serviceaccount token creation (use-service-account-credentials)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-controller-manager-role
+  namespace: {{ $cluster.namespace }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - update
+      - patch
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts/token
+    verbs:
+      - get
+      - create
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-controller-manager-role
+  namespace: {{ $cluster.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-controller-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: {{ $cluster.namespace }}
+---
+# Role for leader election
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-controller-manager-leader-election
+  namespace: {{ $cluster.namespace }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-controller-manager-leader-election
+  namespace: {{ $cluster.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-controller-manager-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: {{ $cluster.namespace }}
+{{- end }}
+{{- end }}

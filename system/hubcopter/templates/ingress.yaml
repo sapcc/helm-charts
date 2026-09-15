@@ -1,0 +1,51 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: hubcopter-api
+  annotations:
+    ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $.Values.global.tld }}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $.Values.global.tld }}/oauth2/auth"
+    ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $.Values.global.tld }}/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $.Values.global.tld }}/oauth2/start"
+    ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+    kubernetes.io/tls-acme: "true"
+
+spec:
+  tls:
+    - secretName: tls-hubcopter-api
+      hosts:
+        - 'hubcopter.global.{{ .Values.global.tld }}'
+        - 'hubcopter.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  rules:
+    - &rule
+      host: 'hubcopter.global.{{ .Values.global.tld }}'
+      http:
+        paths:
+          - path: /(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: hubcopter-html
+                port:
+                  number: 80
+{{- range .Values.hubcopter.instances }}
+          - path: /{{ .id }}/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: hubcopter-api-{{ .id }}
+                port:
+                  number: 8080
+{{- end }}
+    - <<: *rule
+      host: 'hubcopter.{{ .Values.global.region }}.{{ .Values.global.tld }}'

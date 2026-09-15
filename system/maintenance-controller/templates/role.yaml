@@ -2,9 +2,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: maintenance-controller-role
-  namespace: kube-system
+  namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups:
   - coordination.k8s.io
@@ -19,7 +18,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ""
+  - events.k8s.io 
   resources:
   - events
   verbs:
@@ -58,6 +57,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/eviction
+  verbs:
+  - create
 # required for metrics
 - apiGroups:
   - apps
@@ -70,4 +75,26 @@ rules:
   - get
   - list
   - watch
+# required for hypervisor CRD
+- apiGroups:
+  - kvm.cloud.sap
+  resources:
+  - hypervisors
+  - hypervisors/status
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+{{- if .Values.rbac.cloudProviderSecretName }}
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  resourceNames:
+  - {{ .Values.rbac.cloudProviderSecretName | quote }}
+{{- end }}
 {{- end }}

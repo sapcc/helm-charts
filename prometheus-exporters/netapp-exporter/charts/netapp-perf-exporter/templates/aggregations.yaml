@@ -1,4 +1,3 @@
-{{- if .Values.enabled }}
 {{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -8,9 +7,8 @@ metadata:
   labels:
     type: aggregation-rules
     app.kubernetes.io/name: {{ $.Values.fullname }}
-    prometheus: {{ required ".Values.global.prometheus.targets missing" $.Values.global.prometheus.targets }}
+    prometheus: {{ required ".Values.global.prometheus missing" $.Values.global.prometheus }}
 spec:
   {{ printf "%s" $bytes | nindent 2 }}
 
-{{- end }}
 {{- end }}

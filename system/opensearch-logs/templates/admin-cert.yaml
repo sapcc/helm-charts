@@ -1,0 +1,21 @@
+{{- if .Values.scaleout.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: admin-cert-manager
+  namespace: opensearch-logs
+spec:
+  commonName: 'opensearchadmin.{{ .Values.global.clusterType }}.{{ .Values.global.region }}'
+  issuerRef:
+    name: opensearch-logs-ca-issuer
+    kind: Issuer
+  duration: 8760h
+  renewBefore: 720h
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS8
+    size: 2048
+  usages:
+    - client auth
+  secretName: admin-cert-manager
+{{- end }}

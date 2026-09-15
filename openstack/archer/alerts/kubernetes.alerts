@@ -1,0 +1,15 @@
+groups:
+- name: kubernetes.alerts
+  rules:
+  - alert: archer-pod-not-ready
+    expr: kube_pod_status_ready_normalized{condition="true", pod=~"archer.+", pod!~"archer-migration.*"} == 0
+    for: 10m
+    labels:
+      context: availability
+      service: archer
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Archer pod is not ready for 10 minutes.'
+      summary: 'Archer pod is not ready for 10 minutes. Please check the pods.'

@@ -1,0 +1,29 @@
+{{- if .Values.alert.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: http-keep-alive-alerts
+  labels:
+    app: http-keep-alive-monitor
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alert.prometheus }}
+
+spec:
+  groups:
+  - name: http-keep-alive.alerts
+    rules:
+    - alert: IdleHTTPKeepAliveTimeoutTooLow
+      expr: (min by(ingress, ingress_namespace, backend) (http_keepalive_idle_timeout_seconds{ingress !~ "^{{ .Values.alert.ignore_ingress_names | join "|" }}$"}) < {{ .Values.alert.timeout }} > 0) * on (ingress, ingress_namespace) group_left(label_ccloud_support_group, label_ccloud_service) (label_replace(kube_ingress_labels, "ingress_namespace", "$1", "namespace", "(.*)"))
+      for: 30m
+      labels:
+        tier: k8s
+        service: resources
+        severity: {{ .Values.alert.severity }}
+        support_group: "{{`{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}`}}{{ .Values.alert.default_support_group }}{{`{{ end }}`}}"
+        meta: "Timeout for idle HTTP connections to low for ingress {{`{{ $labels.ingress_namespace }}/{{ $labels.ingress }}`}}"
+        playbook: 'docs/support/playbook/kubernetes/idle_http_keep_alive_timeout'
+      annotations:
+        summary: Timeout for idle HTTP keep-alive connections to low
+        description: The backend `{{`{{ $labels.backend }}`}}` of the ingress `{{`{{ $labels.ingress_namespace }}/{{ $labels.ingress }}`}}` is closing idle http connections to fast. To avoid _502 Gateway Timeout_ errors the service needs to keep idle connections for at least {{ .Values.alert.timeout }} seconds.
+{{- end }}

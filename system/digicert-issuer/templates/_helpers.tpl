@@ -1,3 +1,3 @@
-{{- define "image" -}}
-{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required ".Values.image.tag missing" .Values.image.tag -}}
+{{- define "digicert-issuer.image" -}}
+{{- required ".Values.image.repository missing" .Values.image.repository -}}:{{- required "image tag missing" (.Values.image.tag | default .Chart.AppVersion) -}}
 {{- end -}}

@@ -69,12 +69,12 @@ See [Thanos docs](./templates/thanos/README.md) for additional details specific 
 
 The following table provides an overview of configurable parameters of this chart and their defaults.  
 See the [values.yaml](./values.yaml) for more details.  
-**TLDR;** Set the `name`, `global.region`, `global.domain` parameters and get started where `name` has to be a unique identifier for your prometheus.
+**TLDR;** Set the `name`, `global.region`, `global.tld` parameters and get started where `name` has to be a unique identifier for your prometheus.
 
 |       Parameter                        |           Description                                                                                                   |                         Default                     |
 |----------------------------------------|-------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
 | `global.region`                        | The OpenStack region.                                                                                                   | `""`                                                |
-| `global.domain`                        | The URL domain.                                                                                                         | `""`                                                |
+| `global.tld`                        | The URL domain.                                                                                                         | `""`                                                |
 | `global.clusterType`                   | Optional: The type of the cluster to which the Prometheus is deployed.                                                  | `""`                                                |
 | `global.cluster`                       | Optional: The name of the cluster to which the Prometheus is deployed.                                                  | `$global.region`                                    |
 | `image.repository`                     | Repository of the Prometheus image.                                                                                     | `prom/prometheus`                                   |

@@ -1,0 +1,63 @@
+groups:
+- name: snmp_neutron_router
+  rules:
+  - record: neutron_router:per_pair_5min_avg_ifHCOutOctets
+    expr: |
+      sum by (site, asr_pair, model)(
+        label_replace(
+          rate(snmp_asr_ifHCOutOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"}[5m]),
+          "site", "regional", "statically_setting_a_label", "")
+        or
+        rate(snmp_asr_ifHCOutOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)[1-9][0-9]{2}[ab]$"}[5m]))
+  - record: neutron_router:per_pair_5min_avg_ifHCInOctets
+    expr: |
+      sum by (site, asr_pair, model)(
+        label_replace(
+          rate(snmp_asr_ifHCInOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"}[5m]),
+          "site", "regional", "statically_setting_a_label", "")
+        or
+        rate(snmp_asr_ifHCInOctets{ifDescr=~"Port-channel1", device=~"^(asr|rt)[1-9][0-9]{2}[ab]$"}[5m]))
+  - record: neutron_router:per_pair_uplink_capacity_mbits
+    expr: |
+      max by (site, asr_pair, model)(
+        label_replace(
+          snmp_asr_ifHighSpeed{ifDescr=~"Port-channel1", ifOperStatus="1", device=~"^(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"},
+          "site", "regional", "statically_setting_a_label", "")
+        or
+        snmp_asr_ifHighSpeed{ifDescr=~"Port-channel1", ifOperStatus="1", device=~"^(asr|rt)[1-9][0-9]{2}[ab]$"})
+  - record: neutron_router:per_pair_max_bdvifs_in_network
+    expr: |
+        max by(asr_pair, site) (count by(network_id, asr_pair, site) (
+        label_replace(
+          snmp_asr_ifHCInOctets{ifAlias=~"^type:gw.*"},
+          "site", "regional", "statically_setting_a_label", "")
+        or
+        snmp_asr_ifHCInOctets{ifAlias=~"^type:gw.*"}))
+- name: snmp_exporter
+  rules:
+  - record: snmp_scrape_failed_devices
+    expr: ({job=~"scrapeConfig/infra-monitoring/snmp-exporter-.*",__name__=~"up"} == 0)
+  - record: snmp_scrape_time_devices
+    expr: scrape_duration_seconds{job=~"scrapeConfig/infra-monitoring/snmp-exporter-.*"}
+  - record: snmp_arista_vlans_counted
+    expr: count(snmp_arista_dot1qVlanFdbId) by (name)
+  - record: snmp_apod_arista_devices
+    expr: group by (server_name,module) (snmp_apod_arista_entPhysicalName)
+  - record: snmp_apod_asr_devices
+    expr: group by (server_name) (snmp_apod_asr_entPhysicalName)
+- name: f5_listener
+  rules:
+  - record: snmp_f5_ltmVirtualServStatClientBytesIn
+    expr: snmp_f5_ltmVirtualServStatClientBytesIn_slb * on(ltmVirtualServStatName,devicename) group_right snmp_f5_ltmVirtualServStatName
+  - record: snmp_f5_ltmVirtualServStatClientBytesOut
+    expr: snmp_f5_ltmVirtualServStatClientBytesOut_slb * on(ltmVirtualServStatName,devicename) group_right snmp_f5_ltmVirtualServStatName
+  - record: snmp_f5_ltmVirtualServStatClientCurConns
+    expr: snmp_f5_ltmVirtualServStatClientCurConns_slb * on(ltmVirtualServStatName,devicename) group_right snmp_f5_ltmVirtualServStatName
+  - record: snmp_f5_ltmVirtualServStatClientMaxConns
+    expr: snmp_f5_ltmVirtualServStatClientMaxConns_slb * on(ltmVirtualServStatName,devicename) group_right snmp_f5_ltmVirtualServStatName
+  - record: snmp_f5_ltmVirtualServStatClientTotConns
+    expr: snmp_f5_ltmVirtualServStatClientTotConns_slb * on(ltmVirtualServStatName,devicename) group_right snmp_f5_ltmVirtualServStatName
+  - record: snmp_f5_ltmVirtualServStatTotRequests
+    expr: snmp_f5_ltmVirtualServStatTotRequests_slb * on(ltmVirtualServStatName,devicename) group_right snmp_f5_ltmVirtualServStatName
+  - record: snmp_f5_ltmVirtualServStatName
+    expr: snmp_f5_ltmVirtualServStatName_slb * on(ltmVirtualServStatName,devicename) group_right snmp_f5_ltmVirtualServStatName

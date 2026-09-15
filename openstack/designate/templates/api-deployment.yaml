@@ -8,6 +8,12 @@ metadata:
     application: designate
     type: api
     component: api
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: designate-api
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -26,32 +32,22 @@ spec:
       labels:
         app: {{ .Release.Name }}-api
       annotations:
+        kubectl.kubernetes.io/default-container: designate-api
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       initContainers:
-      - name: kubernetes-entrypoint
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
-        imagePullPolicy: IfNotPresent
-        command:
-          - kubernetes-entrypoint
-        env:
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: {{ .Release.Name }}-migration-{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
-            - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- else }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- end }}
-            - name: COMMAND
-              value: "true"
+      {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: designate-api
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
@@ -80,19 +76,33 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
+          lifecycle:
+            preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
           livenessProbe:
-            httpGet:
-              path: /
-              port: {{.Values.global.designate_api_port_internal}}
-            initialDelaySeconds: 15
+            tcpSocket:
+              port: designate-api
+            initialDelaySeconds: 30
             periodSeconds: 15
             timeoutSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /
-              port: {{.Values.global.designate_api_port_internal}}
-            initialDelaySeconds: 5
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - api
+            initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 10
           ports:
             - name: designate-api
               containerPort: {{.Values.global.designate_api_port_internal}}
@@ -103,11 +113,26 @@ spec:
               name: container-init
             - name: wsgi-designate
               mountPath: /var/www/cgi-bin/designate
+{{- if .Values.global.is_global_region }}
+            - mountPath: /var/www/html/test.html
+              name: designate-etc
+              subPath: test.html
+{{- end }}
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
+              readOnly: true
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/mods-available/mpm_event.conf
+              subPath: mpm_event.conf
+              readOnly: true
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/mods-available/status.conf
+              subPath: status.conf
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
@@ -121,16 +146,34 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
+ {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: {{ .Release.Name }}-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
+            - secret:
+                name: {{ .Release.Name }}-secrets-rndc
+{{- if .Values.rate_limit.enabled }}
+            - secret:
+                name: {{ .Release.Name }}-api-ratelimit-redis-user-default
+                items:
+                  - key: password
+                    path: ratelimit-backend-secret.conf
+{{- end }}
         - name: designate-etc-wsgi
           configMap:
-            name: designate-etc-wsgi         
+            name: designate-etc-wsgi
         - name: wsgi-designate
           emptyDir: {}
         - name: container-init
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

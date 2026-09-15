@@ -1,0 +1,15 @@
+package imagesfromnonkeppel
+
+import data.lib.add_support_labels
+import data.lib.traversal
+
+iro := input.review.object
+containers := traversal.find_container_specs(iro)
+
+violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+    container := containers[_]
+    image := container.image
+
+    not regex.match("^keppel\\.[^/.]*\\.cloud.sap/", image)
+    msg := sprintf("container %q uses an image that is not from a Keppel registry: %s", [container.name, image])
+}

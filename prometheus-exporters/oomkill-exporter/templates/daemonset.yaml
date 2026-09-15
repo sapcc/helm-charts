@@ -7,6 +7,8 @@ metadata:
     app: {{ template "name" . }}
 spec:
   updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '50%' # these pods can be rolled rather quickly since they are not in the hot path
     type: RollingUpdate
   selector:
     matchLabels:
@@ -17,7 +19,6 @@ spec:
         app: {{ template "name" . }}
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     spec:
 {{- if .Values.tolerations }}
@@ -26,7 +27,7 @@ spec:
 {{- end }}
       containers:
       - name: {{ template "name" . }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.image.repository }}:{{ if .Values.image.tag }}{{ .Values.image.tag }}{{ else }}{{ .Chart.AppVersion }}{{ end }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - -logtostderr
@@ -46,7 +47,9 @@ spec:
           mountPath: /dev/kmsg
           readOnly: true
         - name: docker
-          mountPath: /var/run/docker.sock 
+          mountPath: /var/run/docker.sock
+        - name: containerd
+          mountPath: /run/containerd/containerd.sock
         ports:
         - name: metrics
           containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
@@ -57,3 +60,6 @@ spec:
       - name: docker
         hostPath:
           path: /var/run/docker.sock
+      - name: containerd
+        hostPath:
+          path: /run/containerd/containerd.sock

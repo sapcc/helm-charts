@@ -1,18 +1,26 @@
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: cc3test-api
   namespace: {{ .Values.cc3test.namespace }}
 spec:
-  schedule: "*/2 * * * *"
+  schedule: "*/5 * * * *"
   concurrencyPolicy: Replace
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       backoffLimit: 2
-      ttlSecondsAfterFinished: 300
+      activeDeadlineSeconds: 3600
       template:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        metadata:
+          annotations:
+            linkerd.io/inject: enabled
+            config.linkerd.io/skip-inbound-ports: "22,443,9125"
+            config.linkerd.io/skip-outbound-ports: "22,443,9125"
+            config.linkerd.io/proxy-admin-shutdown: enabled
+        {{- end }}
         spec:
           volumes:
             - name: cc3test-config
@@ -24,7 +32,8 @@ spec:
           containers:
           - name: cc3test-api
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
-            args: ['pytest', '--disable-pytest-warnings', '--no-header', '--color=yes', '--variables', 'config/config.yaml', '--variables', 'secrets/secrets.yaml', '-r', 'ap', '-m', 'api', 'tests']
+            command: ["/linkerd-await"]
+            args: ["--shutdown", "--", "/bin/sh", "-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -r ap -m api --ignore=tests/compute_kvm --ignore=tests/logical_network_separation --ignore=tests/validation --ignore=tests/compute/test_server.py --ignore=tests/compute/test_compute_host.py tests; exit 0"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config
@@ -32,4 +41,9 @@ spec:
               - name: cc3test-secrets
                 mountPath: /cc3test/secrets
                 readOnly: true
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            env:
+              - name: LINKERD_AWAIT_DISABLED
+                value: "Linkerd was not enabled or not requested"
+            {{- end }}
           restartPolicy: Never

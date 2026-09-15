@@ -1,0 +1,68 @@
+{{- $num_grants := 0 }}
+{{- range $role, $grants := $.Values.limes.external_role_assignments }}
+  {{- $num_grants = add $num_grants (len $grants) }}
+{{- end }}
+{{- if gt $num_grants 0 }}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  # This seed is for granting cloud_resource_admin and cloud_resource_viewer
+  # to the chosen few permitted to wield such powers.
+  name: limes-grants-seed
+
+{{/* If a domain is mentioned in the external_role_assignments, we need to add a dependency on its domain seed. */}}
+{{- $relevant_domain_names := list }}
+{{- range $role, $grants := $.Values.limes.external_role_assignments }}
+  {{- range $grant := $grants }}
+    {{- $relevant_domain_names = append $relevant_domain_names $grant.user_domain_name }}
+    {{- $relevant_domain_names = append $relevant_domain_names $grant.project_domain_name }}
+  {{- end }}
+{{- end }}
+{{- $relevant_domain_names = sortAlpha (uniq $relevant_domain_names) }}
+
+spec:
+  {{- if $relevant_domain_names }}
+  requires:
+    {{- range $relevant_domain_names }}
+    - {{ $.Values.global.keystoneNamespace }}/domain-{{ . | lower | replace "_" "-" }}-seed
+    {{- end }}
+
+  roles:
+    # NOTE: These role declarations are duplicated from limes-seed.
+    # I don't want to depend on limes-seed here because its dependency tree is huge and slow.
+    - name: cloud_resource_admin
+    - name: cloud_resource_viewer
+
+  {{/* The big pile of templating here is to restructure from "roles -> assignments" into "domains -> projects -> assignments". */}}
+  domains:
+    {{- range $domain_name := $relevant_domain_names }}
+    - name: {{ $domain_name }}
+      {{- $relevant_project_names := list }}
+      {{- range $role, $grants := $.Values.limes.external_role_assignments }}
+        {{- range $grant := $grants }}
+          {{- if eq $grant.project_domain_name $domain_name }}
+            {{- $relevant_project_names = append $relevant_project_names $grant.project_name }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- $relevant_project_names = sortAlpha (uniq $relevant_project_names) }}
+      {{- if $relevant_project_names }}
+      projects:
+        {{- range $project_name := $relevant_project_names }}
+        - name: {{ $project_name }}
+          role_assignments:
+          {{- range $role := sortAlpha (keys $.Values.limes.external_role_assignments) }}
+          {{- range $grant := index $.Values.limes.external_role_assignments $role }}
+          {{- if and (eq $grant.project_domain_name $domain_name) (eq $grant.project_name $project_name) }}
+            - user: {{ $grant.user_name }}@{{ $grant.user_domain_name }}
+              role: {{ $role }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+
+{{- end }}

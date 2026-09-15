@@ -1,0 +1,45 @@
+[DEFAULT]
+debug = {{ .Values.debug }}
+prometheus = true
+prometheus_listen = 0.0.0.0:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
+pprof = {{ .Values.pprof.enabled }}
+pprof_listen = 127.0.0.1:{{ .Values.pprof.port }}
+sentry = true
+endpoint_type = internal
+
+[api_settings]
+policy_file = /etc/archer/policy.json
+policy_engine = goslo
+auth_strategy = keystone
+rate_limit = 100
+enable_proxy_headers_parsing = true
+
+[database]
+connection = postgresql://archer@{{ include "archer.fullname" . }}-postgresql:5432/archer?sslmode=disable&pool_max_conns=20
+
+[service_auth]
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://keystone.{{ default .Release.Namespace .Values.global.keystoneNamespace }}.svc.{{ .Values.global.clusterDNSSearchDomain | required "missing value for .Values.global.clusterDNSSearchDomain" }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+username = {{ .Release.Name }}{{ .Values.global.user_suffix }}
+project_name = service
+project_domain_id = default
+user_domain_id = default
+allow_reauth = true
+
+[quota]
+enabled = true
+service = 0
+endpoint = 0
+
+{{- if .Values.audit.enabled }}
+[audit_middleware_notifications]
+enabled = true
+queue_name = notifications.info
+{{- end }}
+
+[notification]
+enabled = true
+campfire_url = https://limes-campfire.{{ .Values.global.region }}.cloud.sap/v1/send-email?from=archer
+template_path = /etc/archer
+mime_type = text/html; charset="utf-8"
+# Send out digest reminder mondays at 9:00 AM
+digest_cron = 0 9 * * 1

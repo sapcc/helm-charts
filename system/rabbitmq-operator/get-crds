@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ $# -ne 3 ]]; then
+    echo -e "This script can be used to get the RabbitMQ Operator CRDs from the upstream respository.\nusage: get-crds <operator> <version> <filename>\n operator: messaging-topology-operator or cluster-operator" >&2
+    exit 2
+fi
+OPERATOR=$1
+VERSION=$2
+FILENAME=$3
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+echo "SCRIPT_DIR is set to ${SCRIPT_DIR}"  # Debug statement
+CRDS_DIR="${SCRIPT_DIR}/crds"
+TMP_DIR="${SCRIPT_DIR}/tmp/${OPERATOR}-${VERSION}"
+
+echo "Getting RabbitMQ Operator CRDs in version ${VERSION}"
+
+fetch_crds() {
+  local url=$1
+  local resp_code=$(curl -o /dev/null --silent -Iw '%{http_code}' $url)
+  if [[ "$resp_code" != "404" ]]; then
+    curl -L -s $url | yq -s '$index' -
+    return 0
+  fi
+  return 1
+}
+
+if [[ -d $TMP_DIR ]]; then
+  rm -r $TMP_DIR
+fi
+
+mkdir -p $TMP_DIR
+cd $TMP_DIR
+
+fetch_crds "https://github.com/rabbitmq/${OPERATOR}/releases/download/${VERSION}/${FILENAME}" || {
+  echo "No ${OPERATOR} release in version ${VERSION} found."
+  rm -rf ${SCRIPT_DIR}/tmp
+  exit 1
+}
+
+crd_files=$(grep --recursive --files-with-matches -e "kind: CustomResourceDefinition" $TMP_DIR | sort | uniq)
+for file in $crd_files; do
+  crd_name=$(yq '.metadata.name' $file)
+  if [[ -z $crd_name ]]; then
+    continue
+  fi
+  echo "Fetched CRD ${crd_name} to ${CRDS_DIR}/${crd_name}.yaml"
+  cp $file "${CRDS_DIR}/${crd_name}.yaml"
+done
+
+rm -rf ${SCRIPT_DIR}/tmp

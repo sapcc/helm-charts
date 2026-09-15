@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/name: sysstat
+  name: sysstat
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sysstat
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sysstat
+      annotations:
+        configmap-sysstat-hash: {{ include (print $.Template.BasePath "/sysstat-configmap.yaml") $ | sha256sum }}
+    spec:
+      containers:
+      - name: sysstat
+        image: "{{ required ".Values.images.sysstat.image is missing" .Values.images.sysstat.image }}:{{ required ".Values.images.sysstat.tag is missing" .Values.images.sysstat.tag }}"
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh","-c"]
+        args: ["/scripts/sysstat-sar.sh"]
+        securityContext:
+           privileged: true
+        volumeMounts:
+        - mountPath: /host/var/log
+          name: log
+        - mountPath: /scripts
+          name: sysstat-script
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      terminationGracePeriodSeconds: 5
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/role: storage
+      tolerations:
+        - operator: "Exists"
+      volumes:
+      - name: log
+        hostPath:
+          path: /var/log
+      - name: sysstat-script
+        configMap:
+          name: sysstat-script
+          defaultMode: 0500

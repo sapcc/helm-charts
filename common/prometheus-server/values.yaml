@@ -16,17 +16,35 @@ global:
   # Optional tier for Prometheus alerts.
   # tier: k8s
 
+  # Optional targets to create Prometheus names.
+  # targets:
+
+  linkerd_requested: false
+
+  playbookDomain: https://operations.global.cloud.sap
+
 # The image for the Prometheus server. The tag equals the .Chart.appVersion.
 image:
-  repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
+  repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
 
-# Mandatory name for this Prometheus.
+# Mandatory name for a single Prometheus. To setup multiple, define a list of .Values.names or .Values.global.targets.
+# Disable local compaction on Prometheus.
+# Workaround for prometheus-operator v0.93.0 bug with Thanos sidecar path mismatch.
+# See: https://github.com/prometheus-operator/prometheus-operator/issues/8763 for more details
+disableCompaction: true
+
 # The name is used to find relevant aggregation and alerting rules.
-# Examples: kubernetes, openstack, infrastructure, maia, etc.
-name:
+# Examples: kubernetes, openstack, infrastructure, maia, vmware etc.
+name: 
+
+# A list to deploy multiple Prometheis with the same configuration but different names.
+# names:
+
+# Defaults to Legacy, set to UTF8 to use Prometheus v3 standard
+nameValidationScheme:
 
 # Defines how long data is stored. Format: `[0-9]+(ms|s|m|h|d|w|y)`
-retentionTime: 7d
+retentionTime: 25h
 
 # Reference a secret containing additional Prometheus scrape configurations.
 # Injecting an invalid configuration might break the Prometheus server instance.
@@ -43,6 +61,18 @@ additionalScrapeConfigs: {}
 
 # Interval between consecutive scrapes.
 scrapeInterval: "60s"
+
+# Convert all classic histograms to native histograms with custom buckets (NHCB).
+# This corresponds to the 'convert_classic_histograms_to_nhcb' field in Prometheus configuration.
+convertClassicHistogramsToNHCB: true
+
+# Enable scraping of classic histograms that are also exposed as native histograms.
+# This corresponds to the 'always_scrape_classic_histograms' field in Prometheus configuration.
+scrapeClassicHistograms: true
+
+# Enable scraping of native histograms.
+# This corresponds to the 'scrape_native_histograms' field in Prometheus configuration.
+scrapeNativeHistograms: true
 
 # List of configmaps in the same namespace as the Prometheus that should be mounted to /etc/prometheus/configmaps/<configmap-name>.
 # Can be used to add targets found by a custom service discovery.
@@ -73,11 +103,15 @@ alertmanagers:
 service:
   annotations: {}
 
+# Will explicitly set ingressClassName to nginx. If the cluster has traefik deployed only, this needs to be set to true
+traefik:
+  enabled: false
+
 # Optional ingress for this Prometheus.
 ingress:
   enabled: false
 
-  # List of hostnames for this Prometheus server. FQDN will be generated using the pattern  <host>.<region>.<domain> .
+  # List of hostnames for this Prometheus server. If empty, the FQDN will be generated using the pattern  prometheus-<name>.<region>.<domain> otherwise <host>.<region>.<domain>.
   # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
   # If the ingress is enabled, it's also used for the ingress host.
   hosts: []
@@ -110,13 +144,14 @@ ingress:
       authTLSVerifyClient: on
 
   # Additional annotations for the ingress.
-  annotations: {}
+  annotations:
+    cloud.sap/no-http-keep-alive-monitor: "true"
 
 # Optional additional ingress for this Prometheus.
 internalIngress:
   enabled: false
 
-  # List of hostnames for this Prometheus server. FQDN will be generated using the pattern  <host>.<region>.<domain> .
+  # List of hostnames for this Prometheus server. If empty, the FQDN will be generated using the pattern  prometheus-<name>-internal.<region>.<domain> otherwise <host>.<region>.<domain>.
   # The first host is used to generate the external URL for the Prometheus. Remaining hosts will be used as SANs.
   # If the ingress is enabled, it's also used for the ingress host.
   hosts: []
@@ -149,7 +184,8 @@ internalIngress:
       authTLSVerifyClient: on
 
   # Additional annotations for the ingress.
-  annotations: {}
+  annotations:
+    cloud.sap/no-http-keep-alive-monitor: "true"
 
 # Enable persistent storage.
 # If disabled, data will be stored in memory.
@@ -184,13 +220,43 @@ serviceAccount:
 
 # Thanos configuration.
 thanos:
-  # Enable Thanos components and Prometheus sidecar.
-  enabled: false
+  # Enables Prometheus sidecar. This is now the default setting for global monitoring integration.
+  # Only disable this, if you don't want to have your Prometheus being queried by global Thanos.
+  # Important: needed thanos swift seed configuration is provided by system/thanos-seeds and specified with thanosSeeds below
+  enabled: true
 
-  # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
-  # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
+  objectStorageConfig:
+    # set false to only add thanos-sidecar gRPC store API. Usually you now do want sidecarDiscovery to be set, see below.
+    enabled: true
+    # Note:
+    # The name of the secret specified below will be prefixed with `prometheus-<name>`
+    # to avoid multiple configurations with the same name.
+    name: thanos-storage-config
+    key: thanos.yaml
+    optional: true
+
+  # When there is no store activated (objectStorageConfig.enabled = false) you can have this sidecar detected by the operator
+  # using a StoreEndpoint. You need to specify which thanos should pick up the sidecar. This Thanos needs to run QueryDiscovery.
+  # domain defaults to cluster.local and only needs to be set if it differs
+  # thanosNamespace needs to be set, if the thanos specified with thanosName resides in a Sidecar disjunct namespace. 
+  sidecarDiscovery:
+    - thanosName:
+      # thanosNamespace:
+      namespace:
+      # domain:
+
+  # Specification for Thanos sidecar to Prometheus server.
+  # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
+  spec:
+    image: keppel.global.cloud.sap/ccloud-quay-mirror/thanos/thanos:v0.41.0
+    version: v0.41.0
+
+  # Being one of debug, info, warn, error. Defaults to warn.
+  # logLevel: info
+
+thanosSeeds:
   seed:
-    # If disabled the user and container need to exist.
+    # If disabled the user and container need to exist, or you are in another cluster but metal. In this case leverage the dedicated system/thanos-seeds chart instead of this default, prometheus-bundled seed.
     enabled: true
 
     # List of required OpenstackSeeds that need to be resolved before.
@@ -200,103 +266,72 @@ thanos:
       - monsoon3/domain-ccadmin-seed
       - monsoon3/domain-default-seed
 
+    # optional cluster type appended to container name to prevent same names for different prometheus
+    clusterType:
+
   # Configuration for OpenStack Swift Thanos storage backend.
-  swiftStorageConfig: {}
-    # authURL:
-    # userName:
-    # userDomainName:
-    # password:
-    # domainName:
-    # projectName:
-    # projectDomainName:
-    # regionName:
-    # containerName:
+  # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
+  # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
+  swiftStorageConfig:
+    authURL:
+    userDomainName:
+    password:
+    domainName:
+    projectName:
+    projectDomainName:
+    # all settings below are not mandatory and auto-generated
+    userName:
+    containerName:
 
     # Currently not supported are:
     # tenantID:
     # domainID:
     # userID:
 
-  objectStorageConfig:
-    # Note:
-    # The name of the secret specified below will be prefixed with `prometheus-<name>`
-    # to avoid multiple configurations with the same name.
-    name: thanos-storage-config
-    key: thanos.yaml
-    optional: true
-
-  # Specification for Thanos sidecar to Prometheus server.
-  # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
-  spec:
-    baseImage: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/thanosio/thanos
-    version: v0.23.1
-
-  # Image for Thanos components.
-  components:
-    baseImage: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/thanosio/thanos
-    version: v0.23.1
-
-  # Specification for Thanos components.
-  compactor:
-    # How long to retain raw samples in bucket. 0d - disables this retention.
-    retentionResolutionRaw: 30d
-
-    # How long to retain samples of resolution 1 (5 minutes) in bucket. 0d - disables this retention.
-    retentionResolution5m: 30d
-
-    # How long to retain samples of resolution 2 (1 hour) in bucket. 0d - disables this retention.
-    retentionResolution1h: 1y
-
-    # Minimum age of fresh (non-compacted) blocks before they are being processed. Malformed blocks older than the maximum of consistency-delay and 30m0s will be removed.
-    consistencyDelay: 30m
-
-    service:
-      httpPort: 9090
-
-  store:
-    # Maximum size of items held in the index cache.
-    indexCacheSize: 1GB
-
-    # Maximum size of concurrently allocatable bytes for chunks.
-    chunkPoolSize: 4GB
-
-    # Limit the amount of samples that might be retrieved on a single Series() call.
-    # 0 = unlimited.
-    seriesSampleLimit: 0
-
-    # Limit number of concurrent Series() calls in Thanos store.
-    seriesMaxConcurrency: 20
-
-    # Persistent volume for Thanos store.
-    persistence:
-      enabled: true
-      size: 2Gi
-
-    service:
-      httpPort: 9090
-      grpcPort: 10901
-
-  querier:
-    # Prefix is used to expose the Thanos querier component via ingress using the following sub path.
-    webRouteprefix: /thanos
-    service:
-      httpPort: 9090
-      grpcPort: 10901
+  # needs to be enabled for vmware-monitoring only
+  vmware: false
 
 # The labels to add to any time series or alerts when communicating with
 # external systems (federation, remote storage, Alertmanager).
 externalLabels: {}
   # labelName: labelValue
 
-# The log level of the Prometheus.
-logLevel: info
+# The log level of the Prometheus. Defaults to warn.
+# logLevel: info
 
 # Kubernetes resource requests and limits for this Prometheus.
 # See: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container .
 resources:
   requests:
-    cpu: "4"
+    cpu: "1"
     memory: 8Gi
+    ephemeral-storage: 200M
+
+# specifying container specific maximal values.
+vpaResources:
+  # if prometheus needs more than 10Gi memory, this needs to be increased otherwise the VPA will not set it accordingly
+  prometheus:
+    containerName: "prometheus"
+    maxAllowed:
+      cpu: "3"
+      memory: "10Gi"
+  configReloader:
+    containerName: "config-reloader"
+    maxAllowed:
+      cpu: "100"
+      memory: "200Mi"
+  thanosSidecar:
+    containerName: "thanos-sidecar"
+    maxAllowed:
+      cpu: "1"
+      memory: "3Gi"
+
+# If set to Auto, make sure to enable alerts.thanos.enabled and alerts.thanos.name if you are in any Prometheus but kubernetes and kubernikus. This will deploy needed alerts to Thanos Ruler.
+vpaUpdateMode: "Off"
+
+# One of the supported priorityClasses: common-payload, common-infrastructure, important-payload, important-infrastructure, critical-payload, critical-infrastructure
+# Defaults to important-payload
+priorityClass: ""
 
 # A security context defines privilege and access control settings for a Pod or Container.
 # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context .
@@ -343,6 +378,9 @@ serviceDiscoveries:
     limitToPrometheusTargets: true
     # Scrape all metrics by default.
     forbiddenMetrics: []
+    # Custom metric relabelings
+    # See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs
+    # metricRelabelings:
 
   # SD for Kubernetes Probes.
   probes:
@@ -353,15 +391,16 @@ serviceDiscoveries:
     enabled: false
     # Full list of APIserver metrics: https://github.com/kubernetes/apiserver/blob/master/pkg/endpoints/metrics/metrics.go .
     allowedMetrics:
-      - apiserver_request_count
-      - apiserver_request_latencies_bucket
       - apiserver_request_total
-      - apiserver_request_latency_seconds
+      - apiserver_longrunning_requests
+      - apiserver_request_duration_seconds_(count|sum|bucket)
       - apiserver_dropped_requests_total
-      - etcd_request_latency_seconds
-      - etcd_object_counts
+      - apiserver_requested_deprecated_apis
+      - apiserver_current_inflight_requests
       - process_max_fds
       - process_open_fds
+      - aggregator_unavailable_apiservice
+
 
   # Scrape cAdvisor metrics.
   cAdvisor:
@@ -383,6 +422,8 @@ serviceDiscoveries:
       - container_network_receive_bytes_total
       - container_network_transmit_bytes_total
       - container_start_time_seconds
+      - container_threads
+      - container_oom_events_total
 
   # Scrape kubelet metrics.
   kubelet:
@@ -419,4 +460,39 @@ nodeSelector: {}
 # The tier of the alerts.
 # If set .Values.global.tier takes precedence.
 alerts:
-  tier: k8s
+  # prometheus name picking up the prometheus self metrics, defaults to prometheus.name
+  prometheus:
+  # thanos name that picks up the alerts from Prometheus - mainly used when kube_ metrics needs to be present
+  thanos:
+    enabled: false
+    # name:
+  # service name routing the alerts, defaults to `metrics`
+  service:
+  # support_group routing the alerts, defaults to `observability`
+  support_group:
+
+  multipleTargetScrapes:
+    enabled: true
+    # List of exceptions for scrape jobs. This is joined together with a `|`.
+    exceptions: []
+
+  # This alert requires kube state metrics. Disable if not present
+  multiplePodScrapes:
+    enabled: true
+
+# If true, a custom Prometheus naming will take place. Only needed for vmware-monitoring.
+vmware: false
+
+# Add remoteWrite configurations as a list. It expects a certificate with the specified key. It can be the same secret, if it has both, the cert and the key, it can be different too.
+remoteWriteTargets: []
+#   - name: randomName
+#     url: some.url.foo.bar.xyz
+#     tlsConfig:
+#       cert:
+#         secret:
+#           name: certs-spoken-name
+#           key: cert
+#       keySecret:
+#         name: certs-spoken-name
+#         key: key
+#     remoteTimeout: 60s #defaults to 30s

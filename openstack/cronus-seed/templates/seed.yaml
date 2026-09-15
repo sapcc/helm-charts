@@ -1,3 +1,6 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin") $cdomains -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
 metadata:
@@ -8,6 +11,7 @@ spec:
     - name: email_admin
     - name: email_user
     - name: cloud_email_admin
+    - name: email_router
 
   services:
     - name:        cronus
@@ -43,6 +47,27 @@ spec:
         - name: cronus
           description: Cronus Service
           password: '{{ $.Values.global.cronus_service_password }}'
+        - name: cronus-exporter
+          description: Cronus Exporter Service Account
+          password: '{{ $.Values.global.cronus_service_password }}'
+          role_assignments:
+          - system: all
+            role: reader
+        - name: cronus-updater
+          description: Cronus Updater Service Account
+          password: '{{ $.Values.global.cronus_service_password }}'
+          role_assignments:
+          - system: all
+            role: reader
+        - name: cronus-poller
+          description: Cronus Poller Service Account
+          password: '{{ $.Values.global.cronus_service_password }}'
+          role_assignments:
+          - system: all
+            role: reader
+        - name: cronus-simulator
+          description: Cronus Simulator Service Account
+          password: '{{ $.Values.global.cronus_service_password }}'
     - name: monsoon3
       projects:
       - name: cronus-simulator
@@ -50,7 +75,45 @@ spec:
         - user: cronus@Default
           role: email_admin # for monitoring
         - user: cronus@Default
-          role: swiftoperator # for monitoring
+          role: objectstore_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: email_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-updater@Default
+          role: email_admin # for monitoring
+        - user: cronus-updater@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-poller@Default
+          role: email_admin # for monitoring
+        - user: cronus-poller@Default
+          role: objectstore_admin # for monitoring
+      - name: consulting_poc
+        role_assignments:
+        - user: cronus@Default
+          role: email_admin # for monitoring
+        - user: cronus@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: email_admin # for monitoring
+        - user: cronus-exporter@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-updater@Default
+          role: email_admin # for monitoring
+        - user: cronus-updater@Default
+          role: objectstore_admin # for monitoring
+        - user: cronus-poller@Default
+          role: email_admin # for monitoring
+        - user: cronus-poller@Default
+          role: objectstore_admin # for monitoring
+    - name: hcp03
+      projects:
+      - name: cronus-external
+        role_assignments:
+        - user: cronus@Default
+          role: email_admin # for external access from hyperscaler
+        - user: cronus@Default
+          role: objectstore_admin # for external access from hyperscaler
     - name: ccadmin
       projects:
       - name: master
@@ -61,11 +124,23 @@ spec:
           role: email_admin # for monitoring and system accounts
         - user: cronus@Default
           role: cloud_identity_viewer # for keystone effective role assignment list
+        - user: cronus@Default
+          role: email_router
+        - user: cronus@Default
+          role: service
+        - user: cronus-exporter@Default
+          role: keymanager_viewer # to read Barbican secrets for AWS credentials
+        - user: cronus-updater@Default
+          role: keymanager_viewer # to read Barbican secrets for AWS credentials
         swift:
           enabled: true
           containers:
           # allow a user who has a keymanager_admin role in the project to read and write to a swift container
           - name: cronus_usage_cache
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_inspections_1
             metadata:
               read: keymanager_admin
               write: keymanager_admin
@@ -103,106 +178,14 @@ spec:
               write: keymanager_admin
 
     # cloud admin role assignment
-    - name: ccadmin
+    {{- range $domains}}
+    {{- if not (hasPrefix "iaas-" .)}}
+    - name: {{ . }}
       groups:
-      - name: CCADMIN_API_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
-        - domain: ccadmin
+        - domain: {{ . }}
           role: cloud_email_admin
           inherited: true
-
-    - name: bs
-      groups:
-      - name: BS_API_SUPPORT
-        role_assignments:
-        - domain: bs
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cis
-      groups:
-      - name: CIS_API_SUPPORT
-        role_assignments:
-        - domain: cis
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cp
-      groups:
-      - name: CP_API_SUPPORT
-        role_assignments:
-        - domain: cp
-          role: cloud_email_admin
-          inherited: true
-
-    - name: hcm
-      groups:
-      - name: HCM_API_SUPPORT
-        role_assignments:
-        - domain: hcm
-          role: cloud_email_admin
-          inherited: true
-
-    - name: hcp03
-      groups:
-      - name: HCP03_API_SUPPORT
-        role_assignments:
-        - domain: hcp03
-          role: cloud_email_admin
-          inherited: true
-
-    - name: hec
-      groups:
-      - name: HEC_API_SUPPORT
-        role_assignments:
-        - domain: hec
-          role: cloud_email_admin
-          inherited: true
-
-    - name: monsoon3
-      groups:
-      - name: MONSOON3_API_SUPPORT
-        role_assignments:
-        - domain: monsoon3
-          role: cloud_email_admin
-          inherited: true
-
-    - name: neo
-      groups:
-      - name: NEO_API_SUPPORT
-        role_assignments:
-        - domain: neo
-          role: cloud_email_admin
-          inherited: true
-
-    - name: s4
-      groups:
-      - name: S4_API_SUPPORT
-        role_assignments:
-        - domain: s4
-          role: cloud_email_admin
-          inherited: true
-
-    - name: wbs
-      groups:
-      - name: WBS_API_SUPPORT
-        role_assignments:
-        - domain: wbs
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cc3test
-      groups:
-      - name: CC3TEST_API_SUPPORT
-        role_assignments:
-        - domain: cc3test
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cis
-      groups:
-      - name: CIS_API_SUPPORT
-        role_assignments:
-        - domain: cis
-          role: cloud_email_admin
-          inherited: true
+    {{- end}}
+    {{- end}}

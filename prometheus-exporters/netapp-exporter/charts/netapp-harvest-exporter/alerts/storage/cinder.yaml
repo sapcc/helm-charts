@@ -1,0 +1,61 @@
+groups:
+  - name: cinder-storage
+    rules:
+      - alert: CinderStorageAggregateHighUsage
+        expr: netapp_aggr_space_used_percent{app=~".*cinder",availability_zone!~"eu-nl-1a|eu-nl-1b|eu-de-1a|eu-de-1d|eu-de-2a|na-us-3a"} > 80 or netapp_aggr_space_used_percent{app=~".*cinder",availability_zone=~"eu-de-1a|eu-de-1d|eu-nl-1a|eu-nl-1b|na-us-3a"} > 88 or netapp_aggr_space_used_percent{app=~".*cinder",availability_zone=~"eu-de-2a"} > 84
+        labels:
+          severity: warning
+          context: netapp-usage
+          tier: os
+          service: cinder
+          support_group: compute-storage-api
+          dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: 'Aggregate usage above the high usage level for this region'
+          playbook: 'docs/support/playbook/cinder/balancing/cinder-balance-alert'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is above the high usage level for this region'
+          summary: 'High Capacity Usage on {{$labels.filer}}'
+
+      - alert: CinderStorageAggregateFull
+        expr: netapp_aggr_space_used_percent{app=~".*cinder"} > 95
+        labels:
+          severity: critical
+          tier: os
+          service: cinder
+          support_group: compute-storage-api
+          context: netapp-usage
+          dashboard: netapp-capacity-vpods?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          meta: 'Aggregate usage above 95%'
+          playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} in az {{$labels.availability_zone}} is above 95%'
+          summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
+
+      - alert: VVolDatastoreFlexvolHighUsage
+        expr: netapp_volume_size_used{app="netapp-harvest-exporter-cinder", volume=~"vv.*"} / 1024/1024/1024 > 7000 and netapp_volume_size_used_percent{app="netapp-harvest-exporter-cinder", volume=~"vv.*"} > 75
+        for: 3h
+        labels:
+          severity: warning
+          tier: os
+          service: cinder
+          support_group: compute-storage-api
+          meta: 'VVol flex-volume usage usage larger than 7TB and above 75 percent usage'
+          playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert'
+        annotations:
+          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is high'
+          summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 7TB and above 75 percent usage'
+
+      - alert: VVolDatastoreFlexvolCriticalUsage
+        expr: netapp_volume_size_used{app="netapp-harvest-exporter-cinder", volume=~"vv.*"} / 1024/1024/1024 > 8000 and netapp_volume_size_used_percent{app="netapp-harvest-exporter-cinder", volume=~"vv.*"} > 90
+        for: 3h
+        labels:
+          severity: critical
+          tier: os
+          service: cinder
+          support_group: compute-storage-api
+          meta: 'VVol flex-volume usage over 8TB and 90 percent usage'
+          playbook: 'docs/support/playbook/cinder/balancing/cinder_balance_alert'
+        annotations:
+          description: 'Usage of VVol flex-volume {{$labels.volume}} on filer {{$labels.filer}} in az {{$labels.availability_zone}} is very high'
+          summary: 'Flex-volume {{$labels.filer}}/{{$labels.volume}} usage larger than 8TB and 90 percent usage'
+

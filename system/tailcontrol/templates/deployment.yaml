@@ -1,0 +1,163 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tailcontrol
+  labels:
+    {{- include "tailcontrol.labels" . | nindent 4 }}
+{{- if .Values.tailcontrol.backup.enabled }}
+  annotations:
+    litestream-config: {{ include (print $.Template.BasePath "/litestream-config.yaml") $ | sha256sum }}
+{{- end }}
+spec:
+  strategy:
+    type: Recreate
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "tailcontrol.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "tailcontrol.selectorLabels" . | nindent 8 }}
+    spec:
+      volumes:
+        - name: ephemeral
+          emptyDir: {}
+        - name: config
+          secret:
+            secretName: tailcontrol-config
+        - name: cert
+          secret:
+            secretName: tailscale
+        - name: tailscale
+          persistentVolumeClaim:
+            claimName: tailscale
+        - name: var-lib-tailscale
+          persistentVolumeClaim:
+            claimName: var-lib-tailscale
+{{- if .Values.tailcontrol.backup.enabled }}
+        - name: litestream-config
+          configMap:
+            name: litestream-config
+{{- end }}
+        - name: tailcontrol-config
+          projected:
+            defaultMode: 400
+            sources:
+            - configMap:
+                items:
+                - key: superusers
+                  path: superusers
+                name: tailcontrol-config
+{{- if .Values.tailcontrol.backup.enabled }}
+      initContainers:
+        - name: litestream-restore-sqlite
+          image: "{{ .Values.image.litestream.repository }}:{{ .Values.image.litestream.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+          - restore
+          - -if-db-not-exists
+          - /tailscale/config/tailcontrol.sqlite.db
+          env:
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailcontrol-aws
+                  key: secret-access-key
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tailcontrol-aws
+                  key: access-key-id
+          volumeMounts:
+            - name: tailscale
+              mountPath: /tailscale
+            - name: litestream-config
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+{{- end }}
+      containers:
+        - name: tailcontrol
+          image: "{{ .Values.image.tailcontrol.repository }}:{{ .Values.image.tailcontrol.tag }}"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["NET_ADMIN"]
+{{- if .Values.tailcontrol.command.enabled }}
+          args:
+          - --url
+          - {{ .Values.tailcontrol.url }}
+          - --tls-cert
+          - {{ .Values.tailcontrol.certdir }}/tls.crt
+          - --tls-key
+          - {{ .Values.tailcontrol.certdir }}/tls.key
+          - --confdir
+          - {{ .Values.tailcontrol.confdir }}
+          - --debug_addr
+          - {{ .Values.tailcontrol.debugaddr.addr }}:{{ .Values.tailcontrol.debugaddr.port }}
+          - --superusers=/tailcontrol-config/superusers
+          - --backup-dir=$HOME/backup-temp-dir
+          - --checkpoint-period=30s
+          - --checkpoint-passive-period=5s
+          - -ts2021=local
+          - -use-forwarded-for
+{{ else }}
+          command:
+          - sleep
+          args:
+          - infinity
+{{- end }}
+          env:
+            - name: TS_LOG_TARGET
+              value: http://logcatcher:48283
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+            - name: debug
+              containerPort: {{ .Values.tailcontrol.debugaddr.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tailscale
+              mountPath: /tailscale
+            - name: var-lib-tailscale
+              mountPath: /var/lib/tailscale
+            - name: ephemeral
+              mountPath: {{ .Values.tailcontrol.ephemeral }}
+            - name: config
+              mountPath: /tailscale/config/auth.json
+              subPath: auth.json
+            - name: cert
+              mountPath: {{ .Values.tailcontrol.certdir }}
+            - mountPath: /tailcontrol-config
+              name: tailcontrol-config
+{{- if .Values.tailcontrol.backup.enabled }}
+        - name: litestream
+          image: "{{ .Values.image.litestream.repository }}:{{ .Values.image.litestream.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+          - replicate
+          env:
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailcontrol-aws
+                  key: secret-access-key
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tailcontrol-aws
+                  key: access-key-id
+          volumeMounts:
+            - name: tailscale
+              mountPath: /tailscale
+            - name: litestream-config
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+{{- end }}

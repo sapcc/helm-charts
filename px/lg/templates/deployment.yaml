@@ -1,0 +1,55 @@
+{{ range $lg, $lg_config := .Values.looking_glass -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $lg }}
+  labels:
+    app: {{ $lg }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $lg }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        alert-tier: px
+        alert-service: px
+        app: {{ $lg }}
+      annotations:
+        checksum/configmap-config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      serviceAccountName: {{ $.Release.Name }}
+      containers:
+      - name: {{ $lg }}
+        image: keppel.{{ $.Values.registry }}.cloud.sap/{{ $.Values.lg_image }}
+        imagePullPolicy: Always
+        resources:
+{{ toYaml $.Values.resources.lg | indent 10 }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/bird-lg
+        - name: lg-communities
+          mountPath: /etc/bird-lg-communities
+{{- if $lg_config.privileged }}
+        args: ["lg_config.cfg", "priv"]
+{{- else }}
+        args: ["lg_config.cfg"]
+{{- end }}
+        ports:
+        - containerPort: 80
+          name: {{ $lg }}web
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $lg }}
+        - name: lg-communities
+          configMap:
+            name: lg-communities
+{{ end }}

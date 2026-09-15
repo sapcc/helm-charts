@@ -1,3 +1,11 @@
+{{- $max_asset_sizes := list -}}
+{{- range .Values.castellum.max_asset_sizes -}}
+  {{- if eq .region "any" $.Values.global.region -}}
+    {{- $max_asset_sizes = append $max_asset_sizes (pick . "asset_type" "scope_uuid" "value") -}}
+  {{- end -}}
+{{- end -}}
+{{- $full_config := dict "max_asset_sizes" $max_asset_sizes "project_seeds" .Values.castellum.project_seeds -}}
+
 apiVersion: v1
 kind: ConfigMap
 
@@ -5,5 +13,7 @@ metadata:
   name: castellum
 
 data:
-  policy.yaml: |
-{{ .Files.Get "files/policy.yaml" | indent 4 }}
+  castellum.json: |
+    {{- toPrettyJson $full_config | nindent 4 }}
+  policy.json: |
+    {{- .Files.Get "files/policy.yaml" | fromYaml | toPrettyJson | nindent 4 }}

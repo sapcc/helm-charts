@@ -1,0 +1,12 @@
+{{- if and .Values.logger.enabled .Values.logger.persistence.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: neutron-nsxv3-logstash
+spec:
+  accessModes:
+    - {{ required ".Values.logger.persistence.accessMode missing" .Values.logger.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ required ".Values.logger.persistence.size missing" .Values.logger.persistence.size | quote }}
+{{- end }}

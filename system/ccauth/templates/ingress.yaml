@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "ccauth.fullname" . }}
@@ -7,15 +7,22 @@ metadata:
   annotations:
     disco: "true"
     kubernetes.io/tls-acme: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 spec:
   rules:
   - host: {{ include "ccauth.hostname" . }}
     http:
         paths:
         - backend:
-            serviceName: {{ include "ccauth.fullname" . }}
-            servicePort: 80
+            service:
+              name: {{ include "ccauth.fullname" . }}
+              port:
+                number: 80
           path: /
+          pathType: Prefix
   tls:
   - hosts:
     - {{ include "ccauth.hostname" . }}

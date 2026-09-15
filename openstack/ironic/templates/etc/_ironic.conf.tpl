@@ -1,12 +1,6 @@
 [DEFAULT]
 log_config_append = /etc/ironic/logging.ini
-logging_context_format_string =%(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
-
-{{- if contains "train" .Values.imageVersion }}
-pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
-{{- else }}
-pybasedir = /var/lib/openstack/lib/python2.7/site-packages/ironic
-{{- end }}
+{{- include "ini_sections.logging_format" . }}
 
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
@@ -16,9 +10,16 @@ notification_level = {{ .Values.notification_level }}
 versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
-{{- include "ini_sections.default_transport_url" . }}
-rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 90 }}
-rpc_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 100 }}
+# Name of the project where the service users are located. This is inside the default domain
+# this is the default value, but this makes this transparent
+rbac_service_project_name = service
+
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
+executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}
+
+# time to live in sec of idle connections in the pool:
+conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
+rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
 
 {{- if .Values.notification_level }}
 [oslo_messaging_notifications]
@@ -26,6 +27,7 @@ driver = messagingv2
 {{- end }}
 
 [agent]
+image_download_source = swift
 deploy_logs_collect = {{ .Values.agent.deploy_logs.collect }}
 deploy_logs_storage_backend = {{ .Values.agent.deploy_logs.storage_backend }}
 deploy_logs_swift_days_to_expire = {{ .Values.agent.deploy_logs.swift_days_to_expire }}
@@ -44,18 +46,10 @@ dhcp_provider = neutron
 [api]
 host_ip = 0.0.0.0
 public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
-{{- if .Values.api.api_workers }}
 api_workers = {{ .Values.api.api_workers }}
-{{- end }}
 
 [database]
-{{- if eq .Values.mariadb.enabled true }}
-connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
 {{- include "ini_sections.database_options_mysql" . }}
-{{- else }}
-connection = {{ tuple . "ironic" "ironic" .Values.global.dbPassword | include "db_url" }}
-{{- include "ini_sections.database_options" . }}
-{{- end }}
 
 [keystone]
 auth_section = keystone_authtoken
@@ -68,8 +62,6 @@ auth_version = v3
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 region_name = {{ .Values.global.region }}
@@ -90,8 +82,6 @@ auth_version = v3
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 insecure = True
@@ -102,15 +92,6 @@ swift_temp_url_duration = 3600
 # No terminal slash, it will break the url signing scheme
 swift_endpoint_url = {{ .Values.global.swift_endpoint_protocol | default "https" }}://{{ include "swift_endpoint_host" . }}:{{ .Values.global.swift_api_port_public | default 443 }}
 swift_api_version = v1
-{{- if .Values.swift_store_multi_tenant }}
-swift_store_multi_tenant = True
-{{- else}}
-    {{- if .Values.swift_multi_tenant }}
-swift_store_multiple_containers_seed = 32
-    {{- end }}
-swift_temp_url_key = {{required "A valid .Values.swift_tempurl required!" .Values.swift_tempurl }}
-swift_account = {{required "A valid .Values.swift_account required!" .Values.swift_account }}
-{{- end }}
 
 [swift]
 auth_section = service_catalog
@@ -125,27 +106,61 @@ provisioning_network = {{required "A valid .Values.network_management_uuid requi
 timeout = {{ .Values.neutron_url_timeout }}
 port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 
+# only works with nova api version >= 2.76
+# enable once nova is upgraded to xena
+#[nova]
+#auth_section = service_catalog
+#service_type = compute
+#service_name = nova
+
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
-{{- if .Values.watcher.enabled }}
-[watcher]
-enabled = true
-service_type = baremetal
-config_file = /etc/ironic/watcher.yaml
-{{ end }}
+[oslo_policy]
+# This option controls whether or not to enforce scope when
+# evaluating policies. If ``True``, the scope of the token
+# used in the request is compared to the ``scope_types`` of
+# the policy being enforced. If the scopes do not match, an
+# ``InvalidScope`` exception will be raised. If ``False``, a
+# message will be logged informing operators that policies are
+# being invoked with mismatching scope. (boolean value)
+enforce_scope = false
 
-{{ if .Values.audit.enabled }}
+# This option controls whether or not to use old deprecated
+# defaults when evaluating policies. If ``True``, the old
+# deprecated defaults are not going to be evaluated. This
+# means if any existing token is allowed for old defaults but
+# is disallowed for new defaults, it will be disallowed. It is
+# encouraged to enable this flag along with the
+# ``enforce_scope`` flag so that you can get the benefits of
+# new defaults and ``scope_type`` together. If ``False``, the
+# deprecated policy check string is logically OR'd with the
+# new policy check string, allowing for a graceful upgrade
+# experience between releases with new policies, which is the
+# default behavior. (boolean value)
+enforce_new_defaults = false
+
+{{ if .Values.audit.enabled -}}
 [audit]
 enabled = True
 audit_map_file = /etc/ironic/api_audit_map.yaml
 ignore_req_list = GET, HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
 {{- end }}
 
-{{- include "osprofiler" . }}
 
 {{- include "ini_sections.cache" . }}
+
+
+[conductor]
+{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+  {{- if .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+  {{- end }}
+  {{- if .Values.conductor.defaults.conductor.permitted_image_formats }}
+permitted_image_formats = {{ .Values.conductor.defaults.conductor.permitted_image_formats }}
+  {{- end }}
+{{- end }}
+# Make sure to set it in api and conductor
+max_concurrent_clean = {{ .Values.conductor.defaults.conductor.max_concurrent_clean }}

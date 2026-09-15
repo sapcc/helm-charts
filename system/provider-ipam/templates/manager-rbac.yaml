@@ -1,0 +1,82 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "provider-ipam.fullname" . }}-manager-role
+  labels:
+    cluster.x-k8s.io/provider: ipam-in-cluster
+  {{- include "provider-ipam.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.cluster.x-k8s.io
+  resources:
+  - globalinclusterippools
+  - globalinclusterprefixpools
+  - inclusterippools
+  - inclusterprefixpools
+  - ipaddresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ipam.cluster.x-k8s.io
+  resources:
+  - globalinclusterippools/finalizers
+  - globalinclusterprefixpools/finalizers
+  - inclusterippools/finalizers
+  - inclusterprefixpools/finalizers
+  - ipaddressclaims/finalizers
+  - ipaddresses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ipam.cluster.x-k8s.io
+  resources:
+  - globalinclusterippools/status
+  - globalinclusterprefixpools/status
+  - inclusterippools/status
+  - inclusterprefixpools/status
+  - ipaddressclaims/status
+  - ipaddresses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ipam.cluster.x-k8s.io
+  resources:
+  - ipaddressclaims
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "provider-ipam.fullname" . }}-manager-rolebinding
+  labels:
+    cluster.x-k8s.io/provider: ipam-in-cluster
+  {{- include "provider-ipam.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "provider-ipam.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "provider-ipam.serviceAccountName" . }}'
+  namespace: '{{ .Release.Namespace }}'

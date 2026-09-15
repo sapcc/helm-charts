@@ -27,7 +27,7 @@
 
 # prometheus monitoring config
 
-@include /fluent-etc/prometheus.conf
+@include /fluentd/etc/prometheus.conf
 
 <filter **>
   @type systemd_entry

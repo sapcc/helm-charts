@@ -1,3 +1,4 @@
+{{- if not .Values.global.is_global_region }}
 {{- if .Values.maia.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -6,7 +7,7 @@ metadata:
   namespace: maia
   labels:
     system: openstack
-    service: metrics
+    service: maia
 
 spec:
   revisionHistoryLimit: 5
@@ -24,14 +25,16 @@ spec:
       labels:
         component: maia
       annotations:
-        checksum/maia-templates-maia-configmap.yaml: {{ include "maia/templates/maia-configmap.yaml" . | sha256sum }}
+        checksum/maia-templates-maia-api-secret.yaml: {{ include "maia/templates/maia-api-secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "maia"
+        secret.reloader.stakater.com/reload: "maia-api-secret"
+        deployment.reloader.stakater.com/pause-period: "60s"
     spec:
-      nodeSelector:
-        zone: farm
       volumes:
         - name: maia-etc
-          configMap:
-            name: maia
+          secret:
+            secretName: maia-api-secret
+            defaultMode: 420
       containers:
         - name: maia
           # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
@@ -58,4 +61,20 @@ spec:
           ports:
             - name: api
               containerPort: {{ .Values.maia.listen_port }}
+          # http get returns 401 because it requires authentication
+          # Need to add a non-authenticated health endpoint
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: {{ .Values.maia.listen_port }}
+          #   timeoutSeconds: 10
+          #   periodSeconds: 60
+          #   initialDelaySeconds: 60
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: {{ .Values.maia.listen_port }}
+          #   timeoutSeconds: 5
+          #   periodSeconds: 5
+{{- end }}
 {{- end }}

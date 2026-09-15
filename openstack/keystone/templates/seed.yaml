@@ -1,3 +1,7 @@
+{{- if and (hasKey $.Values "seed") (hasKey $.Values.seed "disabled") ($.Values.seed.disabled) }}
+{{- else }}
+{{/* seeding of global region only happens once */}}
+{{- if or (not .Values.global.is_global_region) (eq .Values.global.db_region "eu-de-2") (eq .Values.global.db_region "qa-de-1") }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -35,11 +39,6 @@ spec:
       implied_role: role_viewer
 
   regions:
-  - id: af
-    description: 'Africa'
-  - id: af-za-1
-    description: 'South Africa - Cape Town'
-    parent_region: af
   - id: ap
     description: 'Asia/Pacific'
   - id: ap-ae-1
@@ -51,9 +50,6 @@ spec:
   - id: ap-cn-1
     description: 'China - Shanghai'
     parent_region: ap
-  - id: ap-in-1
-    description: 'India - New Delhi'
-    parent_region: ap
   - id: ap-jp-1
     description: 'Japan - Tokyo'
     parent_region: ap
@@ -62,9 +58,6 @@ spec:
     parent_region: ap
   - id: ap-sa-1
     description: 'Saudi Arabia - Riyadh'
-    parent_region: ap
-  - id: ap-sg-1
-    description: 'Singapore'
     parent_region: ap
   - id: eu
     description: 'Europe'
@@ -76,9 +69,6 @@ spec:
     parent_region: eu
   - id: eu-nl-1
     description: 'Netherlands - Amsterdam'
-    parent_region: eu
-  - id: eu-ru-1
-    description: 'Russia - Moscow'
     parent_region: eu
   - id: na
     description: 'North America'
@@ -132,7 +122,7 @@ spec:
       region: {{ .Values.global.region }}
 {{- if .Values.global.clusterDomain }}
       url: http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3
-{{- else if .Values.global_setup }}
+{{- else if .Values.global.is_global_region }}
       url: http://{{ .Values.global.keystone_internal_ip }}:5000/v3
 {{- else }}
       url: http://{{ .Release.Name }}.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
@@ -181,3 +171,5 @@ spec:
       description: Administrator Project
     - name: service
       description: Services Project
+{{- end }}
+{{- end }}

@@ -8,6 +8,11 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ template "fullname" . }}-etc"
+{{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: metrics
+{{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -21,11 +26,14 @@ spec:
       labels:
         name: {{ template "fullname" . }}
       annotations:
+        kubectl.kubernetes.io/default-container: metrics
         chart-version: {{.Chart.Version}}
-        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        checksum/etc-secret.yaml: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.port_metrics missing" .Values.port_metrics | quote }}
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ .Values.prometheus }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
     spec:
       affinity:
       {{- with .Values.nodeAffinity }}
@@ -34,8 +42,8 @@ spec:
       {{- end }}
       volumes:
       - name: config-metrics
-        configMap:
-          name: {{ template "fullname" . }}-etc
+        secret:
+          secretName: {{ template "fullname" . }}-etc
       containers:
       - name: metrics
         image: "{{required ".Values.global.registry is missing" .Values.global.registry}}/{{ .Values.image }}:{{ .Values.imageTag }}"

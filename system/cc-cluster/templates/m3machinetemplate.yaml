@@ -1,0 +1,29 @@
+{{- range $key, $cluster := .Values.clusters }}
+{{- range $dkey, $deployment := $cluster.machineDeployments }}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: Metal3MachineTemplate
+metadata:
+  name: {{ $key }}-{{ $dkey }}
+  namespace: metal-{{ $key }}
+spec:
+  nodeReuse: true
+  template:
+    spec:
+      # When set to disabled, automated cleaning of host disks will be skipped during provisioning and deprovisioning.
+      automatedCleaningMode: {{ $deployment.automatedCleaningMode | default "disabled" }}
+      dataTemplate:
+        name: {{ $key }}
+{{- with $deployment.hostSelector }}
+      hostSelector:
+{{- toYaml . | nindent 10 }}
+{{- end }}
+      image:
+        checksum: {{ $deployment.imageChecksum | default (printf "https://repo.%s.cloud.sap/%s" $.Values.global.region $.Values.image.checksumPath) }} 
+        {{- if $deployment.imageChecksumType }}
+        checksumType: {{ $deployment.imageChecksumType }}
+        {{- end }}
+        format: {{ $deployment.imageFormat | default "qcow2" }}
+        url: {{ $deployment.imageUrl | default (printf "https://repo.%s.cloud.sap/%s" $.Values.global.region $.Values.image.urlPath) }} 
+{{- end }}
+{{- end }}

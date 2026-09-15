@@ -1,40 +1,178 @@
+---
 # Default values for mariadb.
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
 # name: value
+global:
+  mariadb:
+    native_sidecar:
+      enabled: true
 
-name: DEFINED-IN-COMPONENT-CHART
-image: library/mariadb:10.5.12
+name: null
+image: library/mariadb:10.11.19
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
 buffer_pool_size: "1024M"
-performance_schema: "OFF"
 log_file_size: "256M"
 log_warnings: "2"
 query_cache_size: "0"
 query_cache_type: "0"
 join_buffer_size: "4M"
+long_query_time: 5
 binlog_format: "MIXED"
 expire_logs_days: 10
+character_set_server: "utf8" # Should be utf8mb4, but we started with this
+collation_server: "utf8_general_ci"
 
-#root_password:
-#initdb_configmap:
-#custom_initdb_configmap:
+db_performance_schema: # Enabling performance schema only (without enabling instruments for data collections).
+  # Instrument can be enabled separately. Only Performance Schema Enablement does not cause any
+  # overhead.
+  enabled: true
+
+db_performance_schema_instrument: # Enabling performance schema instruments.
+  # Please enable the db_performance_schema in order to enable the db_performance_schema_instrument.
+  enabled: false
+
+root_password: null
+
+# if enabled create 'ccroot'@'127.0.0.1' with all privileges to allow passwordless local connections
+# if disabled, the user will be dropped from the DB if existing
+ccroot_user.enabled: false
+
+databases:
+# - example
+users:
+  backup:
+    name: backup
+    password: null
+    replace_grants: true
+    limits:
+      max_user_connections: 4
+    grants:
+      - ALTER ON *.*                    # restore
+      - BINLOG ADMIN ON *.*             # backup; PURGE BINARY LOGS
+      - BINLOG MONITOR ON *.*           # backup; --master-data=1 (SHOW MASTER STATUS)
+      - BINLOG REPLAY ON *.*            # restore; replaying binary logs
+      - CREATE ON *.*                   # restore
+      - CREATE VIEW ON *.*              # restore
+      - DROP ON *.*                     # restore
+      - INDEX ON *.*                    # restore
+      - INSERT ON *.*                   # restore
+      - LOCK TABLES ON *.*              # backup & restore
+      - PROCESS ON *.*                  # backup
+      - REFERENCES ON *.*               # restore
+      - RELOAD ON *.*                   # backup
+      - REPLICATION SLAVE ADMIN ON *.*  # restore; CHANGE MASTER TO, RESET SLAVE
+      - REPLICATION SLAVE ON *.*        # backup; BinlogSyncer streams binlogs as a replica
+      - SELECT ON *.*                   # backup & restore
+      - SET USER ON *.*                 # restore; DEFINER= clauses (mysql.user view)
+      - SHOW VIEW ON *.*                # backup & restore
+      - SHUTDOWN ON *.*                 # restore
+      - TRIGGER ON *.*                  # backup & restore
+#  example:
+#    name: example1 # This looks repetitive, but the point is that they key is the name
+#                   # you refer to in your charts, while the field 'name' is the actual name
+#                   # used as credentials. It should be possible to change the latter,
+#                   # without having to change the first.
+#    password: null # Causes users not be be created, and even maybe to get locked
+#    replace_grants: false  # default; set to true to REVOKE ALL before re-granting
+#    grants:
+#    - ALL ON example.*
+
+job:
+  maintenance:
+    # -- Whether to enable the maintenance job
+    # @default -- false
+    enabled:
+    function:
+      # -- Whether to enable the analyze table function
+      # @default -- false
+      analyzeTable:
+        enabled:
+        # -- List of tables to analyze (database.table)
+        # @default -- []
+        # Example:
+        # - keystone.user
+        # - keystone.project
+        tables:
+        # -- Query all tables in all non system databases(information_schema, performance_schema, mysql, sys, innodb) and analyze them. This will skip the analyzeTable.tables option
+        # @default -- false
+        allTables:
+        # -- Whether to enable verbose logging
+        # @default -- false
+        verbose:
+    # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the maintenance job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+    # @default -- [5 9 * * 2](https://crontab.guru/#5_9_*_*_2)
+    schedule:
+    # -- (int) Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped
+    # @default -- 300
+    startingDeadlineSeconds:
+    # -- Define how the maintenance job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+    # It can be on the same worker node or another
+    # @default -- OnFailure
+    jobRestartPolicy:
+    # -- Define if and how maintenance jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+    # @default -- Forbid
+    concurrencyPolicy:
+    # -- Define how how many completed maintenance jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+    # @default -- 1
+    successfulJobsHistoryLimit:
+    # -- Define how how many failed maintenance jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+    # @default -- 1
+    failedJobsHistoryLimit:
+    # -- Define the priority class for the maintenance job pod
+    # @default -- common-payload
+    priority_class:
+    # -- Define the [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for the MariaDB maintenance job pod
+    # @default -- Etc/UTC
+    timeZone:
+    resources:
+      requests:
+        # -- Define how much memory the MariaDB ma job container will request
+        # @default -- 64Mi
+        memory:
+        # -- Define how much CPU the MariaDB maintenance job container will request
+        # @default -- 0.5
+        cpu:
+  renameCheckConstraints:
+    # -- Whether to enable the rename-check-constraints job
+    # @default -- false
+    enabled: false
+    # -- Define the rename-check-constraints job backoff limit
+    # @default -- 1
+    backoffLimit:
+    # -- Define how the rename-check-constraints job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+    # It can be on the same worker node or another
+    # @default -- OnFailure
+    jobRestartPolicy:
+    # -- Define the priority class for the maintenance job pod
+    # @default -- common-payload
+    priority_class:
+    resources:
+      requests:
+        # -- Define how much memory the MariaDB rename-check-constraintsjob container will request
+        # @default -- 64Mi
+        memory:
+        # -- Define how much CPU the MariaDB rename-check-constraints job container will request
+        # @default -- 0.5
+        cpu:
 
 # name of priorityClass to influence scheduling priority
-priority_class: "openstack-service-critical"
+priority_class: "critical-infrastructure"
+priority_class_backup: "critical-infrastructure"
+priority_class_sync: "critical-infrastructure"
 
 persistence_claim:
   enabled: true
-  #name:
+  # name:
   size: "10Gi"
   access_modes:
-  - ReadWriteOnce
-  - ReadWriteMany
-  - ReadOnlyMany
+    - ReadWriteOnce
+    - ReadWriteMany
+    - ReadOnlyMany
   autoprovision: false
-  #storage_class: default
+  # storage_class: default
 
 livenessProbe:
   enabled: true
@@ -72,13 +210,21 @@ use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: 70f3884b
+  image_version: "20260820145244"
+  # set to true if backup_v2 is not enabled, but readiness sidecar is required
+  useSidecar: false
+
+credentialUpdater:
+  image: 'shared-app-images/alpine-mariadb'
+  imageTag: 'python3.13-alpine3.24-20260820144936'
+  checkInterval: '10'
 
 backup_v2:
   enabled: false
+  cohost_with_mariadb: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20220329113120"
+  image_version: "10.11-20260825091346"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -86,7 +232,41 @@ backup_v2:
   verification:
     enabled: false
     run_after_inc_backups: 12
+  aws:
+    enabled: true
+  ceph_s3:
+    enabled: false
+    force_path_style: true
+    verify: false
+    # Ceph S3 targets:
+    # NOTE: this configuration lives under global.mariadb.backup_v2.ceph_s3.targets
+    #   - name: ceph-eu-de-1-cold               # optional, defaults to ceph-<region>
+    #     endpoint: "https://..."               # required
+    #     aws_access_key_id: vault+kvv2:...     # required
+    #     aws_secret_access_key: vault+kvv2:... # required
+    #     region: eu-de-1                       # optional, defaults to global.region
+    #     bucket_name: mariadb-backup-eu-de-2   # optional, defaults to mariadb-backup-<global.region>
+    #     force_path_style: true                # optional, inherits chart-local default
+    #     verify: false                         # optional, inherits chart-local default
+    #     sse_customer_key: vault+kvv2:...      # optional, opt-in SSE-C key;
+    #                                           #   inherits global.mariadb.backup_v2.ceph_s3.sse_customer_key
+    #                                           #   when unset; set to "" to opt out of an inherited default.
+    #     object_lock: {...}                    # optional, see backup_v2.object_lock below
+  # Default S3 object-lock settings applied to every S3 target unless overridden.
+  # Per-target overrides (per-field; omit a field to inherit the default below):
+  #   AWS:  global.mariadb.backup_v2.aws.object_lock
+  #   Ceph: global.mariadb.backup_v2.ceph_s3.targets[].object_lock
+  # Example per-target block:
+  #   object_lock:
+  #     enabled: true
+  #     lock_mode: COMPLIANCE   # or GOVERNANCE
+  #     retention_days: 7
+  object_lock:
+    enabled: false
+    lock_mode: COMPLIANCE # or GOVERNANCE
+    retention_days: 7
   swift:
+    enabled: true
     user_name: db_backup
     user_domain_name: Default
     project_name: master
@@ -98,16 +278,18 @@ backup_v2:
     middleware: false
     sap_id: true
 
-
 metrics:
   enabled: true
   image: prom/mysqld-exporter
-  image_version: v0.12.1
-  port: '9104'
+  image_version: v0.20.0
+  port: "9104"
   flags:
     - collect.binlog_size
     - collect.info_schema.processlist
     - collect.info_schema.query_response_time
+    - collect.info_schema.innodb_tablespaces
+    - collect.info_schema.userstats
+    - collect.mysql.user
   resources:
     enabled: true
     limits:
@@ -116,6 +298,30 @@ metrics:
     requests:
       cpu: 5m
       memory: 32Mi
+
+sync:
+  enabled: false
+  replicas: 1
+  init:
+    enabled: false
+    image: 'shared-app-images/alpine-mariadb'
+    imageTag: 'python3.13-alpine3.24-20260820144936'
+  image:
+    name: "go-maria-sync"
+    tag: "20260813190947"
+  backup:
+    service: null
+    swift:
+      password: null
+    s3: {}
+  source:
+    password: null
+  target:
+    password: null
+  databases: []
+  loglevel: info
+  serverID: 899
+  binlogMaxReconnectAttempts: 10
 
 # Default Prometheus alerts and rules.
 alerts:
@@ -129,5 +335,49 @@ alerts:
   # The tier of the alert.
   tier: os
 
+  # The support group label of the alerts. Must be given in values.yaml of parent chart.
+  # support_group:
+
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   # service:
+
+  # InnoDB buffer pool alerts. Set buffer_pool_alerts_enabled to false to disable both alerts.
+  buffer_pool_alerts_enabled: true
+  # Ratio of free pages below which MariaDBBufferPoolNearlyFull (warning) fires.
+  buffer_pool_warning_threshold: 0.10
+  # Ratio of free pages below which MariaDBBufferPoolExhausted (critical) fires.
+  buffer_pool_critical_threshold: 0.025
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: false
+linkerd:
+  mariadb:
+    # linkerd annotation for the MariaDB pod (true/false)
+    enabled: true
+  backup:
+    # linkerd annotation for the backup pod (true/false)
+    enabled: true
+  cronjob:
+    # linkerd annotation for the cronjob pods (true/false)
+    enabled: true
+  sync:
+    # linkerd annotation for the go-maria-sync pod (true/false)
+    enabled: true
+
+tcp_keepalive:
+  # Timeout, in seconds, with no activity until the first TCP keep-alive packet is sent. If set to 0, a system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_time
+  # default is 0
+  time:
+  # The number of unacknowledged probes to send before considering the connection dead and notifying the application layer. If set to 0, a system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_probes
+  # default is 0
+  probes:
+  # Time between retries of unacknowledged keepalive packets. If set to 0, the system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_interval
+  # default is 0
+  interval:
+
+# -- Enable owner_info injector chart dependency to allow installation as stand-alone chart
+owner_info:
+  enabled: false

@@ -1,0 +1,11 @@
+{{- $lbValues := dict
+    "debug" (.Values.linuxbridge_agent.debug | default .Values.debug)
+    "default_log_levels" (.Values.linuxbridge_agent.default_log_levels | default (list))
+    "host" .Values.linuxbridge_agent.host
+    "agent" (.Values.linuxbridge_agent.agent | default dict)
+    "vxlan" (.Values.linuxbridge_agent.vxlan | default dict)
+    "securitygroup" (.Values.linuxbridge_agent.securitygroup | default dict)
+    "privsep" (.Values.linuxbridge_agent.privsep | default dict)
+    "logging" (.Values.linuxbridge_agent.logging | default dict)
+}}
+{{- include "archer.neutron-linuxbridge-agent.configmap-etc" (dict "root" . "values" $lbValues) }}

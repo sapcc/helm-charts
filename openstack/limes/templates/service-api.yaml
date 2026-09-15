@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: limes-api-ccloud
+  labels:
+    app: limes-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
+
+spec:
+  selector:
+    name: limes-api-ccloud
+  ports:
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 80
+      protocol: TCP

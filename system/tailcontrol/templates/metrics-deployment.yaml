@@ -1,0 +1,44 @@
+{{- if .Values.tailcontrol.backup.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tailscale-s3-exporter
+  labels:
+    app: tailscale-s3-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tailscale-s3-exporter
+  template:
+    metadata:
+      labels:
+        app: tailscale-s3-exporter
+    spec:
+      containers:
+      - name: s3-exporter
+        image: "{{ .Values.image.exporter.repository }}:{{ .Values.image.exporter.tag }}"
+        imagePullPolicy: IfNotPresent
+        args:
+          - --web.listen-address=:{{ .Values.exporter.metricsPort }}
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              key: region
+              name: tailcontrol-aws
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret-access-key
+              name: tailcontrol-aws
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: access-key-id
+              name: tailcontrol-aws
+        ports:
+        - containerPort: {{ .Values.exporter.metricsPort }}
+          name: metrics
+          protocol: TCP
+{{- end }}

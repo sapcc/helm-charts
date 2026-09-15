@@ -1,0 +1,15 @@
+groups:
+- name: manila
+  rules:
+  # substract reserved capacity from reported overall free capacity to get usable capacity
+  # only for hardware state 'live'
+  # add availability zones from manila_service_state metric
+  - record: manila_usable_capacity
+    expr: (manila_free_capacity_gb{hardware_state="live"} - (manila_reserved_percentage/100 * manila_total_capacity_gb)) * on(host) group_left(zone) manila_service_state{service="manila-share"}
+
+  - record: manila_live_backend_count:per_zone
+    expr: count by (zone) (sum by (zone, host)(manila_free_capacity_gb{hardware_state="live"}) * on(host) group_left(zone) manila_service_state{service="manila-share"})
+
+  # We recommend to not put more than 3 shares into an anti-affinity set. Therefore this is the number of clusters we try to keep deployable per AZ
+  - record: manila_anti_affinity_set_limit:per_zone
+    expr: max by (zone) (manila_service_state{service="manila-share"}) * 3

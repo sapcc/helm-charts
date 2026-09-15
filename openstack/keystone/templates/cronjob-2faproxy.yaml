@@ -1,0 +1,41 @@
+{{- if and (index .Values "2fa" "crls") (index .Values "2fa" "enabled") }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-2faproxy-crls
+spec:
+  schedule: '*/5 * * * *'
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300 # 5 minutes
+      ttlSecondsAfterFinished: 1800 #30 minutes
+      template:
+        spec:
+          serviceAccountName: {{ .Release.Name }}-2faproxy-crls
+          containers:
+          - name: rotate-crls
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine
+            command:
+              - /bin/sh
+              - -ec
+              - |
+                set -o pipefail
+                apk add curl openssl
+                curl -Lo /usr/local/bin/kubectl https://dl.k8s.io/release/v1.23.10/bin/linux/amd64/kubectl
+                chmod +x /usr/local/bin/kubectl
+                kubectl get secret --namespace={{.Release.Namespace}} {{ .Release.Name }}-x509-ca -ojsonpath='{.data.ca\.crl}' |base64 -d > /tmp/current.crl
+            {{- range $crl := index .Values "2fa" "crls" }}
+            {{- if eq $crl.format "DER"}}
+                curl -sfL {{ $crl.url }} | openssl crl -inform DER -outform PEM >> /tmp/new.crl
+            {{- else }}
+                curl -sfL {{ $crl.url }} >> /tmp/new.crl
+            {{- end }}
+            {{- end }}
+                ls -l /tmp/*.crl
+                if ! cmp -s /tmp/current.crl /tmp/new.crl; then
+                  set -x
+                  kubectl patch secret --namespace={{.Release.Namespace}} {{ .Release.Name }}-x509-ca --type=json -p '[{"op":"replace", "path":"/data/ca.crl", "value":"'$(cat /tmp/new.crl | base64 -w 0)'"}]'
+                fi
+          restartPolicy: Never
+{{- end }}

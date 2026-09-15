@@ -1,8 +1,8 @@
 {{- define "castellum_image" -}}
-  {{- if contains "DEFINED" $.Values.castellum.image_tag -}}
-    {{ required "This release should be installed by the deployment pipeline!" "" }}
-  {{- else -}}
+  {{- if $.Values.castellum.image_tag -}}
     {{$.Values.global.registry}}/castellum:{{$.Values.castellum.image_tag}}
+  {{- else -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- end -}}
 {{- end -}}
 
@@ -10,12 +10,14 @@
 - name: CASTELLUM_DEBUG
   value: "false"
 - name: CASTELLUM_ASSET_MANAGERS
-  value: "nfs-shares,project-quota,server-groups"
+  value: "{{ $.Values.castellum.asset_managers | join "," }}"
+- name: CASTELLUM_DB_USERNAME
+  value: 'castellum'
 - name: CASTELLUM_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: castellum-secret
-      key: postgres_password
+      name: '{{ $.Release.Name }}-pguser-castellum'
+      key: 'postgres-password'
 - name: CASTELLUM_DB_HOSTNAME
   value: "castellum-postgresql.{{ .Release.Namespace }}.svc"
 - name: CASTELLUM_DB_CONNECTION_OPTIONS
@@ -24,29 +26,41 @@
   value: ":8080"
 - name: CASTELLUM_LOG_SCRAPES
   value: "true"
-- name: CASTELLUM_MAX_ASSET_SIZES
-  value: "nfs-shares=16384" # 16384 GiB = 16 TiB
+{{- if $.Values.castellum.asset_managers | has "nfs-shares" }}
+- name: CASTELLUM_NFS_DISCOVERY_PROMETHEUS_URL
+  value: "http://prometheus-openstack.prometheus-openstack.svc:9090"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
-  value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
+  # NOTE: some exclusion-reason metrics come from prometheus-openstack, but are federated into prometheus-storage as of <https://github.com/sapcc/helm-charts/pull/12354>
+  value: "http://prometheus-storage.infra-monitoring.svc:9090"
+{{- end }}
 - name: CASTELLUM_OSLO_POLICY_PATH
-  value: /etc/castellum/policy.yaml
+  value: /etc/castellum/policy.json
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
-  value: "{{ .Values.castellum.rabbitmq.queue_name }}"
+  value: notifications.info
 - name: CASTELLUM_RABBITMQ_USERNAME
-  value: "{{ .Values.castellum.rabbitmq.username }}"
+  valueFrom:
+    secretKeyRef:
+      name: castellum-secret
+      key: rabbitmq_username
 - name: CASTELLUM_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:
       name: castellum-secret
       key: rabbitmq_password
 - name: CASTELLUM_RABBITMQ_HOSTNAME
-  value: "{{ .Values.castellum.rabbitmq.hostname }}"
+  value: hermes-rabbitmq-notifications.hermes.svc
+{{- if $.Values.castellum.asset_managers | has "server-groups" }}
 - name: CASTELLUM_SERVERGROUPS_LOCAL_ROLES
   value: "member,keymanager_viewer"
 - name: CASTELLUM_SERVERGROUPS_PROMETHEUS_URL
-  value: "http://prometheus-infra-collector.infra-monitoring.svc:9090"
+  value: "https://metrics-internal.scaleout.{{ .Values.global.region }}.cloud.sap"
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_CERT
+  value: /etc/castellum-certs/prometheus-vmware.cert.pem
+- name: CASTELLUM_SERVERGROUPS_PROMETHEUS_KEY
+  value: /etc/castellum-certs/prometheus-vmware.key.pem
+{{- end }}
 - name: OS_AUTH_URL
-  value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
+  value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}:5000/v3"
 - name: OS_AUTH_VERSION
   value: "3"
 - name: OS_IDENTITY_API_VERSION

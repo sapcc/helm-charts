@@ -7,33 +7,71 @@
 {{- end -}}
 
 {{- define "limes_common_envvars" }}
-- name: LIMES_DEBUG
-  value: '0'
-- name: LIMES_DB_PASSWORD
+{{- if $.Values.limes.has_audit_trail }}
+- name: LIMES_AUDIT_RABBITMQ_QUEUE_NAME
+  value: "notifications.info"
+- name: LIMES_AUDIT_RABBITMQ_HOSTNAME
+  value: "hermes-rabbitmq-notifications.hermes.svc"
+- name: LIMES_AUDIT_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:
       name: limes-secret
-      key: postgres_password
+      key: rabbitmq_password
+- name: LIMES_AUDIT_RABBITMQ_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: limes-secret
+      key: rabbitmq_username
+{{- end }}
+- name: LIMES_AUTHORITATIVE
+  value: "true"
+- name: LIMES_DEBUG
+  value: '0'
+- name: LIMES_DB_USERNAME
+  value: 'limes'
+- name: LIMES_DB_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: '{{ $.Release.Name }}-pguser-limes'
+      key: 'postgres-password'
 - name: LIMES_DB_HOSTNAME
   value: "limes-postgresql.{{ .Release.Namespace }}.svc"
 - name: LIMES_DB_CONNECTION_OPTIONS
   value: "sslmode=disable"
-- name: LIMES_API_REQUEST_LOG_EXCEPT_STATUS_CODES
-  value: "300"
-- name: LIMES_API_CORS_ALLOWED_ORIGINS
-  value: "*"
-- name: LIMES_COLLECTOR_DATA_METRICS_EXPOSE
-  value: "true"
-- name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
-  value: "true"
-- name: CCLOUD_AUTH_PASSWORD
+{{ include "limes_openstack_envvars" . }}
+{{- end -}}
+
+{{- define "limes_openstack_envvars" }}
+{{- $limitas_hostname := .Values.limes.api_domain_names.v2 }}
+{{- if .Values.global.is_global_region }}
+- name: OS_AUTH_URL
+  value: "https://{{ $limitas_hostname | replace "limitas" "identity-3" }}/v3"
+- name: OS_INTERFACE
+  value: "public"
+{{- else }}
+- name: OS_AUTH_URL
+  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.{{ $.Values.global.clusterDNSSearchDomain }}:5000/v3"
+- name: OS_INTERFACE
+  value: "internal"
+{{- end }}
+- name: OS_USER_DOMAIN_NAME
+  value: "Default"
+- name: OS_USERNAME
+  value: "limes"
+- name: OS_PASSWORD
   valueFrom:
     secretKeyRef:
       name: limes-secret
-      key: ccloud_auth_password
-- name: CCLOUD_RABBITMQ_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: limes-secret
-      key: ccloud_rabbitmq_password
+      key: os_password
+- name: OS_PROJECT_DOMAIN_NAME
+  value: "ccadmin"
+- name: OS_PROJECT_NAME
+  value: "cloud_admin"
+{{- if .Values.global.is_global_region }}
+- name: OS_REGION_NAME
+  value: global
+{{- else }}
+- name: OS_REGION_NAME
+  value: {{ quote $.Values.global.region }}
+{{- end }}
 {{- end -}}

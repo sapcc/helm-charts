@@ -11,7 +11,8 @@ client:
   aws_secret_key:
   aws_region:
   ssl_no_validate: False
-  http_auth: {{.Values.global.elk_elasticsearch_admin_user}}:{{.Values.global.elk_elasticsearch_admin_password}}
+  username: {{.Values.global.elk_elasticsearch_admin_user}}
+  password: {{.Values.global.elk_elasticsearch_admin_password}}
   timeout: 60
   master_only: False
 

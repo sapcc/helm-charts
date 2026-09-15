@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openstack-performance
+  namespace: openstack-performance
+spec:
+  selector:
+    matchLabels:
+      app: openstack-performance
+  template:
+    metadata:
+      labels:
+        app: openstack-performance
+    spec:
+      securityContext:
+        runAsUser: 0
+      serviceAccountName: "openstack-performance"
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: openstack-performance
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: openstack-performance-config
+        - name: git-ssh-key
+          secret:
+            secretName: git-ssh-key
+            defaultMode: 0400
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - sh
+            - /config/docker-entrypoint.sh
+          args:
+            - "-f"
+            - "openstack_performance/openstack.py"
+            - "OpenstackTest"
+          ports:
+            - name: http
+              containerPort: 8089
+              protocol: TCP
+          livenessProbe:
+            periodSeconds: 30
+            httpGet:
+              path: /
+              port: 8089
+          readinessProbe:
+            periodSeconds: 30
+            httpGet:
+              path: /
+              port: 8089
+          env:
+            - name: OS_USER_DOMAIN_NAME
+              value: "tempest"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "tempest"
+            - name: OS_PASSWORD
+              value: {{ .Values.tempestAdminPassword | quote }}
+            - name: OS_USERNAME
+              value: "performance_tester"
+            - name: OS_PROJECT_NAME
+              value: "performance-testing"
+            - name: OS_AUTH_URL
+              value: "https://identity-3.qa-de-1.cloud.sap/v3"
+          volumeMounts:
+            - mountPath: "/data"
+              name: openstack-performance
+              readOnly: false
+            - name: config
+              mountPath: /config
+        - name: git-sync
+          image: "keppel.eu-de-1.cloud.sap/ccloud/git-sync:v3.5.0"
+          volumeMounts:
+            - name: openstack-performance
+              mountPath: "/data"
+              readOnly: false
+            - name: git-ssh-key
+              mountPath: /etc/git-secret
+              readOnly: true
+          env:
+            - name: GIT_SYNC_REPO
+              value: "git@github.wdf.sap.corp:cc/openstack_performance.git"
+            - name: GIT_SYNC_BRANCH
+              value: main
+            - name: GIT_SYNC_ONE_TIME
+              value: "false"
+            - name: GIT_SSL_NO_VERIFY
+              value: "true"
+            - name: GIT_SYNC_ROOT
+              value: "/data"
+            - name: GIT_SYNC_PERIOD
+              value: "10000"
+            - name: GIT_SYNC_DEST
+              value: "src"
+            - name: GIT_SYNC_SSH
+              value: "true"
+            - name: GIT_SSH_KEY_FILE
+              value: /etc/git-secret/ssh
+          securityContext:
+            runAsUser: 0

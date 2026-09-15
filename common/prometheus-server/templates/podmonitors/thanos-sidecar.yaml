@@ -1,0 +1,46 @@
+# This PodMonitor is used for monitoring the thanos-sidecar container.
+{{- $root := . }}
+{{- if .Values.thanos.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" (list $name $root) }}-thanos-sidecar
+  labels:
+    prometheus: {{ default (include "prometheus.name" (list $name $root)) $root.Values.alerts.prometheus }}
+
+spec:
+  jobLabel: thanos-sidecar
+
+  selector:
+    matchExpressions:
+    - key: app.kubernetes.io/instance
+      operator: In
+      values:
+      - {{ include "prometheus.name" (list $name $root) }}
+
+  podMetricsEndpoints:
+    - interval: {{ required ".Values.serviceDiscoveries.scrapeInterval  missing" $root.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.serviceDiscoveries.scrapeTimeout  missing" $root.Values.serviceDiscoveries.scrapeTimeout }}
+      port: http
+      scheme: http
+      relabelings:
+        - action: replace
+          targetLabel: prometheus
+          replacement: {{ include "prometheus.name" (list $name $root) }}
+        - action: replace
+          targetLabel: job
+          replacement: {{ include "prometheus.fullName" (list $name $root) }}-thanos-sidecar
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_service_name
+          targetLabel: kubernetes_name
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
+{{ end }}
+{{ end }}

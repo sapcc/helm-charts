@@ -1,0 +1,30 @@
+{{- $root := . }}
+{{- if and .Values.ruler.enabled (eq .Values.deployWholeThanos false) }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: thanos-ruler-{{ include "thanos.name" (list $name $root) }}
+  labels:
+    thanos: {{ include "thanos.name" (list $name $root) }}
+  {{- if or (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.ruler.service.annotations }}
+  annotations:
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+  {{- end }}
+{{ if $.Values.ruler.service.annotations }}
+{{ toYaml $.Values.ruler.service.annotations | indent 4 }}
+{{ end }}
+  {{- end }}
+spec:
+  selector:
+    thanos-ruler: {{ include "thanos.name" (list $name $root) }}
+  ports:
+    - name: web
+      port: 10902
+    - name: grpc
+      port: 10901
+{{- end }}
+{{- end }}

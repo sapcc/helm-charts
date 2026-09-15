@@ -4,10 +4,10 @@ global
   uid 99
   gid 99
 
-  log stdout format raw local0 info
+  log stdout format raw local0 {{ .Values.default_log_level }}
   zero-warning
 
-  maxconn 4000
+  maxconn 2000
 
   # TODO: Should be replaced by https://ssl-config.mozilla.org/#server=haproxy&version=2.3&config=intermediate&openssl=1.1.1d&guideline=5.6
   # AES256-SHA256 seems to be needed for iPXE with tlsv1.2
@@ -35,7 +35,6 @@ defaults
 
 listen stats
   bind *:8404
-  option http-use-htx
   http-request use-service prometheus-exporter if { path /metrics }
   stats enable
   stats uri /stats

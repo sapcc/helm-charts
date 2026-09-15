@@ -13,16 +13,16 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 6
+      maxUnavailable: '10%'
   template:
     metadata:
       labels:
         component: fluent-audit-container
       annotations:
+        kubectl.kubernetes.io/default-container: "fluentd-audit"
         checksum/fluent-audit-container-bin-configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/fluent.conf: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
         checksum/prometheus.conf: {{ include  (print $.Template.BasePath "/_prometheus.conf.tpl") . | sha256sum }}
-        checksum/fluent-start: {{ include  (print $.Template.BasePath "/_fluent-start.tpl") . | sha256sum }}
         checksum/pattern: {{ include  (print $.Template.BasePath "/_pattern.tpl") . | sha256sum }}
         scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
     spec:
@@ -30,6 +30,20 @@ spec:
       serviceAccountName: fluentd-audit
       tolerations:
       - operator: "Exists"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/esx-in-maintenance
+                operator: NotIn
+                values:
+                - alarm
+                - "true"
+              - key: cloud.sap/maintenance-state
+                operator: NotIn
+                values:
+                - in-maintenance
       terminationGracePeriodSeconds: 30
       volumes:
         - name: fluent-bin
@@ -43,9 +57,8 @@ spec:
             path: /var/lib/docker/containers
       containers:
         - name: fluent-audit-container
-          image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
+          image: "{{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}"
           imagePullPolicy: IfNotPresent
-          command: ["/usr/local/bin/dumb-init", "/bin/bash", "/fluent-bin/fluent-start"]
           env:
             - name: NAMESPACE
               valueFrom:
@@ -59,7 +72,7 @@ spec:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
             - name: fluent-bin
-              mountPath: /fluent-bin
+              mountPath: /fluentd/etc
             - name: varlog
               mountPath: /var/log
             - name: varlibdockercontainers

@@ -6,12 +6,14 @@ metadata:
   name: k3s-backup-s3-exporter
   labels:
     prometheus: {{ .Values.exporter.prometheus }}
+    plugin: kube-monitoring
 
 spec:
   jobName: k3s-backup-s3-exporter
   prober:
     url: k3s-backup-s3-exporter-metrics.{{.Release.Namespace}}.svc.cluster.local
     path: /probe
+  interval: {{ .Values.exporter.scrapeInterval }}
   scrapeTimeout: {{ .Values.exporter.scrapeTimeout }}
   targets:
     staticConfig: 

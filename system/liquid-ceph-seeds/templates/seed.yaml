@@ -1,0 +1,37 @@
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: liquid-ceph-seed
+
+spec:
+  requires:
+  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  - monsoon3/domain-default-seed
+
+  domains:
+  - name: Default
+    users:
+    - name: liquid-ceph
+      description: 'Limes integration for Ceph <https://github.com/cobaltcore-dev/liquid-ceph>'
+      password: '{{required ".Values.password missing" .Values.password}}'
+      role_assignments: # for keystone token validation
+      - project: service
+        role:    service
+
+  services:
+  - name:        liquid-ceph
+    type:        liquid-ceph
+    description: 'Limes integration for Ceph <https://github.com/cobaltcore-dev/liquid-ceph>'
+    enabled:     true
+    endpoints:
+    - region:    '{{ $region }}'
+      interface: public
+      enabled:   true
+      url:       'https://liquid-ceph.st1.{{ $region }}.cloud.sap'
+    - region:    '{{ $region }}'
+      interface: internal
+      enabled:   true
+      url:       'https://liquid-ceph.st1.{{ $region }}.cloud.sap'

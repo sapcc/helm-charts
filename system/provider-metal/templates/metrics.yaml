@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "provider-metal.fullname" . }}-controller-manager-metrics
+  labels:
+    control-plane: controller-manager
+  {{- include "provider-metal.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.metrics.type }}
+  selector:
+    control-plane: controller-manager
+    {{- include "provider-metal.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.metrics.ports | toYaml | nindent 2 }}

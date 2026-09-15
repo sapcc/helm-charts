@@ -1,0 +1,52 @@
+baremetalOperatorControllerManager:
+  manager:
+    args:
+      - --enable-leader-election
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      runAsGroup: 65532
+      runAsUser: 65532
+    image:
+      repository: quay.io/metal3-io/baremetal-operator
+      tag: v0.13.1
+    imagePullPolicy: Always
+  nodeSelector: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  replicas: 1
+  tolerations: []
+  topologySpreadConstraints: []
+baremetalOperatorControllerManagerMetricsService:
+  ports:
+    - name: https
+      port: 8443
+      targetPort: https
+  type: ClusterIP
+baremetalOperatorWebhookService:
+  ports:
+    - port: 443
+      targetPort: 9443
+  type: ClusterIP
+ironic:
+  cacheurl: http://172.22.0.1/images
+  dhcpRange: 172.22.0.10,172.22.0.100
+  httpPort: "6180"
+  ironicEndpoint: http://172.22.0.2:6385/v1/
+  provisioningInterface: eth2
+kubernetesClusterDomain: cluster.local
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
+controllerManager:
+  manager:
+    image:
+      tag: v0.13.1
+fullnameOverride: metal3

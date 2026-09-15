@@ -1,5 +1,30 @@
-{{- $domains := list "bs" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs" -}}
-{{- /* WARNING: When adding a new domain, also increment the domain count in the OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments alert. */ -}}
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $dbRegion := .Values.global.db_region       | required "missing value for .Values.global.db_region"       -}}
+{{/* cdomains equals [ "global" ] in global region */}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test") $cdomains -}}
+
+{{- $liquid_roles := list -}}
+{{- if not .Values.limes.local_liquids.nova.skip -}}
+  {{- /* NOTE: cloud_image_admin is required to determine the OS type for images of running instances */ -}}
+  {{- $liquid_roles = concat $liquid_roles (list "cloud_compute_admin" "cloud_image_admin" "cloud_keymanager_admin") -}}
+{{- end -}}
+{{- if not .Values.limes.local_liquids.cinder.skip -}}
+  {{- $liquid_roles = append $liquid_roles "cloud_volume_admin" -}}
+{{- end -}}
+{{- if not .Values.limes.local_liquids.designate.skip -}}
+  {{- $liquid_roles = append $liquid_roles "cloud_dns_admin" -}}
+{{- end -}}
+{{- if not .Values.limes.local_liquids.neutron.skip -}}
+  {{- $liquid_roles = append $liquid_roles "cloud_network_admin" -}}
+{{- end -}}
+{{- if not .Values.limes.local_liquids.manila.skip -}}
+  {{- $liquid_roles = append $liquid_roles "cloud_sharedfilesystem_admin" -}}
+{{- end -}}
+{{- if not .Values.limes.local_liquids.swift.skip -}}
+  {{- $liquid_roles = append $liquid_roles "cloud_objectstore_admin" -}}
+{{- end -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -8,61 +33,44 @@ metadata:
 
 spec:
   requires:
-  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
-  - monsoon3/neutron-seed
-#  - openstack/nova-seed  # uncomment once nova brings its own seed
-#  - openstack/cinder-seed  # uncomment once cinder brings its own seed
-  - monsoon3/manila-seed
-  - monsoon3/barbican-seed
-  - monsoon3/designate-seed
-  - swift/swift-seed
-  - monsoon3/domain-bs-seed
-  - monsoon3/domain-cis-seed
-  - monsoon3/domain-cp-seed
-  - monsoon3/domain-cc3test-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-default-seed
-  - monsoon3/domain-fsn-seed
-  - monsoon3/domain-hcm-seed
-  - monsoon3/domain-hcp03-seed
-  - monsoon3/domain-hec-seed
-  - monsoon3/domain-monsoon3-seed
-  - monsoon3/domain-neo-seed
-  - monsoon3/domain-s4-seed
-  - monsoon3/domain-wbs-seed
+  - {{ .Values.global.keystoneNamespace }}/{{ .Values.global.is_global_region | ternary "keystone-global-seed" "keystone-seed" }}
+  - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-default-seed
+  {{- range $domains }}
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .}}-seed
+  {{- end }}
 
   roles:
+    # our own roles
     - name: cloud_resource_admin
     - name: cloud_resource_viewer
-    - name: cloud_dns_resource_admin
     - name: resource_admin
     - name: resource_viewer
     - name: resource_service
-
-  services:
-    - name:        limes
-      type:        resources
-      description: 'Hierarchical quota/usage tracking'
-      enabled:     true
-      endpoints:
-        - region:    '{{.Values.global.region}}'
-          interface: public
-          enabled:   true
-          url:       '{{.Values.limes.clusters.ccloud.catalog_url}}'
-        - region:    '{{.Values.global.region}}'
-          interface: internal
-          enabled:   true
-          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc'
+    # roles defined by other services (instead of adding complicated seed
+    # dependencies between services, we just redefine these roles here)
+    - name: cloud_masterdata_viewer
+    {{- range (sortAlpha $liquid_roles) }}
+    - name: {{ . }}
+    {{- end }}
 
   domains:
     - name: Default
       users:
         - name: limes
           description: Limes Service
-          password: '{{.Values.limes.passwords.ccloud.auth_password}}'
+          password: '{{.Values.limes.passwords.ccloud.os_password}}'
           role_assignments:
             - project: service
               role:    service
+        - name: limes-validation
+          description: User account for pre-deployment validation in CI
+          {{- $vaultFolder := and (eq $dbRegion "qa-de-1") .Values.global.is_global_region | ternary "qa-de-1" $region }}
+          {{- $vaultSubFolder := .Values.global.is_global_region | ternary "limes-global" "limes" }}
+          password: {{ printf "%s/%s/%s/keystone-user/validation/password" $vbase $vaultFolder $vaultSubFolder | quote }}
+          role_assignments:
+            - project: service
+              role:    resource_viewer # needs to be able to run `limesctl project show`
 
     - name: ccadmin
       projects:
@@ -71,27 +79,17 @@ spec:
           # permission to enumerate all projects and domains
           - user: limes@Default
             role: admin
+          # permission to read project masterdata (used for e-mail notifications)
+          - user: limes@Default
+            role: cloud_masterdata_viewer
           # (new-style) permission to manage all services' quotas
           - user: limes@Default
             role: resource_service
           # (old-style) permission to manage all services' quotas
+          {{- range $liquid_roles }}
           - user: limes@Default
-            role: cloud_network_admin
-          - user: limes@Default
-            role: cloud_compute_admin
-          - user: limes@Default
-            role: cloud_volume_admin
-          - user: limes@Default
-            role: cloud_sharedfilesystem_admin
-          - user: limes@Default
-            role: cloud_keymanager_admin
-          - user: limes@Default
-            role: cloud_dns_admin
-          - user: limes@Default
-            role:  swiftreseller
-          # permission to inspect metadata for private images (to determine OS type)
-          - user: limes@Default
-            role: cloud_image_admin
+            role: {{ . }}
+          {{- end }}
       groups:
       - name: CCADMIN_CLOUD_ADMINS
         role_assignments:
@@ -99,30 +97,24 @@ spec:
           role: cloud_resource_admin
         - project: cloud_admin
           role: cloud_resource_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
+      - name: CCADMIN_PLUTUS_CLOUD_RESOURCE_VIEWERS
+        role_assignments:
+        - project: cloud_admin@ccadmin
+          role: cloud_resource_viewer
       - name: CCADMIN_DOMAIN_RESOURCE_ADMINS
         role_assignments:
         - domain: ccadmin
           role: resource_admin
         - domain: ccadmin
           role: resource_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
-      - name: CCADMIN_DOMAIN_DNS_OPS
-        role_assignments:
-        - domain: ccadmin
-          role: cloud_dns_resource_admin
-          inherited: true
 
     {{- range $domains }}
     - name: {{ . | lower }}
       groups:
-      - name: {{ . | upper }}_DOMAIN_RESOURCE_ADMINS
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_DOMAIN_RESOURCE_ADMINS
         role_assignments:
         - domain: {{ . | lower }}
           role: resource_admin
         - domain: {{ . | lower }}
           role: resource_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
-      - name: {{ . | upper }}_DOMAIN_DNS_OPS
-        role_assignments:
-        - domain: {{ . | lower }}
-          role: cloud_dns_resource_admin
-          inherited: true
     {{- end }}

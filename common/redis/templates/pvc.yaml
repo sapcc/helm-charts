@@ -1,12 +1,14 @@
 {{- if .Values.persistence.enabled }}
+{{- $fullname := include "redis.fullname" . -}}
+
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ template "redis.fullname" . }}
+  name: {{ $fullname }}
 spec:
   accessModes:
-    - {{ required ".Values.persistence.accessMode missing" .Values.persistence.accessMode | quote }}
+    - {{ quote .Values.persistence.accessMode }}
   resources:
     requests:
-      storage: {{ required ".Values.persistence.size missing" .Values.persistence.size | quote }}
+      storage: {{ quote .Values.persistence.size }}
 {{- end }}

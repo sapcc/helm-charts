@@ -1,0 +1,46 @@
+# vim: set ft=yaml:
+groups:
+  - name: utilization
+    rules:
+      # These rules are intermediate results to keep the final aggregation rules more readable.
+      # In both cases, we take the maximum of momentary resource usage and resource request.
+      #
+      # Unfortunately, there is no straight-forward way to take a maximum of two separate sets of
+      # timeseries. The builtin max() function can only be used to reduce cardinality on a single
+      # set of timeseries. As a workaround, we use the pattern `(X >= Y) or Y` to mean `max(X, Y)`.
+      #
+      # Note that `(X >= Y) or Y` only works if Y is fully populated. Therefore we need to put the
+      # resource requests in X (since those metrics may be missing for some containers) and the
+      # cadvisor metrics in Y (since those metrics are always present for all containers).
+      #
+      # Ref: <https://stackoverflow.com/a/7335140>
+
+      - record: container_memory_effective_utilization_bytes
+        expr: |
+          max by (namespace, pod, container) (kube_pod_container_resource_requests{resource="memory"})
+            >= max by (namespace, pod, container) (container_memory_working_set_bytes)
+            or max by (namespace, pod, container) (container_memory_working_set_bytes)
+
+      - record: container_cpu_effective_utilization_average
+        expr: |
+          max by (namespace, pod, container) (kube_pod_container_resource_requests{resource="cpu"})
+            >= max by (namespace, pod, container) (rate(container_cpu_usage_seconds_total[5m]))
+            or max by (namespace, pod, container) (rate(container_cpu_usage_seconds_total[5m]))
+
+  - name: utilization-final
+    rules:
+      # These rules summarize various types of resource utilization metrics into one timeseries per
+      # owner (as defined by the ccloud/support-group and ccloud/service labels on the respective
+      # Kubernetes objects).
+
+      - record: by_owner:container_memory_effective_utilization_bytes
+        expr: 'sum by (label_ccloud_support_group, label_ccloud_service) (container_memory_effective_utilization_bytes * on (namespace, pod) group_left (label_ccloud_support_group, label_ccloud_service) (kube_pod_labels))'
+
+      - record: by_owner:container_cpu_effective_utilization_average
+        expr: 'sum by (label_ccloud_support_group, label_ccloud_service) (container_cpu_effective_utilization_average * on (namespace, pod) group_left (label_ccloud_support_group, label_ccloud_service) (kube_pod_labels))'
+
+      - record: by_owner:persistentvolume_used_bytes
+        expr: 'sum by (label_ccloud_support_group, label_ccloud_service) (kubelet_volume_stats_used_bytes * on (namespace, persistentvolumeclaim) group_left (label_ccloud_support_group, label_ccloud_service) kube_persistentvolumeclaim_labels)'
+
+      - record: by_owner:persistentvolume_capacity_bytes
+        expr: 'sum by (label_ccloud_support_group, label_ccloud_service) (kubelet_volume_stats_capacity_bytes * on (namespace, persistentvolumeclaim) group_left (label_ccloud_support_group, label_ccloud_service) kube_persistentvolumeclaim_labels)'

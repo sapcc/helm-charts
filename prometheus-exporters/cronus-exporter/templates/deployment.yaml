@@ -38,6 +38,9 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "-config=/cronus-exporter/config.yaml"
+          envFrom:
+            - secretRef:
+                name: cronus-exporter-secret
           volumeMounts:
             - name: cronus-exporter-config
               mountPath: "/cronus-exporter/config.yaml"
@@ -49,6 +52,9 @@ spec:
       restartPolicy: Always
       volumes:
         - name: cronus-exporter-config
-          secret:
-            secretName: cronus-exporter-config
+          configMap:
+            name: cronus-exporter-config
+            items:
+              - key: config.yaml
+                path: config.yaml
 {{ end -}}

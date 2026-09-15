@@ -1,32 +1,25 @@
-# Might we worth building your own ipxe stack here: https://rom-o-matic.eu/
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ironic-inspector-db-migration
+  # Name changes with imageVersion / etc-configmap / secrets content, so Helm
+  # deletes the old completed Job and creates a new one on any relevant change.
+  name: {{ tuple . "inspector-db-migration" | include "job_name" }}
   labels:
     system: openstack
     type: job
     component: ironic
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
-      initContainers:
-      - name: "kubernetes-entrypoint"
-        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
-        imagePullPolicy: "IfNotPresent"
-        command: ["kubernetes-entrypoint"]
-        env:
-        - name: "NAMESPACE"
-          value: {{ .Release.Namespace | quote }}
-        - name: "DEPENDENCY_SERVICE"
-{{- if eq .Values.mariadb.enabled true }}
-          value: "ironic-mariadb"
-{{- else }}
-          value: "ironic-postgresql"
-{{- end }}
-        - name: "COMMAND"
-          value: "true"
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       restartPolicy: OnFailure
+      initContainers:
+      {{- tuple . (dict "service" (include "ironic.db_service" . | quote)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: dbsync
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -39,6 +32,7 @@ spec:
         - |
           set -e
           ironic-inspector-dbsync upgrade
+          {{- include "utils.script.job_finished_hook" . | nindent 10 }}
         env:
         - name: PGAPPNAME
           valueFrom:
@@ -47,6 +41,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic-inspector
           name: etcironicinspector
+        - mountPath: /etc/ironic-inspector/ironic-inspector.conf.d
+          name: ironic-inspector-etc-confd
         - mountPath: /etc/ironic-inspector/ironic-inspector.conf
           name: ironic-inspector-etc
           subPath: ironic-inspector.conf
@@ -63,6 +59,7 @@ spec:
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       volumes:
       - name: etcironicinspector
         emptyDir: {}
@@ -74,3 +71,10 @@ spec:
         configMap:
           name: ironic-inspector-etc
           defaultMode: 0444
+      - name: ironic-inspector-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: inspector_secrets.conf
+            path: inspector_secrets.conf
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

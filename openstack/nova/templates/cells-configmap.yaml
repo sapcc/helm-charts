@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nova-cells
+  labels:
+    system: openstack
+    component: nova
+    type: nova-cell
+data:
+{{- $envAll := . }}
+{{- $cellNames := list }}
+{{- range $cellId := include "nova.helpers.cell_ids_all" . | fromJsonArray }}
+{{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+  {{- $cellNames = append $cellNames $cellName }}
+{{- end }}
+  cells: {{ $cellNames | join "," }}

@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "andromeda.fullname" . }}-server
+  annotations:
+    secret.reloader.stakater.com/reload: "andromeda-secret"
   labels:
 {{ include "andromeda.labels" . | indent 4 }}
 spec:
@@ -15,6 +17,10 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "andromeda.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: openstack
+        checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -25,10 +31,10 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
         - name: wait-for-migration
-          image: "quay.io/stackanetes/kubernetes-entrypoint:v0.3.1"
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
           env:
             - name: NAMESPACE
-              value: "andromeda"
+              value: "{{ .Release.Namespace }}"
             - name: DEPENDENCY_JOBS
               value: {{ include "andromeda.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
             - name: COMMAND
@@ -38,14 +44,51 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          args: ["--config-file", "/etc/andromeda/andromeda.conf", "server", "--port", "8000"]
+          args: ["--config-file", "/etc/andromeda/andromeda.yaml", "--config-file", "/etc/andromeda/akamai.yaml", "--port", "8000"]
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: HOST
               value: 0.0.0.0
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ .Chart.Name }}-server
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ .Chart.Name }}-server
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ include "andromeda.fullname" . }}.DSN
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: andromeda-secret
+                  key: service_user_password
+            {{- if .Values.mariadb.enabled }}
+            - name: DATABASE_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: andromeda-secret
+                  key: database_connection
+            {{- end }}
+            {{- if .Values.audit.enabled }}
+            - name: AUDIT_TRANSPORT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: andromeda-secret
+                  key: audit_transport_url
+            {{- end }}
           ports:
             - name: http
               containerPort: 8000
+              protocol: TCP
+            - containerPort: 9090
+              name: metrics
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -69,5 +112,12 @@ spec:
               - configMap:
                   name: andromeda-etc
                   items:
-                    - key: andromeda.conf
-                      path: andromeda.conf
+                    - key: andromeda.yaml
+                      path: andromeda.yaml
+                    - key: policy.json
+                      path: policy.json
+              - configMap:
+                  name: andromeda-etc-akamai
+                  items:
+                    - key: akamai.yaml
+                      path: akamai.yaml

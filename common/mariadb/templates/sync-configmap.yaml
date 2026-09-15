@@ -1,0 +1,50 @@
+{{/*
+Create the config map content for sync pod
+*/}}
+{{- define "mariadb.sync.configmap" }}
+{{- $v := .Values -}}
+region: {{ $v.global.region | required ".Values.global.region is required" | quote }}
+loglevel: {{ $v.loglevel | default "info" | quote }}
+backup:
+  service: {{ $v.sync.backup.service | quote }}
+  swift:
+    container: {{ ($v.sync.backup.swift.container | default (printf "mariadb-backup-%s" ($v.sync.backup.region | default $v.global.region))) | quote }}
+    creds:
+      identityEndpoint: {{ $v.sync.backup.swift.identityEndpoint | default (printf "https://identity-3.%s.cloud.sap/v3" $v.global.region) | quote }}
+      user: {{ $v.sync.backup.swift.user | default "db_backup" | quote }}
+      userDomain: {{ $v.sync.backup.swift.userDomain | default "Default" | quote }}
+      project: {{ $v.sync.backup.swift.project | default "master" | quote }}
+      projectDomain: {{ $v.sync.backup.swift.projectDomain | default "ccadmin" | quote }}
+  s3:
+    sseCustomerAlgorithm: {{ $v.sync.backup.s3.sseCustomerAlgorithm | default "AES256" | quote }}
+    region: {{ required "missing AWS region" $v.global.mariadb.backup_v2.aws.region | quote }}
+    bucketName: {{ ($v.sync.backup.s3.bucketName | default (printf "mariadb-backup-%s" ($v.sync.backup.region | default $v.global.region))) | quote }}
+replication:
+  sourceDB:
+    host: {{ $v.sync.source.host | quote }}
+    port: {{ ($v.sync.source.port | default 3306) }}
+    user: {{ $v.sync.source.user | default "root" | quote }}
+  targetDB:
+    host: {{ include "fullName" . | quote }}
+    port: {{ ($v.sync.target.port | default 3306) }}
+    user: {{ $v.sync.target.user | default "root" | quote }}
+  schemas:
+  {{- range $db := $v.sync.databases }}
+    - {{ $db | quote }}
+  {{- end }}
+  serverID: {{ $v.sync.serverID | default 899 }}
+  binlogMaxReconnectAttempts: {{ $v.sync.binlogMaxReconnectAttempts | default 10 }}
+{{- end }}
+{{- if .Values.sync.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "fullName" . }}-sync-config
+  labels:
+    {{- include "mariadb.labels" (list $ "noversion" "database-sync" "cm" "config") | nindent 4 }}
+data:
+  config.yaml: |
+{{ include "mariadb.sync.configmap" . | indent 4 }}
+{{- end }}

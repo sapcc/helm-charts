@@ -1,0 +1,26 @@
+{{- if and .Values.thanos.enabled ( eq .Values.thanos.objectStorageConfig.enabled false ) }}
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+{{- range $thanos := $.Values.thanos.sidecarDiscovery }} 
+---
+apiVersion: monitoring.banzaicloud.io/v1alpha1
+kind: StoreEndpoint
+metadata:
+  name: {{ include "prometheus.name" (list $name $root) }}-to-{{ $thanos.thanosName }}
+  {{- if $thanos.thanosNamespace }}
+  namespace: {{ $thanos.thanosNamespace }} 
+  {{- end}}
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
+spec:
+  {{- if $thanos.domain }}
+  url: {{ include "prometheus.fullName" (list $name $root) }}.{{ $thanos.namespace }}.svc.{{ $thanos.domain }}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.tld missing" $root.Values.global.tld }}:10901
+  {{- else }}
+  url: {{ include "prometheus.name" (list $name $root) }}.{{ $thanos.namespace }}.svc.cluster.local:10901
+  {{- end }}
+  thanos: {{ $thanos.thanosName }}
+{{ end }}
+{{ end }}
+{{ end }}

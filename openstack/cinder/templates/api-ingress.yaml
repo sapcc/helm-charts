@@ -1,4 +1,4 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
@@ -8,8 +8,8 @@ metadata:
     type: api
     component: cinder
   annotations:
-    ingress.kubernetes.io/configuration-snippet: |
-      {{- include "utils.snippets.set_openstack_request_id" . | indent 6 }}
+    {{- include "utils.snippets.set_ingress_cors_annotations" . | indent 4 }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
   {{- if .Values.use_tls_acme }}
     kubernetes.io/tls-acme: "true"
   {{- end }}
@@ -22,6 +22,9 @@ spec:
       http:
         paths:
         - path: /
+          pathType: Prefix
           backend:
-            serviceName: cinder-api
-            servicePort: {{.Values.cinderApiPortInternal}}
+            service:
+              name: cinder-api
+              port:
+                number: {{.Values.cinderApiPortInternal}}

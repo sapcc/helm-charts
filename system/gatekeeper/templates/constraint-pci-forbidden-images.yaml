@@ -1,34 +1,27 @@
-apiVersion: templates.gatekeeper.sh/v1beta1
-kind: ConstraintTemplate
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "pci-forbidden-images" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPCIForbiddenImages
 metadata:
-  name: gkpciforbiddenimages
+  name: pci-forbidden-images
+  annotations:
+    {{- include "sources" (tuple "pci-forbidden-images" "pci-forbidden-images") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkPCIForbiddenImages") | indent 4 }}
+  labels:
+    severity: 'error'
 spec:
-  crd:
-    spec:
-      names:
-        kind: GkPCIForbiddenImages
-      validation:
-        # Schema for the `parameters` field
-        openAPIV3Schema:
-          properties:
-            patterns:
-              type: array
-              items:
-                description: regex pattern
-                type: string
-              minItems: 0
+  enforcementAction: deny
+  match: {{ include "gatekeeper-policies.match-pods-and-pod-owners" . | indent 4 }}
+  parameters:
+    patterns:
+      {{- if contains "qa-" .Values.global.region }}
+      - "bogus-pattern-for-testing"
+      {{- else }}
+      - "/cc-ia/cc-readymade"
+      {{- end }}
 
-  targets:
-    - target: admission.k8s.gatekeeper.sh
-      rego: |
-        package pciforbiddenimages
-
-        violation[{"msg": msg}] {
-          input.review.object.kind == "Pod"
-          container := input.review.object.spec.containers[_]
-
-          pattern := input.parameters.patterns[_]
-          regex.match(pattern, container.image)
-
-          msg := sprintf("container %q uses forbidden image: %s", [container.name, container.image])
-        }
+{{- end -}}

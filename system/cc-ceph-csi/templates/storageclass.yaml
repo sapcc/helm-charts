@@ -1,0 +1,40 @@
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: replicapool
+  namespace: {{ .Release.Namespace }}
+spec:
+  failureDomain: {{ .Values.cluster.redundancy.failureDomain }}
+  replicated:
+    size: {{ .Values.cluster.redundancy.replicas }}
+    requireSafeReplicaSize: true
+    {{- if .Values.cluster.redundancy.subFailureDomain }}
+    subFailureDomain: {{ .Values.cluster.redundancy.subFailureDomain }}
+    {{- end }}
+    {{- if .Values.cluster.redundancy.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ .Values.cluster.redundancy.replicasPerFailureDomain }}
+    {{- end }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: rook-ceph-block
+{{- if .Values.cluster.storage.defaultStorageClass }}
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+{{- end }}
+provisioner: rook-ceph.rbd.csi.ceph.com
+parameters:
+  clusterID: {{ .Release.Namespace }}
+  pool: replicapool
+  imageFormat: "2"
+  imageFeatures: layering
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: {{ .Release.Namespace }}
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: {{ .Release.Namespace }}
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+  csi.storage.k8s.io/node-stage-secret-namespace: {{ .Release.Namespace }}
+  csi.storage.k8s.io/fstype: ext4
+allowVolumeExpansion: true
+reclaimPolicy: Delete

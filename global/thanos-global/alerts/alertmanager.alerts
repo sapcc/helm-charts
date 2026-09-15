@@ -1,0 +1,27 @@
+groups:
+- name: alertmanager-global.alerts
+  rules:
+  - alert: AlertmanagerSlackRoutesMissing
+    expr: count (alertmanager_receivers{alertmanager=~"s-eu-de-1|s-eu-nl-1"} < 40) >= 2
+    for: 10m
+    labels:
+      severity: critical
+      service: metrics 
+      support_group: observability
+      summary: Alertmanager slack routes missing
+      playbook: https://operations.global.cloud.sap/docs/support/playbook/prometheus/alertmanager_alerts/alertmanager-slack-routes-missing
+    annotations:
+      description: There should be over 40 routes slack routes configured to alarm dedicated support_groups in their slack channels. 
+      summary: Alertmanager slack routes missing
+  - alert: AlertmanagerSlackRoutesMissing
+    expr: count (alertmanager_receivers{alertmanager=~"s-eu-de-1|s-eu-nl-1"} < 40) == 1
+    for: 5m
+    labels:
+      severity: warning
+      service: metrics 
+      support_group: observability
+      summary: Alertmanager slack routes missing
+      playbook: https://operations.global.cloud.sap/docs/support/playbook/prometheus/alertmanager_alerts/alertmanager-slack-routes-missing
+    annotations:
+      description: There should be over 40 routes slack routes configured to alarm dedicated support_groups in their slack channels. 
+      summary: Alertmanager slack routes missing

@@ -1,0 +1,322 @@
+---
+apiVersion: pxc.percona.com/v1
+kind: PerconaXtraDBCluster
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "pxc-db.clusterName" . }}
+  finalizers:
+    - percona.com/delete-pxc-pods-in-order
+  {{- with .Values.annotations }}
+  annotations:
+    {{- .  | toYaml | nindent 4 }}
+  {{- end }}
+  labels:
+{{- include "pxc-db.labels" . | nindent 4 }}
+spec:
+  crVersion: {{ .Chart.AppVersion }}
+  {{- if .Values.ignoreAnnotations }}
+  ignoreAnnotations:
+{{ .Values.ignoreAnnotations | toYaml | indent 4 }}
+  {{- end }}
+  {{- if .Values.ignoreLabels }}
+  ignoreLabels:
+{{ .Values.ignoreLabels | toYaml | indent 4 }}
+  {{- end }}
+  secretsName: pxc-db-{{.Values.name}}-secrets
+  sslSecretName: pxc-db-{{.Values.name}}-ssl
+  sslInternalSecretName: pxc-db-{{.Values.name}}-ssl-internal
+  {{- if .Values.initContainer }}
+  initContainer:
+    {{- if $.Values.initContainer.image.override }}
+    image: {{ $.Values.initContainer.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ $.Values.initContainer.image.name }}:{{ $.Values.initContainer.image.tag }}
+    {{- end }}
+    {{- if .Values.initContainer.resources }}
+    resources:
+      {{- if hasKey .Values.initContainer.resources "requests" }}
+      requests:
+{{ tpl (.Values.initContainer.resources.requests | toYaml) $ | indent 8 }}
+      {{- end }}
+      {{- if hasKey .Values.initContainer.resources "limits" }}
+      limits:
+{{ tpl (.Values.initContainer.resources.limits | toYaml) $ | indent 8 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  enableCRValidationWebhook: true
+  tls:
+    enabled: {{ .Values.tls.enabled }}
+  pause: {{ .Values.pause }}
+  unsafeFlags:
+    {{- $unsafeFlagsTLS:= dict -}}
+    {{- if not .Values.tls.enabled }}
+      {{- $unsafeFlagsTLS = dict "tls" true }}
+    {{- end}}
+    {{- $unsafeFlags := merge .Values.unsafeFlags $unsafeFlagsTLS }}
+{{ tpl ($unsafeFlags| toYaml) $ | indent 4 }}
+  updateStrategy: SmartUpdate
+  upgradeOptions:
+    apply: disabled
+  {{- $pxc := .Values.pxc }}
+  pxc:
+    {{- if gt (int $pxc.size) 7 }}
+    {{- fail "The Galera cluster must not be bigger than 7 nodes" }}
+    {{- end }}
+    size: {{ $pxc.size }}
+    {{- if $pxc.image.override }}
+    image: {{ $pxc.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ $pxc.image.name }}:{{ $pxc.image.tag }}
+    {{- end }}
+    annotations:
+{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) (include "pxc-db.metricsAnnotations" $ | fromYaml ) ($pxc.annotations) | toYaml | indent 6 }}
+    labels:
+{{ merge (include "pxc-db.appLabels" $ | fromYaml) ($pxc.labels) | toYaml | indent 6 }}
+    expose:
+      enabled: {{ $pxc.expose.enabled }}
+      type: {{ $pxc.expose.type }}
+      externalTrafficPolicy: {{ $pxc.expose.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $pxc.expose.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($pxc.expose.annotations) | toYaml | indent 8 }}
+    autoRecovery: {{ $pxc.autoRecovery }}
+    readinessDelaySec: 15
+    livenessDelaySec: 600
+    {{- if .Values.pxc.configuration }}
+    configuration: |
+      [mysqld]
+      {{- if $.Values.pxc.configuration.performance_schema }}
+      # performance monitoring
+      performance_schema=ON
+      performance-schema-instrument='stage/%=ON'
+      performance-schema-consumer-events-stages-current=ON
+      performance-schema-consumer-events-stages-history=ON
+      performance-schema-consumer-events-stages-history-long=ON
+      {{- else }}
+      performance_schema=OFF
+      {{- end }}
+      {{- range $key, $value := $.Values.pxc.configuration.options }}
+      {{ $key }} = "{{ tpl (toString $value) $ }}"
+      {{- end }}
+      [sst]
+      xbstream-opts=--decompress
+      [xtrabackup]
+      compress
+    {{- end }}
+    {{- if $pxc.imagePullPolicy }}
+    imagePullPolicy: {{ $pxc.imagePullPolicy }}
+    {{- end }}
+    readinessProbes:
+{{ tpl ($pxc.readinessProbes | toYaml) $ | indent 6 }}
+    livenessProbes:
+{{ tpl ($pxc.livenessProbes | toYaml) $ | indent 6 }}
+    {{- if $pxc.containerSecurityContext }}
+    containerSecurityContext:
+{{ tpl ($pxc.containerSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
+    {{- if $pxc.podSecurityContext }}
+    podSecurityContext:
+{{ tpl ($pxc.podSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
+    resources:
+      requests:
+{{ tpl ($pxc.resources.requests | toYaml) $ | indent 8 }}
+      limits:
+{{ tpl ($pxc.resources.limits | toYaml) $ | indent 8 }}
+    sidecars:
+    {{- $metrics := .Values.metrics }}
+    {{- if $metrics.enabled }}
+    - name: metrics
+      {{- if $metrics.image.override }}
+      image: {{ $metrics.image.override }}
+      {{- else }}
+      image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ $metrics.image.name }}:{{ $metrics.image.tag }}
+      {{- end }}
+      env:
+        - name: MYSQLD_EXPORTER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: internal-{{ include "pxc-db.clusterName" . }}
+              key: monitor
+      ports:
+        - name: metrics
+          containerPort: 9104
+      args:
+        - "--mysqld.username=monitor"
+        - "--mysqld.address=localhost:3306"
+        {{- range $flag := $metrics.flags }}
+        - "--{{$flag}}"
+        {{- end }}
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 9104
+          scheme: HTTP
+        periodSeconds: 20
+        timeoutSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 9104
+          scheme: HTTP
+        periodSeconds: 20
+        timeoutSeconds: 10
+      resources:
+        requests:
+          cpu: 5m
+          memory: 32Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+    {{- end }}
+    {{- if $pxc.priority_class }}
+    priorityClassName: {{ $pxc.priority_class | default "critical-infrastructure" | quote }}
+    {{- end }}
+    affinity:
+{{ tpl ($pxc.affinity | toYaml) $ | indent 6 }}
+    podDisruptionBudget:
+      maxUnavailable: 1
+    volumeSpec:
+      persistentVolumeClaim:
+        {{- if $pxc.persistence.storageClass }}
+        {{- if (eq "-" $pxc.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: "{{ $pxc.persistence.storageClass }}"
+        {{- end }}
+        {{- end }}
+        accessModes: [{{ $pxc.persistence.accessMode | quote }}]
+        resources:
+          requests:
+            storage: {{ $pxc.persistence.size | quote }}
+    gracePeriod: 600
+{{- if .Values.custom_users }}
+  users:
+  {{- range $username, $values := .Values.users }}
+    {{- $username := default $username $values.name }}
+    {{- if $values.password }}
+    - name: {{ $values.name }}
+      hosts: []
+      passwordSecretRef:
+        name: pxc-db-{{$.Values.name}}-custom-users-secret
+        key: {{ $username }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+  proxysql:
+    enabled: false
+  {{- $haproxy := .Values.haproxy }}
+  haproxy:
+    enabled: true
+    size: {{ $haproxy.size }}
+    {{- if $haproxy.image.override }}
+    image: {{ $haproxy.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ $haproxy.image.name }}:{{ $haproxy.image.tag }}
+    {{- end }}
+    {{- if $haproxy.imagePullPolicy }}
+    imagePullPolicy: {{ $haproxy.imagePullPolicy }}
+    {{- end }}
+    annotations:
+{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) ($haproxy.annotations) | toYaml | indent 6 }}
+    labels:
+{{ merge (include "pxc-db.appLabels" $ | fromYaml) ($haproxy.labels) | toYaml | indent 6 }}
+    readinessDelaySec: 15
+    livenessDelaySec: 600
+    readinessProbes:
+{{ tpl ($haproxy.readinessProbes | toYaml) $ | indent 6 }}
+    livenessProbes:
+{{ tpl ($haproxy.livenessProbes | toYaml) $ | indent 6 }}
+    {{- if $haproxy.containerSecurityContext }}
+    containerSecurityContext:
+{{ tpl ($haproxy.containerSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
+    {{- if $haproxy.podSecurityContext }}
+    podSecurityContext:
+{{ tpl ($haproxy.podSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
+    exposePrimary:
+      enabled: {{ $haproxy.service.primary.enabled }}
+      type: {{ $haproxy.service.primary.type }}
+      externalTrafficPolicy: {{ $haproxy.service.primary.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $haproxy.service.primary.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($haproxy.service.primary.annotations) | toYaml | indent 8 }}
+    exposeReplicas:
+      enabled: {{ $haproxy.service.replicas.enabled }}
+      type: {{ $haproxy.service.replicas.type }}
+      externalTrafficPolicy: {{ $haproxy.service.replicas.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $haproxy.service.replicas.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($haproxy.service.replicas.annotations) | toYaml | indent 8 }}
+    resources:
+      requests:
+{{ tpl ($haproxy.resources.requests | toYaml) $ | indent 8 }}
+      limits:
+{{ tpl ($haproxy.resources.limits | toYaml) $ | indent 8 }}
+    {{- if $haproxy.priority_class }}
+    priorityClassName: {{ $haproxy.priority_class | default "critical-infrastructure" | quote }}
+    {{- end }}
+    affinity:
+{{ tpl ($haproxy.affinity | toYaml) $ | indent 6 }}
+    podDisruptionBudget:
+      maxUnavailable: 1
+    gracePeriod: 30
+  {{- $backup := .Values.backup }}
+  {{- if $backup.enabled }}
+  backup:
+    {{- if $backup.image.override }}
+    image: {{ $backup.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ $backup.image.name }}:{{ $backup.image.tag }}
+    {{- end }}
+    {{- if $backup.imagePullPolicy }}
+    imagePullPolicy: {{ $backup.imagePullPolicy }}
+    {{- end }}
+    {{- if $backup.backoffLimit }}
+    backoffLimit: {{ $backup.backoffLimit }}
+    {{- end }}
+    {{- if $backup.activeDeadlineSeconds }}
+    activeDeadlineSeconds: {{ $backup.activeDeadlineSeconds }}
+    {{- end }}
+    pitr:
+    {{- if not $backup.pitr.enabled }}
+      enabled: false
+    {{- else }}
+      enabled: true
+      storageName: {{ $backup.pitr.storageName }}
+      timeBetweenUploads: {{ $backup.pitr.timeBetweenUploads }}
+      timeoutSeconds: {{ $backup.pitr.timeoutSeconds }}
+      resources:
+        requests:
+{{ tpl ($backup.pitr.resources.requests | toYaml) $ | indent 10 }}
+        limits:
+{{ tpl ($backup.pitr.resources.limits | toYaml) $ | indent 10 }}
+    {{- end }}
+    storages:
+{{- range $storage, $config := $backup.s3.storages }}
+  {{- if $config.enabled }}
+      s3-backups-{{ $storage }}:
+        type: s3
+        annotations:
+{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) (include "pxc-db.metricsAnnotations" $ | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
+        labels:
+{{ merge (include "pxc-db.backupLabels" $ | fromYaml) ($backup.labels) | toYaml | indent 10 }}
+        resources:
+          requests:
+{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
+          limits:
+{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
+        {{- if $backup.priority_class }}
+        priorityClassName: {{ $backup.priority_class | default "critical-infrastructure" | quote }}
+        {{- end }}
+        containerOptions:
+{{ tpl ($backup.containerOptions | toYaml) $ | indent 10 }}
+        s3:
+{{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" (get $backup.s3.storages $storage).bucket) | toYaml) $ | indent 10 }}
+  {{- end }}
+{{- end }}
+    schedule:
+{{ $backup.schedule | toYaml | indent 6 }}
+{{- end }}

@@ -3,10 +3,15 @@ apiVersion: apps/v1
 
 metadata:
   name: keppel-api
+  annotations:
+    secret.reloader.stakater.com/reload: keppel-issuer-key,keppel-keys,keppel-secret
 
 spec:
   revisionHistoryLimit: 5
-  replicas: {{ if .Values.keppel.slim }} 1 {{ else }} {{ .Values.keppel.replicas.api }} {{ end }}
+  {{- $overrides := merge (dict)
+                    (index $.Values.keppel.region_overrides $.Values.global.region | default (dict))
+                    $.Values.keppel.region_overrides.default }}
+  replicas: {{ .Values.keppel.slim | ternary 1 $overrides.api_replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -19,13 +24,24 @@ spec:
     metadata:
       labels:
         name: keppel-api
-        alert-tier: os
-        alert-service: keppel
       annotations:
         checksum/configmap: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
         checksum/secret-keys: {{ include "keppel/templates/secret-keys.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: api
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - keppel-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
       volumes:
         - name: config
           configMap:
@@ -33,17 +49,26 @@ spec:
         - name: keys
           secret:
             secretName: keppel-keys
+        - name: issuer-key
+          secret:
+            secretName: keppel-issuer-key
       containers:
         - name: api
           image: {{include "keppel_image" .}}
           imagePullPolicy: IfNotPresent
           args: [ server, api ]
           env: {{ include "keppel_environment" $ | indent 12 }}
+            - name: KEPPEL_ENABLE_HEADER_REFLECTOR
+              value: 'false'
+          securityContext:
+            runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/keppel
               name: config
             - mountPath: /etc/keppel-keys
               name: keys
+            - mountPath: /etc/keppel-issuer-key
+              name: issuer-key
           livenessProbe:
             httpGet:
               path: /healthcheck
@@ -57,13 +82,13 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # NOTE: observed resource usage in eu-de-1 (as of 2021-12)
-          # - CPU: 150m with 6 replicas was running into throttling, so give plenty headroom
-          # - RAM: levels off around 50 Mi
+          # NOTE: observed resource usage in eu-de-1 (as of 2026-04)
+          # - CPU: base load is around 20m-30m, but sometimes one pod gets all the traffic and throttles even at the previous limit of 500m
+          # - RAM: levels off around 30-70 Mi, can spike and cause OOM during CPU throttling
           resources:
             requests:
-              cpu: "400m"
+              cpu: "250m"
               memory: "128Mi"
             limits:
-              cpu: "400m"
+              cpu: "1"
               memory: "128Mi"

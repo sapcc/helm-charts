@@ -33,13 +33,13 @@ hosts = [
     }
   },
   {
-    host = "http://elastiflow-master.elastiflow:9200"
-    name = "{{ .Values.global.cluster }} elastiflow cluster"
+    host = "https://opensearch-logs-client.opensearch-logs:9200"
+    name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
     auth = {
-      username = "{{.Values.global.elastiflow_admin_user}}"
-      password = "{{.Values.global.elastiflow_admin_password}}"
+      username = "{{.Values.global.elk_opensearch_admin_user}}"
+      password = "{{.Values.global.elk_opensearch_admin_password}}"
     }
-  }
+  },
 ]
 
 # Authentication
@@ -59,3 +59,13 @@ auth = {
     }
   }
 }
+{{- if .Values.opensearch.enabled }}
+play.ws.ssl {
+  trustManager = {
+    stores = [
+      { type = "PKCS12", path = "/secrets/truststore", password = "{{.Values.opensearch.cacerts.truststore_password}}" }
+    ]
+  }
+}
+play.ws.ssl.loose.acceptAnyCertificate=true
+{{- end }}

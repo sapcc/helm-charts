@@ -1,0 +1,39 @@
+{{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prysm-webhook-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: prysm-webhook-service
+spec:
+  replicas: {{ .Values.objectstore.prysm.rgwSidecarWebhook.replicas }}
+  selector:
+    matchLabels:
+      app: prysm-webhook-service
+  template:
+    metadata:
+      labels:
+        app: prysm-webhook-service
+      annotations:
+        # this is a hack for the "replicate-changed-images" concourse task
+        image: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.tag }}"
+    spec:
+      containers:
+      - name: prysmwebhook
+        image: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.webhook.repository.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.webhook.repository.tag }}"
+        imagePullPolicy: {{ .Values.objectstore.prysm.rgwSidecarWebhook.webhook.repository.pullPolicy }}
+        env:
+        - name: SIDECAR_IMAGE
+          value: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.tag }}"
+        ports:
+        - containerPort: {{ .Values.objectstore.prysm.rgwSidecarWebhook.containerPort }}
+        volumeMounts:
+        - name: certs
+          mountPath: "/certs"
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: {{ .Values.objectstore.prysm.rgwSidecarWebhook.certSecretName }}
+{{- end }}

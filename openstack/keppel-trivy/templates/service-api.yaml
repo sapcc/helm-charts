@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: trivy-api
+  annotations:
+    prometheus.io/scrape: "true"
+    # metrics go to the same Prometheus as used by redis-exporter
+    prometheus.io/targets: {{ tpl .Values.redis.metrics.prometheus $ | quote }}
+
+spec:
+  selector:
+    name: trivy-api
+  ports:
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 80
+      protocol: TCP

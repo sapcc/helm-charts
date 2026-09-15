@@ -1,19 +1,30 @@
+{{- if not (.Values.global.region | hasPrefix "qa-") }}
+
 # Because Keppel depends on Keystone and the other way around the Docker images
 # for Keystone should be pre-pulled to able to start in case keppel is down.
 # This daemonset (through its existence) keeps required images permanently
 # pulled on all nodes.
+#
+# The condition above skips this daemonset on QA and lab regions, because high
+# availability is not a concern there. By omitting the daemonset there, the
+# Helm deployment will finish faster since it does not have to wait on it.
+# This also avoids wasting resources in small lab clusters.
 
 kind: DaemonSet
 apiVersion: apps/v1
 
 metadata:
   name: {{ .Release.Name }}-keep-image-pulled
+  annotations:
+    # This pod intentionally has extremely tight resource requests.
+    # The VerticalPodAutoscaler should never waste resources by increasing those.
+    vpa-butler.cloud.sap/update-mode: "Off"
 
 spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 5
+      maxUnavailable: 10%
   selector:
     matchLabels:
       app: {{ .Release.Name }}-keep-image-pulled
@@ -21,11 +32,15 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-keep-image-pulled
+        alert-tier: os
+        alert-service: keystone
+      annotations:
+        linkerd.io/inject: disabled # This pod does not interact with the network.
     spec:
       containers:
 {{- if eq .Values.mariadb.enabled true }}
         - name: mariadb
-          image: {{ .Values.mariadb.image }}
+          image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.mariadb.image }}
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', 'inf' ]
           resources:
@@ -70,7 +85,7 @@ spec:
               cpu: "1m"
               memory: "20Mi"
         - name: check
-          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion}}/kube-python:1.0.1
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/shared-app-images/alpine-kubectl:latest-latest
           imagePullPolicy: IfNotPresent
           command: [ '/bin/sleep', '9999999999d' ]
           resources:
@@ -81,3 +96,5 @@ spec:
               cpu: "1m"
               memory: "20Mi"
       terminationGracePeriodSeconds: 1
+
+{{- end }}

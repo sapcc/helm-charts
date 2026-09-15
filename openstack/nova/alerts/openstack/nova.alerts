@@ -10,6 +10,7 @@ groups:
       meta: '{{ $labels.availability_zone }} DiskUsage above 90%'
       service: nova
       severity: critical
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova {{ $labels.availability_zone }} Disk Usage is above 90%
@@ -24,6 +25,7 @@ groups:
       meta: '{{ $labels.availability_zone }} RAMUsage above 95%'
       service: nova
       severity: warning
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova {{ $labels.availability_zone }} total RAM Usage is above 95%.
@@ -34,9 +36,10 @@ groups:
     for: 5m
     labels:
       dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/instance_error_on_create.html
+      playbook: docs/support/playbook/nova/instance_error_on_create
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance {{$labels.uuid }} Stuck in Error in {{ $labels.nova_host }}
@@ -47,9 +50,10 @@ groups:
     for: 5m
     labels:
       dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/instance_error_on_create.html
+      playbook: docs/support/playbook/nova/instance_error_on_create
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Building state over 15mins in {{ $labels.nova_host }}
@@ -59,10 +63,10 @@ groups:
     expr: sum(openstack_compute_stuck_instances_count_gauge{task_state="deleting"}) BY (nova_host) > 0
     for: 5m
     labels:
-      dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/delete_stuck_instance.html#Delete
+      playbook: docs/support/playbook/nova/delete_stuck_instance#Delete
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Deleting state over 15mins in {{ $labels.nova_host }}
@@ -75,6 +79,7 @@ groups:
       dashboard: nova-hypervisor
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Stopping state over 15mins in {{ $labels.nova_host }}
@@ -88,6 +93,7 @@ groups:
       dashboard: nova-hypervisor
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Starting state over 15mins in {{ $labels.nova_host }}
@@ -100,6 +106,7 @@ groups:
       dashboard: nova-hypervisor
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Spawning state over 60 mins in {{ $labels.nova_host }}
@@ -110,98 +117,78 @@ groups:
     for: 5m
     labels:
       dashboard: nova-hypervisor
-      playbook: docs/support/playbook/nova/delete_stuck_instance.html#Rebooting
+      playbook: docs/support/playbook/nova/delete_stuck_instance#Rebooting
       service: nova
       severity: info
+      support_group: compute-storage-api
       tier: os
     annotations:
       description: Nova Instance Stuck in Rebooting state over 15mins in {{ $labels.nova_host }}
       summary: Openstack Nova Instance Stuck in Rebooting state metric
-
-  - alert: OpenstackNovaCanaryDown
-    expr: blackbox_canary_status_gauge{service=~"nova", check!~"create_server-.+"} == 1
-    for: 1h
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
-
-  - alert: OpenstackNovaCanaryTimeout
-    expr: blackbox_canary_status_gauge{service=~"nova", check!~"create_server-.+"} == 0.5
-    for: 1h
-    labels:
-      severity: info
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out for 1 hour. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
-
-  - alert: OpenstackNovaCanaryFlapping
-    expr: changes(blackbox_canary_status_gauge{service=~"nova", check!~"create_server-.+"}[2h]) > 8
-    labels:
-      severity: warning
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      dashboard: ccloud-health-canary-details
-      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/{{ $labels.service }}'
-    annotations:
-      description: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping for 2 hours. See Sentry for details'
-      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is flapping'
-
-  - alert: OpenstackNovaComputeAgentDown
-    expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 1
-    for: 20m
-    labels:
-      severity: warning
-      tier: os
-      service: nova
-      context: '{{ $labels.context }}'
-      meta: '{{ $labels.check }}: nova-compute node is enabled but is down for 20 minutes. See Sentry for details.'
-      sentry: 'blackbox/?query=test_{{ $labels.check }}'
-      playbook: 'docs/devops/alert/nova/#OpenstackNovaComputeAgentDown'
-    annotations:
-      description: '{{ $labels.check }}: nova-compute node is enabled but is down for 20 minutes. See Sentry for details.'
-      summary: '{{ $labels.check }}: nova-compute node is enabled but is down'
-
-  - alert: OpenstackNovaComputeServiceDisabled
-    expr: blackbox_integrity_status_gauge{check=~"host_status-.+"} == 2
-    for: 20m
-    labels:
-      severity: info
-      tier: os
-      service: nova
-      context: '{{ $labels.context }}'
-      meta: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
-      sentry: blackbox/?query=test_{{ $labels.check }}
-    annotations:
-      description: '{{ $labels.check }}: host is disabled without reason. See Sentry for details.'
-      summary: '{{ $labels.check }}: host is disabled without reason'
 
   - alert: OpenstackNovaComputeServiceVersionsMismatch
     expr: count(count_values('service_version', openstack_compute_service_version)) != 1
     for: 1h
     labels:
       severity: info
+      support_group: compute-storage-api
       tier: os
       service: nova
       context: '{{ $labels.context }}'
     annotations:
       description: Nova contains services with differing versions for 1h.
       summary: Nova service versions do not match.
+
+  - alert: OpenstackNovaConsistentlyFailingVolumeDetach
+    expr: (sum(delta(oslo_messaging_events{alert_service='nova', method="detach_volume", type="exception"}[20m])) by (name)) > 0
+    for: 90m
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: nova
+      context: '{{ $labels.context }}'
+    annotations:
+      description: Nova {{ $labels.name }} is consistently failing to detach a volume/volumes for 90m.
+      summary: Nova fails to detach a volume.
+
+  - alert: OpenstackNovaLiveMigrationError
+    expr: sum(openstack_compute_errored_live_migration_gauge) BY (instance_uuid,migration_uuid) > 0
+    for: 1m
+    labels:
+      service: nova
+      playbook: docs/support/playbook/nova/live_migration_error
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+    annotations:
+      description: Live migration failed for instance={{ $labels.instance_uuid }}, migration_uuid={{ $labels.migration_uuid }}
+      summary: Instances are in error state because live-migration failed.
+
+  - alert: OpenstackNovaComputeNodeWithoutValidService
+    expr: sum(openstack_compute_nodes_no_valid_service) BY (uuid, nova_host) > 0
+    for: 1h
+    labels:
+      severity: warning
+      playbook: docs/support/playbook/nova/compute_node_without_valid_service/
+      support_group: compute-storage-api
+      tier: os
+      service: nova
+      context: '{{ $labels.context }}'
+    annotations:
+      summary: A compute node of Nova has no or a deleted service assigned
+      description: Pagination when listing hypervisors in Nova can fail, leading to reduced resources in Cortex/Limes, because compute node {{ $labels.uuid }} of Nova host {{ $labels.nova_host }} does not have a valid service assigned in the database.
+
+  - alert: OpenstackNovaPurgeBroken
+    expr: openstack_compute_oldest_soft_deleted_instance > 30
+    for: 4h
+    labels:
+      severity: info
+      tier: os
+      service: nova
+      context: '{{ $labels.context }}'
+      support_group: compute-storage-api
+      playbook: docs/support/playbook/nova/purge_broken
+    annotations:
+      summary: nova db purger not working
+      description: Nova has a soft deleted instance that is older than 30 days, check the db-archive-deleted-rows and db-purge nanny cronjobs.

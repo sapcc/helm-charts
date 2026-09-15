@@ -1,0 +1,190 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: calico-kube-controllers
+rules:
+  # Nodes are watched to monitor for deletions.
+  - apiGroups: [""]
+    resources:
+      - nodes
+    verbs:
+      - watch
+      - list
+      - get
+  # Pods are watched to check for existence as part of IPAM controller.
+  - apiGroups: [""]
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  # Namespaces are watched for LoadBalancer IP allocation with namespace selector support
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  # Services are monitored for service LoadBalancer IP allocation
+  - apiGroups: [""]
+    resources:
+      - services
+      - services/status
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+  # IPAM resources are manipulated in response to node and block updates, as well as periodic triggers.
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - ipreservations
+    verbs:
+      - list
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - blockaffinities
+      - ipamblocks
+      - ipamhandles
+      - ipamconfigurations
+      - ipamconfigs
+      - tiers
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+      - watch
+  # Pools are watched to maintain a mapping of blocks to IP pools.
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - ippools
+    verbs:
+      - list
+      - watch
+  # kube-controllers manages hostendpoints.
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - hostendpoints
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+      - watch
+  # Needs access to update clusterinformations.
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - clusterinformations
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - watch
+  # KubeControllersConfiguration is where it gets its config
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - kubecontrollersconfigurations
+    verbs:
+      # read its own config
+      - get
+      - list
+      # create a default if none exists
+      - create
+      # update status
+      - update
+      # watch for changes
+      - watch
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - kubecontrollersconfigurations/status
+    verbs:
+      - get
+      - update
+  # Needed for policy name migrator.
+  - apiGroups: ["projectcalico.org", "crd.projectcalico.org"]
+    resources:
+      - networkpolicies
+      - stagednetworkpolicies
+      - globalnetworkpolicies
+      - stagedglobalnetworkpolicies
+    verbs:
+      - watch
+      - list
+      - get
+      - create
+      - update
+      - delete
+  # Needed for migration controller to watch calico-node and calico-typha status.
+  - apiGroups: ["apps"]
+    resources:
+      - daemonsets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+  # Migration controller: manage DatastoreMigration CRs.
+  - apiGroups: ["migration.projectcalico.org"]
+    resources:
+      - datastoremigrations
+      - datastoremigrations/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  # Migration controller: read, watch, and delete CRDs during migration.
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+  # Migration controller: manage API services during migration.
+  - apiGroups: ["apiregistration.k8s.io"]
+    resources:
+      - apiservices
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+  # Migration controller: read v1 resources and write v3 resources.
+  - apiGroups: ["projectcalico.org"]
+    resources:
+      - "*"
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - "*"
+    verbs:
+      - get
+      - list
+      - watch
+  # KubeVirt VM/VMI informers for IPAM garbage collection of KubeVirt workloads.
+  - apiGroups: ["kubevirt.io"]
+    resources:
+      - virtualmachines
+      - virtualmachineinstances
+    verbs:
+      - get
+      - list
+      - watch

@@ -1,7 +1,8 @@
 fullname: netapp-perf-exporter
 
 prometheus:
-  scrape: true
+  scrape:  true
+  scrape_service: false
 
 apps:
   cinder:
@@ -44,19 +45,25 @@ rbac:
 
 harvest:
   name: netapp-harvest
-  image: keppel.eu-de-1.cloud.sap/ccloud/netapp-harvester
-  imageTag: v202010050348-master-859ad8e
-  memory: 300Mi
-  cpu: 200m
+  image: netapp-harvester
+  imageTag: v20221206145524-master-2013c4d
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 1Gi
+    limits:
+      cpu: 6000m
+      memory: 3Gi
 
 exporter:
-  image: prom/graphite-exporter:v0.8.0
+  image: prom/graphite-exporter
+  imageTag: v0.8.0
   memory: 400Mi
   cpu: 100m
 
 netappsd:
-  image: keppel.eu-de-1.cloud.sap/ccloud/netappsd
-  imageTag: master-20201008151228-7c5dbde
+  image: netappsd
+  imageTag: master-ad6b560-20221007205120
   memory: 50Mi
   cpu: 50m
 

@@ -1,5 +1,7 @@
 #!/bin/bash
 #set -x
+export GENERATOR_PATH=/gopath/snmp_exporter/generator
+
 
 if [[ $# -eq 0 ]] ; then
     echo 'Please set the module name like "asr" or "all" to create snmp config'
@@ -30,7 +32,7 @@ fi
 # cd ./helm-charts/prometheus-exporters/snmp-exporter/generator/
 
 
-mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/ # This mib makes other generators fail...
+#mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/ # This mib makes other generators fail...
 
 for i in $modules;
 
@@ -45,7 +47,7 @@ for i in $modules;
             mv /usr/share/snmp/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/mibs/
         fi
 
-        /gopath/bin/generator generate || exit
+        $GENERATOR_PATH/generator generate --no-fail-on-parse-errors || exit
 
         if [ $i = "ucs" ]; then # This mib makes other generators fail...
             mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/
@@ -56,19 +58,23 @@ for i in $modules;
 
         if test -f "${i}-additional-oids.yaml"; then
             awk -v f=$i '{ print; } /walk:/ { system ( "cat "f"-additional-oids.yaml" ) } \' _snmp-exporter-${i}.yaml.tmp  > ../_snmp-exporter-${i}.yaml
+            sed -i '2d' ../_snmp-exporter-${i}.yaml
             rm -f  _snmp-exporter-${i}.yaml.tmp
         else
             mv -f ./_snmp-exporter-${i}.yaml.tmp ../_snmp-exporter-${i}.yaml
+            sed -i '2d' ../_snmp-exporter-${i}.yaml
+            rm -f  _snmp-exporter-${i}.yaml.tmp
         fi
  
-        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer)$ ]]; then
+        if [[ "$i" =~ ^(f5mgmt|f5physical|f5physicalrseries|f5customer|f5gtm|f5archer)$ ]]; then
             sed -i "s/- name: /- name: snmp_f5_/g" ../_snmp-exporter-${i}.yaml
         else
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
         fi
  
         if test -f "${i}-additional-metrics.yaml"; then
-                cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
+                #cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
+                sed -i "/max_repetitions: 25/e cat ${i}-additional-metrics.yaml" ../_snmp-exporter-${i}.yaml
                 rm -f ./_snmp-exporter-${i}.yaml.tmp
         fi
 done
@@ -76,14 +82,6 @@ done
 
 if grep -q "arista:" ../_snmp-exporter-arista.yaml; then
     sed -i '2d' ../_snmp-exporter-arista.yaml
-fi
-
-if grep -q "n7k:" ../_snmp-exporter-n7k.yaml; then
-    sed -i '2d' ../_snmp-exporter-n7k.yaml
-fi
-
-if grep -q "n7k:" ../_snmp-exporter-n7kcontext.yaml; then
-    sed -i '2d' ../_snmp-exporter-n7kcontext.yaml
 fi
 
 if grep -q "asw:" ../_snmp-exporter-arista.yaml; then

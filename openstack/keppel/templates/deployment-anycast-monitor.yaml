@@ -1,4 +1,7 @@
-{{- if .Values.keppel.anycast_domain_name }}
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $has_anycast := $peer_group.exclude_from_anycast | has $region | not -}}
+{{- if $has_anycast }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -17,11 +20,9 @@ spec:
     metadata:
       labels:
         name: keppel-anycast-monitor
-        alert-tier: os
-        alert-service: keppel
       annotations:
+        kubectl.kubernetes.io/default-container: monitor
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
         prometheus.io/targets: "openstack"
     spec:
       containers:
@@ -31,21 +32,25 @@ spec:
           args:
             - server
             - anycastmonitor
-            - "https://{{ .Values.keppel.anycast_domain_name }}"
-            - "keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}"
-            - {{ quote .Values.keppel.healthcheck_account }}
-            {{- range .Values.keppel.peers }}
-            - {{ quote .healthcheck_account }}
+            - "https://{{ $peer_group.anycast_domain_name }}"
+            - "keppel.{{ $region }}.{{ .Values.global.tld }}"
+            {{- range $peer_region := $peer_group.members }}
+            - "healthcheck-{{ $peer_region }}"
             {{- end }}
           env:
             - name:  KEPPEL_DEBUG
               value: 'false'
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - name: metrics
+              containerPort: 8080
           # initially same as keppel-health-monitor
           resources:
             requests:
               cpu: "10m"
               memory: "64Mi"
             limits:
-              cpu: "10m"
+              cpu: "100m"
               memory: "64Mi"
 {{- end }}

@@ -1,0 +1,21 @@
+{{- if .Values.federation.saml.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-federation-saml
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+type: Opaque
+data:
+  {{- /* shibboleth2.xml and per-tenant federation-saml.d/*.conf live in
+         ConfigMaps shipped by the keystone-saml-federation chart (statically
+         pre-rendered into the federation repo by bin/init-region and bin/onboard).
+         Only attribute-map.xml remains here -- it is identical for all tenants. */}}
+  attribute-map.xml: |
+    {{ include "keystone.attribute-map.xml" . | b64enc | indent 4 }}
+{{- end }}

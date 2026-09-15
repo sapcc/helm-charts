@@ -1,0 +1,87 @@
+global:
+  region: test
+
+replicaCount: 1
+
+alerts:
+  enabled: true
+
+image:
+  tailcontrol:
+    repository: 
+    tag: 
+  logcatcher:
+    repository: 
+    tag: 
+  litestream:
+    repository: 
+    tag: 
+  exporter:
+    repository: 
+    tag: 
+
+tailcontrol:
+  url: 
+  confdir: /tailscale/config
+  ephemeral: /tailscale/ephem
+  certdir: /tailscale/cert
+  debugaddr: 
+    addr: 0.0.0.0
+    port: 8383
+  superusers: []
+  backup:
+    enabled: true
+  command:
+    enabled: true
+
+service:
+  type: ClusterIP
+  port: 443
+
+ingress:
+  enabled: true
+  annotations:
+    ingress.kubernetes.io/ingress.class: nginx
+    ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  tailcontrol:
+    hosts: []
+    tls: []
+  logcatcher:
+    hosts: []
+    tls: []
+
+pvc:
+  size: 10Gi
+
+auth: 
+  oidc:
+    issuer: 
+    style: 
+    client_id: 
+    client_secret:
+
+aws:
+  bucketName: test
+
+exporter:
+  prometheus: kubernetes
+  metricsPort: 30041
+  bucketPrefix: tailcontrol.sqlite.db
+  scrapeInterval: 1m
+  scrapeTimeout: 55s
+
+resources: {}
+
+owner-info:
+  support-group: containers
+  service: tailscale
+  maintainers:
+    - Alexandru Mihai
+    - Dmitri Fedotov
+    - Goeran Gudat
+    - Marian Schwarz
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/tailcontrol

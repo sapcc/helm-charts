@@ -1,0 +1,81 @@
+{{- if .Values.job.initdb.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "pxc-db.fullname" . }}-init-db"
+  namespace:  {{.Release.Namespace}}
+  labels:
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+{{- include "pxc-db.ownerLabels" . | indent 4 }}
+{{ include "pxc-db.labels" . | indent 4 }}
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+{{- include "pxc-db.linkerdPodAnnotations" . | indent 4 }}
+{{- end }}
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "3"
+spec:
+  backoffLimit: {{ .Values.job.initdb.jobBackoffLimit | default 1 }}
+  template:
+    metadata:
+      name: "{{ include "pxc-db.fullname" . }}-init-db"
+      labels:
+{{ include "pxc-db.labels" . | indent 8 }}
+    spec:
+      restartPolicy: {{ .Values.job.initdb.jobRestartPolicy | default "Never" | quote }}
+      serviceAccountName: {{ .Values.name }}-init-db
+      priorityClassName: {{ .Values.job.initdb.priority_class | default "critical-infrastructure" | quote }}
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ .Values.kubernetes_entrypoint.image.name }}:{{ .Values.kubernetes_entrypoint.image.tag }}
+        command:
+        - /kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "true"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ .Values.name }}-db-haproxy
+      containers:
+      - name: init-db-job
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.job.initdb.image.name }}:{{ .Values.job.initdb.image.tag }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/init-db.sh
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ .Values.name }}-db-haproxy
+          - name: MYSQL_USERNAME
+            value: 'operator'
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pxc-db-{{ .Values.name }}-init-sql
+                key: operator
+        resources:
+          requests:
+            cpu: {{ .Values.job.initdb.resources.requests.cpu | default 0.5 }}
+            memory: {{ .Values.job.initdb.resources.requests.memory | default "128Mi" | quote }}
+          limits:
+            cpu: {{ .Values.job.initdb.resources.limits.cpu | default 0.5 }}
+            memory: {{ .Values.job.initdb.resources.limits.memory | default "128Mi" | quote }}
+        volumeMounts:
+          - name: initdb
+            mountPath: /var/lib/initdb
+          - name: init-db-configmap
+            mountPath: /configurator
+      volumes:
+        - name: initdb
+          secret:
+            secretName: pxc-db-{{ .Values.name }}-init-sql
+            defaultMode: 0666
+        - name: init-db-configmap
+          configMap:
+            name: pxc-db-{{ .Values.name }}-init-db-bin
+            defaultMode: 0755
+{{- end }}

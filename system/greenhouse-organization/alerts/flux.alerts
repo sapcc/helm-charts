@@ -1,0 +1,75 @@
+groups:
+  - name: flux-operator.rules
+    rules:
+    - alert: FluxOperatorReconcileErrorsHigh
+      annotations:
+        description: '{{ $value | humanizePercentage }} of reconciling operations failed for {{ $labels.controller }} controller'
+        summary: 'Errors while reconciling {{$labels.controller}}'
+      expr: |
+        (sum by (controller) (rate(controller_runtime_reconcile_errors_total{job="flux-system/flux-system"}[5m]))) / (sum by (controller) (rate(controller_runtime_reconcile_total{job="flux-system/flux-system"}[5m]))) > 0.1
+      for: 15m
+      labels:
+        severity: warning
+        service: greenhouse
+        organization: '{{ $labels.namespace }}'
+        controller: '{{ $labels.controller }}'
+        support_group: '{{ $labels.namespace }}-admin'  # routed to the org-admin team
+        playbook: https://cloudoperators.github.io/greenhouse/docs/operations/playbooks/operator/operator-reconcile-errors-high/
+    - alert: FluxOperatorReconcileDurationHigher10Min
+      annotations:
+        description: "Flux Operator reconciliation takes longer than ({{ $value | humanizeDuration }})."
+        summary: 'Reconcile duration higher than 10m while reconciling {{ $labels.controller }}'
+      expr: |
+        (sum by (controller) (rate(controller_runtime_reconcile_time_seconds_sum{job="flux-system/flux-system"}[5m]))) / (sum by (controller) (rate(controller_runtime_reconcile_time_seconds_count{job="flux-system/flux-system"}[5m]))) > 600
+      for: 15m
+      labels:
+        severity: warning
+        service: greenhouse
+        organization: '{{ $labels.namespace }}'
+        controller: '{{ $labels.controller }}'
+        support_group: '{{ $labels.namespace }}-admin'  # routed to the org-admin team
+        playbook: https://cloudoperators.github.io/greenhouse/docs/operations/playbooks/operator/operator-reconcile-duration-higher-10min/
+    - alert: FluxOperatorWorkqueueNotDrained
+      annotations:
+        description:  The workqueue backlog of Flux Operator controller - {{ $labels.controller }} is not getting drained.
+        summary: Flux Operator controller - {{ $labels.name }}'s backlog is not being drained.
+      expr: |
+        sum by (name) (rate(workqueue_depth{job="flux-system/flux-system"}[5m])) > 0
+      for: 15m
+      labels:
+        severity: warning
+        service: greenhouse
+        organization: '{{ $labels.namespace }}'
+        controller: '{{ $labels.controller }}'
+        support_group: '{{ $labels.namespace }}-admin'  # routed to the org-admin team
+        playbook: https://cloudoperators.github.io/greenhouse/docs/operations/playbooks/operator/operator-workqueue-not-drained/
+  - name: flux-webhooks.rules
+    rules:
+    - alert: FluxWebhookLatencyHigh
+      annotations:
+        description: The 90th percentile latency of Flux Operator webhook - {{ $labels.webhook }} is {{ $value | humanizeDuration }}
+        summary: Flux Operator webhook - {{ $labels.webhook }}'s latency is high.
+      expr: |
+        histogram_quantile(0.9, avg(rate(controller_runtime_webhook_latency_seconds_bucket{job="flux-system/flux-system"}[5m])) by (webhook, le)) > 0.2 
+      for: 15m
+      labels:
+        severity: warning
+        service: greenhouse
+        organization: '{{ $labels.namespace }}'
+        webhook: '{{ $labels.webhook}}'
+        support_group: '{{ $labels.namespace }}-admin'  # routed to the org-admin team
+        playbook: https://cloudoperators.github.io/greenhouse/docs/operations/playbooks/operator/webhook-latency-high/
+    - alert: FluxWebhookErrorsHigh
+      annotations:
+        description: '{{ $value | humanizePercentage }} of webhook operations failed for {{ $labels.webhook }} webhook'
+        summary: 'Errors while reconciling {{ $labels.webhook }}'
+      expr: |
+        (sum by (webhook) (rate(controller_runtime_webhook_requests_total{code!="200", job="flux-system/flux-system"}[5m]))) / (sum by (webhook) (rate(controller_runtime_webhook_requests_total{code="200", job="flux-system/flux-system"}[5m]))) > 0.1
+      for: 15m
+      labels:
+        severity: warning
+        service: greenhouse
+        organization: '{{ $labels.namespace }}'
+        webhook: '{{ $labels.webhook}}'
+        support_group: '{{ $labels.namespace }}-admin'  # routed to the org-admin team
+        playbook: https://cloudoperators.github.io/greenhouse/docs/operations/playbooks/operator/webhook-errors-high/

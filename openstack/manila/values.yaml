@@ -1,23 +1,43 @@
 # Default values for manila.
 owner-info:
+  support-group: compute-storage-api
+  service: manila
   maintainers:
     - Maurice Escher
     - Chuan Miao
     - Dmitry Galkin
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/manila
 
+rbac:
+  enabled: true
+
 global:
   dbUser: manila
-  dbBackupServicePassword: null
   master_password: null
   metrics_port: 9102
+  domain_seeds:
+    skip_hcm_domain: false
+  linkerd_requested: true
 
 loci:
   imageNamespace: monsoon
 
 api_port_internal: '8786'
+api_v1_enabled: true
 api_backdoor: false
 debug: "True"
+rpc_ping_enabled: true
+
+# manager config options
+server_migration_driver_continue_update_interval: 300
+share_service_concurrency: 10
+
+# better debugging experience; enable it only in QA
+pyreloader_enabled: false
+
+coordinationBackend: 'file'
+rpc_workers: 1
+wsgi_processes: 8
 
 logging:
   formatters:
@@ -73,33 +93,32 @@ logging:
     auditmiddleware:
       handlers: stdout, sentry
       level: INFO
+    rate_limit.rate_limit:
+      handlers: stdout, sentry
+      level: DEBUG
 
 memcached:
+  alerts:
+    support_group: compute-storage-api
   enabled: true
   metrics:
     enabled: true
+  priority_class: important-payload
 
+proxysql:
+  mode: ""
+  max_transaction_time: "120000"
+  native_sidecar: true
 
 mysql_metrics:
   db_name: manila
   db_user: manila
+  resources:
+    limits:
+      memory: 512Mi
+  vpa:
+    set_main_container: true
   customMetrics: # metrics starting "openstack_" and having a project_id label will go to Maia !
-    - help: Manila Share servers count
-      labels:
-        - "manila_host"
-        - "share_network_subnet_id"
-        - "status"
-      name: manila_share_servers_count_gauge
-      query: |
-        SELECT
-          host AS manila_host,
-          share_network_subnet_id,
-          status,
-          COUNT(*) AS count_gauge
-        FROM share_servers
-        GROUP BY manila_host, share_network_subnet_id, status;
-      values:
-        - "count_gauge"
     - help: Manila Shares count
       labels:
         - "share_type_id"
@@ -113,7 +132,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
@@ -122,8 +141,9 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
-        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_instances.deleted = 'False'
+        AND share_instances.replica_state='active'
         GROUP BY
           share_instances.share_type_id,
           manila_host,
@@ -142,21 +162,25 @@ mysql_metrics:
         - "id"
         - "share_instance_id"
         - "status"
+        - "snapmirror"
       name: openstack_manila_shares_size_gauge
       query: |
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
           share_instances.id AS share_instance_id,
           share_instances.status,
+          coalesce(share_metadata.value, 'N/A') AS snapmirror,
           SUM(size) size_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
-        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN share_metadata ON shares.id=share_metadata.share_id AND share_metadata.key='snapmirror'
         WHERE share_instances.deleted = 'False'
+        AND share_instances.replica_state='active'
         GROUP BY
           share_instances.share_type_id,
           manila_host,
@@ -172,22 +196,38 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
+        - "availability_zone_name"
       name: openstack_manila_snapshot_count_gauge
       query: |
         SELECT
-          share_snapshots.project_id,
-          share_snapshots.share_id,
-          share_snapshots.id,
-          share_snapshot_instances.status,
+          snap.project_id as project_id,
+          snap.share_id as share_id,
+          snap.id as id,
+          si.status as status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           COUNT(*) AS count_gauge
-        FROM share_snapshots
-        INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
-        WHERE share_snapshots.deleted = 'False'
+        FROM share_snapshots AS snap
+        INNER JOIN share_snapshot_instances AS si ON snap.id=si.snapshot_id
+        INNER JOIN share_instances ON si.share_instance_id=share_instances.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        WHERE snap.deleted = 'False'
+        AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
-          share_snapshots.id,
-          share_snapshots.project_id,
-          share_snapshots.share_id,
-          share_snapshot_instances.status;
+          snap.id,
+          snap.project_id,
+          snap.share_id,
+          si.status,
+          availability_zones.id
+        UNION SELECT
+          'none' AS id,
+          'none' AS project_id,
+          'none' AS share_id,
+          'none' AS status,
+          'none' AS share_type_id,
+          'none' AS availability_zone_name,
+          0 AS count_gauge;
       values:
         - "count_gauge"
     - help: Manila Snapshot Size
@@ -196,6 +236,8 @@ mysql_metrics:
         - "share_id"
         - "id"
         - "status"
+        - "share_type_id"
+        - "availability_zone_name"
       name: openstack_manila_snapshot_size_gauge
       query: |
         SELECT
@@ -203,15 +245,21 @@ mysql_metrics:
           share_snapshots.share_id,
           share_snapshots.id,
           share_snapshot_instances.status,
+          coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           SUM(share_snapshots.size) size_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
+        INNER JOIN share_instances ON share_snapshot_instances.share_instance_id=share_instances.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_snapshots.deleted = 'False'
+        AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
           share_snapshots.share_id,
-          share_snapshot_instances.status;
+          share_snapshot_instances.status,
+          availability_zones.id;
       values:
         - "size_gauge"
     - help: Manila Replicas count
@@ -228,7 +276,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(replicas.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           replicas.host AS manila_host,
           shares.project_id,
           replicas.id,
@@ -237,7 +285,7 @@ mysql_metrics:
           replicas.replica_state,
           COUNT(*) AS count_gauge
         FROM share_instances AS replicas
-        JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
         JOIN shares ON replicas.share_id=shares.id
         WHERE replicas.deleted = 'False' AND replicas.replica_state IS NOT NULL
         GROUP BY
@@ -251,8 +299,45 @@ mysql_metrics:
           replicas.replica_state;
       values:
         - "count_gauge"
+    - help: Manila Replicas size
+      labels:
+        - "share_type_id"
+        - "availability_zone_name"
+        - "manila_host"
+        - "project_id"
+        - "id"
+        - "share_id"
+        - "status"
+        - "replica_state"
+      name: openstack_manila_replicas_size_gauge
+      query: |
+        SELECT
+          coalesce(replicas.share_type_id, 'N/A') AS share_type_id,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
+          replicas.host AS manila_host,
+          shares.project_id,
+          replicas.id,
+          replicas.share_id,
+          replicas.status,
+          replicas.replica_state,
+          SUM(shares.size) size_gauge
+        FROM share_instances AS replicas
+        LEFT OUTER JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
+        JOIN shares ON replicas.share_id=shares.id
+        WHERE replicas.deleted = 'False' AND replicas.replica_state IS NOT NULL
+        GROUP BY
+          replicas.share_type_id,
+          replicas.availability_zone_id,
+          manila_host,
+          shares.project_id,
+          replicas.id,
+          replicas.share_id,
+          replicas.status,
+          replicas.replica_state;
+      values:
+        - "size_gauge"
     # The final UNION SELECT adds a dummy row that always exists even when no
-    # stcuk objects exist. This allows us to have our cake and eat it (we
+    # stuck objects exist. This allows us to have our cake and eat it (we
     # don't insert unnecessary timeseries, but the absence alert generated by
     # the absent-metrics-operator is still useful).
     - help: Manila Shares Stuck Count
@@ -268,7 +353,7 @@ mysql_metrics:
           host AS manila_host,
         COUNT(*) AS count_gauge
         FROM share_instances
-        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending', 'shrinking_error', 'extending_error') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_id,
           status,
@@ -287,9 +372,9 @@ mysql_metrics:
           share_id,
           status,
           host AS manila_host,
-          MAX(NOW() - COALESCE(updated_at, created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(updated_at, created_at))) AS max_duration_gauge
         FROM share_instances
-        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE deleted='False' AND status in ('deleting','error_deleting','creating','shrinking','extending', 'shrinking_error', 'extending_error') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_id,
           status,
@@ -297,6 +382,24 @@ mysql_metrics:
         UNION SELECT 'none' AS share_id, 'none' AS status, 'none' AS manila_host, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
+    - name: manila_share_replica_stuck_duration_seconds
+      help: Manila Share Replica Stucked for One Hour Longer
+      labels: ["project_id", "share_id", "replica_id", "status"]
+      query: |
+        SELECT
+          project_id,
+          shares.id AS share_id,
+          si.id AS replica_id,
+          status,
+          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(si.updated_at, si.created_at))) AS elapsed
+        FROM share_instances si
+        INNER JOIN shares ON si.share_id = shares.id
+        WHERE
+          status IN ('creating', 'deleting', 'error', 'error_deleting')
+          AND COALESCE(si.updated_at, si.created_at) < (NOW() - INTERVAL 1 hour)
+          AND si.deleted = 'False'
+        UNION SELECT 'none', 'none', 'none', 'none', 0
+      values: ["elapsed"]
     - help: Manila Snapshot Stuck Count
       labels:
         - "project_id"
@@ -313,7 +416,10 @@ mysql_metrics:
         COUNT(*) AS count_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
-        WHERE share_snapshot_instances.status in ('deleting','creating') AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE
+          share_snapshots.deleted = 'False'
+          AND share_snapshot_instances.status in ('deleting','creating')
+          AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
@@ -335,10 +441,13 @@ mysql_metrics:
           share_snapshots.share_id,
           share_snapshots.id,
           share_snapshot_instances.status,
-          MAX(NOW() - COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at)) AS max_duration_gauge
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at))) AS max_duration_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
-        WHERE share_snapshot_instances.status in ('deleting','creating') AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE
+          share_snapshots.deleted = 'False'
+          AND share_snapshot_instances.status in ('deleting','creating')
+          AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
@@ -347,26 +456,25 @@ mysql_metrics:
         UNION SELECT 'none' AS project_id, 'none' AS share_id, 'none' AS id, 'none' AS status, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
-    - help: Manila Share servers
+    - help: Manila Share servers count
       labels:
-        - "project_id"
-        - "share_network_id"
+        - "manila_host"
         - "share_network_subnet_id"
-        - "share_server_id"
-      name: manila_share_servers_gauge
+        - "status"
+      name: manila_share_servers_count_gauge
       query: |
         SELECT
-          a.project_id AS project_id,
-          a.id AS share_network_id,
-          b.id AS share_network_subnet_id,
-          c.id AS share_server_id,
+          ss.host AS manila_host,
+          ss.status,
+          ssnsm.share_network_subnet_id,
           COUNT(*) AS count_gauge
-        FROM share_network_subnets as b
-        JOIN share_networks AS a ON a.id = b.share_network_id
-        JOIN share_servers AS c ON b.id = c.share_network_subnet_id
-        WHERE c.deleted = 'False'
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
         GROUP BY
-          project_id, share_network_id, share_network_subnet_id, share_server_id;
+          manila_host,
+          ss.status,
+          ssnsm.share_network_subnet_id;
       values:
         - "count_gauge"
     - help: Manila Share servers Stuck Count
@@ -378,49 +486,119 @@ mysql_metrics:
       name: manila_share_servers_stuck_count_gauge
       query: |
         SELECT
-          host as manila_host,
-          id,
-          share_network_subnet_id,
-          status,
+          ss.host AS manila_host,
+          ss.id,
+          ss.status,
+          ssnsm.share_network_subnet_id,
           COUNT(*) AS count_gauge
-        FROM share_servers
-        WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        WHERE
+          ss.deleted = 'False' AND ss.status IN (
+            'deleting',
+            'creating',
+            'error',
+            'error_unmanage',
+            'error_manage'
+          ) AND (
+            COALESCE(ss.updated_at, ss.created_at) < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          )
         GROUP BY
           manila_host,
-          id,
-          share_network_subnet_id,
-          status
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS count_gauge;
+          ss.id,
+          ss.status,
+          ssnsm.share_network_subnet_id
+        UNION
+        SELECT
+          'none' AS manila_host,
+          'none' AS id,
+          'none' AS share_network_subnet_id,
+          'none' AS status,
+          0 AS count_gauge;
       values:
         - "count_gauge"
-    - help: Manila Share servers Stuck Max Duration
+    - help: Manila Share servers Stuck Duration in Seconds
       labels:
         - "manila_host"
         - "id"
         - "share_network_subnet_id"
         - "status"
-      name: manila_share_servers_stuck_max_duration_gauge
+      name: manila_share_servers_stuck_duration_seconds
       query: |
         SELECT
-          host AS manila_host,
-          id,
-          share_network_subnet_id,
-          status,
-          MAX(NOW() - COALESCE(updated_at, created_at)) AS max_duration_gauge
-        FROM share_servers
-        WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+          ss.host AS manila_host,
+          ss.id,
+          ssnsm.share_network_subnet_id,
+          ss.status,
+          UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(ss.updated_at, ss.created_at)) AS duration
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        WHERE
+          ss.deleted = 'False' AND ss.status IN (
+            'deleting',
+            'creating',
+            'error',
+            'error_unmanage',
+            'error_manage'
+          ) AND (
+            COALESCE(ss.updated_at, ss.created_at) < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          )
+        UNION
+        SELECT
+          'none' AS manila_host,
+          'none' AS id,
+          'none' AS share_network_subnet_id,
+          'none' AS status,
+          0 AS duration;
+      values:
+        - "duration"
+    - help: Manila Share Access Stuck Max Duration
+      labels:
+        - "access_id"
+        - "share_id"
+        - "share_instance_id"
+        - "state"
+      name: manila_share_access_stuck_max_duration_gauge
+      query: |
+        SELECT
+          access_id,
+          share_instances.share_id as share_id,
+          share_instance_id,
+          state,
+          MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(access.updated_at, access.created_at))) AS max_duration_gauge
+        FROM share_instance_access_map as access
+        JOIN share_instances on share_instances.id = access.share_instance_id
+        WHERE access.deleted='False' AND access.state != 'active' AND (COALESCE(access.updated_at, access.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
-          manila_host,
-          id,
-          share_network_subnet_id,
-          status
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS max_duration_gauge;
+          access_id,
+          share_id,
+          share_instance_id,
+          state
+        UNION SELECT 'none' AS access_id, 'none' AS share_id, 'none' AS share_instance_id, 'none' AS state, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
+    - help: Manila Oldest Soft Deleted Share
+      labels:
+        - "id"
+      name: manila_oldest_soft_deleted_share
+      query: |
+        SELECT
+          id,
+          DATEDIFF(NOW(), deleted_at) AS age_of_oldest_share_in_days
+        FROM shares
+        WHERE deleted_at IN (
+          SELECT MIN(deleted_at)
+          FROM shares
+        );
+      values:
+        - "age_of_oldest_share_in_days"
 
 pod:
   replicas:
     api: 5
+    ensure: 1
     scheduler: 1
   lifecycle:
     upgrades:
@@ -428,8 +606,13 @@ pod:
         revision_history: 5
         pod_replacement_strategy: RollingUpdate
         rolling_update:
-          max_unavailable: 0
-          max_surge: 1
+          max_unavailable: 10%
+          max_surge: 25%
+  health:
+    use_agent: true
+  priority_class:
+    default: critical-payload
+    low: important-payload
   resources:
     api:
       requests:
@@ -455,9 +638,23 @@ pod:
         memory: "2Gi"
         cpu: "500m"
 
+# all default quotas are 0 to enforce usage of the Resource Management tool (aka Limes) in Elektra
+quota:
+  shares: 0
+  gigabytes: 0
+  snapshots: 0
+  snapshot_gigabytes: 0
+  share_networks: 0
+  share_groups: 0
+  share_group_snapshots: 0
+  share_replicas: 0
+  replica_gigabytes: 0
+
 db_name: manila
 
 mariadb:
+  alerts:
+    support_group: compute-storage-api
   enabled: true
   # root_password: null       # define in region or use master_password mechanism
   buffer_pool_size: "4096M"
@@ -465,12 +662,24 @@ mariadb:
   query_cache_size: "1M"
   query_cache_type: "1"
   name: manila
-  initdb_configmap: manila-initdb
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
+  databases:
+  - manila
+  users:
+    manila:
+      name: manila
+      password: null
+      grants:
+      - "ALL PRIVILEGES on manila.*"
   persistence_claim:
     name: db-manila-pvclaim
   resources:
     requests:
       memory: 6144Mi
+  vpa:
+    set_main_container: true
   backup_v2:
     enabled: true
     databases:
@@ -491,24 +700,130 @@ mariadb:
       net_read_timeout = 300
       net_write_timeout = 300
 
+pxc_db:
+  alerts:
+    support_group: compute-storage-api
+  enabled: false
+  name: manila
+  ccroot_user:
+    enabled: true
+  databases:
+    - manila
+  users:
+    manila:
+      name: manila
+      grants:
+        - "ALL PRIVILEGES on manila.*"
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "2048M"
+        net_read_timeout: "300"
+        net_write_timeout: "300"
+    resources:
+      requests:
+        memory: 6Gi
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 # needed for utils ini_sections
 postgresql:
   enabled: false
 
+utils:
+  trust_bundle:
+    enabled: true
+
 rabbitmq:
   name: manila
-  persistence:
+  alerts:
     enabled: false
+    rabbit_queue_length: 10
+    support_group: compute-storage-api
+  persistence:
+    enabled: true
+  metrics:
+    enabled: true
+    addMetricsUser: true
+  enableDetailedMetrics: false
+  enablePerObjectMetrics: false
 
 sentry:
   enabled: true
+seeds:
+  requires_swift: true
+  all_enabled: true
+  service_type: share
+  endpoint_prefix: ""
+  backup_user:
+    enabled: false
+    username: manilabackup
+    password: null
+  integration_test_user:
+    enabled: true
 
 share_ensure:
   enabled: true
 
+share_type_extra_specs:
+  compression: "<is> True"
+  create_share_from_snapshot_support: "True"
+  dedupe: "<is> True"
+  mount_point_name_support: "<is> True"
+  replication_type: "readable"
+  revert_to_snapshot_support: "True"
+  capabilities:netapp_is_home: "True"
+  netapp:hide_snapdir: "True"
+  netapp:max_files_multiplier: "4.813"  # 33.6925 / 7 -> roughly 1 inode per 7 KB
+  netapp:snapshot_policy: "none"
+  netapp:split_clone_on_create: "True"
+  netapp:tcp_max_xfer_size: "262144"  # ccloud 256 KB, system default for ONTAP 9.5 was 64 KB
+  netapp:thin_provisioned: "True"     # netapp_flexvol_encryption: "True"
+  provisioning:max_share_size: "32768"
+  provisioning:max_share_extend_size: "32768" # keep this in sync with value "max_asset_sizes" of "- asset_type: 'nfs-shares.*'" in openstack/castellum/templates/configmap.yaml
+
 share_types:
-  hypervisor_storage: false
-  btp_backup: false
+  default:
+    enabled: true
+    is_public: true
+    description: "High Performance"
+    extra_specs:
+      share_backend_name: "netapp-multi"
+  integration:
+    enabled: true
+  standard:
+    enabled: false
+    description: "Standard"
+    extra_specs:
+      provisioning:max_share_size: "65536"
+      provisioning:max_share_extend_size: "65536" # keep this in sync with castellum
+  hypervisor_storage_hana_qa:
+    enabled: false
+    extra_specs:  # is a flexgroup share type, where capability 'netapp_is_home' is not reported
+      capabilities:netapp_is_home: "__skip__"  # opt-out sentinel: filtered out at render time
+      provisioning:min_share_size: "2048"
+      provisioning:max_share_size: "40960"
+  hypervisor_storage:
+    enabled: false
+  hypervisor_storage_hanalytics:
+    enabled: false
+  hypervisor_storage_vim:
+    enabled: false
+  btp_backup:
+    enabled: false
+
+netapp:
+  filers:
+    username: manilauser
 
 # netapp filer back ends, required input
 # netapp:
@@ -530,6 +845,12 @@ share_types:
 
 use_tls_acme: true
 
+designate:
+  enabled: false
+  ttl: 300
+  endpoint_type: publicURL
+  region_name: null
+
 audit:
   enabled: true
   # do by default not attach the request payloads of create/update calls to the event
@@ -538,14 +859,56 @@ audit:
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
 
-rabbitmq_notifications:
-  name: manila
+# openstack-ratelimit-middleware
+api_rate_limit:
+  enabled: false
+  backend_secret_file: /etc/manila/ratelimit-backend-secret.txt
+  rate_limit_by: "target_project_id"
+  max_sleep_time_seconds: 15
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 15
+  project_whitelist_default:
+    - ccadmin/cloud_admin # castellum scraping
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api
 
 # openstack-watcher-middleware
 watcher:
   enabled: true
 
+# oslo_messaging rpc stats
+rpc_statsd_port: 9125
+rpc_statsd_enabled: true
+
 # prometheus alerts
 alerts:
   enabled: true
-  prometheus: openstack
+  support_group: compute-storage-api
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+    metrics-metal: metal
+    # metrics: regional
+    # metrics-global: global
+    # metrics-scaleout: scaleout
+
+aggregates:
+  prometheus:
+    openstack: openstack
+    storage: storage
+
+# osprofiler
+osprofiler:
+  enabled: false
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'

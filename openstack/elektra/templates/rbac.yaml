@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  # This service account is used by elektra pod itself.
+  name: elektra
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: elektra-token-secret
+rules:
+  # "create" permission cannot be restricted to specific resourceNames
+  # Ref: <https://stackoverflow.com/a/65203104>
+  - apiGroups: [ "" ]
+    resources: [ secrets ]
+    verbs:     [ create ]
+
+  # need to update the elektra-token secret
+  - apiGroups: [ "" ]
+    resources: [ secrets ]
+    verbs:     [ get, patch ]
+    resourceNames:
+    - elektra-token
+
+  # need the UID of the postgres deployment to render an owner reference
+  - apiGroups: [ apps ]
+    resources: [ deployments ]
+    verbs:     [ get ]
+    resourceNames: [ elektra ]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: elektra-token-secret
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: elektra-token-secret
+subjects:
+  - kind: ServiceAccount
+    name: elektra

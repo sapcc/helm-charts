@@ -1,7 +1,8 @@
 {{- if eq .Values.global.clusterType "metal" }}
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- range $i, $target := $values.alerts.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target.name) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -10,13 +11,18 @@ metadata:
   name: {{ printf "fluent-audit-container-%s" $path | replace "/" "-" }}
   labels:
     app: fluent-audit-container-prometheus
-    tier: infra
+    tier: kubernetes
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
+    {{ $target.type | required (printf "$values.alerts.prometheus.[%v].type missing" $i) }}: {{ $target.name | required (printf "$values.alerts.prometheus.[%v].name missing" $i) }}
+    {{- if eq $target.type "thanos-ruler" }}
+    # Disable absent-metrics-operator (AMO) for Thanos-Ruler alerts.
+    absent-metrics-operator/disable: "true"
+    {{- end }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

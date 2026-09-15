@@ -1,36 +1,50 @@
+---
 apiVersion: v2
 description: A Helm chart for Openstack Neutron
 name: neutron
-version: 0.1.9
-appVersion: "ussuri"
+version: 0.3.9
+appVersion: "caracal"
 dependencies:
   - condition: mariadb.enabled
     name: mariadb
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.3.50
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.42.2
+  - condition: pxc_db.enabled
+    name: pxc-db
+    alias: pxc_db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.6.0
   - name: memcached
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.0.10
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.6.18
   - condition: mariadb.enabled
     name: mysql_metrics
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.2.7
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.8.1
   - name: rabbitmq
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.3.2
-  - alias: rabbitmq_notifications
-    condition: audit.enabled
-    name: rabbitmq
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.3.2
-  - name: region_check
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.1.2
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.25.7
   - name: utils
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 0.3.4
-  - alias: logger-redis
-    condition: logger.enabled
-    name: redis
-    repository: https://charts.eu-de-2.cloud.sap
-    version: 1.1.7
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.38.0
+  - name: owner-info
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 1.0.0
+  - name: redis
+    alias: api-ratelimit-redis
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 2.4.72
+    condition: rate_limit.enabled
+  - name: linkerd-support
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 1.1.1
+  - name: ovsdb
+    alias: ovsdb-sb
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.2.0
+    condition: ovn.enabled
+  - name: ovsdb
+    alias: ovsdb-nb
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.2.0
+    condition: ovn.enabled

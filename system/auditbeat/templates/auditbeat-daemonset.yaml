@@ -9,27 +9,47 @@ spec:
   selector:
     matchLabels:
       k8s-app: auditbeat
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
   template:
     metadata:
       annotations:
-        prometheus.io/port: "{{ .Values.exporter.metrics.port }}"
         prometheus.io/scrape: "true"
-        prometheus.io/targets: kubernetes
+        prometheus.io/targets: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
       labels:
         k8s-app: auditbeat
         {{- include "auditbeat.labels" . | nindent 8 }}
     spec:
       tolerations:
       - operator: Exists
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+              - key: cloud.sap/esx-in-maintenance
+                operator: NotIn
+                values:
+                - alarm
+                - "true"
+              - key: cloud.sap/maintenance-state
+                operator: NotIn
+                values:
+                - in-maintenance
       serviceAccountName: {{ include "auditbeat.serviceAccountName" . }}
       terminationGracePeriodSeconds: 30
-      hostNetwork: true
       hostPID: true  # Required by auditd module
-      dnsPolicy: ClusterFirstWithHostNet
+      dnsPolicy: ClusterFirst
 {{- if .Values.enable_pamd_tty }}
       initContainers:
       - name: enable-pamd-tty
-        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+        image: {{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/library/alpine:latest
         securityContext:
           privileged: true
         command:
@@ -47,7 +67,7 @@ spec:
 {{- end }}
       containers:
       - name: exporter
-        image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
         imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
         args:
           - -p=5066
@@ -59,7 +79,7 @@ spec:
         resources:
           {{- toYaml .Values.exporter.resources | nindent 10 }}
       - name: auditbeat
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ required ".Values.global.elasticCoMirror variable missing" .Values.global.elasticCoMirror }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args: [
           "-c", "/etc/auditbeat.yml",
@@ -77,7 +97,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ include "auditbeat.fullname" . }}
-              key: es-username        
+              key: es-username
         - name: ELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:

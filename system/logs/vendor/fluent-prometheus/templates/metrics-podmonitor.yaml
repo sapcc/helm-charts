@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: logs-fluent-prometheus-exporter
+  labels:
+    prometheus: {{ .Values.global.prometheus }}
+
+spec:
+  jobLabel: logs-fluent-prometheus-exporter
+
+  selector:
+    matchLabels:
+      component: fluent-prometheus
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames: [logs]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      path: /metrics
+      scheme: http
+      port: metrics
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - targetLabel: job
+          replacement: logs-fluent-prometheus-exporter

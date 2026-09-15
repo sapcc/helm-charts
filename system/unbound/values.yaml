@@ -1,13 +1,76 @@
 unbound:
-  image_unbound: unbound
-  image_unbound_exporter: unbound_exporter
-  image_unbound_tag: "20201112134042"
-  image_unbound_exporter_tag: "20201002123043"
-  image_pullPolicy: IfNotPresent
-  port_unbound_exporter: 9107
+
+  # make sure the images are always refreshed since we use the "latest" tag here
+  # using "IfNotPresent" policy in production is advised
+  image_pullPolicy: Always
+
+  # the "latest" tag is used as a placeholder here
+  # override them with proper production tags in your secrets
+  unbound:
+    image: unbound
+    image_tag: latest
+
+  unbound_exporter:
+    image: unbound_exporter
+    image_tag: latest
+
+  dnstap:
+    image: dnstap
+    image_tag: latest
+
+  bind_rpz_proxy:
+    image: bind-rpz-proxy
+    image_tag: latest
+    rndc:
+      keyname: 'rndc-key'
+
+  port_unbound_exporter: 9167
   interface: 0.0.0.0
   failure_domain_zone: a
+  ext_stats: "yes"
+
+  control:
+    socket_path: "/run/unbound/control.sock"
+
+  rpz:
+    zones: []
+    tsig:
+      keyname: "tsig-key"
+
+  externalPorts:
+    - 53
+
+  # if there's an expectation that the traffic is balanced between the unbound instances, set this to true
+  # this will enable the "Disproportionate" alerts in Prometheus
+  balancedTrafficExpected: true
+
+resources:
+  unbound:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+  metric:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+  dnstap:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+  bind_rpz_proxy:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
 
 alerts:
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+owner-info:
+  support-group: coredns
+  service: unbound
+  maintainers:
+    - David Hoeller
+    - Benjamin Tinney
+    - Vassil Dimitrov
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/unbound

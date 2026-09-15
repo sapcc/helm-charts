@@ -1,0 +1,39 @@
+groups:
+- name: replicationV2.alerts
+  rules:
+  - alert: MetisSyncErrorsHigh
+    expr: sum by (kubernetes_pod_name) (increase(metis_replication_restart_counter[1h])) > 2
+    for: 5m
+    labels:
+      context: replicationerrors
+      service: "metis"
+      severity: info
+      support_group: containers
+    annotations:
+      description: The DB sync of `{{ $labels.app_kubernetes_io_instance }}` restarts frequently
+      summary: Database replication restarting frequently
+
+  - alert: MetisSyncIncomplete
+    expr: sum without(type) (metis_sync_status) != 3
+    for: 30m
+    labels: 
+      context: replicationerrors
+      service: "metis"
+      severity: info
+      support_group: containers
+      playbook: 'docs/operation/metis/metis/#database-replication-is-slow'
+    annotations:
+      description: The DB sync of `{{ $labels.app_kubernetes_io_instance }}` is incomplete.
+      summary: Database replication is out of sync
+
+  - alert: MetisNoRotation
+    expr: (timestamp(metis_binlog_rotation_timestamp_seconds) - metis_binlog_rotation_timestamp_seconds) / 60 > 1440
+    for: 30m
+    labels:
+      context: replicationerrors
+      service: "metis"
+      severity: info
+      support_group: containers
+    annotations:
+      description: No binlog rotation processed by {{ $labels.app_kubernetes_io_instance }} for over 1d. DB replication sync could be stale
+      summary: Sync possibly stale because no binlog rotatation processed

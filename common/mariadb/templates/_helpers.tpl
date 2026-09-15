@@ -12,16 +12,54 @@
 {{- end -}}
 {{- end -}}
 
-{{define "keystone_url"}}http://keystone.{{ default .Release.Namespace .Values.global.keystoneNamespace }}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3{{end}}
-
-{{- define "mariadb.db_host"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end}}
-
-{{- define "mariadb.root_password" -}}
-{{- .Values.root_password }}
+{{- define "mariadb.resolve_secret_squote" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" | squote {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "'" "''" | squote }}
+{{- end -}}
 {{- end -}}
 
-{{- define "db_password" -}}
-{{- .Values.global.dbPassword }}
+{{/*
+  Emit S3 object-lock keys for a backup_v2 storage target, merging per-target
+  overrides onto the chart-level default (backup_v2.object_lock) per field.
+  Emits nothing when effectively disabled.
+  Usage:
+    include "mariadb.backup_v2.object_lock" (dict "target" $target.object_lock "default" .Values.backup_v2.object_lock)
+*/}}
+
+{{- define "mariadb.backup_v2.object_lock" -}}
+{{- $target := default (dict) .target -}}
+{{- $default := default (dict) .default -}}
+{{- $enabled := default false $default.enabled -}}
+{{- if hasKey $target "enabled" -}}{{- $enabled = $target.enabled -}}{{- end -}}
+{{- if $enabled -}}
+{{- $mode := default "COMPLIANCE" $default.lock_mode -}}
+{{- if hasKey $target "lock_mode" -}}{{- $mode = $target.lock_mode -}}{{- end -}}
+{{- if not (has $mode (list "COMPLIANCE" "GOVERNANCE")) -}}
+{{- fail (printf "backup_v2.object_lock.lock_mode must be COMPLIANCE or GOVERNANCE, got %q" $mode) -}}
+{{- end -}}
+{{- $days := default 7 $default.retention_days -}}
+{{- if hasKey $target "retention_days" -}}{{- $days = $target.retention_days -}}{{- end -}}
+{{- if not (gt (int $days) 0) -}}
+{{- fail (printf "backup_v2.object_lock.retention_days must be a positive integer, got %v" $days) -}}
+{{- end -}}
+object_lock_enabled: true
+object_lock_mode: {{ $mode | quote }}
+object_lock_retention_days: {{ $days }}
+{{- end -}}
+{{- end -}}
+
+{{/* Emit SSE-C keys for a backup_v2 S3 target; per-target overrides default. */}}
+{{- define "mariadb.backup_v2.sse_c" -}}
+{{- $target := default (dict) .target -}}
+{{- $key := default "" .default -}}
+{{- if hasKey $target "sse_customer_key" -}}{{- $key = $target.sse_customer_key -}}{{- end -}}
+{{- if $key -}}
+sse_customer_algorithm: "AES256"
+sse_customer_key: {{ include "mariadb.resolve_secret_squote" $key }}
+{{- end -}}
 {{- end -}}
 
 {{- define "registry" -}}
@@ -63,3 +101,87 @@
 {{/* Needed for testing purposes only. */}}
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+
+{{/*
+Charts owner-info labels
+*/}}
+{{- define "mariadb.ownerLabels" -}}
+{{- if index .Values "owner-info" }}
+ccloud/support-group: {{  index .Values "owner-info" "support-group" | quote }}
+ccloud/service: {{  index .Values "owner-info" "service" | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+  Generate labels
+  $ = global values
+  version/noversion = enable/disable version fields in labels
+  mariadb = desired component name
+  job = object type
+  config = provided function
+  include "mariadb.labels" (list $ "version" "mariadb" "deployment" "database")
+  include "mariadb.labels" (list $ "version" "mariadb" "job" "config")
+*/}}
+{{- define "mariadb.labels" }}
+{{- $ := index . 0 }}
+{{- $component := index . 2 }}
+{{- $type := index . 3 }}
+{{- $function := index . 4 }}
+app.kubernetes.io/name: {{ $.Chart.Name }}
+app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
+app.kubernetes.io/component: {{ include "label.component" (list $component $type $function) }}
+app.kubernetes.io/part-of: {{ $.Release.Name }}
+  {{- if eq (index . 1) "version" }}
+app.kubernetes.io/version: {{ $.Values.image | regexFind "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" }}
+app.kubernetes.io/managed-by: "helm"
+helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+  {{- end }}
+{{- end }}
+
+{{/*
+  Generate labels
+  mariadb = desired component name
+  job = object type
+  config = provided function
+  include "label.component" (list "mariadb" "deployment" "database")
+  include "label.component" (list "mariadb" "job" "config")
+*/}}
+{{- define "label.component" }}
+{{- $component := index . 0 }}
+{{- $type := index . 1 }}
+{{- $function := index . 2 }}
+{{- $component }}-{{ $type }}-{{ $function }}
+{{- end }}
+
+{{/*
+  generate a randomized schedule for the maintenance job
+  include "mariadb.maintenance.schedule.randomize"
+*/}}
+{{- define "mariadb.maintenance.schedule.randomize" }}
+  {{- if $.Values.job.maintenance.schedule -}}
+    {{- $schedule := split " " $.Values.job.maintenance.schedule }}
+    {{- $minute := required "invalid cron syntax for job.maintenance.schedule" $schedule._0 }}
+    {{- $hour := required "invalid cron syntax for job.maintenance.schedule" $schedule._1 }}
+    {{- $monthday := required "invalid cron syntax for job.maintenance.schedule" $schedule._2 }}
+    {{- $month := required "invalid cron syntax for job.maintenance.schedule" $schedule._3 }}
+    {{- $weekday := required "invalid cron syntax for job.maintenance.schedule" $schedule._4 }}
+    {{- if not (mustRegexMatch "^(\\*|\\?)$|^(\\*|\\?)\\/[0-9]{1,2}$|^[0-9]{1,2}-[0-9]{1,2}$" $minute) }}
+      {{- $minute = (randInt 1 59 | toString) }}
+    {{- end }}
+    {{- (printf "%s %s %s %s %s" $minute $hour $monthday $month $weekday) }}
+  {{- else -}}
+    {{- (printf "%d %d * * %d" (randInt 1 59) (randInt 9 15) (randInt 2 4)) }}
+  {{- end }}
+{{- end }}
+
+{{/*
+Default pod labels for linkerd
+*/}}
+{{- define "mariadb.linkerdPodAnnotations" }}
+  {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+linkerd.io/inject: enabled
+    {{- if or $.Values.global.linkerd_use_native_sidecar $.Values.global.mariadb.native_sidecar.enabled }}
+config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+    {{- end }}
+  {{- end }}
+{{- end }}

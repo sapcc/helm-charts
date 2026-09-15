@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logcatcher
+  labels:
+    {{- include "logcatcher.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "logcatcher.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "logcatcher.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: logcatcher
+          image: "{{ .Values.image.logcatcher.repository }}:{{ .Values.image.logcatcher.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+          - -bind
+          - 0.0.0.0:48283
+          - -use-forwarded-for
+          ports:
+            - name: logs
+              containerPort: 48283
+              protocol: TCP

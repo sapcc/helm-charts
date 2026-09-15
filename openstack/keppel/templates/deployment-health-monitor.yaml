@@ -19,24 +19,20 @@ spec:
     metadata:
       labels:
         name: keppel-health-monitor
-        alert-tier: os
-        alert-service: keppel
       annotations:
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
-        prometheus.io/targets: "openstack"
+        kubectl.kubernetes.io/default-container: monitor
     spec:
       containers:
         - name: monitor
           image: {{include "keppel_image" .}}
           imagePullPolicy: IfNotPresent
-          args: [ server, healthmonitor, {{quote .Values.keppel.healthcheck_account}} ]
+          args: [ server, healthmonitor, "healthcheck-{{ .Values.global.region }}" ]
           env:
             - name:  KEPPEL_DEBUG
               value: 'false'
             - name: OS_AUTH_URL
-              value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:5000/v3"
+              value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}:5000/v3"
             - name:  OS_AUTH_VERSION
               value: '3'
             - name:  OS_IDENTITY_API_VERSION
@@ -58,25 +54,38 @@ spec:
               value: 'Default'
             - name:  OS_USERNAME
               value: 'keppel'
-          # NOTE: This is only a readiness probe for a reason.
-          # - We want the readiness probe to have `k rollout status` fail (and
-          #   therefore turn the pipeline red) when a new version is rotten.
-          # - We *don't* want the liveness probe because it just makes the
-          #   container restart uselessly when the health check starts failing
-          #   at some point.
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - name: http
+              containerPort: 8080
+          # We don't want the livenessProbe to kill us excessively often. The
+          # healthmonitor can well operate in a non-Ready state if Keppel is
+          # down. The only reason to actively restart it is to try and
+          # re-execute the startup phase where the test image gets uploaded.
+          # Otherwise, we may get stuck in a loop of trying to pull a test
+          # image that is known broken and will stay this way.
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 300 # do not restart uselessly often
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3 # but restart quickly once the 300 seconds are up
           readinessProbe:
             httpGet:
               path: /healthcheck
               port: 8080
             timeoutSeconds: 5
             periodSeconds: 5
-          # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
+          # NOTE: observed resource usage in eu-de-1 (as of 2026-03-23)
           # - CPU: spiky, but always below 1m
-          # - memory: usually level around 17 Mi
+          # - memory: usually level around 50 Mi
           resources:
             requests:
               cpu: "10m"
-              memory: "64Mi"
+              memory: "96Mi"
             limits:
-              cpu: "10m"
-              memory: "64Mi"
+              cpu: "100m"
+              memory: "96Mi"

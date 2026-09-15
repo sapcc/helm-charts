@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+    name: volume-backup
+spec:
+  schedule: {{.Values.volume.backup.schedule}}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          affinity:
+            podAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                      - {{ tpl .Values.volume.backup.app $ }}
+                  topologyKey: "kubernetes.io/hostname"
+          volumes:
+          - name: backup
+            persistentVolumeClaim:
+                claimName: {{ .Values.volume.backup.pvcName }}
+          containers:
+            - name: backup
+              image: '{{ .Values.global.dockerHubMirror }}/restic/restic:0.15.1'
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - '-c'
+                - restic snapshots &>/dev/null || restic init ; echo "Init done."; restic backup /bak -q --tag "{{ .Values.volume.backup.pvcName }}-backup"; echo "Backup completed successfully."; restic forget --group-by paths,tags --cleanup-cache --keep-within {{ .Values.volume.backup.pruneSchedule }} --prune; echo "Pruning done.";
+                # - restic restore 76ca96f6 --target /
+              env:
+                - name: RESTIC_REPOSITORY
+                  value: swift:volume_backup:/{{ .Values.volume.backup.pvcName }}
+                - name: OS_AUTH_URL
+                  value: https://identity-3.{{.Values.global.region}}.cloud.sap/v3
+                - name: OS_IDENTITY_API_VERSION
+                  value: "3"
+                - name: OS_PROJECT_NAME
+                  value: master
+                - name: OS_PROJECT_DOMAIN_NAME
+                  value: ccadmin
+                - name: OS_USERNAME
+                  value: db_backup
+                - name: OS_USER_DOMAIN_NAME
+                  value: Default
+                - name: OS_REGION_NAME
+                  value: {{.Values.global.region}}
+              envFrom:
+                - secretRef:
+                    name: volume-backup
+              volumeMounts:
+              - name: backup
+                mountPath: /bak
+          envFrom:
+          - secretRef:
+                name: volume-backup
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Secret
+metadata:
+    namespace: shelfapp
+    name: volume-backup
+data:
+    OS_PASSWORD: {{ .Values.volume.backup.password | b64enc | quote }}
+    RESTIC_PASSWORD: {{ .Values.volume.backup.resticPassword | b64enc | quote }}

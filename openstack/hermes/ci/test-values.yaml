@@ -1,11 +1,27 @@
 global:
   region: earth
+  tld: example.com
   master_password: topSecret
+  clusterDNSSearchDomain: cluster.local
+  registry: keppel.eu-de-1.cloud.sap
+  linkerd_enabled: false
+  linkerd_requested: false
+  metis:
+    user: metis-user
+    password: topSecret
+  forwarding:
+    audit:
+      host: host
+  user_suffix: ""
+  dockerHubMirror: "another-region"
+  dockerHubMirrorAlternateRegion: "other.dockerhub.mirror"
+  domain_seeds:
+    customer_domains: [bar, foo, baz]
+    customer_domains_without_support_projects: [baz]
 
 hermes_image_version_elasticsearch: latest
 hermes_image_version_elasticsearch_manager: latest
 hermes_image_version_logstash: latest
-hermes_image_version_wall_e: latest
 
 hermes_elasticsearch_cluster_name: my-es-cluster
 hermes_elasticsearch_data_retention: data-retention-time
@@ -13,11 +29,18 @@ hermes_elasticsearch_host: my-es-host
 hermes_elasticsearch_port: my-es-port
 
 docker_repo: my-docker-repository
+users:
+  audit:
+    username: test
+    password: test
 
 hermes:
   image: my-image
   image_tag: latest
   image_pull_policy: IfNotPresent
+  dockerHubMirror: another-region
+  # Required by log-router-secret when logRouter.swift.enabled=true (CI exercises that path).
+  seed_password: test
   certs:
     tls_crt: my-tls-cert
     tls_key: my-tls-key
@@ -42,3 +65,87 @@ ingress:
 
 ldap:
   host: my-ldap-host
+
+elasticsearch_exporter:
+  enabled: false
+
+rabbitmq_notifications:
+# Test values for rabbitmq.
+  ports:
+    public: 5672
+    management: 15672
+
+  users:
+    default:
+      user: test1
+      password: test
+    admin:
+      user: test2
+      password: test
+
+  persistence:
+    enabled: false
+
+  resources:
+    requests:
+      memory: 1Mi
+      cpu: 1m
+    limits:
+      cpu: 1m
+
+  replicas: 1
+
+  metrics:
+    enabled: false
+
+logRouter:
+  enabled: true
+  image_tag: "latest"
+  replicas: 1
+  init_image: "keppel.eu-de-1.cloud.sap/ccloud/shared-app-images/alpine-busybox:latest"
+
+  rabbitmq:
+    port: 5672
+    queue: "dataplane.audit"
+    exchange: ""
+    routing_key: "#"
+    prefetch: "10"
+    user: test
+    password: test
+
+  s3:
+    endpoint: "https://ceph.qa.example.com"
+    region: "qa"
+    bucket: "audit-qa"
+    prefix: "dataplane/"
+
+  # CI exercises the Swift/Keystone-token auth path (the only supported mode).
+  swift:
+    enabled: true
+    service_type: "object-store-ceph"
+
+  wal:
+    storage: 1Gi
+
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+hermes-postgresql:
+  postgresVersion: 17
+  databases:
+    hermes: {}
+  users:
+    hermes: {}
+    log-router: {}
+  config:
+    max_connections: 16
+  persistence:
+    enabled: false
+    size: 1Gi
+  alerts:
+    support_group: observability

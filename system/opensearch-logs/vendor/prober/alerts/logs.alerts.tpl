@@ -1,0 +1,31 @@
+groups:
+  - name: OpenSearchLogsProbes
+    rules:
+      - alert: LogsOpenSearchDashboardDown
+        expr: 'probe_success{instance=~"https://logs.+"} == 0'
+        for: 15m
+        labels:
+          severity: warning
+          service: logs
+          support_group: observability
+          meta: "Logs OpenSearch dashboard down"
+          dashboard: opensearch-logshipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/opensearch-overview?var-cluster=opensearch-logs"
+          playbook: 'docs/support/playbook/opensearch/generic'
+        annotations:
+          description: "Logs dashboard is down"
+          summary: "Logs dashboard is down"
+      - alert: LogsOpenSearchClientEndpointDown
+        expr: 'probe_success{instance=~"https://opensearch-logs-client.+"} == 0'
+        for: 15m
+        labels:
+          severity: warning
+          service: logs
+          support_group: observability
+          meta: "Logs OpenSearch client endpoint down"
+          dashboard: opensearch-logshipping
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/opensearch-overview?var-cluster=opensearch-logs"
+          playbook: 'docs/support/playbook/opensearch/generic'
+        annotations:
+          description: "Logs OpenSearch client endpoint is down"
+          summary: "Logs OpenSearch client endpoint is down"

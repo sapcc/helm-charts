@@ -1,0 +1,47 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-limes-capacity.alerts
+  rules:
+
+  - alert: LimesBlockedCapacityAbove80Percent
+    expr: (stabilized:limes_capacity_blocked_percent_per_az > 80) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    for: 10m
+    labels:
+      severity: info
+      service: capacity-ops
+      support_group: capacity-ops
+    annotations:
+      summary: "Blocked capacity above 80% on an autogrowing resource"
+      description: |
+        In AZ {{ $labels.availability_zone }}, more than 80% of all {{ $labels.service }}/{{ $labels.resource }}
+        capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
+
+  - alert: LimesBlockedCapacityDangerouslyHigh
+    expr: (stabilized:limes_capacity_blocked_percent_per_az > on (service, resource) group_left () stabilized:limes_autogrow_quota_overcommit_threshold_percent) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    for: 10m
+    labels:
+      severity: warning
+      service: capacity-ops
+      support_group: capacity-ops
+    annotations:
+      summary: "Blocked capacity approaching 100% on an autogrowing resource"
+      description: |
+        In AZ {{ $labels.availability_zone }}, nearly all {{ $labels.service }}/{{ $labels.resource }}
+        capacity is blocked by commitments or provisioned usage.
+        Limes has disabled quota overcommit to safeguard the deployability of committed resources, so new projects will not get any base quota anymore.
+        Please check if hardware needs to be ordered.
+
+  - alert: LimesPendingCommitments
+    expr: stabilized:limes_pending_commitments_per_az > 0
+    for: 10m
+    labels:
+      severity: warning
+      service: capacity-ops
+      support_group: capacity-ops
+    annotations:
+      summary: "Pending commitments cannot be confirmed"
+      description: |
+        In AZ {{ $labels.availability_zone }}, there are pending commitments for {{ $labels.service }}/{{ $labels.resource }}
+        that Limes is unable to confirm. Please check if there is a capacity shortage and hardware needs to be ordered.
+        The problematic commitments can be located through the cloud-admin Resource Management UI. Look for the `+pending` label.

@@ -1,18 +1,13 @@
-## Bitnami Redis image version
-## ref: https://hub.docker.com/r/bitnami/redis/tags/
-##
-image:
-  repository: library/redis
-  tag: 5.0.10-alpine
-  pullPolicy: IfNotPresent
-
-# Port for the Redis.
-redisPort: 6379
+# If enabled, image references use `.Values.registryAlternateRegion` etc. instead of `.Values.registry` etc.
+useAlternateRegion: false
 
 ## Redis password
-## ref: https://github.com/bitnami/bitnami-docker-redis#setting-the-server-password-on-first-run
 ##
-# redisPassword:
+## WARNING: Setting this password explicitly is deprecated.
+## Leave this field unfilled to have the redis server autogenerate a password on first startup.
+## The password can be consumed from the secret "$RELEASE-redis-user-default" in the key "password".
+## To rotate the secret, delete it and restart the redis container to generate a new one.
+redisPassword: null
 
 ## Enable persistence using Persistent Volume Claims
 ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -28,38 +23,44 @@ persistence:
 resources:
   limits:
     memory: 128Mi
-    cpu: 100m
+    cpu: 350m
   requests:
     memory: 128Mi
-    cpu: 10m
+    cpu: 100m
+
+# if enabled, annotates generated password Secrets with `stakater/Reloader`
+# annotations to cause the consuming applications annotated with
+# `reloader.stakater.com/auto: "true"` to be restarted when the corresponding
+# Secrets change
+reloader:
+  annotateGeneratedSecrets: false
+
+alerts:
+  enabled: true
+  support_group: null # This field must be filled by the top-level chart.
+  service: null       # defaults to .Release.Name if not set
 
 # Prometheus metrics via oliver006/redis_exporter sidecar.
 metrics:
   enabled: true
 
-  image:
-    repository: oliver006/redis_exporter
-    tag: v1.0.3
-    pullPolicy: IfNotPresent
-
-  # Port to expose metrics on.
-  port: 9121
-
   # Name of the Prometheus by which the metrics will be scraped.
+  # This field can also accept a template string like '{{ eq .Values.global.clusterType "scaleout" | ternary "infra-frontend" "obs-metrics-product" }}'.
   prometheus: openstack
 
   ## Configure resource requests and limits
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources
   resources:
     limits:
-      memory: 512Mi
+      memory: 64Mi
       cpu: 100m
     requests:
-      memory: 128Mi
+      memory: 64Mi
       cpu: 10m
 
-alerts:
-  enabled: true
-
-  tier: os
-  service: "" # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # if enabled, configures `stakater/Reloader` (annotations) to cause the
+  # deployment to do a rolling restart when referenced CMs and Secrets annotated
+  # with `reloader.stakater.com/match: "true"` (e.g. Secret with DB password)
+  # change
+  reloader:
+    enabled: false

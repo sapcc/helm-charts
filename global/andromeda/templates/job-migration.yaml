@@ -14,30 +14,47 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
+      {{- if not .Values.database_override.enabled }}
       initContainers:
         - name: wait-for-db
-          image: "quay.io/stackanetes/kubernetes-entrypoint:v0.3.1"
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
+          imagePullPolicy: Always
           env:
             - name: NAMESPACE
-              value: "andromeda"
+              value: "{{ .Release.Namespace }}"
             - name: DEPENDENCY_SERVICE
-              value: "{{ include "andromeda.fullname" . }}-cockroachdb"
+              value: "{{ include "andromeda.database_service" . }}"
             - name: COMMAND
               value: "true"
-        - name: create-database
-          image: "cockroachdb/cockroach:v21.2.6"
-          command:
-          - /cockroach/cockroach
-          - sql
-          - --insecure
-          - --host
-          - {{ include "andromeda.name" . }}-cockroachdb
-          - --execute
-          - CREATE DATABASE IF NOT EXISTS {{ include "andromeda.name" . }};
+      {{- end }}
       containers:
         - name: {{ include "andromeda.fullname" . }}-migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
-          args: ["--config-file", "/etc/andromeda/andromeda.conf", "migrate"]
+          command: [ "/usr/bin/andromeda-migrate" ]
+          args: ["--config-file", "/etc/andromeda/andromeda.yaml"]
+          env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "andromeda.fullname" . }}-migration
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "andromeda.fullname" . }}-migration
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ include "andromeda.fullname" . }}.DSN
+            {{- if .Values.mariadb.enabled }}
+            - name: DATABASE_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: andromeda-secret
+                  key: database_connection
+            {{- end }}
           volumeMounts:
             - name: etc-andromeda
               mountPath: /etc/andromeda
@@ -50,5 +67,5 @@ spec:
               - configMap:
                   name: andromeda-etc
                   items:
-                    - key: andromeda.conf
-                      path: andromeda.conf
+                    - key: andromeda.yaml
+                      path: andromeda.yaml

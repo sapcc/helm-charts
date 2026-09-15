@@ -1,0 +1,61 @@
+{{- if .Values.scaleout.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: opensearch-logs-data-exporter
+  labels:
+    prometheus: infra-frontend
+
+spec:
+  jobLabel: opensearch-logs-data-exporter
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opensearch-logs-data
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    matchNames: [opensearch-logs]
+
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 50s
+      path: /_prometheus/metrics
+      scheme: http
+      port: http
+      basicAuth:
+        password:
+          name: security-config
+          key: password
+        username:
+          name: security-config
+          key: user
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - targetLabel: job
+          replacement: opensearch-logs-data-exporter
+      metricRelabelings:
+        - sourceLabels: [__name__, cluster]
+          regex: '^(opensearch)_.+;(.*)'
+          replacement: $2
+          targetLabel: elastic_cluster
+        - regex: "controller_revision_hash|pod_template_hash|statefulset_kubernetes_io_pod_name|nodeid|cluster|app_kubernetes_io_managed_by|app_kubernetes_io_component|app_kubernetes_io_instance|app_kubernetes_io_name|app_kubernetes_io_version|helm_sh_chart|helm_sh_chart|app_kubernetes_io_managed_by|app_kubernetes_io_component|app_kubernetes_io_instance|app_kubernetes_io_name|helm_sh_chart|statefulset_kubernetes_io_pod_name"
+          action: labeldrop
+        - action: replace
+          targetLabel: region
+          replacement: {{ required ".Values.global.region missing" .Values.global.region }}
+        - action: replace
+          targetLabel: cluster_type
+          replacement: {{ required ".Values.global.clusterType missing" .Values.global.clusterType }}
+        - action: replace
+          targetLabel: cluster
+          replacement: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+        - action: drop
+          regex: '(opensearch_index_.+);(security-auditlog-.+|.kibana.+|.async-search.+|.apm.+)'
+          sourceLabels: [__name__, index]
+        - action: drop
+          regex: '(opensearch_index_merges_current_number|opensearch_index_requestcache_memory_size_bytes|opensearch_index_requestcache_hit_count|opensearch_index_querycache_memory_size_bytes|opensearch_index_fielddata_evictions_count|opensearch_index_indexing_noop_update_count|opensearch_index_suggest_time_seconds|opensearch_index_get_missing_time_seconds|opensearch_index_querycache_hit_count|opensearch_index_fielddata_memory_size_bytes|opensearch_index_get_time_seconds|opensearch_index_doc_deleted_number|opensearch_index_merges_total_size_bytes|opensearch_index_search_scroll_time_seconds|opensearch_index_search_fetch_count|opensearch_index_flush_total_count|opensearch_index_merges_.+|opensearch_index_indexing_delete_count|opensearch_index_flush_total_count|opensearch_index_merges_current_docs_number|opensearch_index_search_query_time_seconds|opensearch_index_search_scroll_count|opensearch_index_search_query_current_number|opensearch_index_requestcache_miss_count|opensearch_index_warmer_time_seconds|opensearch_index_indexing_delete_current_number|opensearch_index_get_missing_count|opensearch_index_get_current_number|opensearch_index_translog_operations_number|opensearch_index_search_scroll_current_number|opensearch_index_search_fetch_current_number|opensearch_index_search_fetch_time_seconds|opensearch_index_indexing_is_throttled_bool|opensearch_index_suggest_count|opensearch_index_get_exists_time_seconds|opensearch_index_querycache_cache_size_bytes|opensearch_index_translog_size_bytes|opensearch_index_search_open_contexts_number|opensearch_index_get_count|opensearch_index_refresh_listeners_number|opensearch_index_completion_size_bytes|opensearch_index_translog_uncommitted_operations_number|opensearch_index_indexing_index_failed_count|opensearch_index_suggest_current_number)'
+          sourceLabels: [__name__]
+{{- end }}

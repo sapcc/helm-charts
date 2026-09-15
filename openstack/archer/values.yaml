@@ -1,0 +1,238 @@
+# Default values for archer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+debug: false
+
+global:
+  linkerd_requested: true
+  keystoneNamespace: monsoon3
+
+image:
+  neutron_version: caracal-latest
+  kubernetes_entrypoint_version: v0.3.1
+  pullPolicy: IfNotPresent
+
+postgresql:
+  enabled: true
+  alerts:
+    support_group: containers
+  databases:
+    archer:
+      sqlOnStartup: |
+        ALTER ROLE archer SET idle_in_transaction_session_timeout = '5min';
+  extensions:
+    pgcrypto: []
+  persistence:
+    accessMode: ReadWriteMany
+    size: 1Gi
+  users:
+    archer: {}
+
+pgbackup:
+  alerts:
+    support_group: containers
+
+pgmetrics:
+  alerts:
+    support_group: containers
+  databases:
+    archer:
+      customMetrics:
+        archer_services:
+          query: >
+            SELECT
+              COALESCE(status, 'none') AS status,
+              COALESCE(provider, 'none') AS provider,
+              COALESCE(health_status, 'none') AS health_status,
+              COUNT(*) AS gauge
+            FROM service
+            GROUP BY status, provider, health_status
+            UNION SELECT 'none', 'none', 'none', 0
+          metrics:
+            - status:
+                usage: "LABEL"
+                description: "Service status"
+            - provider:
+                usage: "LABEL"
+                description: "Service provider (tenant/cp)"
+            - health_status:
+                usage: "LABEL"
+                description: "Service health status"
+            - gauge:
+                usage: "GAUGE"
+                description: "Total number of services"
+
+        archer_endpoints:
+          query: >
+            SELECT
+              COALESCE(status, 'none') AS status,
+              COUNT(*) AS gauge
+            FROM endpoint
+            GROUP BY status
+            UNION SELECT 'none', 0
+          metrics:
+            - status:
+                usage: "LABEL"
+                description: "Endpoint status"
+            - gauge:
+                usage: "GAUGE"
+                description: "Total number of endpoints"
+
+        archer_agents:
+          query: >
+            SELECT
+              COALESCE(host, 'none') AS host,
+              COALESCE(provider, 'none') AS provider,
+              enabled::text AS enabled,
+              COALESCE(EXTRACT(epoch FROM (now() - heartbeat_at)), 0) AS heartbeat_age_seconds
+            FROM agents
+            UNION SELECT 'none', 'none', 'false', 0
+          metrics:
+            - host:
+                usage: "LABEL"
+                description: "Agent host"
+            - provider:
+                usage: "LABEL"
+                description: "Agent provider"
+            - enabled:
+                usage: "LABEL"
+                description: "Agent enabled status"
+            - heartbeat_age_seconds:
+                usage: "GAUGE"
+                description: "Age in seconds since last agent heartbeat (for stale agent detection)"
+
+alerts:
+  enabled: true
+  support_group: containers
+  # Name of the Prometheus to which the alerts should be assigned to.
+  tier: os
+
+owner-info:
+  support-group: containers
+  service: archer
+  maintainers:
+    - Andrew Karpow
+    - Anton Khramov
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/archer
+
+ingress:
+  enabled: true
+  tls: true
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+
+metrics:
+  port: 9090
+
+# net/http/pprof profiling endpoints, bound to localhost (reach via `kubectl port-forward`).
+pprof:
+  enabled: true
+  port: 6060
+
+audit:
+  enabled: true
+  user: rabbitmq
+  host: hermes-rabbitmq-notifications.hermes
+  port: 5672
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+cp_network_interface: bond1
+multusSelector: bond1
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/targets: "openstack"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  api: {}
+  f5-agent: {}
+  ni-agent: {}
+  linuxbridge_agent: {}
+  socat: {}
+
+linuxbridge_agent:
+  secretName: ""
+  default_log_levels:
+    - neutron.plugins.ml2.drivers.agent._common_agent=WARN
+    - neutron.agent.securitygroups_rpc=WARN
+    - oslo_messaging._drivers.amqpdriver=WARN
+  logging:
+    formatters:
+      context:
+        class: oslo_log.formatters.ContextFormatter
+    handlers:
+      stdout:
+        class: StreamHandler
+        args: "(sys.stdout,)"
+        formatter: context
+    loggers:
+      root:
+        handlers: stdout
+        level: INFO
+      neutron.plugins.ml2.drivers.agent._common_agent:
+        handlers: stdout
+        level: WARNING
+      neutron.agent.securitygroups_rpc:
+        handlers: stdout
+        level: WARNING
+      oslo_messaging._drivers.amqpdriver:
+        handlers: stdout
+        level: WARNING
+  rabbitmq:
+    # Default: neutron-rabbitmq.<namespace>.svc.<cluster domain>
+    host: ""
+    namespace: monsoon3
+    use_discovery_record: false
+    port: 5672
+    virtual_host: ""
+    defaultUser: neutron_1
+  extraEnv:
+    - name: OS_DEFAULT__HOST
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+agents:
+  f5: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

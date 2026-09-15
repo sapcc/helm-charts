@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: placement-etc
+  labels:
+    system: openstack
+    type: configuration
+    component: placement
+data:
+  placement.conf: |
+{{ include (print .Template.BasePath "/etc/_placement.conf.tpl") . | indent 4 }}
+  logging.ini: |
+{{ include "loggerIni" .Values.logging | indent 4 }}
+  uwsgi.ini: |
+{{ include (print .Template.BasePath "/etc/_uwsgi.ini.tpl") . | indent 4 }}
+  policy.yaml: |
+{{ include (print .Template.BasePath "/etc/_policy.yaml.tpl") . | indent 4 }}

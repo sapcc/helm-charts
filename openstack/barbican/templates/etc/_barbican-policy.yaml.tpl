@@ -8,16 +8,8 @@
 "context_is_key_admin": "rule:context_is_admin or rule:key_admin"
 "context_is_editor": "rule:context_is_key_admin"
 "context_is_viewer": "rule:context_is_editor or rule:viewer"
-
-"secret_project_match": "project_id:%(target.secret.project_id)s"
-"secret_acl_read": "'read':%(target.secret.read)s"
-"secret_private_read": "'False':%(target.secret.read_project_access)s"
-"secret_creator_user": "user_id:%(target.secret.creator_id)s"
-
-"container_project_match": "project_id:%(target.container.project_id)s"
-"container_acl_read": "'read':%(target.container.read)s"
-"container_private_read": "'False':%(target.container.read_project_access)s"
-"container_creator_user": "user_id:%(target.container.creator_id)s"
+"context_is_key_admin_and_project_member": "rule:context_is_admin or rule:key_admin"
+"context_is_viewer_and_project_member": "rule:context_is_key_admin_and_project_member or rule:viewer"
 
 "secret_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read"
 "secret_decrypt_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read"
@@ -34,6 +26,10 @@
 "secret:put": "rule:context_is_editor and rule:secret_project_match"
 "secret:delete": "rule:secret_project_admin or rule:secret_project_creator"
 
+"secret_consumers:get": "rule:context_is_editor"
+"secret_consumers:post": "rule:context_is_editor"
+"secret_consumers:delete": "rule:context_is_editor"
+
 "secrets:post": "rule:context_is_editor"
 "secrets:get": "rule:context_is_viewer"
 
@@ -44,9 +40,9 @@
 "order:delete": "rule:context_is_key_admin"
 
 "consumer:get": "rule:service_user or rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read"
-"consumers:get": "rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read"
-"consumers:post": "rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
-"consumers:delete": "rule:service_user or rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
+"container_consumers:get": "rule:context_is_viewer or rule:container_non_private_read or rule:container_project_admin or rule:container_acl_read"
+"container_consumers:post": "rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
+"container_consumers:delete": "rule:service_user or rule:context_is_key_admin or rule:container_non_private_read or rule:container_project_creator or rule:container_project_admin or rule:container_acl_read"
 
 "containers:post": "rule:context_is_editor"
 "containers:get": "rule:context_is_viewer"
@@ -97,10 +93,10 @@
 "secret_meta:put": "rule:context_is_editor"
 "secret_meta:delete": "rule:context_is_editor"
 
-"secretstores:get": "rule:context_is_key_admin"
-"secretstores:get_global_default": "rule:context_is_key_admin"
-"secretstores:get_preferred": "rule:context_is_key_admin"
+"secretstores:get": "rule:context_is_viewer_and_project_member"
+"secretstores:get_global_default": "rule:context_is_viewer_and_project_member"
+"secretstores:get_preferred": "rule:context_is_viewer_and_project_member"
 
-"secretstore_preferred:post": "rule:context_is_key_admin"
-"secretstore_preferred:delete": "rule:context_is_key_admin"
-"secretstore:get": "rule:context_is_key_admin"
+"secretstore_preferred:post": "rule:context_is_key_admin_and_project_member"
+"secretstore_preferred:delete": "rule:context_is_key_admin_and_project_member"
+"secretstore:get": "rule:context_is_viewer_and_project_member"

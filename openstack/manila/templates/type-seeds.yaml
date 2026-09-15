@@ -1,4 +1,5 @@
 {{- if .Release.IsUpgrade}}
+{{- if .Values.seeds.all_enabled}}
 {{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1"}}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
@@ -7,41 +8,32 @@ metadata:
   labels:
     component: manila
     app: manila
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
   - monsoon3/manila-seed
-
   share_types:
-  - name: default
-    is_public: true
-    description: "premium_ssd"
-    specs:
-    {{- include "manila_type_seed.specs" . | indent 6 }}
-    extra_specs:
-      share_backend_name: "netapp-multi"
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-  - name: integration
-    is_public: false
-    specs:
-    {{- include "manila_type_seed.specs" . | indent 6 }}
-    extra_specs:
-      share_backend_name: "integration"
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-  {{- range $shareTypeName, $shareTypeEnabled := .Values.share_types }}
-  {{- if $shareTypeName | hasPrefix "hypervisor_storage" }}
-  {{- if $shareTypeEnabled }}
+  {{- range $shareTypeName, $shareTypeValues := .Values.share_types }}
+  {{- $shareTypeValues := kindIs "bool" $shareTypeValues | ternary (dict "enabled" $shareTypeValues) $shareTypeValues }}
+  {{- if $shareTypeValues.enabled }}
   - name: {{ $shareTypeName }}
-    is_public: false
+    is_public: {{ $shareTypeValues.is_public | default false }}
+    {{- if $shareTypeValues.description }}
+    description: {{ $shareTypeValues.description | quote }}
+    {{- end }}
     specs:
     {{- include "manila_type_seed.specs" . | indent 6 }}
     extra_specs:
-      share_backend_name: {{ $shareTypeName | quote }}
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
+    {{- $extraSpecs := $.Values.share_type_extra_specs | merge (dict "share_backend_name" $shareTypeName) | merge (default (dict) $shareTypeValues.extra_specs) }}
+    {{- range $key, $value := $extraSpecs }}
+    {{- if ne $value "__skip__" }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
   {{- end }}
   {{- end }}
-  {{- end }}
+{{- end }}
 {{- end }}
 {{- end }}

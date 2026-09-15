@@ -11,8 +11,12 @@ use = egg:Paste#urlmap
 {{- if .Values.watcher.enabled }} watcher{{- end -}}
 {{- end }}
 
+{{- define "rate_limit_pipe" -}}
+{{- if ((.Values.rate_limit).enabled) }} rate_limit {{- end -}}
+{{- end }}
+
 {{- define "sentry_pipe" -}}
-{{- if .Values.sentry.enabled }} raven{{- end -}}
+{{- if .Values.sentry.enabled }} sapccsentry {{- end -}}
 {{- end }}
 
 {{- define "uwsgi_pipe" -}}
@@ -22,7 +26,7 @@ use = egg:Paste#urlmap
 [composite:neutronapi_v2_0]
 use = call:neutron.auth:pipeline_factory
 noauth = cors healthcheck http_proxy_to_wsgi request_id  {{- include "watcher_pipe" . }} catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} {{- include "uwsgi_pipe" . }} extensions neutronapiapp_v2_0
-keystone = cors healthcheck http_proxy_to_wsgi request_id catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "uwsgi_pipe" . }} extensions neutronapiapp_v2_0
+keystone = cors healthcheck http_proxy_to_wsgi request_id catch_errors {{- include "osprofiler_pipe" . }} {{- include "sentry_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "rate_limit_pipe" . }} {{- include "audit_pipe" . }} {{- include "uwsgi_pipe" . }} extensions neutronapiapp_v2_0
 
 [filter:healthcheck]
 paste.filter_factory = oslo_middleware:Healthcheck.factory
@@ -67,9 +71,8 @@ paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 paste.filter_factory = oslo_middleware:Debug.factory
 
 {{ if .Values.sentry.enabled -}}
-[filter:raven]
-use = egg:raven#raven
-level = ERROR
+[filter:sapccsentry]
+paste.filter_factory = sapcc_sentrylogger.paste:sapcc_sentry_filter_factory
 {{- end }}
 
 {{ if .Values.audit.enabled -}}
@@ -87,6 +90,22 @@ use = egg:watcher-middleware#watcher
 service_type = network
 config_file = /etc/neutron/watcher.yaml
 {{- end }}
+
+{{ if ((.Values.rate_limit).enabled) -}}
+[filter:rate_limit]
+use = egg:rate-limit-middleware#rate-limit
+config_file = /etc/neutron/ratelimit.yaml
+service_type = network
+rate_limit_by = {{ .Values.rate_limit.rate_limit_by }}
+max_sleep_time_seconds: {{ .Values.rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_secret_file =  {{ .Values.rate_limit.backend_secret_file }}
+backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
+{{- end }}
+
 
 {{ if .Values.api.uwsgi -}}
 [filter:manhole]

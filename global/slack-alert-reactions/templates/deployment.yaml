@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slack-alert-reactions
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      name: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Chart.Name }}
+      annotations:
+        checksum/configmap: {{ include "slack-alert-reactions/templates/config-map.yaml" . | sha256sum }}
+        checksum/secret: {{ include "slack-alert-reactions/templates/secret.yaml" . | sha256sum }}
+        checksum/secret-apps-dev-json: {{ include "slack-alert-reactions/templates/secret-apps-dev-json.yaml" . | sha256sum }}
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-sa
+      containers:
+        - name: {{ .Chart.Name }}-app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: Always
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c 
+                - /slack-alert-reactions/scripts/healthcheck.sh
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+          env:
+          - name: SLACK_APP_CONFIG_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: slack-app-config-token
+                optional: false
+          - name: SLACK_WORKSPACE
+            valueFrom:
+              configMapKeyRef:
+                name: {{ .Chart.Name }}-config-map
+                key: slack-workspace
+                optional: false
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: github-token
+                optional: false 
+          - name: ACTIVE_CHANNELS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: active-channels
+                optional: false 
+          - name: REPO_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: repo-url
+                optional: false 
+          - name: LINK_TRIGGER_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Chart.Name }}-secret
+                key: link-trigger-url
+                optional: false 
+          - name: TEAM_NAME
+            value: {{.Values.env.TEAM_NAME }}
+          volumeMounts:
+          - name: {{ .Chart.Name }}-secret-apps-dev-json-volume
+            mountPath: "/secrets"
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - cp /secrets/apps.dev.json /slack-alert-reactions/.slack
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        - name: {{ .Chart.Name }}-sidecar
+          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          command: 
+            - tail
+            - -f
+            - /dev/null
+          volumeMounts:
+          - name: {{ .Chart.Name }}-secret-volume
+            mountPath: "/secrets"
+            readOnly: true
+          resources:
+            {{- toYaml .Values.sidecar.resources | nindent 12 }}
+      volumes:
+      - name: {{ .Chart.Name }}-secret-volume
+        secret:
+          secretName: {{ .Chart.Name }}-secret
+          optional: false
+      - name: {{ .Chart.Name }}-secret-apps-dev-json-volume
+        secret:
+          secretName: {{ .Chart.Name }}-secret-apps-dev-json
+          optional: false

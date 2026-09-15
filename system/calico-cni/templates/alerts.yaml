@@ -1,0 +1,20 @@
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: alerts-calico.alerts
+  labels:
+    app: calico
+    tier: k8s
+    type: alerting-rules
+  {{- with $values.alerts.ruleSelector }}
+    {{ tpl (toYaml .) . | nindent 4 }}
+  {{- end }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_calico.alerts.tpl") . | indent 2 }}
+
+{{- end }}

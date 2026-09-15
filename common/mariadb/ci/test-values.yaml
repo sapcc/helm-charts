@@ -1,9 +1,42 @@
+---
 global:
-  dbUser: admin
+  dbUser: test
   dbPassword: secret!
   registry: my.docker.registry
+  registryAlternateRegion: other.docker.registry
   dockerHubMirror: my.dockerhub.mirror
   dockerHubMirrorAlternateRegion: other.dockerhub.mirror
+  tld: ""
+  region: local
+  backup_v2:
+    aws_access_key_id: superSecret
+    aws_secret_access_key: superSecret
+  mariadb:
+    backup_v2:
+      aws:
+        region: local
+        sse_customer_key: superSecret
+      ceph_s3:
+        sse_customer_key: superSecretDefault
+        targets:
+          - endpoint: "https://ceph-s3.local.example.com"
+            region: local
+            aws_access_key_id: superSecret
+            aws_secret_access_key: superSecret
+          - name: ceph-override
+            endpoint: "https://ceph-s3-b.local.example.com"
+            region: local
+            bucket_name: mariadb-backup-local-b
+            aws_access_key_id: superSecret
+            aws_secret_access_key: superSecret
+            sse_customer_key: superSecretPerTarget
+          - name: ceph-optout
+            endpoint: "https://ceph-s3-c.local.example.com"
+            region: local
+            bucket_name: mariadb-backup-local-c
+            aws_access_key_id: superSecret
+            aws_secret_access_key: superSecret
+            sse_customer_key: ""
 
 test_db_host: testRelease-mariadb.svc
 root_password: secret123
@@ -14,4 +47,38 @@ backup:
   enabled: false
 
 backup_v2:
-  enabled: false
+  enabled: true
+  swift:
+    password: superSecret
+  ceph_s3:
+    enabled: true
+
+users:
+  test:
+    name: test
+    password: superSecret
+  skipme:
+    name: skipme
+    password: null
+  deleteme:
+    enabled: false
+  backup:
+    password: superSecret
+
+alerts:
+  support_group: test
+
+sync:
+  enabled: true
+  replicas: 1
+  backup:
+    service: test
+    swift:
+      password: openstackTopSecret
+  source:
+    host: source-mariadb
+    password: sourceTopSecret
+  target:
+    password: targetTopSecret
+  databases:
+    - test

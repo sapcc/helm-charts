@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "cron-iaas-availability-monthly"
+  namespace: jupyterhub
+spec:
+  schedule: "0 0 1 * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: "cron-availability"
+            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.images.application.name }}:{{ .Values.jupyterhub_cron.images.application.tag }}"
+            command: ['sh', '-c']
+            args:
+            - >
+              papermill iaas-api-availability.ipynb - -r swift_url $(swift_url) && /linkerd-await --shutdown echo "shutdown linkerd-proxy" \
+            volumeMounts:
+            - name: notebooks-git
+              mountPath: /home/jovyan
+            env:
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "Linkerd was not enabled or not requested"
+            {{- end }}
+            - name: approle_role_id
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: approle_role_id
+            - name: approle_secret_id
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: approle_secret_id
+            - name: swift_url
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: swift_url
+            securityContext:
+              allowPrivilegeEscalation: false
+          initContainers:
+          - name: "clone-notebooks"
+            volumeMounts:
+            - name: notebooks-git
+              mountPath: /notebooks-git
+            env:
+            - name: github_token
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: github_token
+            - name: github_url
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: github_url
+            image: "{{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/{{ .Values.jupyterhub_cron.images.init.name }}:{{ .Values.jupyterhub_cron.images.init.tag }}"
+            command: ['sh', '-c']
+            args:
+            - >
+              curl -L -k -o \   -H "Accept: application/vnd.github.raw+json" \   -H "Authorization: Bearer $(github_token)" \   -H "X-GitHub-Api-Version: 2022-11-28" \   "$(github_url)iaas-api-availability.ipynb" > /notebooks-git/iaas-api-availability.ipynb
+          volumes:
+          - name: notebooks-git
+            emptyDir: {}

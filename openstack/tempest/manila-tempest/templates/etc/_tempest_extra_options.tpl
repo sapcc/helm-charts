@@ -1,4 +1,3 @@
-
 [DEFAULT]
 debug = True
 use_stderr = True
@@ -7,9 +6,9 @@ rally_debug = True
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
-test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
+test_accounts_file = /{{ .Chart.Name }}-etc-secret/tempest_accounts.yaml
 admin_username = admin
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
 admin_project_name = admin
 admin_domain_name = tempest
 admin_domain_scope = True
@@ -20,27 +19,28 @@ share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).temp
 alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
 admin_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
 run_revert_to_snapshot_tests = {{ default false (index .Values (print .Chart.Name | replace "-" "_")).tempest.run_revert_to_snapshot_tests }}
-run_multiple_share_replicas_tests = False
+run_multiple_share_replicas_tests = True
 run_share_group_tests = False
 run_quota_tests = False
 run_public_tests = False
-run_security_service_backend_tests = False
+run_admin_project_member_client_tests = False
+run_security_service_backend_tests = True
 multitenancy_enabled = True
 create_networks_when_multitenancy_enabled = False
 default_share_type_name = default
 catalog_type = sharev2
-max_api_microversion = 2.49
+max_api_microversion = 2.78
 suppress_errors_in_cleanup = True
 enable_ip_rules_for_protocols = nfs
 enable_protocols = nfs
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 
 [identity]
 uri_v3 = http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}:5000/v3
-endpoint_type = internal
-v3_endpoint_type = internal
+endpoint_type = public
+v3_endpoint_type = public
 region = {{ .Values.global.region }}
 default_domain_id = {{ .Values.tempest_common.domainId }}
 admin_domain_scope = True

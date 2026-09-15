@@ -1,0 +1,122 @@
+name: Build, push, and scan Docker image with input
+
+on:
+  workflow_dispatch:
+    inputs:
+      Dockerfile:
+        description: 'Dockerfile path to build'
+        required: true
+        type: string
+      ImageName:
+        description: 'Name of the image to build'
+        required: true
+        type: string
+      ImageTag:
+        description: 'Tag of the image to build'
+        required: true
+        type: string
+      dry-run:
+        description: 'Run the workflow without pushing the Docker image to the registry'
+        type: boolean
+        required: false
+      skip-trivy-scan:
+        description: 'Skip the Trivy vulnerability scan'
+        type: boolean
+        required: false
+        default: false
+    
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    name: Build
+    runs-on: [ ubuntu-latest ]
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: set build context to Dockerfile location
+        id: change-dir
+        run: echo "CONTEXT=$(dirname ${{ inputs.Dockerfile }})" >> "$GITHUB_OUTPUT"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.7.0
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ inputs.ImageName }}
+          tags: |
+            type=sha
+            type=raw,value=${{ inputs.ImageTag }}
+
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ steps.change-dir.outputs.CONTEXT }}
+          file: ${{ inputs.Dockerfile }}
+          push: ${{ !inputs.dry-run }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+  vulnerability-scan:
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    
+    name: Vulnerability Scan
+    needs: build
+    runs-on: [ ubuntu-latest ]
+    if: ${{ !inputs.skip-trivy-scan }}
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.29.0
+        if: success()
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ inputs.ImageName }}:${{ inputs.ImageTag }}
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif

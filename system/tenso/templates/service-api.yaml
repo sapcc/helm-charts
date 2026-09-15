@@ -1,0 +1,16 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: tenso-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ .Values.prometheus.targets.openstack }}
+
+spec:
+  selector:
+    name: tenso-api
+  ports:
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 80
+      protocol: TCP

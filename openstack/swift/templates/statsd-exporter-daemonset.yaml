@@ -11,15 +11,17 @@ spec:
   minReadySeconds: 15
   updateStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '10%' # these pods can be rolled rather quickly since they are not in the hot path
   selector:
     matchLabels:
       component: swift-statsd-exporter
+      from: daemonset
+      restart: directly
   template:
     metadata:
       labels:
         component: swift-statsd-exporter
-        alert-tier: os
-        alert-service: swift
         from: daemonset
         restart: directly
       annotations:
@@ -38,6 +40,8 @@ spec:
         - name: statsd
           image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
           args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          securityContext:
+            runAsNonRoot: true
           ports:
             - name: statsd
               containerPort: 9125
@@ -47,3 +51,6 @@ spec:
           volumeMounts:
             - mountPath: /swift-etc
               name: swift-etc
+
+---
+{{ include "swift_vpa_no_autoupdates" "swift-statsd-exporter" }}

@@ -1,0 +1,254 @@
+---
+image.registry: &imageRegistry "keppel.eu-de-1.cloud.sap"
+image.project: &imageProject "ccloud"
+image.version: &imageVersion "20240724035543"
+
+suite: storage
+values:
+  - default_values.yaml
+set:
+  mariadb.galera.clustername: "testname"
+release:
+  name: testrelease
+  namespace: testnamespace
+templates:
+  - statefulset-mariadb.yaml
+  - statefulset-proxysql.yaml
+  - cronjob-kopia-backup.yaml
+  - deployment-haproxy.yaml
+  - deployment-kopia-server.yaml
+  - job-kopia-restore.yaml
+  - job-mariadb-config.yaml
+  - configmap-mariadb-my.cnf.yaml
+  - configmap-mariadb.yaml
+  - configmap-mariadb-job.yaml
+  - configmap-proxysql.yaml
+  - configmap-proxysql.conf.yaml
+  - configmap-haproxy.yaml
+  - configmap-kopia.yaml
+tests:
+  - it: container image paths for mariadb-galera are correct
+    template: statefulset-mariadb.yaml
+    set:
+      image.os.registry: *imageRegistry
+      image.os.project: *imageProject
+      image.os.softwarename: mariadb-galera-ubuntu
+      image.os.softwareversion: 22.04
+      image.os.imageversion: *imageVersion
+      image.database.registry: *imageRegistry
+      image.database.project: *imageProject
+      image.database.softwarename: mariadb-galera
+      image.database.softwareversion: 10.5.25
+      image.database.imageversion: *imageVersion
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240724035543
+  - it: container image paths for mariadb-galera with monitoring enabled are correct
+    template: statefulset-mariadb.yaml
+    set:
+      image.os.registry: *imageRegistry
+      image.os.project: *imageProject
+      image.os.softwarename: mariadb-galera-ubuntu
+      image.os.softwareversion: 22.04
+      image.os.imageversion: *imageVersion
+      image.database.registry: *imageRegistry
+      image.database.project: *imageProject
+      image.database.softwarename: mariadb-galera
+      image.database.softwareversion: 10.5.25
+      image.database.imageversion: *imageVersion
+      monitoring.mysqld_exporter.enabled: true
+      image.monitoring.registry: *imageRegistry
+      image.monitoring.project: *imageProject
+      image.monitoring.softwarename: mariadb-galera-mysqld_exporter
+      image.monitoring.softwareversion: 0.14.0
+      image.monitoring.imageversion: *imageVersion
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240724035543
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240724035543
+  - it: container image paths for mariadb-galera with cleanCache and fixFsPermissions initContainers are correct
+    template: statefulset-mariadb.yaml
+    set:
+      image.os.registry: *imageRegistry
+      image.os.project: *imageProject
+      image.os.softwarename: mariadb-galera-ubuntu
+      image.os.softwareversion: 22.04
+      image.os.imageversion: *imageVersion
+      image.database.registry: *imageRegistry
+      image.database.project: *imageProject
+      image.database.softwarename: mariadb-galera
+      image.database.softwareversion: 10.5.25
+      image.database.imageversion: *imageVersion
+      mariadb.fixFsPermissions: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240724035543
+  - it: container image paths for proxysql are correct
+    template: statefulset-proxysql.yaml
+    set:
+      image.os.registry: *imageRegistry
+      image.os.project: *imageProject
+      image.os.softwarename: mariadb-galera-ubuntu
+      image.os.softwareversion: 22.04
+      image.os.imageversion: *imageVersion
+      image.proxy.registry: *imageRegistry
+      image.proxy.project: *imageProject
+      image.proxy.softwarename: mariadb-galera-proxysql
+      image.proxy.softwareversion: 2.6.3
+      image.proxy.imageversion: *imageVersion
+      proxy.enabled: true
+      proxy.type: proxysql
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-proxysql:2.6.3-20240724035543
+  - it: container image paths for proxysql with fixFsPermissions initContainers are correct
+    template: statefulset-proxysql.yaml
+    set:
+      image.os.registry: *imageRegistry
+      image.os.project: *imageProject
+      image.os.softwarename: mariadb-galera-ubuntu
+      image.os.softwareversion: 22.04
+      image.os.imageversion: *imageVersion
+      image.proxy.registry: *imageRegistry
+      image.proxy.project: *imageProject
+      image.proxy.softwarename: mariadb-galera-proxysql
+      image.proxy.softwareversion: 2.6.3
+      image.proxy.imageversion: *imageVersion
+      proxy.enabled: true
+      proxy.type: proxysql
+      proxy.proxysql.fixFsPermissions: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.initContainers[1].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-proxysql:2.6.3-20240724035543
+  - it: container image paths for haproxy are correct
+    template: deployment-haproxy.yaml
+    set:
+      image.haproxy.registry: *imageRegistry
+      image.haproxy.project: *imageProject
+      image.haproxy.softwarename: mariadb-galera-haproxy
+      image.haproxy.softwareversion: 2.8.10
+      image.haproxy.imageversion: *imageVersion
+      proxy.enabled: true
+      proxy.type: haproxy
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-haproxy:2.8.10-20240724035543
+  - it: container image paths for kopia-server are correct
+    template: deployment-kopia-server.yaml
+    set:
+      image.os.registry: *imageRegistry
+      image.os.project: *imageProject
+      image.os.softwarename: mariadb-galera-ubuntu
+      image.os.softwareversion: 22.04
+      image.os.imageversion: *imageVersion
+      image.kopiabackup.registry: *imageRegistry
+      image.kopiabackup.project: *imageProject
+      image.kopiabackup.softwarename: mariadb-galera-kopia
+      image.kopiabackup.softwareversion: 0.17.0
+      image.kopiabackup.imageversion: *imageVersion
+      mariadb.galera.backup.enabled: true
+      mariadb.galera.backup.kopia.enabled: true
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.eu-de-1.cloud"
+      mariadb.galera.backup.kopia.s3.region: "eu-de-1"
+      mariadb.galera.backup.kopia.s3.bucket: "testbucket"
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-kopia:0.17.0-20240724035543
+  - it: container image paths for kopia-backup cronjob are correct
+    template: cronjob-kopia-backup.yaml
+    set:
+      image.kopiabackup.registry: *imageRegistry
+      image.kopiabackup.project: *imageProject
+      image.kopiabackup.softwarename: mariadb-galera-kopia
+      image.kopiabackup.softwareversion: 0.17.0
+      image.kopiabackup.imageversion: *imageVersion
+      mariadb.galera.backup.enabled: true
+      mariadb.galera.backup.kopia.enabled: true
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.eu-de-1.cloud"
+      mariadb.galera.backup.kopia.s3.region: "eu-de-1"
+      mariadb.galera.backup.kopia.s3.bucket: "testbucket"
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-kopia:0.17.0-20240724035543
+  - it: container image paths for the kopia-restore job are correct
+    template: job-kopia-restore.yaml
+    set:
+      image.kopiabackup.registry: *imageRegistry
+      image.kopiabackup.project: *imageProject
+      image.kopiabackup.softwarename: mariadb-galera-kopia
+      image.kopiabackup.softwareversion: 0.17.0
+      image.kopiabackup.imageversion: *imageVersion
+      mariadb.galera.restore.kopia.enabled: true
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.eu-de-1.cloud"
+      mariadb.galera.backup.kopia.s3.region: "eu-de-1"
+      mariadb.galera.backup.kopia.s3.bucket: "testbucket"
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-kopia:0.17.0-20240724035543
+  - it: container image paths for mariadb-galera config job are correct
+    template: job-mariadb-config.yaml
+    set:
+      image.database.registry: *imageRegistry
+      image.database.project: *imageProject
+      image.database.softwarename: mariadb-galera
+      image.database.softwareversion: 10.5.25
+      image.database.imageversion: *imageVersion
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240724035543
