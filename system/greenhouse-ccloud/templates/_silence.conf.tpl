@@ -290,3 +290,181 @@
     - region
     - devicename
     - ifDescr
+- status: active
+  title: ACI - ApicStorageIssue silence
+  description: Silence APIC storage capacity > 90% alert for a given region and node
+  fixed_labels:
+    alertname: ApicStorageIssue
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+- status: active
+  title: ACI - APICWrongNodeIdPodIdMapping silence
+  description: Silence APIC wrong node-id to pod-id mapping alert for a given region and node
+  fixed_labels:
+    alertname: APICWrongNodeIdPodIdMapping
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+- status: active
+  title: ACI - ApicUnhealthy silence
+  description: Silence APIC unhealthy controller alert for a given region and node
+  fixed_labels:
+    alertname: ApicUnhealthy
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+- status: active
+  title: ACI - ApicControllerUnhealthy silence
+  description: Silence APIC cluster illegitimate controller alert for a given region and node
+  fixed_labels:
+    alertname: ApicControllerUnhealthy
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+- status: active
+  title: ACI - ApicUnavailable silence
+  description: Silence APIC controller not available (clustering failure) alert for a given region and node
+  fixed_labels:
+    alertname: ApicUnavailable
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+- status: active
+  title: ACI - ApicPsuFailed silence
+  description: Silence APIC missing PSU alert for a given region and node
+  fixed_labels:
+    alertname: ApicPsuFailed
+    support_group: network-data-aci-obs
+    severity: warning
+  editable_labels:
+    - region
+    - node_name
+- status: active
+  title: ACI - ApicSsdUsageIssue silence
+  description: Silence APIC SSD lifetime >= 90% alert for a given region and node
+  fixed_labels:
+    alertname: ApicSsdUsageIssue
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+- status: active
+  title: ACI - ApicConfigBackupFailed silence
+  description: Silence APIC remote backup failed alert for a given region
+  fixed_labels:
+    alertname: ApicConfigBackupFailed
+    support_group: network-data-aci-obs
+    severity: warning
+  editable_labels:
+    - region
+- status: active
+  title: ACI - LLDPOutOfService silence
+  description: Silence LLDP out of service alert for a given region and node/interface
+  fixed_labels:
+    alertname: LLDPOutOfService
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - BPDUReceived silence
+  description: Silence BPDU packets received on interface without VLAN configured alert for a given region and node/interface
+  fixed_labels:
+    alertname: BPDUReceived
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - InvalidConnPort silence
+  description: Silence invalid connection port detected alert for a given region and node/interface
+  fixed_labels:
+    alertname: InvalidConnPort
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - IngressBufDropPacketsRate silence
+  description: Silence ingress buffer drop packets rate alert for a given region and node/interface
+  fixed_labels:
+    alertname: IngressBufDropPacketsRate
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - IngressForwardingDropPacketsRate silence
+  description: Silence ingress forwarding drop packets rate alert for a given region and node/interface
+  fixed_labels:
+    alertname: IngressForwardingDropPacketsRate
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - BGPNeighbourDown silence
+  description: Silence port suspended BGP neighbour down alert for a given region and node/interface
+  fixed_labels:
+    alertname: BGPNeighbourDown
+    support_group: network-data-aci-obs
+    severity: warning
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - PortDown silence
+  description: Silence port down alert for a given region and node/interface
+  fixed_labels:
+    alertname: PortDown
+    support_group: network-data-aci-obs
+    severity: warning
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - VPCConfigInconsistency silence
+  description: Silence VPC configuration inconsistency alert for a given region and node/interface
+  fixed_labels:
+    alertname: VPCConfigInconsistency
+    support_group: network-data-aci-obs
+    severity: warning
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
+- status: active
+  title: ACI - CRCOrFCSOverThreshold silence
+  description: Silence CRC/FCS align errors over threshold alert for a given region and node/interface
+  fixed_labels:
+    alertname: CRCOrFCSOverThreshold
+    support_group: network-data-aci-obs
+    severity: critical
+  editable_labels:
+    - region
+    - node_name
+    - node_intf
