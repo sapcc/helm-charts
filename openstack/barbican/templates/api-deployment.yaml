@@ -43,6 +43,9 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- if and .Values.apacheMetrics.enabled (not .Values.api.metrics.enabled) }}
+          {{- fail "apacheMetrics.enabled requires api.metrics.enabled" }}
+        {{- end }}
         {{- if .Values.apacheMetrics.enabled }}
         prometheus.io/port_1: {{ .Values.apacheMetrics.port | quote }}
         {{- end }}
