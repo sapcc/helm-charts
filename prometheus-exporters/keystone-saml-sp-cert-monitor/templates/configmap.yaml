@@ -9,11 +9,15 @@ data:
     #!/usr/bin/env sh
     set -u
 
-    apk add --no-cache --quiet curl openssl git >/dev/null 2>&1
+    apk add --no-cache --quiet curl openssl git grep >/dev/null 2>&1
 
-    git clone --depth=1 \
+    GIT_SSL_NO_VERIFY=true git clone --depth=1 \
       "https://x-access-token:${GITHUB_TOKEN}@${FEDERATION_REPO#https://}" \
       /federation >/dev/null 2>&1
+    if [ ! -d "/federation/charts/keystone-saml-federation/tenants" ]; then
+      echo "ERROR: git clone failed or repo structure unexpected — /federation/charts/keystone-saml-federation/tenants not found"
+      exit 1
+    fi
 
     FEDERATION_DIR="/federation/charts/keystone-saml-federation"
     WARN_DAYS="{{ .Values.warnDays }}"
