@@ -1,0 +1,95 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keystone-saml-sp-cert-monitor-script
+  namespace: {{ .Values.namespace }}
+data:
+  check-cert-expiry.sh: |
+    #!/usr/bin/env sh
+    set -u
+
+    apk add --no-cache --quiet curl openssl git >/dev/null 2>&1
+
+    git clone --depth=1 \
+      "https://x-access-token:${GITHUB_TOKEN}@${FEDERATION_REPO#https://}" \
+      /federation >/dev/null 2>&1
+
+    FEDERATION_DIR="/federation/charts/keystone-saml-federation"
+    WARN_DAYS="{{ .Values.warnDays }}"
+    ALERT_DAYS="{{ .Values.alertDays }}"
+    REGION="{{ .Values.region }}"
+
+    now_epoch=$(date +%s)
+
+    for tenant_dir in "${FEDERATION_DIR}/tenants/"/*/; do
+      tenant=$(basename "$tenant_dir")
+      for region_file in "${tenant_dir}regions/"*.yaml; do
+        [ -f "$region_file" ] || continue
+        region=$(basename "$region_file" .yaml)
+        [ "$region" = "$REGION" ] || continue
+
+        key_storage=$(grep -m1 '^keyStorage:[[:space:]]' "$region_file" | sed 's/^keyStorage:[[:space:]]*//' || true)
+        key_storage=${key_storage:-vault-kv}
+        [ "$key_storage" = "vault-kv" ] || continue
+
+        METADATA_URL="https://identity-3.${region}.cloud.sap/Shibboleth.sso/${tenant}/Metadata"
+
+        metadata_xml=$(curl -sf --max-time 10 "${METADATA_URL}" 2>/dev/null) || {
+          echo "SKIP: metadata unreachable for tenant=${tenant} region=${region}"
+          continue
+        }
+
+        cert_b64=$(printf '%s' "$metadata_xml" | tr -d '\n\r' | \
+          grep -oP '(?<=<ds:X509Certificate>)[^<]+' | head -1 | tr -dc 'A-Za-z0-9+/=' || true)
+        if [ -z "$cert_b64" ]; then
+          echo "SKIP: no signing cert in metadata for tenant=${tenant} region=${region}"
+          continue
+        fi
+
+        cert_tmp=$(mktemp)
+        printf '%s\n' '-----BEGIN CERTIFICATE-----' > "$cert_tmp"
+        printf '%s\n' "$cert_b64" | fold -w 64 >> "$cert_tmp"
+        printf '%s\n' '-----END CERTIFICATE-----' >> "$cert_tmp"
+
+        asn1_out=$(openssl asn1parse -in "$cert_tmp" 2>/dev/null) || true
+        rm -f "$cert_tmp"
+
+        not_after_raw=$(printf '%s\n' "$asn1_out" | grep -E 'UTCTIME|GENERALIZEDTIME' | sed -n '2p' | sed 's/.*://' | tr -d ' \r') || true
+
+        if [ -z "$not_after_raw" ]; then
+          echo "SKIP: cert parse failed for tenant=${tenant} region=${region} [len=${#cert_b64}]"
+          continue
+        fi
+
+        if [ "${#not_after_raw}" -le 13 ]; then
+          yy="${not_after_raw%${not_after_raw#??}}"
+          [ "$yy" -lt 50 ] && year="20${yy}" || year="19${yy}"
+          not_after_raw="${year}${not_after_raw#??}"
+        fi
+        expiry_date="${not_after_raw%${not_after_raw#????????}} ${not_after_raw#????????}"
+        expiry_date=$(printf '%s-%s-%s %s:%s:%s' \
+          "${not_after_raw%${not_after_raw#????}}" \
+          "$(printf '%s' "$not_after_raw" | cut -c5-6)" \
+          "$(printf '%s' "$not_after_raw" | cut -c7-8)" \
+          "$(printf '%s' "$not_after_raw" | cut -c9-10)" \
+          "$(printf '%s' "$not_after_raw" | cut -c11-12)" \
+          "$(printf '%s' "$not_after_raw" | cut -c13-14)")
+        expiry_epoch=$(TZ=UTC date -d "$expiry_date" +%s 2>/dev/null) || {
+          echo "SKIP: date parse failed for tenant=${tenant} region=${region} (${expiry_date})"
+          continue
+        }
+        remaining=$(( (expiry_epoch - now_epoch) / 86400 ))
+
+        if [ "$remaining" -lt 0 ]; then
+          echo "ALERT: SP cert EXPIRED for tenant=${tenant} region=${region} (expired ${remaining#-} days ago; was: ${expiry_date})"
+        elif [ "$remaining" -lt "$ALERT_DAYS" ]; then
+          echo "ALERT: SP cert for tenant=${tenant} region=${region} expires in ${remaining} days — immediate rotation required (${expiry_date})"
+        elif [ "$remaining" -lt "$WARN_DAYS" ]; then
+          echo "WARN: SP cert for tenant=${tenant} region=${region} expires in ${remaining} days — rotation recommended (${expiry_date})"
+        else
+          echo "OK: SP cert for tenant=${tenant} region=${region} valid for ${remaining} more days (${expiry_date})"
+        fi
+      done
+    done
+{{- end }}

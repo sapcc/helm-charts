@@ -1,0 +1,44 @@
+{{- if .Values.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: keystone-saml-sp-cert-monitor
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: check
+            image: {{ .Values.image }}
+            command:
+            - /bin/sh
+            - /scripts/check-cert-expiry.sh
+            env:
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: keystone-saml-sp-cert-monitor
+                  key: github-token
+            - name: FEDERATION_REPO
+              value: {{ .Values.federationRepo | quote }}
+            - name: REGION
+              value: {{ required "region must be set" .Values.region | quote }}
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: keystone-saml-sp-cert-monitor-script
+              defaultMode: 0755
+{{- end }}
