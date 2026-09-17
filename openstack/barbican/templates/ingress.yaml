@@ -16,7 +16,9 @@ metadata:
   annotations:
   {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
+    {{- if not (include "barbican.tls.serving" .) }}
     disco: "true"
+    {{- end }}
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
   {{- if .Values.ingress.enableRequestSizeLimit }}
