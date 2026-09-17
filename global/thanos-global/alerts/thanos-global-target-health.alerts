@@ -1,0 +1,26 @@
+groups:
+- name: thanos-global-target-health.alerts
+  rules:
+
+  # Fires once per support group (across all regions/clusters) when one or more
+  # of their scrape targets are down. One alert per team = less noise.
+  - alert: ScrapeTargetDown
+    expr: |
+      count by (ccloud_support_group) (
+        min by (job, instance, cluster, region, namespace, service, ccloud_support_group) (
+          up{ccloud_support_group!=""} == 0
+        )
+      ) > 0
+    for: 10m
+    labels:
+      severity: warning
+      service: metrics
+      support_group: "{{ $labels.ccloud_support_group }}"
+      meta: "{{ $value }} target(s) down for support group {{ $labels.ccloud_support_group }}"
+      playbook: docs/support/playbook/prometheus/failed_scrapes
+      persesDashboard: "https://perses.global.cloud.sap/projects/observability/dashboards/thanos-target-health?var-support_group={{ $labels.ccloud_support_group }}"
+    annotations:
+      summary: "Scrape targets down for support group {{ $labels.ccloud_support_group }}"
+      description: >
+        {{ $value }} target(s) owned by {{ $labels.ccloud_support_group }} have been down
+        for more than 10 minutes. For more details see the Perses dashboard.
