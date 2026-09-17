@@ -19,3 +19,25 @@ spec:
   storageClassName: {{ .Values.persistence_claim.storage_class }}
   {{- end }}
 {{ end }}
+{{- if and .Values.slow_query_log.persistence.enabled .Values.slow_query_log.persistence.autoprovision }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "mariadb.slowLogPvcName" . }}
+  labels:
+    {{- include "mariadb.labels" (list $ "noversion" "mariadb" "persistentvolumeclaim" "database") | indent 4 }}
+spec:
+{{- if .Values.slow_query_log.persistence.access_modes }}
+  accessModes:
+  {{- range $accessMode := .Values.slow_query_log.persistence.access_modes }}
+  - {{ $accessMode }}
+  {{- end }}
+{{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.slow_query_log.persistence.size }}
+  {{- if .Values.slow_query_log.persistence.storage_class }}
+  storageClassName: {{ .Values.slow_query_log.persistence.storage_class }}
+  {{- end }}
+{{ end }}
