@@ -107,7 +107,7 @@ groups:
       summary: "Maillog compliance violation"
 
   - alert: KeystoneSAMLSecurityEventLogged
-    expr: opensearch_logs_keystone_saml_errors_doc_count > 0
+    expr: opensearch_logs_keystone_saml_errors_hits > 0
     for: 0m
     labels:
       context: compliance
