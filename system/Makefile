@@ -1,5 +1,5 @@
-CLUSTER_API_VERSION ?= v1.13.4
-PROVIDER_METAL3_VERSION ?= v1.13.1
+CLUSTER_API_VERSION ?= v1.14.2
+PROVIDER_METAL3_VERSION ?= v1.14.0
 PROVIDER_METAL_VERSION ?= cf12acd520aa203db28f21a326a61fddc9720b95
 PROVIDER_IPAM_VERSION ?= v1.1.1
 PROVIDER_HELM ?= v0.6.4
@@ -18,7 +18,7 @@ endif
 build: build-cluster-api-core build-controlplane-kubeadm build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus build-provider-helm build-provider-ipam build-ipam-capi-remote build-provider-metal3 build-provider-metal
 
 build-cluster-api-core:
-	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//config/default,$(CLUSTER_API_VERSION))
+	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//core/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,cluster-api-core)
 	@find cluster-api-core/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#/{{ include "cluster-api-core.fullname" . }}-system/#/#g' {} \;
