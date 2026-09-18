@@ -22,6 +22,10 @@ spec:
         alert-tier: os
         alert-service: neutron
         ml2-driver: "ovs"
+        # Source for the BUILDING_BLOCK downward-API env.
+        {{- if .Values.global.buildingBlock }}
+        kubernetes.metal.cloud.sap/bb: {{ .Values.global.buildingBlock | quote }}
+        {{- end }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         secret-etc-hash: {{ include (print $.Template.BasePath "/secret-etc.yaml") . | sha256sum }}
