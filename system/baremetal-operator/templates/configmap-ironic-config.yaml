@@ -13,7 +13,6 @@ data:
   USE_IRONIC_INSPECTOR: "false"
   IRONIC_KERNEL_PARAMS: console=ttyS0
   PROVISIONING_INTERFACE: {{ .Values.ironic.provisionInterface }}
-  RESTART_CONTAINER_CERTIFICATE_UPDATED: "false"
   IRONIC_RAMDISK_SSH_KEY: {{ .Values.ironic.auth.ipaSshKey }}
   IRONIC_URL_HOST: metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
   IRONIC_EXTERNAL_IP: metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
@@ -27,9 +26,6 @@ data:
   runironic: |
     #!/usr/bin/bash
 
-    # This setting must go before configure-ironic since it has different defaults.
-    export IRONIC_USE_MARIADB=${IRONIC_USE_MARIADB:-false}
-
     # shellcheck disable=SC1091
     . /bin/configure-ironic.sh
 
@@ -38,19 +34,15 @@ data:
 
     run_ironic_dbsync
 
-    if [[ "$IRONIC_TLS_SETUP" == "true" ]] && [[ "${RESTART_CONTAINER_CERTIFICATE_UPDATED}" == "true" ]]; then
-        # shellcheck disable=SC2034
-        inotifywait -m -e delete_self "${IRONIC_CERT_FILE}" | while read -r file event; do
-            kill $(pgrep ironic)
-        done &
-    fi
+    # ironic-image >= 32 uses watchdog instead of inotify; use the built-in helper
+    configure_restart_on_certificate_update "${IRONIC_TLS_SETUP}" ironic "${IRONIC_CERT_FILE}"
 
-    IRONIC_CONFIG=/etc/ironic/ironic.conf
-    sed -i 's/http:\/\/{{ .Values.ironic.externalIP }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' $IRONIC_CONFIG
-    sed -i 's/https:\/\/{{ .Values.ironic.externalIP }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' $IRONIC_CONFIG
-    sed -i 's/http:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' $IRONIC_CONFIG
+    # ironic-image >= 35 renders config into ${IRONIC_CONF_DIR} (/conf/ironic), not /etc/ironic
+    IRONIC_CONFIG="${IRONIC_CONF_DIR}/ironic.conf"
+    sed -i 's/http:\/\/{{ .Values.ironic.externalIP }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' "$IRONIC_CONFIG"
+    sed -i 's/https:\/\/{{ .Values.ironic.externalIP }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' "$IRONIC_CONFIG"
+    sed -i 's/http:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/https:\/\/metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}/' "$IRONIC_CONFIG"
 
     configure_ironic_auth
 
-    exec /usr/bin/ironic
-
+    exec /usr/bin/ironic --config-dir "${IRONIC_CONF_DIR}"
