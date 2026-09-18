@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keystone-saml-sp-cert-exporter
+  namespace: {{ .Values.exporter.namespace }}
+  labels:
+    app: keystone-saml-sp-cert-exporter
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keystone-saml-sp-cert-exporter
+  template:
+    metadata:
+      labels:
+        app: keystone-saml-sp-cert-exporter
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: keystone-saml-sp-cert-exporter-config
+      containers:
+        - name: keystone-saml-sp-cert-exporter
+          image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.exporter.image.name missing" .Values.exporter.image.name }}:{{ required ".Values.exporter.image.tag missing" .Values.exporter.image.tag }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.exporter.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.exporter.port | quote }}
+            - name: REFRESH_INTERVAL_SECS
+              value: {{ .Values.exporter.refreshIntervalSecs | quote }}
+            - name: FEDERATION_REPO_URL
+              value: {{ required ".Values.exporter.federationRepoUrl missing" .Values.exporter.federationRepoUrl | quote }}
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: keystone-saml-sp-cert-exporter-github
+                  key: token
+          volumeMounts:
+            - mountPath: /etc/saml-sp-cert-exporter
+              name: config
+              readOnly: true
+          resources:
+{{ toYaml .Values.exporter.resources | indent 12 }}

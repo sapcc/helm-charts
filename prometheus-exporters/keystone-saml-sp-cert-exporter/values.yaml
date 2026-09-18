@@ -1,0 +1,40 @@
+global:
+  registry: keppel.eu-de-1.cloud.sap
+
+owner-info:
+  support-group: identity
+  service: keystone-saml-sp-cert-exporter
+  maintainers:
+    - "Moutaz Chaara"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/keystone-saml-sp-cert-exporter"
+
+prometheus-monitors:
+  serviceMonitor:
+    enabled: true
+  nameOverride: "keystone-saml-sp-cert-exporter"
+  prometheus: "openstack"
+  jobLabel: "app"
+  matchLabels:
+    app: keystone-saml-sp-cert-exporter
+
+exporter:
+  image:
+    name: ccloud/keystone-saml-sp-cert-exporter
+    tag: ""
+  namespace: infra-monitoring
+  port: 9102
+  refreshIntervalSecs: 3600
+  region: ""
+  federationRepoUrl: https://github.wdf.sap.corp/sap-cloud-infrastructure/keystone-saml-federation.git
+  githubToken: ""
+  resources:
+    limits:
+      memory: 128Mi
+      cpu: 100m
+    requests:
+      memory: 64Mi
+      cpu: 50m
+
+alerts:
+  enabled: true
+  prometheus: openstack
