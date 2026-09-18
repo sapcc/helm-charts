@@ -1,0 +1,17 @@
+{{- if .Values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "keystone-saml-sp-cert-exporter-%s" $path | replace "/" "-" | trimSuffix ".tpl" }}
+  labels:
+    app: keystone-saml-sp-cert-exporter
+    prometheus: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
+    type: alerting-rules
+spec:
+{{- with $ }}
+{{ tpl (printf "%s" $bytes) . | indent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
