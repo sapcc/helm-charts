@@ -102,7 +102,14 @@ spec:
         - mountPath: /shared
           name: ironic-data-volume
       - command:
-        - /bin/runhttpd
+        - /bin/bash
+        - -c
+        - |
+          # ironic-image >= 34 ships arch-suffixed iPXE firmware; runhttpd expects snponly.efi
+          mkdir -p /shared/custom_ipxe_firmware
+          cp /tftpboot/undionly.kpxe /shared/custom_ipxe_firmware/undionly.kpxe
+          cp /tftpboot/snponly-x86_64.efi /shared/custom_ipxe_firmware/snponly.efi
+          exec /bin/runhttpd
         envFrom:
         - configMapRef:
             name: ironic-config-httpd
