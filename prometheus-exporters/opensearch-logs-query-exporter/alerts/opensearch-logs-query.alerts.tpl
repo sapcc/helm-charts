@@ -116,6 +116,7 @@ groups:
       support_group: identity
       tier: os
       no_alert_on_absence: "true"
+      playbook: 'docs/support/playbook/keystone/alerts/saml-security-event'
     annotations:
       summary: "SAML security event logged in keystone-api ({{`{{ $labels.region }}`}})"
       description: "mod_shib logged a WARN/ERROR for Shibboleth or XMLTooling.Signature in monsoon3/keystone-api in the last 5m. Check OpenSearch logs-* for 'Shibboleth' + 'WARN'/'ERROR'."
