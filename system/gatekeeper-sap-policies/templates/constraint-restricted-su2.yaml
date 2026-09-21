@@ -1,0 +1,22 @@
+{{- if .Values.policies.restrictedSu2.enabled }}
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRestrictedSu2
+metadata:
+  name: restricted-su2
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: {{ .Values.policies.restrictedSu2.enforcementAction }}
+  match:
+    kinds:
+      - apiGroups: ["*"]
+        kinds: ["*"]
+    labelSelector:
+      matchLabels:
+        sci-regulated-environment: restricted-su2
+  parameters:
+    allowedGroups:
+      {{- toYaml .Values.policies.restrictedSu2.allowedGroups | nindent 6 }}
+    allowedUsers:
+      {{- toYaml .Values.policies.restrictedSu2.allowedUsers | nindent 6 }}
+{{- end }}

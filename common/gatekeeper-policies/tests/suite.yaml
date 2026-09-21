@@ -665,3 +665,26 @@ tests:
     object: fixtures/GkRestrictMonsoon3Namespace/generic-secret.yaml
     assertions:
     - violations: no
+
+- name: restricted-su2
+  template: rendered-chart/templates/constrainttemplate-GkRestrictedSu2.yaml
+  constraint: rendered-chart/templates/constraint-GkRestrictedSu2.yaml
+  cases:
+  - name: elevated-group-allowed
+    object: fixtures/GkRestrictedSu2/elevated-allowed.yaml
+    assertions:
+    - violations: no
+  - name: non-elevated-denied
+    object: fixtures/GkRestrictedSu2/non-elevated-denied.yaml
+    assertions:
+    - violations: 1
+      message: 'require elevated permissions'
+  - name: allowed-automation-user
+    object: fixtures/GkRestrictedSu2/allowed-automation-user.yaml
+    assertions:
+    - violations: no
+  - name: delete-non-elevated-denied
+    object: fixtures/GkRestrictedSu2/delete-non-elevated-denied.yaml
+    assertions:
+    - violations: 1
+      message: 'require elevated permissions'
