@@ -64,8 +64,9 @@ osprofiler-redis:
 #   disabled -> transition -> enabled (and back). Steps must be adjacent;
 #   going straight between disabled and enabled is refused. In transition the
 #   ingress and the pod TLS LoadBalancer both serve, so switches are downtime
-#   free. Moving forward creates the disco Record; moving back to disabled,
-#   repoint the endpoint DNS to the ingress manually.
+#   free. DNS is not managed by this chart: point the public endpoint at the
+#   LoadBalancer (global.keystone_external_ip) in Designate by hand when moving
+#   to enabled, and back to the ingress when moving to disabled.
 tls:
   state: disabled
   secretName: keystone-tls
