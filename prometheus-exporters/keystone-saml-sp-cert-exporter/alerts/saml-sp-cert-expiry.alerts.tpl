@@ -10,7 +10,7 @@ groups:
       severity: critical
       support_group: identity
       context: saml-sp-cert-expiry
-      playbook: /docs/support/identity/saml-sp-cert-rotation
+      playbook: 'docs/support/playbook/keystone/alerts/saml-sp-cert-rotation'
     annotations:
       description: "SAML SP signing cert for tenant={{`{{ $labels.tenant }}`}} region={{`{{ $labels.region }}`}} expires in {{`{{ $value | printf \"%.0f\" }}`}} days. Immediate rotation required."
       summary: "SAML SP cert — immediate rotation required ({{`{{ $labels.tenant }}`}}/{{`{{ $labels.region }}`}})"
@@ -24,7 +24,7 @@ groups:
       severity: warning
       support_group: identity
       context: saml-sp-cert-expiry
-      playbook: /docs/support/identity/saml-sp-cert-rotation
+      playbook: 'docs/support/playbook/keystone/alerts/saml-sp-cert-rotation'
     annotations:
       description: "SAML SP signing cert for tenant={{`{{ $labels.tenant }}`}} region={{`{{ $labels.region }}`}} expires in {{`{{ $value | printf \"%.0f\" }}`}} days. Rotation recommended."
       summary: "SAML SP cert — rotation recommended ({{`{{ $labels.tenant }}`}}/{{`{{ $labels.region }}`}})"
