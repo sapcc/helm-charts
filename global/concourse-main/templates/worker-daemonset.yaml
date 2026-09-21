@@ -50,6 +50,16 @@ spec:
 
           update-ca-certificates
 
+          # host kernel no longer loads the legacy iptables modules, so point iptables at the
+          # nft backend (nf_tables is loaded by kube-proxy) -- see concourse/concourse#9449
+          if ! iptables -t filter -L >/dev/null 2>&1; then
+            for f in iptables iptables-save iptables-restore ip6tables ip6tables-save ip6tables-restore; do
+              for d in /usr/sbin /usr/bin /sbin; do
+                [ -e "$d/$f" ] && ln -sf xtables-nft-multi "$d/$f"
+              done
+            done
+          fi
+
           exec /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
         livenessProbe:
           failureThreshold: 5
