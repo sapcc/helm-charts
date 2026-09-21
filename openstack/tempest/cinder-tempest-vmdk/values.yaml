@@ -14,3 +14,95 @@ owner-info:
     - Dmitry Galkin
   support-group: network-api
   service: cinder
+
+# Defaults for tempest-base named templates. These values are the production
+# defaults (identical to the previously hardcoded values). Override any of
+# them in landscape-level values to adapt tempest to a different environment.
+# keystoneUrl: when set, overrides the keystone endpoint in all three places
+# (extra_options [identity] uri_v3, OS_AUTH_URL env, deployment_config auth_url).
+# Leave empty to use the in-cluster URL derived from global.clusterDomain/region/tld.
+# Full keystone URL including /v3, e.g. http://keystone.openstack.svc.cluster.local:5000/v3
+# Leave empty to derive the URL from global.clusterDomain/region/tld.
+keystoneUrl: ""
+
+tempest_base:
+  identity:
+    default_credentials_domain_name: tempest
+    domain_name: tempest
+    admin_domain_name: tempest
+    admin_role: admin
+    user_unique_last_password_count: 5
+    user_lockout_duration: 300
+    user_lockout_failure_attempts: 5
+  network:
+    project_network_cidr: "10.199.0.0/16"
+    floating_network_name: "FloatingIP-external-monsoon3-01"
+    subnet_id: "a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5"
+    max_mtu: 9000
+  compute:
+    image_ref: "84f9f266-3f11-4447-ae6c-f7940b2f5eb1"
+    image_ref_alt: "84f9f266-3f11-4447-ae6c-f7940b2f5eb1"
+    flavor_ref: 20
+    flavor_ref_alt: 30
+    min_microversion: "2.1"
+    compute_volume_common_az: "qa-de-1b"
+    vnc_server_header: "WebSockify"
+  baremetal:
+    max_microversion: "1.78"
+    driver: "fake-hardware"
+  validation:
+    image_ssh_user: "ccloud"
+  volume:
+    vendor_name: "VMware"
+    storage_protocol: "vstorageobject"
+    disk_format: "vmdk"
+    volume_size: 10
+    volume_type: "vmware"
+  volume_feature_enabled:
+    backup: true
+  service_available:
+    manila: true
+    neutron: true
+    cinder: true
+    glance: true
+    nova: true
+    swift: true
+    designate: true
+    ironic: true
+    barbican: true
+    keystone: true
+    octavia: true
+  dns:
+    nameservers: "10.114.1.233,147.204.35.140,147.204.35.141"
+
+# Defaults that make helm lint pass without any --set flags.
+# Override these in production deployments or landscape values files.
+tempestAdminPassword: ""
+
+tempest_common:
+  domainId: ""
+  public_network_id: ""
+  shared_physical_network: true
+  rbac_policy_object_name_shared_network: ""
+  rbac_policy_object_name_private_network: ""
+
+tempest_slack_webhook_url:
+  tempest_tests: ""
+  neutron: ""
+  nova: ""
+  ironic: ""
+  barbican: ""
+  cinder: ""
+  manila: ""
+  glance: ""
+  designate: ""
+  keystone: ""
+  octavia: ""
+  kvm: ""
+  cvh: ""
+  cinder_vmdk: ""
+
+global:
+  region: ""
+  tld: "cloud.sap"
+  clusterDomain: ""
