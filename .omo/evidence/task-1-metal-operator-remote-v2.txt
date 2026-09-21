@@ -1,0 +1,263 @@
+========================================================================
+TASK 1 EVIDENCE: metal-operator 0.6.2-crds subchart enable flags + VWC parity
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+
+--- CONTEXT ---
+Working directory : /Users/D065300/IdeaProjects/sapcc/helm-charts
+Subchart pulled   : oci://ghcr.io/ironcore-dev/charts/metal-operator:0.6.2-crds
+Digest            : sha256:24d0dffa0b7eb91a17b6f11ef8696c397701bb34ebff07dcf7e95f799a53940f
+Temp dir          : /var/folders/8m/nyl995ss465f1mn4g6r6lx400000gn/T/opencode/metal-operator-subchart-verify/
+Committed chart   : system/metal-operator-remote/Chart.yaml  (dep version 0.6.2-crds confirmed line 28)
+
+---
+
+COMMAND 1: Pull subchart
+  helm pull oci://ghcr.io/ironcore-dev/charts/metal-operator --version 0.6.2-crds \
+    --untar --destination /var/folders/.../metal-operator-subchart-verify
+OUTPUT:
+  Pulled: ghcr.io/ironcore-dev/charts/metal-operator:0.6.2-crds
+  Digest: sha256:24d0dffa0b7eb91a17b6f11ef8696c397701bb34ebff07dcf7e95f799a53940f
+
+---
+
+COMMAND 2: Template with controllerManager.enable=false, webhook.enable=true
+  helm template test-release /var/folders/.../metal-operator-subchart-verify/metal-operator \
+    --set controllerManager.enable=false \
+    --set crd.enable=true \
+    --set rbac.enable=true \
+    --set webhook.enable=true
+OUTPUT: exit code 0, saved to templated.yaml
+
+---
+
+CHECK 1: controllerManager.enable=false emits NO Deployment
+  COMMAND: yq 'select(.kind=="Deployment")' templated.yaml
+  OUTPUT: (empty — no output)
+  RESULT: PASS ✅  No Deployment resource emitted.
+
+---
+
+CHECK 2: webhook.enable=true emits exactly ONE VWC, correct name
+  COMMAND: yq 'select(.kind=="ValidatingWebhookConfiguration") | .metadata.name' templated.yaml
+  OUTPUT: metal-operator-validating-webhook-configuration
+  RESULT: PASS ✅  Exactly one VWC with the expected name.
+
+---
+
+CHECK 3: Exactly 7 webhook names
+  COMMAND: yq 'select(.kind=="ValidatingWebhookConfiguration") | .webhooks[].name' templated.yaml | sort
+  OUTPUT (sorted):
+    vbiossettings-v1alpha1.kb.io
+    vbiosversion-v1alpha1.kb.io
+    vbmcsecret-v1alpha1.kb.io
+    vbmcsettings-v1alpha1.kb.io
+    vbmcversion-v1alpha1.kb.io
+    vendpoint-v1alpha1.kb.io
+    vserver-v1alpha1.kb.io
+  COUNT: 7
+  RESULT: PASS ✅  Prefixes match: vbiossettings, vbiosversion, vbmcsecret, vbmcsettings,
+                   vbmcversion, vendpoint, vserver (all with -v1alpha1.kb.io suffix).
+
+---
+
+CHECK 4: failurePolicy and sideEffects per webhook
+  COMMAND: yq '... | .webhooks[] | [.name, .failurePolicy, .sideEffects] | join(" | ")' templated.yaml
+  OUTPUT:
+    vbiossettings-v1alpha1.kb.io | Fail | None
+    vbiosversion-v1alpha1.kb.io  | Fail | None
+    vbmcsecret-v1alpha1.kb.io    | Fail | None
+    vbmcsettings-v1alpha1.kb.io  | Fail | None
+    vbmcversion-v1alpha1.kb.io   | Fail | None
+    vendpoint-v1alpha1.kb.io     | Fail | None
+    vserver-v1alpha1.kb.io       | Fail | None
+  RESULT: PASS ✅  All 7 webhooks have failurePolicy: Fail and sideEffects: None.
+
+---
+
+FULL UPSTREAM VWC OUTPUT (for reference):
+
+# Source: metal-operator/templates/webhook/webhooks.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: metal-operator-validating-webhook-configuration
+  namespace: default
+  annotations:
+    cert-manager.io/inject-ca-from: "default/serving-cert"
+  labels:
+    helm.sh/chart: "0.6.2-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: test-release
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+webhooks:
+  - name: vbiossettings-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: metal-operator-webhook-service
+        namespace: default
+        path: /validate-metal-ironcore-dev-v1alpha1-biossettings
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: [v1]
+    rules:
+      - operations: [CREATE, UPDATE, DELETE]
+        apiGroups: [metal.ironcore.dev]
+        apiVersions: [v1alpha1]
+        resources: [biossettings]
+  - name: vbiosversion-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: metal-operator-webhook-service
+        namespace: default
+        path: /validate-metal-ironcore-dev-v1alpha1-biosversion
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: [v1]
+    rules:
+      - operations: [CREATE, UPDATE, DELETE]
+        apiGroups: [metal.ironcore.dev]
+        apiVersions: [v1alpha1]
+        resources: [biosversions]
+  - name: vbmcsecret-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: metal-operator-webhook-service
+        namespace: default
+        path: /validate-metal-ironcore-dev-v1alpha1-bmcsecret
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: [v1]
+    rules:
+      - operations: [CREATE, UPDATE, DELETE]
+        apiGroups: [metal.ironcore.dev]
+        apiVersions: [v1alpha1]
+        resources: [bmcsecrets]
+  - name: vbmcsettings-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: metal-operator-webhook-service
+        namespace: default
+        path: /validate-metal-ironcore-dev-v1alpha1-bmcsettings
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: [v1]
+    rules:
+      - operations: [CREATE, UPDATE, DELETE]
+        apiGroups: [metal.ironcore.dev]
+        apiVersions: [v1alpha1]
+        resources: [bmcsettings]
+  - name: vbmcversion-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: metal-operator-webhook-service
+        namespace: default
+        path: /validate-metal-ironcore-dev-v1alpha1-bmcversion
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: [v1]
+    rules:
+      - operations: [CREATE, UPDATE, DELETE]
+        apiGroups: [metal.ironcore.dev]
+        apiVersions: [v1alpha1]
+        resources: [bmcversions]
+  - name: vendpoint-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: metal-operator-webhook-service
+        namespace: default
+        path: /validate-metal-ironcore-dev-v1alpha1-endpoint
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: [v1]
+    rules:
+      - operations: [CREATE, UPDATE]
+        apiGroups: [metal.ironcore.dev]
+        apiVersions: [v1alpha1]
+        resources: [endpoints]
+  - name: vserver-v1alpha1.kb.io
+    clientConfig:
+      service:
+        name: metal-operator-webhook-service
+        namespace: default
+        path: /validate-metal-ironcore-dev-v1alpha1-server
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: [v1]
+    rules:
+      - operations: [DELETE]
+        apiGroups: [metal.ironcore.dev]
+        apiVersions: [v1alpha1]
+        resources: [servers]
+
+---
+
+PARITY ANALYSIS: Upstream VWC vs system/metal-operator-remote/webhooks.yaml
+========================================================================
+
+MATCHES (no drift):
+  ✅ metadata.name: metal-operator-validating-webhook-configuration
+  ✅ labels.helm.sh/chart: "0.6.2-crds"
+  ✅ labels.app.kubernetes.io/name: metal-operator
+  ✅ labels.app.kubernetes.io/version: "0.1.0"
+  ✅ labels.app.kubernetes.io/managed-by: Helm
+  ✅ Exactly 7 webhooks present (same set)
+  ✅ All webhook names identical (vbiossettings-v1alpha1.kb.io ... vserver-v1alpha1.kb.io)
+  ✅ failurePolicy: Fail — all 7 webhooks
+  ✅ sideEffects: None — all 7 webhooks
+  ✅ admissionReviewVersions: [v1] — all 7 webhooks
+  ✅ All rules (operations / apiGroups / apiVersions / resources) identical:
+       - vbiossettings: CREATE,UPDATE,DELETE on biossettings
+       - vbiosversion:  CREATE,UPDATE,DELETE on biosversions
+       - vbmcsecret:    CREATE,UPDATE,DELETE on bmcsecrets
+       - vbmcsettings:  CREATE,UPDATE,DELETE on bmcsettings
+       - vbmcversion:   CREATE,UPDATE,DELETE on bmcversions
+       - vendpoint:     CREATE,UPDATE on endpoints
+       - vserver:       DELETE on servers
+
+INTENTIONAL DRIFT (by design, not regressions):
+  ⚠️  metadata.namespace:
+        Upstream:  default  (Helm release namespace, rendered with --namespace default)
+        Committed: kube-system
+        → Expected drift: the committed manifest targets the actual deployment namespace.
+
+  ⚠️  metadata.annotations:
+        Upstream:  cert-manager.io/inject-ca-from: "default/serving-cert"
+        Committed: annotations: (empty / null)
+        → Expected drift: remote pattern does not use cert-manager CA injection;
+          the committed webhooks.yaml uses direct URL clientConfig instead of a
+          service reference, bypassing the need for cert-manager CA bundle injection.
+
+  ⚠️  metadata.labels.app.kubernetes.io/instance:
+        Upstream:  test-release  (Helm release name used in templating)
+        Committed: metal-operator
+        → Expected drift: template artifact vs. committed static manifest.
+
+  ⚠️  clientConfig — STRUCTURAL DIFFERENCE (key drift):
+        Upstream:  service.name=metal-operator-webhook-service
+                   service.namespace=default
+                   service.path=/validate-metal-ironcore-dev-v1alpha1-<resource>
+        Committed: url=https://metal-operator-remote-webhook-service:443/validate-...
+        → Expected drift: remote deployment pattern. The -v2 chart will NOT use the
+          upstream's in-cluster service reference. It must supply a direct URL pointing
+          to the remote webhook server (metal-operator-remote-webhook-service).
+        → Service name also differs: upstream uses "metal-operator-webhook-service";
+          committed uses "metal-operator-remote-webhook-service" (with -remote- infix).
+        → The -v2 chart's webhooks.yaml / VWC template MUST preserve url: clientConfig
+          (not service:) and MUST use the correct remote service hostname.
+
+SUMMARY:
+  All 4 mandatory checks PASS.
+  Drift observed is intentional and expected for the remote deployment pattern.
+  No unexpected structural divergence in webhook names, rules, failurePolicy, or sideEffects.
+  The new -v2 chart implementation must:
+    1. Keep clientConfig.url (not clientConfig.service) in the VWC
+    2. Use the correct remote service URL (metal-operator-remote-webhook-service or equivalent)
+    3. Set namespace to the deployment namespace (not "default")
+    4. Omit or replace the cert-manager annotation (not applicable for remote pattern)
+
+========================================================================
+END OF EVIDENCE
+========================================================================

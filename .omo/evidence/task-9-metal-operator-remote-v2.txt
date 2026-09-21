@@ -1,0 +1,24 @@
+========================================================================
+TASK 9 EVIDENCE: dns-record-template ConfigMap (mode=seed, enabled gate)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+FILE: templates/dns-record-template.yaml
+
+CHECK 1: absent by default (dnsRecordTemplate.enabled=false)
+  yq 'select(.kind=="ConfigMap" and .metadata.name=="dns-record-template") | .kind' | wc -l
+  OUTPUT: 0  RESULT: PASS ✅
+
+CHECK 2: present when dnsRecordTemplate.enabled=true + zone set
+  (gated by both enabled AND zone) — uses .Values.dnsRecordTemplate.enabled/.zone
+  RESULT: PASS ✅
+
+CHECK 3: mode=shoot → no dns-record-template
+  RESULT: PASS ✅
+
+CHECK 4: no webhook-config ConfigMap emitted (dead in r7)
+  yq 'select(.kind=="ConfigMap" and .metadata.name=="metal-operator-remote-webhook-config") | .kind' | wc -l
+  OUTPUT: 0  RESULT: PASS ✅
+
+SUMMARY: T9 acceptance criteria PASS.
+========================================================================

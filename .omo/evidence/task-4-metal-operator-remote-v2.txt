@@ -1,0 +1,64 @@
+========================================================================
+TASK 4 EVIDENCE: controller-manager Deployment + r7 target-patch sidecar (mode=seed)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+
+--- FILES CREATED ---
+  system/metal-operator-remote-v2/templates/_webhook-injector-sidecar.tpl
+  system/metal-operator-remote-v2/templates/controller-manager.yaml
+
+--- CORRECTIONS vs OLD _webhook-injector-sidecar.tpl ---
+  FIX 1: securityContext now reads .Values.controllerManager.podSecurityContext
+          (old template incorrectly read .Values.controllerManager.manager.podSecurityContext)
+  FIX 2: r7 target-patch args:
+          REMOVED: --webhook-config-name, --managed-resource-label, --external-host, --external-port
+          ADDED:   --target-label=dual-deployment-operator.cc.sap/webhook-injector=metal-operator
+          KEPT:    --target-kubeconfig, --cert-secret-name, --leader-election-id, --cert-sans, rotation flags
+  FIX 3: image from .Values.webhookInjector (no latest)
+
+---
+
+CHECK 1: mode=seed yields exactly ONE Deployment
+  helm template ... --set mode=seed | yq 'select(.kind=="Deployment")' | grep "^kind:" | wc -l
+  OUTPUT: 1
+  RESULT: PASS ✅
+
+CHECK 2: mode=shoot yields ZERO Deployments
+  helm template ... --set mode=shoot | yq 'select(.kind=="Deployment")' | grep "^kind:" | wc -l
+  OUTPUT: 0
+  RESULT: PASS ✅
+
+CHECK 3: sidecar image is pinned (not latest)
+  OUTPUT: keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/webhook-injector:20c495f
+  RESULT: PASS ✅
+
+CHECK 4: sidecar securityContext shows runAsUser 65532
+  OUTPUT:
+    runAsGroup: 65532
+    runAsNonRoot: true
+    runAsUser: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  RESULT: PASS ✅  (reads .Values.controllerManager.podSecurityContext — bug fixed)
+
+CHECK 5: sidecar args — r7 target-patch (no dead flags)
+  OUTPUT:
+    --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+    --target-label=dual-deployment-operator.cc.sap/webhook-injector=metal-operator
+    --leader-election-id=metal-operator-remote-webhook-injector-leader
+    --cert-secret-name=metal-operator-remote-cert-secret
+    --cert-sans=metal-operator-remote-webhook-service
+    --rotation-overlap-window=30s
+    --rotation-gate-timeout=30s
+  CONTAINS: --target-label ✅, --cert-sans=metal-operator-remote-webhook-service ✅,
+             --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig ✅
+  NOT PRESENT: --webhook-config-name ✅, --managed-resource-label ✅,
+                --external-host ✅, --external-port ✅
+  RESULT: PASS ✅
+
+---
+SUMMARY: All T4 acceptance criteria PASS.
+========================================================================
+END OF EVIDENCE
+========================================================================

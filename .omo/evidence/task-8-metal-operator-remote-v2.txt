@@ -1,0 +1,33 @@
+========================================================================
+TASK 8 EVIDENCE: kubeconfig ConfigMap + 2 token-requestor Secrets (mode=seed)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+FILES:
+  templates/remote-kubeconfig-configmap.yaml
+  templates/remote-kubeconfig.yaml
+  templates/rotate-kubeconfig.yaml
+
+CHECK 1: remote.ca removed
+  grep -R '.Values.remote.ca' templates/  → (empty)
+  RESULT: PASS ✅
+
+CHECK 2: KUBERNETES_SERVICE_HOST required
+  Template uses required "..." .Values.controllerManager.manager.env.KUBERNETES_SERVICE_HOST
+  helm template without KUBERNETES_SERVICE_HOST → error (required fails)
+  With --set …KUBERNETES_SERVICE_HOST=10.0.0.1 → OK
+  RESULT: PASS ✅
+
+CHECK 3: metal-operator-remote-kubeconfig has inject-ca-bundle:"true" + top-level token/bundle.crt
+  yq '…annotations."serviceaccount.resources.gardener.cloud/inject-ca-bundle"' → true
+  stringData keys: token:"", bundle.crt:""
+  RESULT: PASS ✅
+
+CHECK 4: metal-token-rotate-kubeconfig has inject-ca-bundle:"true" + embedded kubeconfig + certificate-authority-data:""
+  yq '…annotations."serviceaccount.resources.gardener.cloud/inject-ca-bundle"' → true
+  stringData.kubeconfig has certificate-authority-data: "" (no .Values.remote.ca)
+  No top-level bundle.crt / token keys
+  RESULT: PASS ✅
+
+SUMMARY: T8 acceptance criteria PASS.
+========================================================================

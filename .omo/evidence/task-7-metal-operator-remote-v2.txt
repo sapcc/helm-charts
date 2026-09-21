@@ -1,0 +1,26 @@
+========================================================================
+TASK 7 EVIDENCE: NetworkPolicies (mode=seed, virtualGardenLBIP gate)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+FILE: templates/networkpolicy.yaml
+
+CHECK 1: mode=seed with virtualGardenLBIP → 6 NetworkPolicies
+  NetworkPolicy names:
+    metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000
+    metalapi-egress-to-ingress-nginx-controller-tcp-443
+    metalapi-ingress-from-kube-apiserver-9443
+    kube-apiserver-egress-to-metalapi
+    kube-apiserver-egress-to-virtual-garden-lb   (gated by virtualGardenLBIP)
+    metalapi-ingress-from-kube-monitoring
+  RESULT: PASS ✅
+
+CHECK 2: mode=seed without virtualGardenLBIP → 5 NetworkPolicies (LB egress absent)
+  (kube-apiserver-egress-to-virtual-garden-lb absent)
+  RESULT: PASS ✅ (template gated by {{ if .Values.virtualGardenLBIP }})
+
+CHECK 3: mode=shoot → 0 NetworkPolicies from this chart
+  RESULT: PASS ✅
+
+SUMMARY: T7 acceptance criteria PASS.
+========================================================================

@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gardener Architecture — Onboarding Slides</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #1e2530;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --runtime:  #f78166;   /* orange-red */
+    --garden:   #7ee787;   /* green */
+    --seed:     #79c0ff;   /* blue */
+    --shoot:    #d2a8ff;   /* purple */
+    --warn:     #ffa657;   /* orange */
+    --accent:   #58a6ff;   /* blue accent */
+    --enforce:  #ff7b72;
+    --prefer:   #7ee787;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow: hidden;
+  }
+
+  /* ── SLIDE CONTAINER ── */
+  #deck {
+    width: 100vw; height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 48px 64px 40px;
+    opacity: 0;
+    transform: translateX(80px);
+    transition: opacity .45s cubic-bezier(.4,0,.2,1),
+                transform .45s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+    overflow-y: auto;
+  }
+  .slide.active {
+    opacity: 1; transform: translateX(0);
+    pointer-events: all;
+  }
+  .slide.exit {
+    opacity: 0; transform: translateX(-80px);
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--garden), var(--accent));
+    transition: width .4s ease;
+    z-index: 100;
+  }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; align-items: center; gap: 16px;
+    background: rgba(22,27,34,.92);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 10px 20px;
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  #nav button {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 18px; line-height: 1;
+    padding: 4px 8px; border-radius: 6px;
+    transition: color .2s, background .2s;
+  }
+  #nav button:hover { color: var(--text); background: var(--surface2); }
+  #nav button:disabled { opacity: .3; cursor: default; }
+  #slide-counter {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--muted); min-width: 60px; text-align: center;
+  }
+  .dot-nav { display: flex; gap: 6px; align-items: center; }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--border); cursor: pointer;
+    transition: background .2s, transform .2s;
+  }
+  .dot.active { background: var(--accent); transform: scale(1.4); }
+  .dot:hover { background: var(--muted); }
+
+  /* ── KEYBOARD HINT ── */
+  #key-hint {
+    position: fixed; bottom: 80px; right: 24px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    opacity: .5;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .slide-label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--font-head); font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 800; line-height: 1.08; letter-spacing: -.02em;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-family: var(--font-head); font-size: clamp(1.4rem, 2.5vw, 2rem);
+    font-weight: 700; line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  h3 {
+    font-family: var(--font-head); font-size: 1.1rem;
+    font-weight: 600; margin-bottom: 10px;
+  }
+  p { line-height: 1.65; color: var(--muted); font-size: .95rem; max-width: 72ch; }
+  .big-p { font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1.7; color: var(--text); max-width: 68ch; }
+  code {
+    font-family: var(--font-mono); font-size: .85em;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px;
+  }
+
+  /* ── LAYOUT HELPERS ── */
+  .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .cols-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+  .flex-row { display: flex; gap: 24px; align-items: flex-start; }
+  .spacer { flex: 1; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    position: relative;
+  }
+  .card.runtime { border-color: var(--runtime); }
+  .card.garden  { border-color: var(--garden); }
+  .card.seed    { border-color: var(--seed); }
+  .card.shoot   { border-color: var(--shoot); }
+  .card.warn    { border-color: var(--warn); }
+
+  .card-badge {
+    display: inline-block;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: .1em; text-transform: uppercase;
+    border-radius: 4px; padding: 3px 8px; margin-bottom: 10px;
+  }
+  .badge-runtime { background: rgba(247,129,102,.15); color: var(--runtime); }
+  .badge-garden  { background: rgba(126,231,135,.15); color: var(--garden); }
+  .badge-seed    { background: rgba(121,192,255,.15); color: var(--seed); }
+  .badge-shoot   { background: rgba(210,168,255,.15); color: var(--shoot); }
+  .badge-warn    { background: rgba(255,166,87,.15);  color: var(--warn); }
+
+  /* ── TAG CHIPS ── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 11px;
+    border-radius: 20px; padding: 4px 12px;
+    white-space: nowrap;
+  }
+  .chip-runtime { background: rgba(247,129,102,.12); color: var(--runtime); border: 1px solid rgba(247,129,102,.3); }
+  .chip-garden  { background: rgba(126,231,135,.12); color: var(--garden);  border: 1px solid rgba(126,231,135,.3); }
+  .chip-seed    { background: rgba(121,192,255,.12); color: var(--seed);    border: 1px solid rgba(121,192,255,.3); }
+  .chip-shoot   { background: rgba(210,168,255,.12); color: var(--shoot);   border: 1px solid rgba(210,168,255,.3); }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(88,166,255,.07);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: .9rem; color: var(--text); line-height: 1.6;
+    margin: 12px 0;
+  }
+  .callout.warn { border-color: var(--warn); background: rgba(255,166,87,.07); }
+  .callout.danger { border-color: var(--enforce); background: rgba(255,123,114,.07); }
+  .callout.good  { border-color: var(--prefer); background: rgba(126,231,135,.07); }
+
+  /* ── CHECKLIST ── */
+  .check-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .check-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: .9rem; line-height: 1.55; color: var(--muted);
+  }
+  .check-list li .icon { flex-shrink: 0; font-size: 14px; margin-top: 2px; }
+  .check-list li strong { color: var(--text); }
+
+  /* ── TABLE ── */
+  .slim-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .slim-table th {
+    font-family: var(--font-mono); font-size: .75rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); text-align: left;
+    padding: 8px 14px; border-bottom: 1px solid var(--border);
+  }
+  .slim-table td { padding: 10px 14px; border-bottom: 1px solid rgba(48,54,61,.6); vertical-align: top; }
+  .slim-table tr:last-child td { border-bottom: none; }
+  .slim-table tr:hover td { background: rgba(255,255,255,.025); }
+
+  /* ── DIAGRAM BOXES ── */
+  .dbox {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: var(--font-mono); font-size: .8rem;
+    line-height: 1.5;
+    position: relative;
+  }
+  .dbox-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; margin-bottom: 8px;
+    opacity: .7;
+  }
+  .dbox.runtime { border-color: var(--runtime); background: rgba(247,129,102,.05); }
+  .dbox.garden  { border-color: var(--garden);  background: rgba(126,231,135,.05); }
+  .dbox.seed    { border-color: var(--seed);    background: rgba(121,192,255,.05); }
+  .dbox.shoot   { border-color: var(--shoot);   background: rgba(210,168,255,.05); }
+
+  /* ── ARROW ── */
+  .arrow-down {
+    text-align: center; font-size: 20px; color: var(--muted);
+    margin: 4px 0; line-height: 1;
+  }
+  .arrow-right {
+    font-size: 18px; color: var(--muted); align-self: center;
+  }
+
+  /* ── HERO SLIDE ── */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    flex: 1;
+    align-items: center;
+  }
+  .hero-tag {
+    display: inline-block;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--garden);
+    background: rgba(126,231,135,.1); border: 1px solid rgba(126,231,135,.25);
+    border-radius: 4px; padding: 4px 10px; margin-bottom: 18px;
+  }
+  .hero-title {
+    font-family: var(--font-head); font-size: clamp(2.8rem, 5vw, 4.5rem);
+    font-weight: 800; line-height: 1.0; letter-spacing: -.03em;
+    margin-bottom: 24px;
+  }
+  .hero-title em { color: var(--garden); font-style: normal; }
+  .hero-subtitle {
+    font-size: 1.1rem; color: var(--muted); line-height: 1.65; max-width: 48ch;
+  }
+
+  /* ── RUSSIAN DOLL DIAGRAM ── */
+  .doll-wrap {
+    display: flex; flex-direction: column;
+    gap: 0;
+    align-items: stretch;
+  }
+  .doll-layer {
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 4px;
+    position: relative;
+  }
+  .doll-layer .dl-title {
+    font-family: var(--font-head); font-size: .95rem; font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .doll-layer .dl-sub {
+    font-family: var(--font-mono); font-size: .75rem; color: var(--muted);
+  }
+  .dl-runtime {
+    background: rgba(247,129,102,.08); border: 1.5px solid rgba(247,129,102,.4);
+    color: var(--runtime);
+  }
+  .dl-garden {
+    background: rgba(126,231,135,.08); border: 1.5px solid rgba(126,231,135,.4);
+    color: var(--garden); margin: 8px 16px;
+  }
+  .dl-seed {
+    background: rgba(121,192,255,.08); border: 1.5px solid rgba(121,192,255,.4);
+    color: var(--seed);
+  }
+  .dl-shoot {
+    background: rgba(210,168,255,.08); border: 1.5px solid rgba(210,168,255,.4);
+    color: var(--shoot); margin: 0 16px;
+  }
+
+  /* ── ZONE MISMATCH DIAGRAM ── */
+  .zones-row {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 12px;
+    margin: 16px 0;
+  }
+  .zone-box {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px; padding: 12px;
+    text-align: center;
+    font-family: var(--font-mono); font-size: .78rem;
+  }
+  .zone-box.has-seed { border-color: var(--seed); background: rgba(121,192,255,.05); }
+  .zone-box.no-seed  { border-color: var(--border); opacity: .5; }
+  .zone-box.has-shoot { border-color: var(--shoot); background: rgba(210,168,255,.05); }
+  .zone-box.mismatch { border-color: var(--enforce); background: rgba(255,123,114,.08); animation: pulse-border 2s infinite; }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,123,114,0); }
+    50% { box-shadow: 0 0 0 4px rgba(255,123,114,.2); }
+  }
+  .zone-label { font-weight: 600; margin-bottom: 6px; }
+
+  /* ── MODE COMPARISON ── */
+  .mode-card {
+    border-radius: 10px; padding: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .mode-prefer { background: rgba(126,231,135,.07); border: 1.5px solid rgba(126,231,135,.3); }
+  .mode-enforce { background: rgba(255,123,114,.07); border: 1.5px solid rgba(255,123,114,.3); }
+  .mode-title {
+    font-family: var(--font-head); font-size: 1.1rem; font-weight: 700;
+  }
+  .mode-prefer .mode-title { color: var(--prefer); }
+  .mode-enforce .mode-title { color: var(--enforce); }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow-step {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    margin-bottom: 8px;
+    transition: border-color .2s;
+  }
+  .flow-step:hover { border-color: var(--accent); }
+  .flow-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: .8rem; font-weight: 600;
+    flex-shrink: 0; color: var(--muted);
+  }
+  .flow-content h4 {
+    font-size: .9rem; font-weight: 600; margin-bottom: 3px;
+    color: var(--text);
+  }
+  .flow-content p { font-size: .82rem; margin: 0; }
+
+  /* ── MISCONCEPTIONS ── */
+  .myth-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .myth-box, .fact-box {
+    border-radius: 8px; padding: 12px 16px; font-size: .85rem; line-height: 1.55;
+  }
+  .myth-box {
+    background: rgba(255,123,114,.07); border: 1px solid rgba(255,123,114,.25);
+  }
+  .fact-box {
+    background: rgba(126,231,135,.07); border: 1px solid rgba(126,231,135,.25);
+  }
+  .myth-box .label { color: var(--enforce); font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; margin-bottom: 5px; }
+  .fact-box .label { color: var(--prefer);  font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; margin-bottom: 5px; }
+
+  /* ── SUMMARY TABLE  ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr 1fr;
+    border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    font-size: .82rem;
+  }
+  .sg-cell {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .sg-cell:last-child, .sg-row:last-child .sg-cell { border-bottom: none; }
+  .sg-cell.header {
+    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    background: var(--surface2);
+  }
+
+  /* ── SLIDE-SPECIFIC ── */
+  #slide-1 .hero-deco {
+    display: flex; flex-direction: column; gap: 10px;
+    opacity: .85;
+  }
+
+  /* ── FOOTER ── */
+  .slide-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+  }
+
+  /* ── SCROLLBAR ── */
+  .slide::-webkit-scrollbar { width: 4px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── SUBTLE NOISE OVERLAY ── */
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+    opacity: .018;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="deck">
+
+  <!-- ─────────────── SLIDE 1: TITLE ─────────────── -->
+  <div class="slide active" id="slide-1">
+    <div class="hero-grid" style="flex:1">
+      <div>
+        <div class="hero-tag">Engineer Onboarding · SAP Converged Cloud</div>
+        <h1 class="hero-title">
+          Understanding<br>
+          <em>Gardener</em><br>
+          Architecture
+        </h1>
+        <p class="hero-subtitle">
+          A visual guide to how SAP's Kubernetes fleet is managed —
+          from the virtual garden down to the shoot control plane sitting
+          in a seed cluster's namespace.
+        </p>
+        <div style="display:flex;gap:10px;margin-top:28px;flex-wrap:wrap">
+          <span class="chip chip-runtime">● Runtime Cluster</span>
+          <span class="chip chip-garden">● Virtual Garden</span>
+          <span class="chip chip-seed">● Seed Cluster</span>
+          <span class="chip chip-shoot">● Shoot Cluster</span>
+        </div>
+      </div>
+      <div class="hero-deco">
+        <div class="dbox runtime">
+          <div class="dbox-label" style="color:var(--runtime)">Runtime Cluster · rt-qa-de-1</div>
+          <div style="margin-left:16px">
+            <div class="dbox garden" style="margin:8px 0 8px 0">
+              <div class="dbox-label" style="color:var(--garden)">Virtual Garden · g-qa-de-1</div>
+              <div style="color:var(--muted);font-size:.75rem">Shoots · Seeds · Projects · ManagedSeeds</div>
+            </div>
+            <div style="color:var(--muted);font-size:.75rem">gardenlet · virtual-garden-kube-apiserver · etcd</div>
+          </div>
+        </div>
+        <div class="dbox seed">
+          <div class="dbox-label" style="color:var(--seed)">Seed Cluster · mgmt-qa-de-1</div>
+          <div style="margin-left:16px">
+            <div class="dbox shoot" style="margin:8px 0 8px 0">
+              <div class="dbox-label" style="color:var(--shoot)">shoot--compute--cc-b0-qa-de-1</div>
+              <div style="color:var(--muted);font-size:.75rem">kube-apiserver · etcd · scheduler · kcm</div>
+            </div>
+            <div style="color:var(--muted);font-size:.75rem">gardenlet · etcd-druid · extension-provider-*</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Gardener Architecture · Onboarding</span>
+      <span>Use ← → or keyboard arrow keys to navigate</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 2: THE BIG PICTURE ─────────────── -->
+  <div class="slide" id="slide-2">
+    <div class="slide-label">Chapter 1 · The Big Picture</div>
+    <h2>Three layers. One goal: manage Kubernetes at scale.</h2>
+    <p style="margin-bottom:28px">Gardener splits the world into <strong style="color:var(--text)">Garden</strong> (control room), <strong style="color:var(--text)">Seed</strong> (hosting substrate), and <strong style="color:var(--text)">Shoot</strong> (customer cluster). On SAP landscapes they nest inside each other — a Russian doll.</p>
+
+    <div class="cols-4" style="margin-bottom:24px">
+      <div class="card runtime">
+        <div class="card-badge badge-runtime">01 · Runtime</div>
+        <h3 style="color:var(--runtime)">Runtime Cluster</h3>
+        <p><strong style="color:var(--text)">rt-qa-de-1</strong> — a plain Kubernetes cluster with real nodes. Hosts the pods that form the garden.</p>
+        <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--muted)">🏢 The building</div>
+      </div>
+      <div class="card garden">
+        <div class="card-badge badge-garden">02 · Garden</div>
+        <h3 style="color:var(--garden)">Virtual Garden</h3>
+        <p><strong style="color:var(--text)">g-qa-de-1</strong> — a full Kubernetes API, but runs as pods inside the runtime. No dedicated nodes. Stores all declarations.</p>
+        <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--muted)">📋 The control room</div>
+      </div>
+      <div class="card seed">
+        <div class="card-badge badge-seed">03 · Seed</div>
+        <h3 style="color:var(--seed)">Seed Cluster</h3>
+        <p><strong style="color:var(--text)">mgmt-qa-de-1</strong> — hosts shoot control planes as pods. Real nodes spread across AZs.</p>
+        <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--muted)">🏨 The hotel building</div>
+      </div>
+      <div class="card shoot">
+        <div class="card-badge badge-shoot">04 · Shoot</div>
+        <h3 style="color:var(--shoot)">Shoot Cluster</h3>
+        <p><strong style="color:var(--text)">cc-b0-qa-de-1</strong> — customer-facing. Control plane is pods in a seed; worker nodes are real VMs / bare metal.</p>
+        <div style="margin-top:12px;font-family:var(--font-mono);font-size:.78rem;color:var(--muted)">🏃 The hotel guest</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Key insight:</strong> The garden only holds <em>declarations</em>. All the actual work — creating pods, VMs, network — is done by <code>gardenlet</code> running inside each seed.
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 1 · The Big Picture</span><span>Slide 2 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 3: VIRTUAL GARDEN ─────────────── -->
+  <div class="slide" id="slide-3">
+    <div class="slide-label">Chapter 1 · Deep Dive</div>
+    <h2>The Virtual Garden — a Kubernetes API that lives inside another cluster</h2>
+
+    <div class="cols-2" style="flex:1;gap:32px">
+      <div>
+        <p style="margin-bottom:16px">There is no dedicated garden cluster with its own hardware. On <code>qa-de-1</code>, <code>gardener-operator</code> runs on the runtime cluster and creates a <strong style="color:var(--garden)">virtual Kubernetes API</strong> as pods:</p>
+
+        <ul class="check-list" style="margin-bottom:20px">
+          <li><span class="icon">🟢</span><div><strong>virtual-garden-kube-apiserver</strong> — the real k8s apiserver for the garden</div></li>
+          <li><span class="icon">🟢</span><div><strong>virtual-garden-etcd-main/events</strong> — storage for the garden</div></li>
+          <li><span class="icon">🟢</span><div><strong>gardener-apiserver</strong> — adds Shoot, Seed, Project APIs on top</div></li>
+          <li><span class="icon">🟢</span><div><strong>gardener-scheduler</strong> — decides which seed a shoot goes to</div></li>
+          <li><span class="icon">🟢</span><div><strong>gardener-controller-manager</strong> — cross-cutting controllers</div></li>
+        </ul>
+
+        <div class="callout warn">
+          <strong>Consequence:</strong> If <code>rt-qa-de-1</code> goes down, the virtual garden goes down. Existing shoots keep running (gardenlet is on the seed), but you cannot create or modify shoots until the garden recovers.
+        </div>
+      </div>
+
+      <div>
+        <div class="dbox runtime" style="padding:20px">
+          <div style="color:var(--runtime);font-family:var(--font-head);font-weight:700;margin-bottom:12px">rt-qa-de-1 (runtime cluster)</div>
+          <div style="margin-left:12px">
+            <div style="font-family:var(--font-mono);font-size:.75rem;color:var(--muted);margin-bottom:6px">namespace: garden</div>
+            <div class="dbox garden" style="margin-bottom:12px">
+              <div style="color:var(--garden);font-family:var(--font-head);font-weight:700;margin-bottom:8px">Virtual Garden (g-qa-de-1)</div>
+              <div style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);line-height:1.8">
+                virtual-garden-kube-apiserver<br>
+                virtual-garden-etcd-main-0<br>
+                gardener-apiserver<br>
+                gardener-scheduler<br>
+                gardener-controller-manager
+              </div>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);line-height:1.8">
+              gardener-operator<br>
+              gardenlet (rt-qa-de-1 seed)
+            </div>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:14px">
+          <code>api.virtual-garden.rt-qa-de-1.qa-de-1.cloud.sap</code><br>
+          <span style="font-size:.82rem;color:var(--muted)">That DNS name → a Service inside rt-qa-de-1. It <em>looks</em> like a standalone cluster.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 1 · The Virtual Garden</span><span>Slide 3 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 4: MANAGED SEED ─────────────── -->
+  <div class="slide" id="slide-4">
+    <div class="slide-label">Chapter 1 · ManagedSeed</div>
+    <h2>A seed is just a promoted shoot — the ManagedSeed pattern</h2>
+
+    <div class="cols-2" style="gap:32px;flex:1">
+      <div>
+        <p style="margin-bottom:16px"><code>mgmt-qa-de-1</code> is simultaneously a <strong style="color:var(--shoot)">Shoot</strong> (Gardener manages its lifecycle) and a <strong style="color:var(--seed)">Seed</strong> (it hosts other shoots' control planes). A <code>ManagedSeed</code> resource is what triggers the promotion.</p>
+
+        <div class="flow-step">
+          <div class="flow-num" style="background:rgba(210,168,255,.15);border-color:var(--shoot);color:var(--shoot)">1</div>
+          <div class="flow-content">
+            <h4>Shoot: mgmt-qa-de-1</h4>
+            <p>Declared in the virtual garden. <code>spec.seedName = rt-qa-de-1</code>. Managed just like any other shoot.</p>
+          </div>
+        </div>
+        <div class="arrow-down" style="margin:4px 0 4px 30px">↓</div>
+        <div class="flow-step">
+          <div class="flow-num" style="background:rgba(88,166,255,.15);border-color:var(--accent);color:var(--accent)">2</div>
+          <div class="flow-content">
+            <h4>ManagedSeed: mgmt-qa-de-1</h4>
+            <p>References the shoot above. Tells Gardener: "once this shoot is Ready, install gardenlet inside it and register it as a Seed."</p>
+          </div>
+        </div>
+        <div class="arrow-down" style="margin:4px 0 4px 30px">↓</div>
+        <div class="flow-step">
+          <div class="flow-num" style="background:rgba(121,192,255,.15);border-color:var(--seed);color:var(--seed)">3</div>
+          <div class="flow-content">
+            <h4>Seed CR: mgmt-qa-de-1</h4>
+            <p>Auto-generated. <strong>Never edit it by hand</strong> — the next reconcile will overwrite your changes. Edit the ManagedSeed (or the Helm chart) instead.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <h3 style="margin-bottom:12px">Where is the Helm chart?</h3>
+          <div class="callout good" style="margin:0">
+            Edit <code>system/cc-shoots-mgmt/templates/managedseed.yaml</code> in <code>sapcc/helm-charts</code>.<br>
+            Values come from <code>.Values.mgmtShoots</code> — one entry per landscape.
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:12px">The Russian-doll picture</h3>
+          <div class="doll-wrap">
+            <div class="doll-layer dl-runtime">
+              <div class="dl-title">rt-qa-de-1 (runtime + seed)</div>
+              <div class="dl-sub">real nodes · openstack</div>
+              <div class="doll-layer dl-garden" style="margin:8px 0 0 0">
+                <div class="dl-title">g-qa-de-1 (virtual garden)</div>
+                <div class="dl-sub">Shoot mgmt-qa-de-1 · ManagedSeed · Seed CR</div>
+              </div>
+            </div>
+            <div style="text-align:center;font-size:18px;color:var(--muted);padding:6px 0">↓  gardenlet bootstrapped into shoot</div>
+            <div class="doll-layer dl-seed">
+              <div class="dl-title">mgmt-qa-de-1 (seed)</div>
+              <div class="dl-sub">real nodes · ironcore-metal · hosts cc-* and lh-* shoot CPs</div>
+              <div class="doll-layer dl-shoot" style="margin:8px 0 0 0">
+                <div class="dl-title">shoot--compute--cc-b0-qa-de-1</div>
+                <div class="dl-sub">kube-apiserver · etcd · kcm · scheduler pods</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 1 · ManagedSeed</span><span>Slide 4 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 5: SHOOT LIFECYCLE ─────────────── -->
+  <div class="slide" id="slide-5">
+    <div class="slide-label">Chapter 1 · Shoot Lifecycle</div>
+    <h2>How a shoot goes from a YAML file to a running cluster</h2>
+    <p style="margin-bottom:20px">Follow <code>cc-b0-qa-de-1</code> — a KVM compute shoot on qa-de-1 — step by step.</p>
+
+    <div class="cols-2" style="gap:28px">
+      <div>
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-content">
+            <h4>Apply Shoot YAML → virtual garden</h4>
+            <p>The Shoot resource lands in the virtual garden's etcd. Nothing is running yet. Think of it as booking a hotel room on paper.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-content">
+            <h4>gardener-scheduler picks a seed</h4>
+            <p>Looks at provider type, seed zones, capacity. Writes <code>spec.seedName: mgmt-qa-de-1</code> onto the Shoot object.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-content">
+            <h4>gardenlet on the seed picks it up</h4>
+            <p>gardenlet watches shoots where <code>spec.seedName == mgmt-qa-de-1</code>. It now starts reconciling this shoot.</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-content">
+            <h4>gardenlet creates CP namespace on the seed</h4>
+            <p>Namespace: <code>shoot--compute--cc-b0-qa-de-1</code>. Populates it with kube-apiserver, etcd, kcm, kube-scheduler, resource-manager, machine-controller-manager pods.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">5</div>
+          <div class="flow-content">
+            <h4>Extension controllers create worker nodes</h4>
+            <p><code>provider-ironcore-metal</code> creates actual bare-metal servers (the shoot's workers) in the target AZ. Workers talk to the kube-apiserver pod on the seed via Istio ingress.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">6</div>
+          <div class="flow-content">
+            <h4>Shoot is Ready ✓</h4>
+            <p>gardenlet reports back to the virtual garden. Workers live on bare metal; their "brain" (CP) lives as pods in the seed namespace.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:auto">
+      The shoot's API endpoint is a DNS name → seed's Istio ingress LB → <code>kube-apiserver</code> pod in <code>shoot--compute--cc-b0-qa-de-1</code>.
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 1 · Shoot Lifecycle</span><span>Slide 5 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 6: RESOURCE MAP ─────────────── -->
+  <div class="slide" id="slide-6">
+    <div class="slide-label">Chapter 1 · Resource Map</div>
+    <h2>Where does every resource live?</h2>
+    <p style="margin-bottom:20px">Two shortcuts: <strong style="color:var(--text)">declared intent</strong> lives in the virtual garden. <strong style="color:var(--text)">Running workloads</strong> of a shoot's CP live in the seed.</p>
+
+    <table class="slim-table">
+      <thead>
+        <tr>
+          <th>Resource</th>
+          <th>Cluster</th>
+          <th>Namespace</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Garden</code> CR</td>
+          <td><span class="chip chip-runtime" style="font-size:.75rem">Runtime</span></td>
+          <td>—</td>
+          <td>Declares the virtual garden setup</td>
+        </tr>
+        <tr>
+          <td><code>Shoot</code></td>
+          <td><span class="chip chip-garden" style="font-size:.75rem">Virtual Garden</span></td>
+          <td><code>garden-&lt;project&gt;</code></td>
+          <td>Declaration of a customer cluster</td>
+        </tr>
+        <tr>
+          <td><code>ManagedSeed</code></td>
+          <td><span class="chip chip-garden" style="font-size:.75rem">Virtual Garden</span></td>
+          <td><code>garden</code></td>
+          <td>"This shoot should also be a seed"</td>
+        </tr>
+        <tr>
+          <td><code>Seed</code> CR</td>
+          <td><span class="chip chip-garden" style="font-size:.75rem">Virtual Garden</span></td>
+          <td>cluster-scoped</td>
+          <td>Seed spec — generated, do not hand-edit</td>
+        </tr>
+        <tr>
+          <td>Shoot CP namespace</td>
+          <td><span class="chip chip-seed" style="font-size:.75rem">Seed</span></td>
+          <td><code>shoot--&lt;project&gt;--&lt;shoot&gt;</code></td>
+          <td>Where CP pods actually run</td>
+        </tr>
+        <tr>
+          <td><code>gardenlet</code></td>
+          <td><span class="chip chip-seed" style="font-size:.75rem">Seed</span></td>
+          <td><code>garden</code></td>
+          <td>Reconciles shoots assigned to this seed</td>
+        </tr>
+        <tr>
+          <td>Extension controllers</td>
+          <td><span class="chip chip-seed" style="font-size:.75rem">Seed</span></td>
+          <td><code>extension-&lt;name&gt;-&lt;hash&gt;</code></td>
+          <td>provider-ironcore-metal, networking-*, etc.</td>
+        </tr>
+        <tr>
+          <td>Worker VMs / bare metal</td>
+          <td><span class="chip chip-shoot" style="font-size:.75rem">Shoot</span></td>
+          <td>—</td>
+          <td>The shoot's actual worker nodes, outside k8s</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="slide-footer">
+      <span>Chapter 1 · Resource Map</span><span>Slide 6 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 7: THE AZ PROBLEM ─────────────── -->
+  <div class="slide" id="slide-7">
+    <div class="slide-label">Chapter 2 · AZ-Local Control Planes (Issue #943)</div>
+    <h2>The problem: shoot control planes land in a random AZ</h2>
+
+    <div class="cols-2" style="gap:28px;flex:1">
+      <div>
+        <p style="margin-bottom:16px">A seed can span multiple AZs. When gardenlet creates a shoot's CP namespace, it historically picks any node — <strong style="color:var(--text)">regardless of which AZ the shoot's workers are in.</strong></p>
+
+        <div class="card warn" style="margin-bottom:16px">
+          <h3 style="color:var(--warn);margin-bottom:12px">Why this breaks things</h3>
+          <ul class="check-list">
+            <li><span class="icon">⚡</span><div><strong>Cross-AZ latency</strong> — every kubelet heartbeat crosses an AZ boundary twice</div></li>
+            <li><span class="icon">💸</span><div><strong>Cross-AZ traffic cost</strong> — at KVM scale this is significant</div></li>
+            <li><span class="icon">💥</span><div><strong>Broken blast radius</strong> — workers in AZ-B, control plane in AZ-A: an AZ-A outage kills an AZ-B shoot</div></li>
+            <li><span class="icon">🌐</span><div><strong>Ingress misplaced</strong> — with zonal Istio, the shoot's DNS endpoint follows the CP's AZ, not the workers'</div></li>
+          </ul>
+        </div>
+
+        <div class="callout">
+          <strong>Goal of issue #943:</strong> Pin each shoot's CP pods to the same AZ as its worker nodes. Document the approach per cluster type.
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:14px;color:var(--muted)">qa-de-1 topology today</h3>
+        <div class="dbox seed" style="margin-bottom:12px">
+          <div style="color:var(--seed);font-family:var(--font-head);font-weight:700;margin-bottom:10px">mgmt-qa-de-1  zones: [1a, 1b]</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--font-mono);font-size:.75rem">
+            <div style="background:rgba(121,192,255,.1);border-radius:6px;padding:8px;border:1px solid rgba(121,192,255,.3)">
+              <div style="color:var(--seed)">qa-de-1a</div>
+              <div style="color:var(--muted)">3 nodes ✅</div>
+            </div>
+            <div style="background:rgba(121,192,255,.1);border-radius:6px;padding:8px;border:1px solid rgba(121,192,255,.3)">
+              <div style="color:var(--seed)">qa-de-1b</div>
+              <div style="color:var(--muted)">3 nodes ✅</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--font-mono);font-size:.78rem;margin-bottom:12px">
+          <div class="dbox shoot" style="padding:10px">
+            <div style="color:var(--shoot)">cc-b0 / cc-b1</div>
+            <div style="color:var(--muted)">workers: [1b] ✅</div>
+            <div style="color:var(--prefer);font-size:.72rem">matches seed</div>
+          </div>
+          <div class="dbox" style="border-color:var(--enforce);background:rgba(255,123,114,.05);padding:10px">
+            <div style="color:var(--enforce)">cc-d0</div>
+            <div style="color:var(--muted)">workers: [1d] ❌</div>
+            <div style="color:var(--enforce);font-size:.72rem">seed has no 1d!</div>
+          </div>
+        </div>
+        <div class="dbox" style="border-color:var(--muted);padding:10px;font-family:var(--font-mono);font-size:.75rem">
+          <div style="color:var(--muted)">lh-b-qa-de-1 (Lighthouse)</div>
+          <div style="color:var(--muted)">workers: none (workerless) — special case</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 2 · The AZ Problem</span><span>Slide 7 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 8: ZONE SELECTION ─────────────── -->
+  <div class="slide" id="slide-8">
+    <div class="slide-label">Chapter 2 · The Fix</div>
+    <h2><code>Seed.spec.settings.zoneSelection</code> — the upstream solution</h2>
+
+    <p style="margin-bottom:22px">Gardener PR <strong style="color:var(--text)">#14238</strong> (merged 2026-03-13) added a new seed setting. When a shoot's CP namespace is created, Gardener intersects the shoot's worker zones with the seed's zones and pins the CP there.</p>
+
+    <div class="cols-2" style="gap:20px;margin-bottom:20px">
+      <div class="mode-card mode-prefer">
+        <div class="mode-title">Prefer — best-effort</div>
+        <p style="font-size:.88rem">Intersection non-empty → pin to that zone.<br>Intersection empty → fall back to random.<br><strong style="color:var(--prefer)">Scheduling never fails.</strong></p>
+        <div class="callout good" style="margin:0;font-size:.82rem">
+          <strong>cc-b0 / cc-b1:</strong> workers=[1b], seed=[1a,1b] → intersection=[1b] ✅ pinned<br>
+          <strong>cc-d0:</strong> workers=[1d], seed=[1a,1b] → empty → random (same as today, no regression)
+        </div>
+      </div>
+      <div class="mode-card mode-enforce">
+        <div class="mode-title">Enforce — strict</div>
+        <p style="font-size:.88rem">Intersection non-empty → pin to that zone.<br>Intersection empty → <strong style="color:var(--enforce)">refuse to schedule.</strong></p>
+        <div class="callout danger" style="margin:0;font-size:.82rem">
+          <strong>cc-d0:</strong> workers=[1d], seed=[1a,1b] → empty → ❌ PermanentlyUnschedulable<br>
+          <strong>Lighthouse:</strong> workerless → empty → ❌ same failure
+        </div>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-bottom:16px">
+      <strong>Important caveats:</strong>
+      Zone assignment happens <strong>at shoot creation</strong>. Adding worker zones later does NOT move an existing CP.
+      Workerless shoots (Lighthouse) always have an empty intersection — they need a separate workaround.
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:10px">How to apply it (via Helm, not by hand)</h3>
+      <div style="font-family:var(--font-mono);font-size:.78rem;background:var(--surface2);border-radius:8px;padding:14px;line-height:1.8;color:var(--muted)">
+        <span style="color:var(--muted)"># system/cc-shoots-mgmt/templates/managedseed.yaml</span><br>
+        spec.gardenlet.config.seedConfig.spec.settings.<span style="color:var(--garden)">zoneSelection: Enforce</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 2 · zoneSelection</span><span>Slide 8 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 9: CC-D0 MISMATCH ─────────────── -->
+  <div class="slide" id="slide-9">
+    <div class="slide-label">Chapter 2 · The cc-d0 Zone Mismatch</div>
+    <h2>Why we can't use <code>Enforce</code> yet on qa-de-1</h2>
+
+    <div class="cols-2" style="gap:28px;flex:1">
+      <div>
+        <p style="margin-bottom:16px">During prep for #943 we found that <code>cc-d0-qa-de-1</code> has workers in <strong style="color:var(--enforce)">qa-de-1d</strong> — a zone that doesn't exist on the seed.</p>
+
+        <div class="zones-row">
+          <div class="zone-box has-seed">
+            <div class="zone-label" style="color:var(--seed)">1a</div>
+            <div style="color:var(--muted);font-size:.72rem">3 seed nodes ✅</div>
+          </div>
+          <div class="zone-box has-seed has-shoot" style="border-color:var(--shoot);background:rgba(210,168,255,.06)">
+            <div class="zone-label" style="color:var(--shoot)">1b</div>
+            <div style="color:var(--muted);font-size:.72rem">3 seed nodes ✅<br>cc-b0, cc-b1 workers ✅</div>
+          </div>
+          <div class="zone-box no-seed">
+            <div class="zone-label">1c</div>
+            <div style="color:var(--muted);font-size:.72rem">no seed nodes</div>
+          </div>
+          <div class="zone-box mismatch">
+            <div class="zone-label" style="color:var(--enforce)">1d ⚠</div>
+            <div style="color:var(--muted);font-size:.72rem">no seed nodes<br>cc-d0 workers here!</div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom:10px;margin-top:20px">Three possible stories</h3>
+        <ul class="check-list">
+          <li><span class="icon">🏗</span><div><strong>Story A:</strong> Seed expansion lagging — KVM deployed in 1d but seed nodes haven't followed. Fix: extend seed to 1d.</div></li>
+          <li><span class="icon">🐛</span><div><strong>Story B:</strong> Shoot misconfigured — someone wrote 1d by mistake. Fix: change worker pool zones to 1a/1b.</div></li>
+          <li><span class="icon">🔬</span><div><strong>Story C:</strong> Deliberate experiment — 1d prototype. Fix: clarify with the shoot owner.</div></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:14px">Decision matrix</h3>
+        <table class="slim-table">
+          <thead><tr><th>Shoot</th><th>Prefer</th><th>Enforce</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>cc-b0</code>, <code>cc-b1</code></td>
+              <td style="color:var(--prefer)">✅ pinned to 1b</td>
+              <td style="color:var(--prefer)">✅ pinned to 1b</td>
+            </tr>
+            <tr>
+              <td><code>cc-d0</code></td>
+              <td style="color:var(--warn)">⚠ random (no regression)</td>
+              <td style="color:var(--enforce)">❌ unschedulable!</td>
+            </tr>
+            <tr>
+              <td><code>lh-b</code> (workerless)</td>
+              <td style="color:var(--warn)">⚠ random</td>
+              <td style="color:var(--enforce)">❌ unschedulable!</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout good" style="margin-top:16px">
+          <strong>Recommended rollout plan:</strong>
+          <ol style="margin-left:16px;margin-top:8px;font-size:.88rem;line-height:2">
+            <li>Ship <code>Prefer</code> on qa-de-1 first — no regressions, cc-b* get pinned</li>
+            <li>Investigate cc-d0 mismatch (Story A/B/C?)</li>
+            <li>Once resolved, flip to <code>Enforce</code> and roll out to other landscapes</li>
+          </ol>
+        </div>
+
+        <div class="callout" style="margin-top:12px;font-size:.82rem">
+          <strong>Lighthouse</strong> is a separate gap. Workerless → intersection always empty → needs a <strong>mutating admission policy</strong> on the seed to set the zone annotation from the namespace name.
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 2 · cc-d0 Zone Mismatch</span><span>Slide 9 of 10</span>
+    </div>
+  </div>
+
+  <!-- ─────────────── SLIDE 10: MYTHS + RECAP ─────────────── -->
+  <div class="slide" id="slide-10">
+    <div class="slide-label">Chapter 3 · Common Gotchas &amp; Recap</div>
+    <h2>Top misconceptions — and what's actually true</h2>
+
+    <div class="cols-2" style="gap:16px;margin-bottom:20px">
+      <div>
+        <div class="myth-row">
+          <div class="myth-box"><div class="label">MYTH</div>"The garden is a big physical cluster."</div>
+          <div class="fact-box"><div class="label">FACT</div>It's pods inside the runtime cluster. No dedicated hardware.</div>
+        </div>
+        <div class="myth-row">
+          <div class="myth-box"><div class="label">MYTH</div>"The shoot's control plane runs in the shoot cluster."</div>
+          <div class="fact-box"><div class="label">FACT</div>It runs in a <code>shoot--*</code> namespace <em>on the seed</em>.</div>
+        </div>
+        <div class="myth-row">
+          <div class="myth-box"><div class="label">MYTH</div>"The Seed CR is how I change a ManagedSeed's settings."</div>
+          <div class="fact-box"><div class="label">FACT</div>Seed is generated — hand edits get overwritten. Edit the ManagedSeed YAML.</div>
+        </div>
+      </div>
+      <div>
+        <div class="myth-row">
+          <div class="myth-box"><div class="label">MYTH</div>"<code>kubectl get shoots</code> on the seed shows what it hosts."</div>
+          <div class="fact-box"><div class="label">FACT</div>Shoot resources live only in the virtual garden. On the seed look for <code>shoot--*</code> namespaces.</div>
+        </div>
+        <div class="myth-row">
+          <div class="myth-box"><div class="label">MYTH</div>"management cluster is a Gardener term."</div>
+          <div class="fact-box"><div class="label">FACT</div>It's SAP convention for <code>mgmt-*</code>. Gardener calls it a "seed."</div>
+        </div>
+        <div class="myth-row">
+          <div class="myth-box"><div class="label">MYTH</div>"There's only one gardenlet in the landscape."</div>
+          <div class="fact-box"><div class="label">FACT</div>Every seed runs its own gardenlet. mgmt-qa-de-1 has one, rt-qa-de-1 has one.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cols-3" style="gap:14px">
+      <div class="card">
+        <div class="card-badge badge-garden">Key Cmd</div>
+        <div style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);line-height:1.9">
+          u8s --context <span style="color:var(--garden)">g-qa-de-1</span> kubectl get seed<br>
+          u8s --context <span style="color:var(--garden)">g-qa-de-1</span> kubectl get shoot -A<br>
+          u8s --context <span style="color:var(--garden)">g-qa-de-1</span> kubectl -n garden get managedseed
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-badge badge-seed">Key Cmd</div>
+        <div style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);line-height:1.9">
+          u8s --context <span style="color:var(--seed)">mgmt-qa-de-1</span> kubectl get ns | grep shoot--<br>
+          u8s --context <span style="color:var(--seed)">mgmt-qa-de-1</span> kubectl get nodes -L topology.kubernetes.io/zone<br>
+          u8s --context <span style="color:var(--seed)">mgmt-qa-de-1</span> kubectl -n garden get pods
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-badge badge-runtime">Key Cmd</div>
+        <div style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);line-height:1.9">
+          u8s --context <span style="color:var(--runtime)">rt-qa-de-1</span> kubectl -n garden get pods | grep virtual-garden<br>
+          u8s --context <span style="color:var(--runtime)">rt-qa-de-1</span> kubectl get garden
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>Chapter 3 · Recap</span>
+      <span>End — <a href="gardener-architecture.md" style="color:var(--accent)">gardener-architecture.md</a> · <a href="gardener-shoot-cp-az-placement.md" style="color:var(--accent)">az-placement.md</a> · <a href="gardener-qa-de-1-cp-az-findings.md" style="color:var(--accent)">qa-de-1-findings.md</a></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── NAVIGATION ── -->
+<div id="nav">
+  <button id="btn-prev" onclick="go(-1)" disabled>←</button>
+  <div class="dot-nav" id="dot-nav"></div>
+  <div id="slide-counter">1 / 10</div>
+  <button id="btn-next" onclick="go(1)">→</button>
+</div>
+
+<div id="key-hint">← → to navigate</div>
+
+<script>
+const TOTAL = 10;
+let current = 0;
+
+const slides = document.querySelectorAll('.slide');
+const dotNav = document.getElementById('dot-nav');
+const counter = document.getElementById('slide-counter');
+const progressBar = document.getElementById('progress-bar');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+
+// Build dots
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotNav.appendChild(d);
+}
+
+function goTo(n) {
+  if (n < 0 || n >= TOTAL) return;
+  slides[current].classList.remove('active');
+  slides[current].classList.add('exit');
+  setTimeout(() => slides[current < n ? current : n + 1 > current ? current : current].classList.remove('exit'), 450);
+
+  const prev = current;
+  current = n;
+
+  // fix exit class cleanup
+  slides[prev].addEventListener('transitionend', function handler() {
+    slides[prev].classList.remove('exit');
+    slides[prev].removeEventListener('transitionend', handler);
+  });
+
+  slides[current].classList.add('active');
+
+  // Update dots
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  counter.textContent = `${current + 1} / ${TOTAL}`;
+  btnPrev.disabled = current === 0;
+  btnNext.disabled = current === TOTAL - 1;
+  progressBar.style.width = `${((current + 1) / TOTAL) * 100}%`;
+}
+
+function go(dir) { goTo(current + dir); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+
+// Init progress bar
+progressBar.style.width = `${(1 / TOTAL) * 100}%`;
+</script>
+</body>
+</html>

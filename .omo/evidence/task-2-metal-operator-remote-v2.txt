@@ -1,0 +1,72 @@
+========================================================================
+TASK 2 EVIDENCE: Chart.yaml + values.yaml skeleton + Chart.lock
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+
+--- FILES CREATED ---
+  system/metal-operator-remote-v2/Chart.yaml
+  system/metal-operator-remote-v2/values.yaml
+  system/metal-operator-remote-v2/templates/          (directory, initially empty)
+
+---
+
+CHECK 1: helm dependency update
+  COMMAND: helm dependency update system/metal-operator-remote-v2
+  OUTPUT (relevant lines):
+    Saving 1 charts
+    Downloading metal-operator from repo oci://ghcr.io/ironcore-dev/charts
+    Pulled: ghcr.io/ironcore-dev/charts/metal-operator:0.6.2-crds
+    Digest: sha256:24d0dffa0b7eb91a17b6f11ef8696c397701bb34ebff07dcf7e95f799a53940f
+    Deleting outdated charts
+  RESULT: PASS ✅  Chart.lock written:
+    dependencies:
+    - name: metal-operator
+      repository: oci://ghcr.io/ironcore-dev/charts
+      version: 0.6.2-crds
+    digest: sha256:eedd0a2eb048b7c9580e3315c6fd710266da468e6cc3abd5c88400e193545beb
+
+---
+
+CHECK 2: charts/*.tgz is gitignored
+  COMMAND: git check-ignore system/metal-operator-remote-v2/charts/metal-operator-0.6.2-crds.tgz
+  OUTPUT: system/metal-operator-remote-v2/charts/metal-operator-0.6.2-crds.tgz
+  RESULT: PASS ✅  TGZ is gitignored via root *.tgz rule.
+
+CHECK 3: git ls-files charts/ is empty
+  COMMAND: git ls-files system/metal-operator-remote-v2/charts
+  OUTPUT: (empty)
+  RESULT: PASS ✅  Nothing in charts/ is tracked by git.
+
+---
+
+CHECK 4: no mode key in values.yaml
+  COMMAND: grep -E '^\s*mode\s*:' values.yaml
+  OUTPUT: (empty — no match)
+  RESULT: PASS ✅  .Values.mode is NOT set in values.yaml.
+
+---
+
+CHECK 5: helm lint --strict --set mode=seed
+  COMMAND: helm lint --strict system/metal-operator-remote-v2 --set mode=seed
+  OUTPUT:
+    ==> Linting system/metal-operator-remote-v2
+    [INFO] Chart.yaml: icon is recommended
+    1 chart(s) linted, 0 chart(s) failed
+  EXIT CODE: 0
+  RESULT: PASS ✅
+
+---
+
+SUMMARY:
+  Chart.yaml:  dep metal-operator 0.6.2-crds alias metal-operator-core (oci://ghcr.io/ironcore-dev/charts)
+  values.yaml: fullnameOverride=metal-operator; subchart ALL flags false; webhookInjector pinned to
+               keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/webhook-injector:20c495f;
+               dualDeploymentOperatorCR.enabled=false + empty stubs; applyOrder=SeedFirst default.
+  Chart.lock:  committed (dep pinned to digest sha256:eedd0a2eb...)
+  charts/*.tgz: gitignored, not tracked.
+  All T2 acceptance criteria PASS.
+
+========================================================================
+END OF EVIDENCE
+========================================================================

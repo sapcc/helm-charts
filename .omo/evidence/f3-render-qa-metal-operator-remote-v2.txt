@@ -1,0 +1,170 @@
+F3 Final Verification Wave — metal-operator-remote-v2 Render QA
+Generated: 2026-08-06
+Branch: metal-operator-remote-v2-redesign-report
+Chart: system/metal-operator-remote-v2/
+==============================================================
+
+## 1. helm dependency build
+Pulled: ghcr.io/ironcore-dev/charts/metal-operator:0.6.2-crds
+Digest: sha256:24d0dffa0b7eb91a17b6f11ef8696c397701bb34ebff07dcf7e95f799a53940f
+Deleting outdated charts
+STATUS: OK
+
+## 2. SEED: full object list (dnsRecordTemplate.enabled=true)
+ConfigMap/dns-record-template
+ConfigMap/remote-kubeconfig
+Deployment/metal-operator-controller-manager
+Ingress/metal-operator-metal-registry-ingress
+NetworkPolicy/kube-apiserver-egress-to-metalapi
+NetworkPolicy/kube-apiserver-egress-to-virtual-garden-lb
+NetworkPolicy/metalapi-egress-to-ingress-nginx-controller-tcp-443
+NetworkPolicy/metalapi-ingress-from-kube-apiserver-9443
+NetworkPolicy/metalapi-ingress-from-kube-monitoring
+NetworkPolicy/metalapi-ingress-to-metal-operator-metal-registry-service-tcp-10000
+Role/metal-operator-webhook-injector
+RoleBinding/metal-operator-webhook-injector
+Secret/macdb
+Secret/metal-operator-remote-kubeconfig
+Service/metal-operator-metal-registry-service
+Service/metal-operator-remote-webhook-service
+ServiceAccount/metal-operator-webhook-injector
+TOTAL: 17 objects (6 NetworkPolicies)
+
+## 3. SEED: duplicate guard
+(no output — no duplicates)
+STATUS: PASS
+
+## 4. SEED: no shoot objects (ValidatingWebhookConfiguration / ClusterRole / ClusterRoleBinding / Namespace)
+Result: 0 (all zeros per document)
+STATUS: PASS
+
+## 5. SHOOT: full object list (crd+rbac+webhook enabled)
+ClusterRole/biossettings-admin-role
+ClusterRole/biossettings-editor-role
+ClusterRole/biossettings-viewer-role
+ClusterRole/biossettingsset-admin-role
+ClusterRole/biossettingsset-editor-role
+ClusterRole/biossettingsset-viewer-role
+ClusterRole/biosversion-admin-role
+ClusterRole/biosversion-editor-role
+ClusterRole/biosversion-viewer-role
+ClusterRole/biosversionset-admin-role
+ClusterRole/biosversionset-editor-role
+ClusterRole/biosversionset-viewer-role
+ClusterRole/bmc-admin-role
+ClusterRole/bmc-editor-role
+ClusterRole/bmc-viewer-role
+ClusterRole/bmcsecret-admin-role
+ClusterRole/bmcsecret-editor-role
+ClusterRole/bmcsecret-viewer-role
+ClusterRole/bmcsettings-admin-role
+ClusterRole/bmcsettings-editor-role
+ClusterRole/bmcsettings-viewer-role
+ClusterRole/bmcsettingsset-admin-role
+ClusterRole/bmcsettingsset-editor-role
+ClusterRole/bmcsettingsset-viewer-role
+ClusterRole/bmcuser-admin-role
+ClusterRole/bmcuser-editor-role
+ClusterRole/bmcuser-viewer-role
+ClusterRole/bmcversion-admin-role
+ClusterRole/bmcversion-editor-role
+ClusterRole/bmcversion-viewer-role
+ClusterRole/bmcversionset-admin-role
+ClusterRole/bmcversionset-editor-role
+ClusterRole/bmcversionset-viewer-role
+ClusterRole/endpoint-admin-role
+ClusterRole/endpoint-editor-role
+ClusterRole/endpoint-viewer-role
+ClusterRole/metal-api-viewer
+ClusterRole/metal-operator-dns-records
+ClusterRole/metal-operator-manager-role
+ClusterRole/metal-operator-webhook-injector
+ClusterRole/server-admin-role
+ClusterRole/server-editor-role
+ClusterRole/server-viewer-role
+ClusterRole/serverbootconfiguration-admin-role
+ClusterRole/serverbootconfiguration-editor-role
+ClusterRole/serverbootconfiguration-viewer-role
+ClusterRole/serverclaim-admin-role
+ClusterRole/serverclaim-editor-role
+ClusterRole/serverclaim-viewer-role
+ClusterRole/servermaintenance-admin-role
+ClusterRole/servermaintenance-editor-role
+ClusterRole/servermaintenance-viewer-role
+ClusterRole/serverreadinessrule-admin-role
+ClusterRole/serverreadinessrule-editor-role
+ClusterRole/serverreadinessrule-viewer-role
+ClusterRoleBinding/cc:oidc-ias-admin
+ClusterRoleBinding/cc:oidc-ias-metal-viewer
+ClusterRoleBinding/cc:oidc-ias-servermaintenance-editor
+ClusterRoleBinding/cc:oidc-ias-viewer
+ClusterRoleBinding/metal-operator-dns-records-rolebinding
+ClusterRoleBinding/metal-operator-manager-rolebinding
+ClusterRoleBinding/metal-operator-webhook-injector-rolebinding
+CustomResourceDefinition/biossettings.metal.ironcore.dev
+CustomResourceDefinition/biossettingssets.metal.ironcore.dev
+CustomResourceDefinition/biosversions.metal.ironcore.dev
+CustomResourceDefinition/biosversionsets.metal.ironcore.dev
+CustomResourceDefinition/bmcs.metal.ironcore.dev
+CustomResourceDefinition/bmcsecrets.metal.ironcore.dev
+CustomResourceDefinition/bmcsettings.metal.ironcore.dev
+CustomResourceDefinition/bmcsettingssets.metal.ironcore.dev
+CustomResourceDefinition/bmcusers.metal.ironcore.dev
+CustomResourceDefinition/bmcversions.metal.ironcore.dev
+CustomResourceDefinition/bmcversionsets.metal.ironcore.dev
+CustomResourceDefinition/endpoints.metal.ironcore.dev
+CustomResourceDefinition/serverbootconfigurations.metal.ironcore.dev
+CustomResourceDefinition/serverclaims.metal.ironcore.dev
+CustomResourceDefinition/servermaintenances.metal.ironcore.dev
+CustomResourceDefinition/serverreadinessrules.metal.ironcore.dev
+CustomResourceDefinition/servers.metal.ironcore.dev
+Namespace/metal-servers
+Role/metal-operator-leader-election-role
+RoleBinding/metal-operator-leader-election-rolebinding
+Service/metal-operator-webhook-service
+ServiceAccount/metal-operator-controller-manager
+ValidatingWebhookConfiguration/metal-operator-validating-webhook-configuration
+
+## 6. SHOOT: VWC webhook names (must be exactly 7)
+vbiossettings-v1alpha1.kb.io
+vbiosversion-v1alpha1.kb.io
+vbmcsecret-v1alpha1.kb.io
+vbmcsettings-v1alpha1.kb.io
+vbmcversion-v1alpha1.kb.io
+vendpoint-v1alpha1.kb.io
+vserver-v1alpha1.kb.io
+COUNT: 7
+STATUS: PASS
+
+## 7. SHOOT: VWC failurePolicy and sideEffects
+vbiossettings-v1alpha1.kb.io failurePolicy=Fail sideEffects=None
+vbiosversion-v1alpha1.kb.io failurePolicy=Fail sideEffects=None
+vbmcsecret-v1alpha1.kb.io failurePolicy=Fail sideEffects=None
+vbmcsettings-v1alpha1.kb.io failurePolicy=Fail sideEffects=None
+vbmcversion-v1alpha1.kb.io failurePolicy=Fail sideEffects=None
+vendpoint-v1alpha1.kb.io failurePolicy=Fail sideEffects=None
+vserver-v1alpha1.kb.io failurePolicy=Fail sideEffects=None
+STATUS: PASS (all Fail/None)
+
+## 8. SHOOT: duplicate guard
+(no output — no duplicates)
+STATUS: PASS
+
+## 9. SHOOT: no Deployment objects
+Result: 0 (all zeros per document)
+STATUS: PASS
+
+## 10. GLOBAL: no metal-token-rotate references in templates/
+STATUS: PASS
+
+## 11. git ls-files charts/ (must be empty — charts are gitignored)
+(no output)
+STATUS: PASS
+
+## 12. Default helm template: DualDeploymentOperator count
+Result: 0
+STATUS: PASS
+
+==============================================================
+VERDICT: APPROVE
+All 12 checks passed. Zero findings.

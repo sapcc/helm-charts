@@ -1,0 +1,30 @@
+========================================================================
+TASK 5 EVIDENCE: macdb Secret (mode=seed, vault+kvv2 placeholders)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+FILE: system/metal-operator-remote-v2/templates/macdb.yaml
+
+CHECK 1: mode=seed emits macdb Secret
+  helm template … --set mode=seed | yq 'select(.kind=="Secret" and .metadata.name=="macdb") | .kind+"/"+.metadata.name'
+  OUTPUT: Secret/macdb
+  RESULT: PASS ✅
+
+CHECK 2: mode=shoot emits NO macdb Secret
+  helm template … --set mode=shoot | yq 'select(.kind=="Secret" and .metadata.name=="macdb") | .kind' | wc -l
+  OUTPUT: 0
+  RESULT: PASS ✅
+
+CHECK 3: No cloud.sap/inject-secrets:"false" annotation
+  Template has no opt-out annotation.
+  RESULT: PASS ✅
+
+CHECK 4: stringData uses toYaml + indent (not literal values)
+  Template: stringData.macdb.yaml: | + toYaml .Values.macdb | indent 4
+  Rendered with empty macdb = `{}` (no leaked creds)
+  RESULT: PASS ✅ (macdb defaults empty; vault+kvv2 refs set per-cluster in CR values)
+
+SUMMARY: T5 acceptance criteria PASS.
+========================================================================
+END OF EVIDENCE
+========================================================================

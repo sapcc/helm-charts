@@ -1,0 +1,36 @@
+========================================================================
+TASK 6 EVIDENCE: metal-registry Service + webhook Service + Ingress (mode=seed)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+FILES:
+  templates/metal-registry-service.yaml
+  templates/webhook-service.yaml
+  templates/ingress.yaml
+
+CHECK 1: Services present in seed
+  helm template … --set mode=seed | yq 'select(.kind=="Service") | .metadata.name'
+  OUTPUT:
+    metal-operator-metal-registry-service
+    metal-operator-remote-webhook-service
+  RESULT: PASS ✅
+
+CHECK 2: webhook-service name and port
+  yq 'select(.kind=="Service" and .metadata.name=="metal-operator-remote-webhook-service") | .spec.ports[0]'
+  OUTPUT: port:443 name:ext-webhook-server protocol:TCP targetPort:9443
+  RESULT: PASS ✅  (name intact — matches VWC URL host and sidecar --cert-sans)
+
+CHECK 3: Ingress present in seed
+  yq 'select(.kind=="Ingress") | .metadata.name'
+  OUTPUT: metal-operator-metal-registry-ingress
+  RESULT: PASS ✅
+
+CHECK 4: mode=shoot emits NONE of the three
+  yq 'select(.kind=="Service" or .kind=="Ingress") | .metadata.name'
+  OUTPUT: (upstream webhook-service from subchart - shoot-side, expected)
+  Seeds Service/Ingress are all absent from shoot render ✅
+
+SUMMARY: T6 acceptance criteria PASS.
+========================================================================
+END OF EVIDENCE
+========================================================================

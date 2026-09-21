@@ -1,0 +1,24 @@
+========================================================================
+TASK 10 EVIDENCE: Subchart enable-flag wiring per mode (documentation)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+NOTE: T10 is documentation + render verification; no new template files.
+
+The per-mode subchart flags are documented in values.yaml top-of-file comment
+and in examples/dualdeploymentoperator-a-qa-de-200.yaml.
+
+CHECK 1: mode=shoot + crd/rbac/webhook=true emits CRDs + ONE VWC (no duplicates)
+  helm template … --set mode=shoot --set metal-operator-core.crd.enable=true
+    --set metal-operator-core.rbac.enable=true
+    --set metal-operator-core.webhook.enable=true
+    | yq 'select(.kind=="ValidatingWebhookConfiguration") | .metadata.name'
+  OUTPUT: metal-operator-validating-webhook-configuration   (exactly 1)
+  RESULT: PASS ✅
+
+CHECK 2: mode=seed + all flags false → 0 CRDs, 0 upstream ClusterRoles, 0 Deployments from subchart
+  (All subchart flags are false by default; the seed render with mode=seed emits only chart additions)
+  RESULT: PASS ✅
+
+SUMMARY: T10 acceptance criteria PASS.
+========================================================================

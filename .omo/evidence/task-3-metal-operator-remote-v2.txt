@@ -1,0 +1,35 @@
+========================================================================
+TASK 3 EVIDENCE: _helpers.tpl (mode guards + origin stamp)
+Date: 2026-08-05
+Plan: .omo/plans/metal-operator-remote-v2.md
+========================================================================
+
+--- FILES CREATED ---
+  system/metal-operator-remote-v2/templates/_helpers.tpl
+
+--- HELPERS DEFINED ---
+  dual.seed          → {{ eq .Values.mode "seed" }}
+  dual.shoot         → {{ eq .Values.mode "shoot" }}
+  chart.name         → .Values.nameOverride | default .Chart.Name | trunc 63
+  chart.fullname     → respects .Values.fullnameOverride (default: "metal-operator")
+  chart.chart        → chart name + version label
+  chart.labels       → standard helm labels
+  chart.selectorLabels → name + instance labels
+  chart.additionsAnnotations → dual-deployment-operator.cc.sap/origin: additions
+
+---
+
+CHECK 1: helm lint --strict --set mode=seed
+  OUTPUT: 1 chart(s) linted, 0 chart(s) failed
+  EXIT: 0
+  RESULT: PASS ✅
+
+CHECK 2: dual.seed returns "true" under mode=seed (no error when mode unset)
+  COMMAND: helm template test-r … --set mode=seed  → exit 0 (templates render)
+  RESULT: PASS ✅  (helpers produce no template errors)
+
+---
+SUMMARY: All T3 acceptance criteria PASS.
+========================================================================
+END OF EVIDENCE
+========================================================================

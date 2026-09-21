@@ -1,0 +1,172 @@
+=== CLEANUP VERIFICATION: metal-operator-remote-v2 ===
+Date: Thu Aug  6 08:27:58 UTC 2026
+
+--- STEP A: Forbidden file deletion ---
+CMD: ls templates/rotate-kubeconfig.yaml templates/token-rotate-rbac.yaml 2>&1
+ls: templates/rotate-kubeconfig.yaml: No such file or directory
+ls: templates/token-rotate-rbac.yaml: No such file or directory
+PASS: both files deleted
+
+CMD: grep -R metal-token-rotate templates/
+PASS: no metal-token-rotate in templates
+
+--- STEP B: Stale comment fix ---
+CMD: grep metal-token-rotate examples/dualdeploymentoperator-a-qa-de-200.yaml
+PASS: no metal-token-rotate in example CR
+
+--- T2: SKELETON ---
+CMD: git check-ignore charts/metal-operator-0.6.2-crds.tgz
+charts/metal-operator-0.6.2-crds.tgz
+CMD: git ls-files charts/
+(empty=PASS)
+CMD: grep -E '^\s*mode\s*:' values.yaml
+PASS: no mode in values.yaml
+CMD: helm lint --strict . --set mode=seed --set controllerManager.manager.env.KUBERNETES_SERVICE_HOST=1.2.3.4
+==> Linting .
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+--- T3: HELPERS ---
+PASS: helm template no errors
+
+--- T4: CONTROLLER-MANAGER ---
+Deployment name:
+metal-operator-controller-manager
+Deployment count seed:
+1
+Deployment count shoot:
+0
+initContainer args:
+--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+--target-label=dual-deployment-operator.cc.sap/webhook-injector=metal-operator
+--leader-election-id=metal-operator-remote-webhook-injector-leader
+--cert-secret-name=metal-operator-remote-cert-secret
+--cert-sans=metal-operator-remote-webhook-service
+--rotation-overlap-window=30s
+--rotation-gate-timeout=30s
+securityContext.runAsUser:
+65532
+
+--- T5: MACDB ---
+macdb stringData contains vault+kvv2://
+macPrefixes:
+- defaultCredentials:
+    username: vault+kvv2://test
+
+macdb count shoot:
+0
+
+--- T6: SERVICES + INGRESS ---
+Service names seed:
+metal-operator-metal-registry-service
+---
+metal-operator-remote-webhook-service
+Service count shoot:
+0
+
+--- T7: NETWORKPOLICIES ---
+NetworkPolicy count seed:
+6
+NetworkPolicy count shoot:
+0
+--- T8: KUBECONFIG + SECRET ---
+no remote.ca refs:
+PASS
+no metal-token-rotate in templates:
+PASS
+remote-kubeconfig stringData:
+token: ""
+bundle.crt: ""
+metal-token-rotate-kubeconfig count:
+0
+
+--- T9: DNS-RECORD ---
+no webhook-config ConfigMap by default:
+0
+dns-record-template ConfigMap when enabled:
+dns-record-template
+
+--- T10: SUBCHART FLAGS ---
+ValidatingWebhookConfiguration count:
+1
+ValidatingWebhookConfiguration name:
+metal-operator-validating-webhook-configuration
+
+--- T11: INJECTOR RBAC ---
+injector kinds seed:
+ServiceAccount
+---
+Role
+---
+RoleBinding
+injector kinds shoot:
+
+
+
+ClusterRole / metal-operator-webhook-injector
+
+
+
+
+
+ClusterRoleBinding / metal-operator-webhook-injector-rolebinding
+
+
+--- T12: OIDC-IAS RBAC ---
+oidc-ias bindings qa-de-1:
+cc:oidc-ias-admin
+cc:oidc-ias-viewer
+cc:oidc-ias-metal-viewer
+cc:oidc-ias-servermaintenance-editor
+oidc-ias-admin subject eu-de-1:
+CC_IAS_CONTROLPLANE_PROD_ADMIN
+
+--- T13: NAMESPACE ---
+Namespace name shoot:
+metal-servers
+Namespace count seed:
+0
+
+--- T14: EXAMPLE CR ---
+has source,shootAccess,shootNamespace (individual):
+true
+true
+true
+applyOrder:
+SeedFirst
+rewriteWebhookURL count (non-null):
+1
+patch count (non-null):
+1
+vault+kvv2 refs:
+        # BMC credentials: MUST stay as vault+kvv2:// references.
+                username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/username" }}'
+                password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/password" }}'
+no metal-token-rotate:
+PASS
+--- T15: README ---
+Chart.lock mention:
+`Chart.yaml` and commits only `Chart.lock` — **not** `charts/*.tgz`.
+Chart.lock     ← committed — locks the digest
+├── Chart.lock
+subchart-dependency-resolution link:
+[`docs/subchart-dependency-resolution.md`](https://github.com/SAP-cloud-infrastructure/dual-deployment-operator/blob/main/docs/subchart-dependency-resolution.md)
+
+--- T16: CR TEMPLATE ---
+DDO count default:
+0
+DDO count seed+enabled (carve-out must be 0):
+0
+DDO namespace with full params:
+shoot--cp--m-qa-de-1
+DDO applyOrder:
+SeedFirst
+
+--- LEAK GUARD ---
+PASS: no unguarded credentials
+
+--- GLOBAL metal-token-rotate GUARD ---
+PASS: no metal-token-rotate in templates
+
+=== ALL CHECKS COMPLETE ===
