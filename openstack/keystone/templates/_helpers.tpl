@@ -163,11 +163,4 @@ Empty values are skipped so callers may pass "" for optional dependencies.
     {{- end }}
   {{- end }}
 {{- end }}
-{{- if eq .Values.tls.state "disabled" }}
-  {{- $recName := printf "%s.%s.%s" .Values.services.public.host .Values.global.region .Values.global.tld }}
-  {{- $rec := lookup "disco.stable.sap.cc/v1" "Record" .Release.Namespace $recName }}
-  {{- if not (empty $rec) }}
-    {{- fail (printf "tls.state is disabled but the disco Record %s still exists. Delete it and point %s to the ingress address by hand, then re-run." $recName $recName) }}
-  {{- end }}
-{{- end }}
 {{- end }}
