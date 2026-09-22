@@ -46,7 +46,7 @@ trust = True
 security_compliance = True
 
 [network]
-project_network_cidr = 10.199.0.0/16
+project_network_cidr = {{ .Values.tempest_common.project_network_cidr }}
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
@@ -61,8 +61,8 @@ max_microversion = 1.46
 driver = fake-hardware
 
 [compute]
-image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
-image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+image_ref = {{ required "Missing tempest_common.image_ref!" .Values.tempest_common.image_ref }}
+image_ref_alt = {{ required "Missing tempest_common.image_ref_alt!" .Values.tempest_common.image_ref_alt }}
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
@@ -72,7 +72,7 @@ min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 build_timeout=600
-compute_volume_common_az = qa-de-1b
+compute_volume_common_az = {{ required "Missing tempest_common.compute_volume_common_az!" .Values.tempest_common.compute_volume_common_az }}
 
 [compute-feature-enabled]
 resize = true
@@ -89,7 +89,7 @@ attach_encrypted_volume = false
 build_timeout=600
 
 [validation]
-image_ssh_user = ccloud
+image_ssh_user = {{ required "Missing tempest_common.image_ssh_user!" .Values.tempest_common.image_ssh_user }}
 
 [volume]
 catalog_type = volumev3

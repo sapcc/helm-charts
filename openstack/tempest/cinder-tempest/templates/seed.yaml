@@ -1,0 +1,63 @@
+{{- $tc := .Values.tempest_common | default dict -}}
+{{- $seed := $tc.seed | default dict -}}
+{{- if $seed.enabled -}}
+{{- $prefix     := default "nova" $seed.accountPrefix -}}
+{{- $userCount  := int (default 18 $seed.userCount) -}}
+{{- $adminCount := int (default 8  $seed.adminCount) -}}
+{{- $pw         := required "Missing tempestAdminPassword value!" .Values.tempestAdminPassword -}}
+{{- $userRoles  := default (list "member" "admin" "volume_admin" "resource_admin") $seed.userRoles -}}
+{{- $adminRoles := default (list "member" "admin" "volume_admin" "cloud_volume_admin" "resource_admin") $seed.adminRoles -}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Chart.Name }}-seed
+  labels:
+    component: cinder
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-tempest-seed
+  domains:
+  - name: tempest
+    projects:
+    {{- range $i := until $adminCount }}
+    - name: {{ $prefix }}-tempest-admin{{ add1 $i }}
+      description: Cinder Tempest Admin Test Project {{ add1 $i }}
+    {{- end }}
+    {{- range $i := until $userCount }}
+    - name: {{ $prefix }}-tempest{{ add1 $i }}
+      description: Cinder Tempest Test Project {{ add1 $i }}
+    {{- end }}
+    users:
+    {{- range $i := until $adminCount }}
+    - name: {{ $prefix }}-tempestadmin{{ add1 $i }}
+      description: Cinder Tempest Administrator {{ add1 $i }}
+      password: {{ $pw | quote }}
+      role_assignments:
+      {{- range $j := until $adminCount }}
+      {{- range $role := $adminRoles }}
+      - project: {{ $prefix }}-tempest-admin{{ add1 $j }}
+        role: {{ $role }}
+      {{- end }}
+      {{- end }}
+      - domain: tempest
+        role: admin
+      - domain: tempest
+        role: resource_admin
+      - domain: tempest
+        role: admin
+        inherited: true
+    {{- end }}
+    {{- range $i := until $userCount }}
+    - name: {{ $prefix }}-tempestuser{{ add1 $i }}
+      description: Cinder Tempest Test User {{ add1 $i }}
+      password: {{ $pw | quote }}
+      role_assignments:
+      {{- range $role := $userRoles }}
+      - project: {{ $prefix }}-tempest{{ add1 $i }}
+        role: {{ $role }}
+      {{- end }}
+    {{- end }}
+{{- end }}
