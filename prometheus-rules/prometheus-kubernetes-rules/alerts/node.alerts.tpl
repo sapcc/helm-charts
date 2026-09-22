@@ -138,7 +138,7 @@ groups:
       summary: Very high number of threads
 
   - alert: NodeReadOnlyRootFilesystem
-    expr: sum by (node) (node_filesystem_readonly{mountpoint="/"}) > 0
+    expr: sum by (node) (node_filesystem_readonly{mountpoint="/", fstype!="erofs"}) > 0
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
