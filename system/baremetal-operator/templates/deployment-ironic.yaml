@@ -102,7 +102,14 @@ spec:
         - mountPath: /shared
           name: ironic-data-volume
       - command:
-        - /bin/runhttpd
+        - /bin/bash
+        - -c
+        - |
+          # ironic-image >= 34 ships arch-suffixed iPXE firmware; runhttpd expects snponly.efi
+          mkdir -p /shared/custom_ipxe_firmware
+          cp /tftpboot/undionly.kpxe /shared/custom_ipxe_firmware/undionly.kpxe
+          cp /tftpboot/snponly-x86_64.efi /shared/custom_ipxe_firmware/snponly.efi
+          exec /bin/runhttpd
         envFrom:
         - configMapRef:
             name: ironic-config-httpd
@@ -119,7 +126,7 @@ spec:
             command:
             - sh
             - -c
-            - curl -sSfk https://127.0.0.1:6180/images
+            - curl -sSfk https://127.0.0.1:6180/boot.ipxe
           failureThreshold: 10
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -131,7 +138,7 @@ spec:
             command:
             - sh
             - -c
-            - curl -sSfk https://127.0.0.1:6180/images
+            - curl -sSfk https://127.0.0.1:6180/boot.ipxe
           failureThreshold: 10
           initialDelaySeconds: 30
           periodSeconds: 30
@@ -154,7 +161,7 @@ spec:
         - mountPath: /certs/ipxe
           name: cert
           readOnly: true
-        - mountPath: /tmp/inspector.ipxe.j2
+        - mountPath: /templates/inspector.ipxe.j2
           name: ironic-httpd
           subPath: inspector.ipxe.j2
       dnsPolicy: ClusterFirst

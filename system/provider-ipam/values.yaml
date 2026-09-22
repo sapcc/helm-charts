@@ -11,7 +11,7 @@ controllerManager:
       runAsUser: 65532
     image:
       repository: gcr.io/k8s-staging-capi-ipam-ic/cluster-api-ipam-in-cluster-controller
-      tag: v1.1.1-rc.0
+      tag: v1.1.1
     imagePullPolicy: Always
     resources:
       limits:
@@ -26,7 +26,11 @@ controllerManager:
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
-  tolerations: []
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
   topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
 managerConfig:
