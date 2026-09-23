@@ -1,5 +1,6 @@
 {{- if .Values.biosVersions.enabled }}
 {{- $usedNames := dict }}
+{{- $firmwareHost := $.Values.firmwareRepo.hostOverride | default (printf "%s.%s.%s" $.Values.firmwareRepo.host $.Values.global.region $.Values.global.tld) }}
 {{- range $vendor, $vendorConfig := .Values.machines }}
 {{- if $vendorConfig }}
 
@@ -7,7 +8,7 @@
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosVersions.filters.vendors) }}
 {{- $processedModels := dict }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if and $entry.bios $entry.bios.imageURI }}
+{{- if and $entry.bios $entry.bios.imagePath }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bios.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
@@ -26,7 +27,7 @@ metadata:
   {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
   {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
   {{- if hasKey $usedNames $resourceName }}
-  {{- fail (printf "metal-settings: duplicate BIOSVersionSet name %q (entry %q, model %q). Two machines.<vendor>.models entries produced the same name with differing bios.version/imageURI. Only one entry per model should define bios.version/imageURI, or set a unique bios.versionParams.setMetadataName on the others." $resourceName $entryName $model) }}
+  {{- fail (printf "metal-settings: duplicate BIOSVersionSet name %q (entry %q, model %q). Two machines.<vendor>.models entries produced the same name with differing bios.version/imagePath. Only one entry per model should define bios.version/imagePath, or set a unique bios.versionParams.setMetadataName on the others." $resourceName $entryName $model) }}
   {{- end }}
   {{- $_ := set $usedNames $resourceName true }}
   name: {{ $resourceName }}
@@ -42,7 +43,7 @@ spec:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
     image:
-      URI: {{ $entry.bios.imageURI | quote }}
+      URI: {{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $entry.bios.imagePath | quote }}
       transferProtocol: "HTTPS"
 {{- with $.Values.biosVersions.retryPolicy }}
     retryPolicy:

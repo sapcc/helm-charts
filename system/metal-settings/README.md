@@ -173,12 +173,16 @@ machines:
         bios:
           version: "2.22.2"        # Target BIOS firmware version gate.
           settingsFileName: dell-default.yaml  # File under bios_settings/ to use for BIOSSettingsSet.
-          imageURI: "https://..."  # Firmware image download URL for BIOSVersionSet.
+          imagePath: "/hw-firmware/..."  # Path appended to the composed firmwareRepo URL for BIOSVersionSet.
         bmc:
           version: "7.00.00.183"   # Target BMC firmware version gate.
           settingsFileName: dell-default.yaml  # File under bmc_settings/ to use for BMCSettingsSet.
-          imageURI: "https://..."  # Firmware image download URL for BMCVersionSet.
+          imagePath: "/hw-firmware/..."  # Path appended to the composed firmwareRepo URL for BMCVersionSet.
 ```
+
+The full image URL is composed at render time from `firmwareRepo.scheme`,
+`firmwareRepo.host` + `global.region` + `global.tld` (or `firmwareRepo.hostOverride`
+if set), and this `imagePath`. See [`firmwareRepo`](#firmware-repository-firmwarerepo) below.
 
 **Key rules:**
 - A model entry with both `bios:` and `bmc:` blocks generates resources for all four types (subject to `enabled` flags and filters).
@@ -215,7 +219,7 @@ machines:
         bios:
           version: "2.9.4"
           settingsContent: *myCustomSettings      # Use inline content instead of settingsFileName
-          imageURI: "https://..."
+          imagePath: "/hw-firmware/..."
           settingsParams:
             serverFilter:
               included: [node003-bb086, node009-bb086]
@@ -449,7 +453,7 @@ machines:
             serverFilter:
               included: [node001-bb001, node002-bb001]
               excluded: []
-          imageURI: "https://<repo-address>/poweredge-r860/iDRAC-7.20.60.50.EXE"
+          imagePath: "/poweredge-r860/iDRAC-7.20.60.50.EXE"
 ```
 
 This example:

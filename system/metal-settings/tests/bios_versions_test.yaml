@@ -46,6 +46,57 @@ tests:
           path: spec.serverSelector.matchLabels["kubernetes.metal.cloud.sap/type"]
           value: poweredge-r7615
 
+  # These tests pin machines.dell.models.poweredge-r7615.bios.imagePath to a
+  # synthetic value via `set`, so they only assert the URI composition logic
+  # (scheme + host/region/tld + imagePath) and stay stable if the real
+  # firmware version/path in values.yaml changes.
+  - it: should build image URI from firmwareRepo.host + global.region + global.tld + imagePath
+    set:
+      machines.dell.models.poweredge-r7615.bios.imagePath: /test-fw.EXE
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615
+    asserts:
+      - equal:
+          path: spec.biosVersionTemplate.image.URI
+          value: https://repo.eu-de-1.cloud.sap/test-fw.EXE
+
+  - it: should build image URI using overridden global.region
+    set:
+      global.region: qa-de-1
+      machines.dell.models.poweredge-r7615.bios.imagePath: /test-fw.EXE
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615
+    asserts:
+      - equal:
+          path: spec.biosVersionTemplate.image.URI
+          value: https://repo.qa-de-1.cloud.sap/test-fw.EXE
+
+  - it: should use firmwareRepo.hostOverride instead of host+region+tld composition when set
+    set:
+      firmwareRepo.hostOverride: custom-repo.example.com
+      machines.dell.models.poweredge-r7615.bios.imagePath: /test-fw.EXE
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615
+    asserts:
+      - equal:
+          path: spec.biosVersionTemplate.image.URI
+          value: https://custom-repo.example.com/test-fw.EXE
+
+  - it: should build image URI using overridden firmwareRepo.scheme
+    set:
+      firmwareRepo.scheme: http
+      machines.dell.models.poweredge-r7615.bios.imagePath: /test-fw.EXE
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615
+    asserts:
+      - equal:
+          path: spec.biosVersionTemplate.image.URI
+          value: http://repo.eu-de-1.cloud.sap/test-fw.EXE
+
   - it: should set serverMaintenancePolicy to OwnerApproval
     documentSelector:
       path: metadata.name
@@ -165,7 +216,7 @@ tests:
   # ignore clusterType, so ALL entries sharing a model resolve to the exact
   # same default resource name ("<vendor>-<model>"). If any two such entries
   # (for ANY vendor/model/key - not just a specific example) also carry
-  # different bios.version/imageURI, the template would otherwise silently
+  # different bios.version/imagePath, the template would otherwise silently
   # emit two documents with the same metadata.name. The template now guards
   # against this generically by failing the render whenever a name collision
   # is detected, regardless of which keys/models are involved.
@@ -184,19 +235,19 @@ tests:
     set:
       # Synthesize a generic collision unrelated to proliant-dl560-gen11: alias
       # an arbitrary second entry (poweredge-r660) onto an existing model
-      # (poweredge-r640) with a different bios.version/imageURI. This proves
+      # (poweredge-r640) with a different bios.version/imagePath. This proves
       # the guard is generic and not hardcoded to one known duplicate.
       machines.dell.models.poweredge-r660.model: poweredge-r640
       machines.dell.models.poweredge-r660.bios.version: "9.9.9-test"
-      machines.dell.models.poweredge-r660.bios.imageURI: "https://example.invalid/test.EXE"
+      machines.dell.models.poweredge-r660.bios.imagePath: "/test.EXE"
     asserts:
       - failedTemplate:
           errorPattern: "duplicate BIOSVersionSet name"
 
-  - it: should not fail when a colliding entry's bios.imageURI is removed (duplication resolved)
+  - it: should not fail when a colliding entry's bios.imagePath is removed (duplication resolved)
     set:
       machines.dell.models.poweredge-r660.model: poweredge-r640
-      machines.dell.models.poweredge-r660.bios.imageURI: null
+      machines.dell.models.poweredge-r660.bios.imagePath: null
     asserts:
       - hasDocuments:
           count: 25
