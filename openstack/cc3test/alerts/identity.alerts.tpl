@@ -252,14 +252,14 @@ groups:
       support_group: identity
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
-      meta: "SAML federation authentication test failing"
+      meta: "SAML federation authentication failing"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "SAML federation authentication test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Tenant users may be unable to authenticate via their IdP."
-      summary: "SAML federation authentication test failing"
+      description: "SAML federation authentication {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Tenant users may be unable to authenticate via their IdP."
+      summary: "SAML federation authentication failing"
 
   - alert: SAMLBypassProtectionFailed
     expr: |
@@ -271,14 +271,14 @@ groups:
       support_group: identity
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
-      meta: "SAML bypass protection test failing"
+      meta: "SAML bypass protection failing"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "SAML bypass protection test {{`{{ $labels.name }}`}} is failing. The unauthenticated redirect or header injection guard may be misconfigured — a BSI security control is not being enforced."
-      summary: "SAML bypass protection test failing"
+      description: "SAML bypass protection {{`{{ $labels.name }}`}} is failing. The unauthenticated redirect or header injection guard may be misconfigured — a BSI security control is not being enforced."
+      summary: "SAML bypass protection failing"
 
   - alert: SAMLTokenFederationInfoMissing
     expr: |
@@ -293,7 +293,7 @@ groups:
       meta: "SAML token missing OS-FEDERATION fields"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "The SAML token payload for {{`{{ $labels.service }}`}} is missing required OS-FEDERATION fields (identity_provider, protocol, groups). Token mapping or Keystone federation config may be broken."
@@ -312,7 +312,7 @@ groups:
       meta: "SAML signature validation control not enforced"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "mod_shib accepted a SAML assertion with an invalid/missing/untrusted signature in {{`{{ $labels.name }}`}}. BSI control SF.Fas.1 is not being enforced — assertions may be accepted without valid cryptographic proof."
@@ -331,7 +331,7 @@ groups:
       meta: "SAML issuer/audience validation control not enforced"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-saml/"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "mod_shib accepted a SAML assertion from an unknown issuer or with a wrong AudienceRestriction in {{`{{ $labels.name }}`}}. BSI control SF.Fas.2 is not being enforced — cross-SP or rogue-IdP assertions may be accepted."
