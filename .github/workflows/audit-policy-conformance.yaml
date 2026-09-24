@@ -1,0 +1,26 @@
+name: "Audit policy conformance"
+# Checks that no apiserver audit policy in cc-gardener or cc-runtime-cluster writes credentials
+# into the audit log. See global/cc-gardener/ci/audit-policy-conformance.sh.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "global/cc-gardener/**"
+      - "system/cc-runtime-cluster/**"
+      - ".github/workflows/audit-policy-conformance.yaml"
+
+jobs:
+  audit-policy-conformance:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.2.0
+
+      - name: Install yq
+        uses: mikefarah/yq@v4.53.6
+
+      - name: Run audit policy conformance check
+        run: ./global/cc-gardener/ci/audit-policy-conformance.sh
