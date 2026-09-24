@@ -107,7 +107,9 @@ backend_url = {{ if eq .Values.coordinationBackend "memcached" -}}
     memcached://{{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 {{- else if eq .Values.coordinationBackend "file" -}}
     file://$state_path/coordination
+{{- else if eq .Values.coordinationBackend "etcd" -}}
+    etcd3+http://etcd-druid.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.etcd.port | default 2379 }}?api_version=v3
 {{- else }}
-    {{ fail ".Values.coordinationBackend needs to be either \"memcached\" or \"file\"" }}
+    {{ fail ".Values.coordinationBackend needs to be either \"etcd\", \"memcached\" or \"file\"" }}
 {{- end }}
 {{- end }}
