@@ -79,10 +79,10 @@ ccloud_compute_kvm_flavor_disk_ref = 100021
 [compute-feature-enabled]
 resize = True
 unified_limits = False
-cold_migration = True
-live_migration = True
-live_migrate_back_and_forth = True
-vnc_console = True
+cold_migration = {{ required "Missing tempest_common.compute_cold_migration!" .Values.tempest_common.compute_cold_migration }}
+live_migration = {{ required "Missing tempest_common.compute_live_migration!" .Values.tempest_common.compute_live_migration }}
+live_migrate_back_and_forth = {{ required "Missing tempest_common.compute_live_migrate_back_and_forth!" .Values.tempest_common.compute_live_migrate_back_and_forth }}
+vnc_console = {{ required "Missing tempest_common.compute_vnc_console!" .Values.tempest_common.compute_vnc_console }}
 vnc_server_header = WebSockify
 serial_console = False
 spice_console = False
