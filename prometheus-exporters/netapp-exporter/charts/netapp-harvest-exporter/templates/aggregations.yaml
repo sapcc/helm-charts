@@ -29,3 +29,25 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+Aggregation rules that combine metrics across multiple availability zones
+(e.g. source/destination filers of a snapmirror relationship can live in
+different AZs) can't be evaluated by any single AZ-scoped Prometheus.
+These are deployed once, for evaluation by the central Thanos Ruler instead.
+*/}}
+{{- range $path, $bytes := .Files.Glob "aggregations/thanos-metal/*.yaml" }}
+{{- with $ }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" .) $path | trimSuffix ".yaml" | replace "/"  "-" }}
+  labels:
+    type: aggregation-rules
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+    thanos-ruler: metal
+spec:
+  {{- printf "%s" $bytes | nindent 2 }}
+---
+{{- end }}
+{{- end }}

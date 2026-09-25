@@ -134,25 +134,11 @@ groups:
     #
     # snapmirror relationship
     #
-    # :local is produced by local aggregation rules (snapmirror.yaml) — covers all local relationships.
-    # :remote is produced by the federation exporter (netapp-metrics-federation) — cross-region only.
-    - record: netapp_snapmirror_labels:maia
-      expr: '{__name__=~"netapp_snapmirror_labels:local|netapp_snapmirror_labels:remote"}'
-
-    - record: netapp_snapmirror_lag_time:maia
-      expr: '{__name__=~"netapp_snapmirror_lag_time:local|netapp_snapmirror_lag_time:remote"}'
-
-    - record: netapp_snapmirror_last_transfer_size:maia
-      expr: '{__name__=~"netapp_snapmirror_last_transfer_size:local|netapp_snapmirror_last_transfer_size:remote"}'
-
-    - record: netapp_snapmirror_last_transfer_duration:maia
-      expr: '{__name__=~"netapp_snapmirror_last_transfer_duration:local|netapp_snapmirror_last_transfer_duration:remote"}'
-
-    - record: netapp_snapmirror_source_snapshot_count:maia
-      expr: '{__name__=~"netapp_snapmirror_source_snapshot_count:local|netapp_snapmirror_source_snapshot_count:remote"}'
-
-    - record: netapp_snapmirror_destination_snapshot_count:maia
-      expr: '{__name__=~"netapp_snapmirror_destination_snapshot_count:local|netapp_snapmirror_destination_snapshot_count:remote"}'
+    # netapp_snapmirror_*:maia records are computed centrally in
+    # aggregations/thanos-metal/snapmirror.yaml (via Thanos Ruler), because they
+    # combine :local (source+destination filers can be in different AZs) and
+    # :remote (cross-region, from netapp-metrics-federation) — a single AZ-scoped
+    # Prometheus cannot see either.
 
     # Maia metrics: openstack_manila_share_snapmirror_snapshot_size_bytes
     # Description: Snapshot size induced by share replicas or other snapmirror relationships
