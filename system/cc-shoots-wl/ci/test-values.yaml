@@ -1,0 +1,68 @@
+global:
+  kubernetes:
+    version: "1.31.5"
+    featureGates:
+      AnonymousAuthConfigurableEndpoints: true
+  networking:
+    services: "10.55.0.0/16"
+  cloudProfile: openstack
+  provider: openstack
+
+clusters:
+  # Example 1: wireApi use-case with default settings
+  - name: wireApi
+    regions:
+      - eu-central-1
+      - us-west-1
+    authenticationConfig:
+      apiVersion: apiserver.config.k8s.io/v1beta1
+      kind: AuthenticationConfiguration
+      jwt:
+        - issuer:
+            url: https://wire-issuer.example.com
+            audiences:
+              - wire-api
+          claimMappings:
+            username:
+              claim: sub
+          userValidationRules:
+            - claim: aud
+              requiredValue: wire-api
+
+  # Example 2: lighthouse use-case with custom Kubernetes version
+  - name: lighthouse
+    regions:
+      - us-east-1
+    kubernetes:
+      version: "1.32.0"
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+        SomeOtherFeature: true
+    authenticationConfig:
+      apiVersion: apiserver.config.k8s.io/v1beta1
+      kind: AuthenticationConfiguration
+      jwt:
+        - issuer:
+            url: https://lighthouse-issuer.example.com
+            audiences:
+              - lighthouse-service
+
+  # Example 3: metalOperator use-case with custom networking and additional spec
+  - name: metalOperator
+    regions:
+      - eu-central-1
+    networking:
+      services: "10.56.0.0/16"
+    authenticationConfig:
+      apiVersion: apiserver.config.k8s.io/v1beta1
+      kind: AuthenticationConfiguration
+      jwt:
+        - issuer:
+            url: https://metal-issuer.example.com
+            audiences:
+              - metal-operator
+    spec:
+      # Example of additional shoot spec fields
+      maintenance:
+        autoUpdate:
+          kubernetesVersion: true
