@@ -1,17 +1,22 @@
 {{- if .Values.podMonitor.enabled }}
+{{- range $az := .Values.global.availability_zones }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: {{ printf "%s-harvest-pod-monitor" .Release.Name | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-harvest-pod-monitor-%s" $.Release.Name $az | trunc 63 | trimSuffix "-" }}
   labels:
-    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+    prometheus: {{ printf "storage-metrics-product-%s" $az }}
 spec:
   namespaceSelector:
     matchNames:
-      - {{ .Release.Namespace }}
+      - {{ $.Release.Namespace }}
   selector:
     matchLabels:
       component: harvest-worker
+      # NOTE: requires netappsd to set pod label availability_zone=<az>; tracked separately
+      availability_zone: {{ $az }}
   podMetricsEndpoints:
     - port: metrics
+{{- end }}
 {{- end }}
