@@ -1,0 +1,21 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: v1
+kind: Service
+metadata:
+  # Name is hardcoded — must equal the VWC URL host and sidecar --cert-sans value.
+  name: metal-operator-remote-webhook-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  ports:
+    - port: 443
+      name: ext-webhook-server
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    control-plane: controller-manager
+    {{- include "chart.selectorLabels" . | nindent 4 }}
+{{- end }}
