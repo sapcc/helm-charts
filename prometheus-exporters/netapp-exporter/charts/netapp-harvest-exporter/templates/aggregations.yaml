@@ -1,5 +1,20 @@
 {{- range $path, $bytes := .Files.Glob "aggregations/*.yaml" }}
 {{- with $ }}
+{{- if .Values.podMonitor.enabled }}
+{{- range $az := required ".Values.global.availability_zones missing" .Values.global.availability_zones }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" $) ($path | trimSuffix ".yaml") | replace "/" "-" }}-{{ $az }}
+  labels:
+    type: aggregation-rules
+    {{- include "netapp-harvest.labels" $ | nindent 4 }}
+    prometheus: {{ printf "storage-metrics-product-%s" $az }}
+spec:
+  {{- printf "%s" $bytes | nindent 2 }}
+---
+{{- end }}
+{{- else }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -11,5 +26,6 @@ metadata:
 spec:
   {{- printf "%s" $bytes | nindent 2 }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
