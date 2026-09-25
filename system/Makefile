@@ -60,6 +60,9 @@ build-bootstrap-kubeadm:
 	@find bootstrap-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
+	@# Upstream RBAC only knows about kubeadmcontrolplanes; cc-cluster uses KubernikusControlPlane
+	@# See https://github.com/kubernetes-sigs/cluster-api/pull/13433
+	@$(SED) -i '/- kubeadmcontrolplanes/a\  - kubernikuscontrolplanes' bootstrap-kubeadm/templates/manager-rbac.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
