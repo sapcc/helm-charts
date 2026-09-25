@@ -2,8 +2,16 @@ apiVersion: v2
 description: NetApp Harvest exporter
 name: netapp-harvest-exporter
 type: application
-version: 0.2.18
+version: 0.2.21
 # Changes
+# v0.2.21: - move snapmirror aggregation rules (source/destination filers can be in different
+#            AZs) and their dependent netapp_snapmirror_*:maia records + AbsentNetAppSnapmirrorLabelsMaia
+#            alert to be evaluated centrally by the Thanos Ruler (thanos-ruler: metal) instead of
+#            per-AZ, since a single AZ-scoped Prometheus cannot see both sides of the relationship
+# v0.2.20: - duplicate aggregation and storage alerting PrometheusRules per availability zone
+#            (prometheus: storage-metrics-product-<az>); thanos-metal rules stay single/cluster-wide
+# v0.2.19: - add per-availability-zone PodMonitor (one per AZ, labeled prometheus: storage-metrics-product-<az>,
+#            selector adds availability_zone: <az> — requires netappsd to set that pod label, tracked separately)
 # v0.2.18: - re-gate PodMonitor on .Values.podMonitor.enabled (default false) instead of hardcoded region
 # v0.2.17: - add PodMonitor for eu-de-3 greenhouse prometheus discovery
 # v0.1.2: - fix incosistent cluster labels
