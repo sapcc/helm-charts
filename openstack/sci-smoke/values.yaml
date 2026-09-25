@@ -1,0 +1,79 @@
+---
+image: sci-smoke
+imageTag: 0.1.0
+
+openstack:
+  project_name: sci-smoke
+  username: sci-smoke-admin
+  password: null
+  user_domain_name: tempest
+  project_domain_name: tempest
+
+# Configuration file for sci-smoke tests
+# This maps directly to the config YAML format used by sci-smoke
+configFile:
+  version: 1
+
+  # Default values applied to all scenarios
+  defaults:
+    image: null                        # Required: Image name or ID
+    flavor: null                       # Required: Flavor name or ID
+    network_cidr: "10.199.0.0/16"
+    floating_network: "external-network"
+    floating_subnet: ""
+    timeout: "5m"
+    cleanup: true
+    verbose: true
+    output_file: ""
+
+    # Boot from volume settings
+    boot_from_volume: false
+    volume_size: 10
+    volume_type: "nfs"
+
+    # Availability settings
+    availability_zone: ""
+    aggregate: ""
+
+    # Reuse previously created resources
+    reuse: false
+
+    # Preflight check thresholds
+    min_instances: 1
+    min_cores: 2
+    min_ram: 2048
+
+    # Scheduler constraints
+    required_trait: ""
+    required_trait_strict: false
+
+    # Skip settings (can be overridden per scenario)
+    skip:
+      preflight: false
+      connectivity: false
+      migration: false
+      cold_migration: false
+      live_migration: false
+
+  # Test scenarios - each scenario inherits from defaults
+  # and can override any setting
+  scenarios:
+    - name: default
+      # Uses all defaults, override as needed:
+      # flavor: m1.small
+      # timeout: 10m
+
+# RBAC policy for shared network access (required)
+rbac_policy_object_name_shared_network: ""
+
+# Webhook URL for notifications (optional)
+webhookUrl: ""
+
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/openstack/sci-smoke'
+  maintainers:
+    - Vladislav Gusev
+    - Mikhail Samoylov
+    - Dmitry Galkin
+  support-group: network-api
+  service: nova
