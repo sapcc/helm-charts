@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.42.3 - 2026/09/23
+* add `tolerations` value (default `[]`) to `deployment.yaml` and `sync-statefulset.yaml`
+* chart version bumped
+
 ## v0.42.2 - 2026/08/25
 * MariaDB version updated to [10.11.19](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.19)
 * `maria-back-me-up` updated to `10.11-20260825091346`
