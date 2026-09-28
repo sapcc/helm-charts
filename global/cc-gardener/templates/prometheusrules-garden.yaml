@@ -27,4 +27,131 @@ spec:
           of the maximum of 5000. Verify whether this growth is expected and, if the
           limit is genuinely being approached, raise the projects count in the Garden
           admission configuration.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: garden-sap-shoot
+  namespace: garden
+  labels:
+    prometheus: garden
+spec:
+  groups:
+  - name: shoot
+    rules:
+    - alert: NodeCountReached
+      expr: |
+        256 - shoot:kube_node_info:count{project="garden", name!~"gcp-ha-.*"} <= 20
+      labels:
+        severity: warning
+        topology: garden
+      annotations:
+        summary: Node count approaching 256 nodes
+        description: >-
+          Seed {{ "{{ $labels.name }}" }} in landscape {{ "{{ $externalLabels.landscape }}" }}
+          is approaching 256 nodes. {{ "{{ $value }}" }} nodes left until that value is
+          reached. Please check this issue for mitigation
+          https://github.tools.sap/kubernetes/landscape-stability/issues/140
+
+    - alert: ShootAPIServerUnavailable10min
+      expr: |
+        garden_shoot_condition{condition       = "APIServerAvailable",
+                              operation       = "Reconcile",
+                              is_seed         = "false",
+                              purpose         = "evaluation",
+                              has_user_errors = "false"}
+        == 0
+      for: 10m
+      labels:
+        severity: critical
+        topology: shoot
+      annotations:
+        summary: API Server Unavailable
+        description: >-
+          The shoot cluster {{ "{{ $labels.project }}" }}/{{ "{{ $labels.name }}" }}
+          has condition APIServerAvailable false for more than 10 minutes. The shoot
+          cluster may have an issue.
+
+    - alert: ShootSystemComponentsUnhealthy
+      expr: |
+        max_over_time(
+          garden_shoot_condition{condition       = "SystemComponentsHealthy",
+                                operation       = "Reconcile",
+                                is_seed         = "false",
+                                purpose         = "evaluation",
+                                is_compliant    = "True",
+                                has_user_errors = "false"}[2m])
+        == 0
+      for: 30m
+      labels:
+        severity: critical
+        topology: shoot
+        mute_on_weekends: "true"
+      annotations:
+        summary: Shoot System Components Unhealthy
+        description: >-
+          The shoot cluster {{ "{{ $labels.project }}" }}/{{ "{{ $labels.name }}" }}
+          has condition SystemComponentsHealthy == 0 for more than 30 minutes. Some
+          components required by the shoot may have an issue.
+
+    - alert: ShootControlPlaneUnhealthy
+      expr: |
+        max_over_time(
+          garden_shoot_condition{condition       = "ControlPlaneHealthy",
+                                operation       = "Reconcile",
+                                is_seed         = "false",
+                                purpose         = "evaluation",
+                                is_compliant    = "True",
+                                has_user_errors = "false"}[2m])
+        == 0
+      for: 30m
+      labels:
+        severity: critical
+        topology: shoot
+      annotations:
+        summary: Shoot ControlPlane Components Unhealthy
+        description: >-
+          The shoot cluster {{ "{{ $labels.project }}" }}/{{ "{{ $labels.name }}" }}
+          has condition ControlPlaneHealthy == 0 for more than 30 minutes. Some Control
+          Plane components of the shoot may have an issue.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: garden-sap-seed
+  namespace: garden
+  labels:
+    prometheus: garden
+spec:
+  groups:
+  - name: seed
+    rules:
+    - alert: SeedRegistryCachePersistentVolumeUsageCritical
+      expr: ALERTS{alertname="RegistryCachePersistentVolumeUsageCritical",alertstate="firing",project="garden"}
+      for: 10m
+      labels:
+        severity: warning
+        topology: garden
+      annotations:
+        summary: Registry cache PersistentVolume almost full.
+        description: >-
+          In Seed cluster {{ "{{ $labels.project }}" }}/{{ "{{ $labels.shoot_name }}" }}
+          the registry-cache PersistentVolume claimed by
+          {{ "{{ $labels.persistentvolumeclaim }}" }} is less than 5% free. When there
+          is no available disk space, no new images will be cached. However, image pull
+          operations are not affected.
+
+    - alert: SeedRegistryCachePersistentVolumeFullInFourDays
+      expr: ALERTS{alertname="RegistryCachePersistentVolumeFullInFourDays",alertstate="firing",project="garden"}
+      for: 10m
+      labels:
+        severity: warning
+        topology: garden
+      annotations:
+        summary: Registry cache PersistentVolume will be full in four days.
+        description: >-
+          Based on recent sampling, in Seed cluster
+          {{ "{{ $labels.project }}" }}/{{ "{{ $labels.shoot_name }}" }} the registry
+          cache PersistentVolume claimed by {{ "{{ $labels.persistentvolumeclaim }}" }}
+          is expected to fill up within four days.
 {{- end }}
