@@ -244,6 +244,22 @@ filter {
             ]
           }
 
+          # ---- never store credentials, whatever the audit policy logs ----
+          # Requests on these resources carry credentials in their request or response
+          # body. Drop both bodies and mark the event, so a policy that logs them can be
+          # found without storing the data.
+          if [objectRef][resource] in ["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"] or [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] {
+            if [requestObject] or [responseObject] {
+              mutate {
+                remove_field => ["requestObject", "responseObject"]
+                add_field => { "[sap][cc][audit][credential_body_removed]" => "true" }
+              }
+              mutate {
+                convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }
+              }
+            }
+          }
+
           # ---- fix responseObject.status type conflict ----
           # When responseObject is a K8s Status (error response), the "status" field
           # is a string ("Failure"/"Success") which conflicts with the object mapping
