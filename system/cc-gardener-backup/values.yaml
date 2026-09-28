@@ -1,0 +1,27 @@
+image:
+  repository: keppel.global.cloud.sap/ccloud/unified-kubernetes-toolbox
+  tag: latest
+
+job:
+  schedule: "0 3 * * *"
+
+# Source cluster region (e.g. eu-de-1). Also used to name the backup archive.
+region: ""
+# Region whose Swift bucket receives the backup (cross-region DR).
+backupRegion: ""
+
+backup:
+  container: gardener-secondary-backup
+  vaultCredPath: cc-gardener/backup
+  vaultKvEngine: secrets
+  publicKeyName: pubkey.gpg
+  retentionDays: 30
+
+vault:
+  addr: https://vault.global.cloud.sap
+  # AppRole credentials — resolved from Vault at deploy time by the pipeline.
+  roleId: ""
+  secretId: ""
+
+prometheusRule:
+  prometheus: kubernetes
