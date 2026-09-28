@@ -173,12 +173,16 @@ machines:
         bios:
           version: "2.22.2"        # Target BIOS firmware version gate.
           settingsFileName: dell-default.yaml  # File under bios_settings/ to use for BIOSSettingsSet.
-          imageURI: "https://..."  # Firmware image download URL for BIOSVersionSet.
+          imagePath: "/hw-firmware/..."  # Path appended to the composed firmwareRepo URL for BIOSVersionSet.
         bmc:
           version: "7.00.00.183"   # Target BMC firmware version gate.
           settingsFileName: dell-default.yaml  # File under bmc_settings/ to use for BMCSettingsSet.
-          imageURI: "https://..."  # Firmware image download URL for BMCVersionSet.
+          imagePath: "/hw-firmware/..."  # Path appended to the composed firmwareRepo URL for BMCVersionSet.
 ```
+
+The full image URL is composed at render time from `firmwareRepo.scheme`,
+`firmwareRepo.host` + `global.region` + `global.tld` (or `firmwareRepo.hostOverride`
+if set), and this `imagePath`. See [`firmwareRepo`](#firmware-repository-firmwarerepo) below.
 
 **Key rules:**
 - A model entry with both `bios:` and `bmc:` blocks generates resources for all four types (subject to `enabled` flags and filters).
@@ -188,6 +192,61 @@ machines:
 - `servers` filters are rendered as selector `matchExpressions` on `kubernetes.metal.cloud.sap/name`.
 - `included` uses `operator: In`, `excluded` uses `operator: NotIn`.
 - Unlike vendor/model/version/clusterType filters, `servers` narrows the generated resource selector rather than deciding whether Helm renders the resource at all.
+
+### Firmware Repository (`firmwareRepo`)
+
+The `firmwareRepo` configuration controls how firmware image URLs are composed for `BIOSVersionSet` and `BMCVersionSet` resources.
+
+**Default behavior:**
+```yaml
+firmwareRepo:
+  scheme: https          # Protocol (https or http)
+  host: repo            # Hostname prefix
+  hostOverride: ""      # Optional: override composed hostname
+```
+
+**URL composition:**
+
+The firmware image URL is built from:
+```
+<scheme>://<host>.<global.region>.<global.tld><imagePath>
+```
+
+**Example:**
+- `firmwareRepo.scheme`: `https`
+- `firmwareRepo.host`: `repo`
+- `global.region`: `eu-de-1`
+- `global.tld`: `cloud.sap`
+- `imagePath`: `/hw-firmware/dell/poweredge-r7615/BIOS_123.EXE`
+
+**Result:** `https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/BIOS_123.EXE`
+
+**Override for special cases:**
+
+If a cluster needs a completely different firmware repository (not just a different region), use `hostOverride`:
+
+```yaml
+firmwareRepo:
+  scheme: http
+  hostOverride: custom-repo.example.com
+```
+
+This bypasses the automatic `host.region.tld` composition.
+
+**Legacy compatibility:**
+
+For backward compatibility, individual machine entries can still use `imageURI` (full URL) instead of `imagePath`:
+
+```yaml
+machines:
+  dell:
+    models:
+      poweredge-r7615:
+        bios:
+          imageURI: "https://legacy-repo.example.com/firmware/bios.exe"  # Takes precedence over imagePath
+```
+
+When `imageURI` is set, it is used directly and `firmwareRepo` configuration is ignored for that specific entry.
 
 ### Region-Specific Settings Overrides (`settingsContent`)
 
@@ -215,7 +274,7 @@ machines:
         bios:
           version: "2.9.4"
           settingsContent: *myCustomSettings      # Use inline content instead of settingsFileName
-          imageURI: "https://..."
+          imagePath: "/hw-firmware/..."
           settingsParams:
             serverFilter:
               included: [node003-bb086, node009-bb086]
@@ -449,7 +508,7 @@ machines:
             serverFilter:
               included: [node001-bb001, node002-bb001]
               excluded: []
-          imageURI: "https://<repo-address>/poweredge-r860/iDRAC-7.20.60.50.EXE"
+          imagePath: "/poweredge-r860/iDRAC-7.20.60.50.EXE"
 ```
 
 This example:
