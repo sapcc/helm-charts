@@ -87,9 +87,11 @@ spec:
           - name: ChrystokiConfigurationPath
             value: "/thales/safenet/lunaclient/config"
           {{- end }}
-          {{- if .Values.hsm.utimaco_hsm.enabled }}
-          - name: CS_PKCS11_R3_CFG
-            value: "/utimaco/cs_pkcs11_R3.cfg"
+          {{- range .Values.hsm.utimaco_instances }}
+          {{- if .enabled }}
+          - name: CS_PKCS11_R3_CFG_{{ .name | upper | replace "-" "_" }}
+            value: "/utimaco-{{ .name }}/cs_pkcs11_R3.cfg"
+          {{- end }}
           {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
@@ -189,9 +191,11 @@ spec:
               subPath: password
               readOnly: true
             {{- end }}
-            {{- if .Values.hsm.utimaco_hsm.enabled }}
-            - name: utimaco-volume
-              mountPath: /utimaco/
+            {{- range .Values.hsm.utimaco_instances }}
+            {{- if .enabled }}
+            - name: utimaco-volume-{{ .name }}
+              mountPath: /utimaco-{{ .name }}/
+            {{- end }}
             {{- end }}
         {{- if .Values.hsm.enabled }}
             - name: luna
@@ -229,9 +233,10 @@ spec:
               readOnly: true
             - name: luna
               mountPath: /thales/
-        {{- if .Values.hsm.utimaco_hsm.enabled }}
-        - name: utimaco
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.utimaco_hsm.image is missing" .Values.hsm.utimaco_hsm.image }}
+        {{- range .Values.hsm.utimaco_instances }}
+        {{- if .enabled }}
+        - name: utimaco-{{ .name }}
+          image: {{required ".Values.global.registry is missing" $.Values.global.registry }}/loci-barbican:{{required (printf "hsm.utimaco_instances[%s].image is missing" .name) .image }}
           imagePullPolicy: Always
           env:
             - name: CS_PKCS11_R3_CFG
@@ -240,26 +245,27 @@ spec:
           args:
             - |
               set -ex
-              echo "$(date) [utimaco] starting init..."
+              echo "$(date) [{{ .name }}] starting init..."
               /scripts/barbican_utimaco.sh
-              echo "$(date) [utimaco] init complete."
+              echo "$(date) [{{ .name }}] init complete."
               exec sleep infinity
           volumeMounts:
             - name: hsm-utimaco
               mountPath: /scripts/
               subPath:
               readOnly: true
-            - name: utimaco-volume
+            - name: utimaco-volume-{{ .name }}
               mountPath: /utimaco/
-          {{- if .Values.hsm.resources.enabled }}
+          {{- if $.Values.hsm.resources.enabled }}
           resources:
             limits:
-              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
-              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+              cpu: {{ $.Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ $.Values.hsm.resources.limits.memory | quote }}
             requests:
-              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
-              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+              cpu: {{ $.Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ $.Values.hsm.resources.requests.memory | quote }}
           {{- end }}
+        {{- end }}
         {{- end }}
         {{- end }}
         - name: statsd
@@ -338,7 +344,13 @@ spec:
         - name: luna
           emptyDir: {}
         {{ end }}
-        {{- if .Values.hsm.utimaco_hsm.enabled }}
+        {{- $enabledUtimaco := list }}
+        {{- range .Values.hsm.utimaco_instances }}
+        {{- if .enabled }}
+        {{- $enabledUtimaco = append $enabledUtimaco . }}
+        {{- end }}
+        {{- end }}
+        {{- if $enabledUtimaco }}
         - name: hsm-utimaco
           secret:
             secretName: {{ .Release.Name }}-secrets
@@ -346,8 +358,10 @@ spec:
             items:
             - key: barbican_utimaco.sh
               path: barbican_utimaco.sh
-        - name: utimaco-volume
+        {{- range $enabledUtimaco }}
+        - name: utimaco-volume-{{ .name }}
           emptyDir: {}
+        {{- end }}
         {{- end }}
         {{- if .Values.sapcc_rate_limit.enabled }}
         - name: ratelimit-backend-secret

@@ -8,6 +8,4 @@ utimaco ()
     chmod -R a+rX /utimaco
 }
 
-{{- if .Values.hsm.utimaco_hsm.enabled }}
 utimaco
-{{- end }}
