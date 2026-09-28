@@ -219,8 +219,11 @@ build-metal-operator-remote:
 		-f metal-operator-remote/values-managed-resources.yaml | \
 		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | (.webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-remote-webhook-service:443" + .service.path})' - \
 		> metal-operator-remote/webhooks.yaml
-	# Bump patch version
-	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	# Bump patch version; pass DEV=1 to append -dev pre-release suffix (only picked up by pipelines with --devel)
+	@yq -i '.version = (.version | split(".") | .[2] = (.[2] | split("-") | .[0] | tonumber + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	@if [ "$(DEV)" = "1" ]; then \
+		yq -i '.version = .version + "-dev"' metal-operator-remote/Chart.yaml; \
+	fi
 
 
 build-boot-operator:
