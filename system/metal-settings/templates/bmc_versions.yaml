@@ -8,7 +8,7 @@
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcVersions.filters.vendors) }}
 {{- $processedModels := dict }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if and $entry.bmc $entry.bmc.imagePath }}
+{{- if and $entry.bmc (or $entry.bmc.imagePath $entry.bmc.imageURI) }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
 {{- $modelKey := printf "%s-%s" $model $version }}
@@ -43,7 +43,7 @@ spec:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
     image:
-      URI: {{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $entry.bmc.imagePath | quote }}
+      URI: {{ if $entry.bmc.imageURI }}{{ $entry.bmc.imageURI | quote }}{{ else }}{{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $entry.bmc.imagePath | quote }}{{ end }}
       transferProtocol: "HTTPS"
 {{- with $.Values.bmcVersions.retryPolicy }}
     retryPolicy:

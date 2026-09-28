@@ -97,6 +97,18 @@ tests:
           path: spec.biosVersionTemplate.image.URI
           value: http://repo.eu-de-1.cloud.sap/test-fw.EXE
 
+  - it: should use imageURI directly when set (legacy fallback)
+    set:
+      machines.dell.models.poweredge-r7615.bios.imageURI: http://repo.eu-de-1.cloud.sap/firmware/bios-legacy.exe
+      machines.dell.models.poweredge-r7615.bios.imagePath: /test-fw.EXE
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615
+    asserts:
+      - equal:
+          path: spec.biosVersionTemplate.image.URI
+          value: http://repo.eu-de-1.cloud.sap/firmware/bios-legacy.exe
+
   - it: should set serverMaintenancePolicy to OwnerApproval
     documentSelector:
       path: metadata.name

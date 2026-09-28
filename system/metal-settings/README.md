@@ -193,6 +193,61 @@ if set), and this `imagePath`. See [`firmwareRepo`](#firmware-repository-firmwar
 - `included` uses `operator: In`, `excluded` uses `operator: NotIn`.
 - Unlike vendor/model/version/clusterType filters, `servers` narrows the generated resource selector rather than deciding whether Helm renders the resource at all.
 
+### Firmware Repository (`firmwareRepo`)
+
+The `firmwareRepo` configuration controls how firmware image URLs are composed for `BIOSVersionSet` and `BMCVersionSet` resources.
+
+**Default behavior:**
+```yaml
+firmwareRepo:
+  scheme: https          # Protocol (https or http)
+  host: repo            # Hostname prefix
+  hostOverride: ""      # Optional: override composed hostname
+```
+
+**URL composition:**
+
+The firmware image URL is built from:
+```
+<scheme>://<host>.<global.region>.<global.tld><imagePath>
+```
+
+**Example:**
+- `firmwareRepo.scheme`: `https`
+- `firmwareRepo.host`: `repo`
+- `global.region`: `eu-de-1`
+- `global.tld`: `cloud.sap`
+- `imagePath`: `/hw-firmware/dell/poweredge-r7615/BIOS_123.EXE`
+
+**Result:** `https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/BIOS_123.EXE`
+
+**Override for special cases:**
+
+If a cluster needs a completely different firmware repository (not just a different region), use `hostOverride`:
+
+```yaml
+firmwareRepo:
+  scheme: http
+  hostOverride: custom-repo.example.com
+```
+
+This bypasses the automatic `host.region.tld` composition.
+
+**Legacy compatibility:**
+
+For backward compatibility, individual machine entries can still use `imageURI` (full URL) instead of `imagePath`:
+
+```yaml
+machines:
+  dell:
+    models:
+      poweredge-r7615:
+        bios:
+          imageURI: "https://legacy-repo.example.com/firmware/bios.exe"  # Takes precedence over imagePath
+```
+
+When `imageURI` is set, it is used directly and `firmwareRepo` configuration is ignored for that specific entry.
+
 ### Region-Specific Settings Overrides (`settingsContent`)
 
 For specific BIOS or BMC settings overrides (stored in other values files), use `settingsContent` to provide inline YAML instead of referencing a bundled file:

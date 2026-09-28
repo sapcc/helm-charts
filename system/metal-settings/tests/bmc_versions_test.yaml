@@ -98,6 +98,18 @@ tests:
           path: spec.bmcVersionTemplate.image.URI
           value: http://repo.eu-de-1.cloud.sap/test-fw.EXE
 
+  - it: should use imageURI directly when set (legacy fallback)
+    set:
+      machines.dell.models.poweredge-r7615.bmc.imageURI: http://repo.eu-de-1.cloud.sap/firmware/idrac-legacy.exe
+      machines.dell.models.poweredge-r7615.bmc.imagePath: /test-fw.EXE
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615
+    asserts:
+      - equal:
+          path: spec.bmcVersionTemplate.image.URI
+          value: http://repo.eu-de-1.cloud.sap/firmware/idrac-legacy.exe
+
   - it: should set serverMaintenancePolicy to OwnerApproval
     documentSelector:
       path: metadata.name
