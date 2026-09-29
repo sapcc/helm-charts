@@ -18,6 +18,24 @@ spec:
   domains:
     - name: Default
       users:
+
+        - name: persephone-terraform
+          description: A service user for running terraform operations in Concourse pipelines
+          password: {{ printf "%s/shared/persephone/keystone-user/persephone-terraform/password" $vbase | quote }}
+          role_assignments:
+          - project: cloud_admin@ccadmin
+            role: admin
+          - project: cloud_admin@ccadmin
+            role: cloud_network_admin
+          - project: master@ccadmin
+            role: cloud_dns_admin
+          - project: master@ccadmin
+            role: objectstore_admin
+          - project: cc-gardener@ccadmin
+            role: cloud_dns_admin
+          - domain: cp
+            role: admin
+
       {{- range $_, $landscape := $landscapes }}
         - name: persephone-{{ $landscape }}-seed
           description: A service user for the landscape seed

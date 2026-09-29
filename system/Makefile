@@ -60,6 +60,9 @@ build-bootstrap-kubeadm:
 	@find bootstrap-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
+	@# Upstream RBAC only knows about kubeadmcontrolplanes; cc-cluster uses KubernikusControlPlane
+	@# See https://github.com/kubernetes-sigs/cluster-api/pull/13433
+	@$(SED) -i '/- kubeadmcontrolplanes/a\  - kubernikuscontrolplanes' bootstrap-kubeadm/templates/manager-rbac.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
@@ -216,8 +219,11 @@ build-metal-operator-remote:
 		-f metal-operator-remote/values-managed-resources.yaml | \
 		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | (.webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-remote-webhook-service:443" + .service.path})' - \
 		> metal-operator-remote/webhooks.yaml
-	# Bump patch version
-	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	# Bump patch version; pass DEV=1 to append -dev pre-release suffix (only picked up by pipelines with --devel)
+	@yq -i '.version = (.version | split(".") | .[2] = (.[2] | split("-") | .[0] | tonumber + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	@if [ "$(DEV)" = "1" ]; then \
+		yq -i '.version = .version + "-dev"' metal-operator-remote/Chart.yaml; \
+	fi
 
 
 build-boot-operator:

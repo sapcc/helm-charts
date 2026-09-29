@@ -138,7 +138,7 @@ groups:
       summary: Very high number of threads
 
   - alert: NodeReadOnlyRootFilesystem
-    expr: sum by (node) (node_filesystem_readonly{mountpoint="/"}) > 0
+    expr: sum by (node) (node_filesystem_readonly{mountpoint="/", fstype!="erofs"}) > 0
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -147,6 +147,7 @@ groups:
       severity: warning
       context: availability
       meta: "Node {{`{{ $labels.node }}`}} has a read-only root filesystem."
+      playbook: docs/support/playbook/kubernetes/k8s_node_read_only_filesystem
     annotations:
       description: Node {{`{{ $labels.node }}`}} has a read-only root filesystem. This could lead to unforeseeable problems. A reboot of the node is advised to fix the issue.
       summary: Read-only root filesystem on node

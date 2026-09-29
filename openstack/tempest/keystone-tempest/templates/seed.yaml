@@ -1,0 +1,50 @@
+{{- $tc := .Values.tempest_common | default dict -}}
+{{- $seed := $tc.seed | default dict -}}
+{{- if $seed.enabled -}}
+{{- $userCount  := int (default 2 $seed.userCount) -}}
+{{- $pw         := required "Missing tempestAdminPassword value!" .Values.tempestAdminPassword -}}
+{{- $userRoles  := default (list "member") $seed.userRoles -}}
+{{- $adminRoles := default (list "admin") $seed.adminRoles -}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Chart.Name }}-seed
+  labels:
+    component: keystone
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-tempest-seed
+  domains:
+  - name: tempest
+    projects:
+    - name: admin
+      description: Tempest admin project
+      role_assignments:
+      {{- range $role := $adminRoles }}
+      - user: admin
+        role: {{ $role }}
+      - user: admin@Default
+        role: {{ $role }}
+      {{- end }}
+    {{- range $i := until $userCount }}
+    - name: tempest{{ add1 $i }}
+      description: Tempest Test Project {{ add1 $i }}
+      role_assignments:
+      - user: admin@Default
+        role: admin
+    {{- end }}
+    users:
+    {{- range $i := until $userCount }}
+    - name: tempestuser{{ add1 $i }}
+      description: Keystone Tempest Test User {{ add1 $i }}
+      password: {{ $pw | quote }}
+      role_assignments:
+      {{- range $role := $userRoles }}
+      - project: tempest{{ add1 $i }}
+        role: {{ $role }}
+      {{- end }}
+    {{- end }}
+{{- end }}
