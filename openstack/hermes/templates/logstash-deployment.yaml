@@ -130,6 +130,20 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: OPENSEARCH_PASSWORD
+            {{- if and .Values.logstash.kafka.enabled .Values.logstash.kafka.username .Values.logstash.kafka.password }}
+            # Kafka SASL/SCRAM credentials (FortLogs KafkaUser)
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: KAFKA_USERNAME
+
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: KAFKA_PASSWORD
+            {{- end }}
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
