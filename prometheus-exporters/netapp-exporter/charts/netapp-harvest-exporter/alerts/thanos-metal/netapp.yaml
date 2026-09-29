@@ -7,7 +7,7 @@ groups:
             label_replace(
               manila_total_capacity_gb{share_backend_name!~"integration", hardware_state!~"in_decom|in_build"},
               "host", "$1", "netapp_cluster_name", "(.*)"))
-          unless on (host) netapp_volume_size
+          unless on (host) label_replace(netapp_volume_size, "host", "$1", "host", "([^.]+).*")
         for: 30m
         labels:
           context: netapp-exporter
