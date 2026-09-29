@@ -1,0 +1,37 @@
+groups:
+- name: cc-gardener-backup.alerts
+  rules:
+
+    - alert: GardenerBackupJobFailed
+      expr: kube_job_status_failed{job_name=~"cc-gardener-backup-.+"} > 0
+      for: 5m
+      labels:
+        tier: k8s
+        service: cc-gardener-backup
+        severity: warning
+        context: cc-gardener-backup
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/gardener_backup"
+      annotations:
+        summary: Gardener backup CronJob failed.
+        description: >
+          The cc-gardener-backup CronJob has a failed job ({{ $labels.job_name }}).
+          Check the pod logs in the cc-gardener-backup namespace for details.
+
+    - alert: GardenerBackupTooOld
+      expr: >
+        (time() - max by (job_name) (kube_job_status_completion_time{job_name=~"cc-gardener-backup-.+"}
+          * on(job_name) kube_job_status_succeeded{job_name=~"cc-gardener-backup-.+"} == 1)) / 3600 > 26
+      for: 30m
+      labels:
+        tier: k8s
+        service: cc-gardener-backup
+        severity: warning
+        context: cc-gardener-backup
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/gardener_backup"
+      annotations:
+        summary: No successful Gardener backup in the last 26 hours.
+        description: >
+          No cc-gardener-backup CronJob has completed successfully in the last 26 hours.
+          The scheduled interval is 24 hours. Check the CronJob and recent job logs.
