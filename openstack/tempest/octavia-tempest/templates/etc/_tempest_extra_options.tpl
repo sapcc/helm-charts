@@ -78,10 +78,10 @@ fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).te
 
 [compute-feature-enabled]
 resize = true
-cold_migration = false
-live_migration = false
-live_migrate_back_and_forth = false
-vnc_console = true
+cold_migration = {{ required "Missing tempest_common.compute_cold_migration!" .Values.tempest_common.compute_cold_migration }}
+live_migration = {{ required "Missing tempest_common.compute_live_migration!" .Values.tempest_common.compute_live_migration }}
+live_migrate_back_and_forth = {{ required "Missing tempest_common.compute_live_migrate_back_and_forth!" .Values.tempest_common.compute_live_migrate_back_and_forth }}
+vnc_console = {{ required "Missing tempest_common.compute_vnc_console!" .Values.tempest_common.compute_vnc_console }}
 vnc_server_header = WebSockify
 attach_encrypted_volume = false
 
@@ -94,9 +94,10 @@ catalog_type = volumev3
 endpoint_type = public
 min_microversion = 3.0
 max_microversion = latest
-vendor_name = VMware
-storage_protocol = vmdk
-disk_format = vmdk
+vendor_name = {{ required "Missing tempest_common.volume_vendor_name!" .Values.tempest_common.volume_vendor_name }}
+storage_protocol = {{ required "Missing tempest_common.volume_storage_protocol!" .Values.tempest_common.volume_storage_protocol }}
+disk_format = {{ required "Missing tempest_common.volume_disk_format!" .Values.tempest_common.volume_disk_format }}
+volume_type = {{ required "Missing tempest_common.volume_type!" .Values.tempest_common.volume_type }}
 volume_size = 3
 
 [volume-feature-enabled]
