@@ -67,3 +67,49 @@ maintained manually via the Elektra `masterdata-cockpit` plugin at
 
 `ci/test-values.yaml` supplies a stub `technicalUser` so that
 `helm lint --strict` and downstream chart-testing renders pass.
+
+## EC2 creds provisioning
+
+1. Generate EC2 credentials using openstack CLI and technicalUser credentials
+
+```
+export OS_IDENTITY_API_VERSION=3
+export OS_USERNAME=<technicalUser>
+export OS_USER_DOMAIN_NAME=monsoon3
+export OS_PASSWORD=<password>
+export OS_PROJECT_NAME=sci-observability-metrics
+export OS_PROJECT_DOMAIN_NAME=monsoon3
+export OS_AUTH_URL=https://identity-3.<region>.cloud.sap/v3
+export OS_REGION_NAME=<region>
+
+openstack ec2 credentials create
+eval "$(openstack ec2 credentials list -f json | jq -r '
+  .[0] |
+  "export EC2_ACCESS=\"\(.Access)\"",
+  "export EC2_SECRET=\"\(.Secret)\""
+')"
+```
+
+2. Create secret in vault <br>
+`vault login` <br>
+`vault kv put -mount=observability-secrets <region>/sci-metrics/ec2  access_key=$EC2_ACCESS secret_key=$EC2_SECRET`
+
+3. Add metadata to secret
+```
+vault kv metadata put -mount=observability-secrets \
+  -custom-metadata=accessed_resource=observability \
+  -custom-metadata=application_criticality=HIGH \
+  -custom-metadata=expiry_date=<expiry_date> \
+  -custom-metadata=is_privileged=yes \
+  -custom-metadata=is_single_factor=yes \
+  -custom-metadata=owner=<owner>@sap.com \
+  -custom-metadata=replica_dest_secret=secrets,<region>/observability/sci-metrics/ec2 \
+  -custom-metadata=review_date=<current_date> \
+  -custom-metadata=support_group=observability \
+  -custom-metadata=type=secret \
+  -custom-metadata=secret_keys=access_key,secret_key \
+  <region>/sci-metrics/ec2
+```
+
+4. Replicate secret to common engine <br>
+`mutavault kv replicate --mount observability-secrets <region>/sci-metrics/ec2`
