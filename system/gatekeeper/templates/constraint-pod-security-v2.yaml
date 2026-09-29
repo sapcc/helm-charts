@@ -1112,6 +1112,13 @@ spec:
         mayBePrivileged: true
         mayUseCapabilities: [ DAC_OVERRIDE, DAC_READ_SEARCH, NET_ADMIN, SETPCAP, SYS_ADMIN, SYS_PTRACE ]
         mayWriteHostPathVolumes: [ /dev/log ]
+
+      - matchNamespace: monsoon3
+        matchRepository: ccloud/loci-octavia
+        justification: |
+          SYS_PTRACE is required by octavia's oslo.privsep daemon to inspect
+          process capabilities when dropping privileges for privileged operations.
+        mayUseCapabilities: [ SYS_PTRACE ]
       {{- end }}
 
       {{- if eq .Values.cluster_type "baremetal" }}
