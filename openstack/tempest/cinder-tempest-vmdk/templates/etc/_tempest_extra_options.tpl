@@ -101,7 +101,6 @@ storage_protocol = vmdk
 disk_format = vmdk
 volume_size = 3
 build_timeout=600
-volume_type = vmdk
 
 [volume-feature-enabled]
 backup = true
