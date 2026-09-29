@@ -93,7 +93,7 @@ snapshot = False
 shelve = False
 
 [validation]
-image_ssh_user = {{ required "Missing tempest_common.image_ssh_user!" .Values.tempest_common.image_ssh_user }}
+image_ssh_user = ccloud
 image_alt_ssh_user = ubuntu
 
 [volume]

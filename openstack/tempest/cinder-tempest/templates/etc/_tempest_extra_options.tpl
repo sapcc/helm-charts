@@ -112,7 +112,7 @@ v3_endpoint_type = publicURL
 region = {{ .Values.global.region }}
 
 [validation]
-image_ssh_user = {{ required "Missing tempest_common.image_ssh_user!" .Values.tempest_common.image_ssh_user }}
+image_ssh_user = ccloud
 
 [volume]
 catalog_type = volumev3
