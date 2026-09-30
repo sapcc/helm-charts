@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.43.0 - 2026/09/24
+* prune slow-query logs older than `slow_query_log.cleanup.max_age_days` (default 14) on pod init
+* optionally write the slow query log to a dedicated PVC (`slow_query_log.persistence`); it is written per-pod as `<dir>/<pod>-slow.log` so `cleanup` prunes it across restarts, and the PVC auto-provisions as `<release>-mariadb-logs` by default
+* opt-in data-PVC free-space alert at `alerts.pvc_free_enabled` (threshold `alerts.pvc_free_threshold`, default 0.20; severity `alerts.pvc_free_severity`, default warning)
+* fix `context` label typo (`datbase`) on the too-many-connections alert
+* chart version bumped
+
 ## v0.42.3 - 2026/09/23
 * add `tolerations` value (default `[]`) to `deployment.yaml` and `sync-statefulset.yaml`
 * chart version bumped
