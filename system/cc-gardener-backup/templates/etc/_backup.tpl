@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-trap 'rm -rf "${gpg_key_dir}"; rm -rf /tmp/backup-dir; unset VAULT_TOKEN BACKUP_OS_APPLICATION_CREDENTIAL_SECRET BACKUP_OS_APPLICATION_CREDENTIAL_ID' EXIT ERR
+trap 'rm -rf "${gpg_key_dir}"; rm -rf /tmp/backup-dir; unset BACKUP_OS_APPLICATION_CREDENTIAL_SECRET BACKUP_OS_APPLICATION_CREDENTIAL_ID' EXIT ERR
 
 cluster_backup_dir="${BACKUP_DIR:-/tmp/backup-dir}"
 gpg_key_dir="${GPG_KEY_DIR:-/tmp/gpg-keys-$(date +%s)-$$}"
@@ -246,12 +246,10 @@ required_vars=(
     "CONTEXT"
     "BACKUP_REGION"
     "REGION"
-    "VAULT_ROLE_ID"
-    "VAULT_SECRET_ID"
+    "BACKUP_OS_APPLICATION_CREDENTIAL_ID"
+    "BACKUP_OS_APPLICATION_CREDENTIAL_SECRET"
     "CONTAINER"
     "PUBLIC_KEY_NAME"
-    "VAULT_KV_ENGINE"
-    "VAULT_CRED_PATH"
     "BACKUP_RETENTION_SECONDS"
     "OS_AUTH_URL"
 )
@@ -273,37 +271,10 @@ echo "All required environment variables are set."
 
 
 #===================================================================================================
-# Vault Authentication and Credentials
+# Kubernetes and OpenStack Authentication
 #===================================================================================================
 
-VAULT_TOKEN=""
-VAULT_TOKEN=$(vault write -format=json auth/approle/login role_id="$VAULT_ROLE_ID" secret_id="$VAULT_SECRET_ID" | jq -r ".auth.client_token") || {
-    echo "ERROR: Failed to authenticate with Vault"
-    exit 1
-}
-export VAULT_TOKEN
-
-# When running inside a cluster, use the pod's ServiceAccount token (in-cluster config).
-# When running outside (e.g. Concourse), obtain a Kubelogon OIDC token from Vault.
-if [[ -n "${KUBERNETES_SERVICE_HOST:-}" ]]; then
-    echo "Running in-cluster — using ServiceAccount for kubectl authentication"
-else
-    KUBELOGON_TOKEN=""
-    KUBELOGON_TOKEN=$(vault read -format=json identity/oidc/token/sci-k8s | jq -r ".data.token") || {
-        echo "ERROR: Failed to read Kubelogon token from Vault"
-        exit 1
-    }
-
-    if [[ -z "$KUBELOGON_TOKEN" ]] || [[ "$KUBELOGON_TOKEN" == "null" ]]; then
-        echo "ERROR: KUBELOGON_TOKEN is empty or null - OIDC endpoint may not exist or failed"
-        exit 1
-    fi
-
-    export KUBELOGON_TOKEN
-    unset KUBELOGON_USER
-    unset KUBELOGON_PASSWORD
-fi
-
+# kubectl uses the pod's ServiceAccount token automatically via in-cluster config.
 kubectl cluster-info || {
     echo "ERROR: Failed to connect to Kubernetes cluster"
     exit 1
@@ -312,16 +283,7 @@ kubectl cluster-info || {
 ## Set value to not bloat logs with kubectl version info
 export SKIP_VERSION_BANNERS=true
 
-echo "Trying to get application credentials mounted in Vault at ${VAULT_KV_ENGINE}/${BACKUP_REGION}/${VAULT_CRED_PATH} to verify access..."
-BACKUP_OS_APPLICATION_CREDENTIAL_ID=$(vault kv get -mount="${VAULT_KV_ENGINE}" -field=application_credential_id "${BACKUP_REGION}/${VAULT_CRED_PATH}") || {
-    echo "ERROR: Failed to get OpenStack application credential ID from Vault"
-    exit 1
-}
-
-BACKUP_OS_APPLICATION_CREDENTIAL_SECRET=$(vault kv get -mount="${VAULT_KV_ENGINE}" -field=application_credential_secret "${BACKUP_REGION}/${VAULT_CRED_PATH}") || {
-    echo "ERROR: Failed to get OpenStack application credential secret from Vault"
-    exit 1
-}
+echo "Using injected OpenStack application credentials for Swift access in region ${BACKUP_REGION}"
 
 echo "Retrieving Swift connection token"
 
