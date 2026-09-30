@@ -86,7 +86,7 @@ vnc_server_header = WebSockify
 attach_encrypted_volume = false
 
 [validation]
-image_ssh_user = {{ required "Missing tempest_common.image_ssh_user!" .Values.tempest_common.image_ssh_user }}
+image_ssh_user = ccloud
 ssh_key_type = rsa
 
 [volume]
