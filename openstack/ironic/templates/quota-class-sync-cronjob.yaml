@@ -1,0 +1,93 @@
+{{- if not .Values.kos_conductor }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ironic-quota-class-sync
+  labels:
+    system: openstack
+    type: cronjob
+    component: ironic
+spec:
+  schedule: "37 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: ironic-quota-class-sync
+            image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - bash
+            args:
+            - -c
+            - |
+              eval $(
+                cat /etc/ironic/ironic.conf | grep -Pzo '\[service_catalog\][^[]*' | tr -d '\000' | grep '=' |
+                while read LINE; do var="${LINE% =*}"
+                  val="${LINE#*= }"
+                  echo export OS_${var^^}=${val}
+                done)
+              export OS_AUTH_URL=$(grep -Pzo '\[keystone_authtoken\][^[]*' /etc/ironic/ironic.conf | tr -d '\000' | grep 'auth_url' | awk -F'= ' '{print $2}' | head -1)
+              export OS_IDENTITY_API_VERSION=3
+
+              python3 - <<'EOF'
+import os, sys, json, subprocess
+
+def openstack(args):
+    result = subprocess.run(["openstack"] + args + ["-f", "json"], capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"ERROR: {result.stderr}", file=sys.stderr)
+        sys.exit(1)
+    return json.loads(result.stdout)
+
+nodes = openstack(["baremetal", "node", "list", "--fields", "resource_class", "--limit", "0"])
+resource_classes = {
+    n.get("Resource Class") or n.get("resource_class")
+    for n in nodes
+    if (n.get("Resource Class") or n.get("resource_class"))
+    and not (n.get("Resource Class") or n.get("resource_class", "")).startswith(("tempest-Resource_Class-", "ResClass-"))
+}
+print(f"Resource classes: {sorted(resource_classes)}")
+
+token = subprocess.run(["openstack", "token", "issue", "-f", "value", "-c", "id"],
+                       capture_output=True, text=True).stdout.strip()
+nova_url = subprocess.run(["openstack", "endpoint", "list", "--service", "compute",
+                            "--interface", "public", "-f", "value", "-c", "URL"],
+                           capture_output=True, text=True).stdout.strip().rstrip("/")
+
+import urllib.request
+quotas = {"quota_class_set": {f"instances_{r}": 0 for r in resource_classes}}
+req = urllib.request.Request(
+    f"{nova_url}/os-quota-class-sets/flavors",
+    data=json.dumps(quotas).encode(),
+    headers={"X-Auth-Token": token, "Content-Type": "application/json"},
+    method="POST",
+)
+with urllib.request.urlopen(req) as resp:
+    print(f"Response: {resp.status}")
+EOF
+            volumeMounts:
+            - mountPath: /etc/ironic/ironic.conf
+              name: ironic-etc
+              subPath: ironic.conf
+              readOnly: true
+            - mountPath: /etc/ironic/ironic.conf.d
+              name: ironic-etc-confd
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          volumes:
+          - name: ironic-etc
+            configMap:
+              name: ironic-etc
+          - name: ironic-etc-confd
+            secret:
+              secretName: {{ .Release.Name }}-secrets
+              items:
+              - key: secrets.conf
+                path: secrets.conf
+          {{- include "utils.trust_bundle.volumes" . | indent 10 }}
+{{- end }}
