@@ -157,12 +157,14 @@
   </record>
 </filter>
 # remove fields which cause parsing errors in elastic and are not audit relevant
+# requestObject is a list for JSON patches, so check each level is a map: digging into a
+# list with a string fails the filter, which drops the event and logs it with its body.
 <filter kubeapi.**>
   @type record_transformer
   enable_ruby
   remove_keys temp,$.requestObject.metadata.labels.app,$.requestObject.metadata.managedFields
   <record>
-     temp ${ unless record.dig("requestObject","metadata","labels","app").nil?; t = record.dig("requestObject","metadata","labels","app"); record["requestObject"]["metadata"]["labels"]["app_"] = t; end; nil;}
+     temp ${ ro = record["requestObject"]; if ro.is_a?(Hash) && ro["metadata"].is_a?(Hash) && ro["metadata"]["labels"].is_a?(Hash) && !ro["metadata"]["labels"]["app"].nil?; ro["metadata"]["labels"]["app_"] = ro["metadata"]["labels"]["app"]; end; nil;}
   </record>
 </filter>
 {{- end }}
