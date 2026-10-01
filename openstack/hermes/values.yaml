@@ -71,13 +71,19 @@ logstash:
   swift: true
   audit: true
   # Kafka output mirroring the Octobus audit filter.
-  # Off by default; enable per-region. Public CA, no client credentials.
+  # Off by default; enable per-region. Public-CA server cert.
   # global.forwarding.kafka.bootstrap_servers must be set in region secrets
   # (comma-separated host:port list, e.g. "broker1:9093,broker2:9093").
   kafka:
     enabled: false
     topic: hermes
     client_id: hermes-logstash
+    # SASL/SCRAM credentials for the FortLogs KafkaUser (write-all / write-all2).
+    # Set both in region secrets to switch the output to SASL_SSL; leave unset
+    # to keep SSL-only (for regions where broker auth isn't enforced yet).
+    # username:
+    # password:
+    sasl_mechanism: SCRAM-SHA-512
     # Durability-first defaults: every audit event must reach the SIEM.
     # acks=all + idempotence + high retries survive single-broker loss
     # without dropping or duplicating events. Requires broker-side

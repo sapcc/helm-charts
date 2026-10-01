@@ -105,10 +105,13 @@ spec:
         - /bin/bash
         - -c
         - |
-          # ironic-image >= 34 ships arch-suffixed iPXE firmware; runhttpd expects snponly.efi
+          # ironic-image >= 34 ships arch-suffixed iPXE firmware in /tftpboot.
+          # v35.0.x runhttpd expects snponly.efi; release-35.0+ (v35.0.3) expects the arch names. Stage both.
           mkdir -p /shared/custom_ipxe_firmware
           cp /tftpboot/undionly.kpxe /shared/custom_ipxe_firmware/undionly.kpxe
+          cp /tftpboot/snponly-x86_64.efi /shared/custom_ipxe_firmware/snponly-x86_64.efi
           cp /tftpboot/snponly-x86_64.efi /shared/custom_ipxe_firmware/snponly.efi
+          [ -f /tftpboot/snponly-arm64.efi ] && cp /tftpboot/snponly-arm64.efi /shared/custom_ipxe_firmware/snponly-arm64.efi
           exec /bin/runhttpd
         envFrom:
         - configMapRef:

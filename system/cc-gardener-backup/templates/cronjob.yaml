@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cc-gardener-backup
+  namespace: {{ .Release.Namespace }}
+spec:
+  concurrencyPolicy: Forbid
+  schedule: {{ required ".Values.job.schedule is required" .Values.job.schedule | quote }}
+  jobTemplate:
+    metadata:
+      name: cc-gardener-backup
+      labels:
+        cronjob: cc-gardener-backup
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          name: cc-gardener-backup
+          labels:
+            cronjob: cc-gardener-backup
+        spec:
+          serviceAccountName: cc-gardener-backup
+          restartPolicy: Never
+          containers:
+          - name: backup
+            image: "{{ required ".Values.image.repository is required" .Values.image.repository }}:{{ required ".Values.image.tag is required" .Values.image.tag }}"
+            imagePullPolicy: Always
+            command:
+              - /scripts/backup-garden-cluster.sh
+            env:
+            - name: REGION
+              value: {{ required ".Values.global.region is required" .Values.global.region | quote }}
+            - name: BACKUP_REGION
+              value: {{ required ".Values.global.alternateRegion is required" .Values.global.alternateRegion | quote }}
+            - name: CONTEXT
+              value: {{ printf "rt-%s" .Values.global.region | quote }}
+            - name: OS_AUTH_URL
+              value: {{ printf "https://identity-3.%s.cloud.sap/v3" .Values.global.alternateRegion | quote }}
+            - name: CONTAINER
+              value: {{ .Values.backup.container | quote }}
+            - name: PUBLIC_KEY_NAME
+              value: {{ .Values.backup.publicKeyName | quote }}
+            - name: BACKUP_RETENTION_SECONDS
+              value: {{ mul .Values.backup.retentionDays 86400 | quote }}
+            - name: BACKUP_OS_APPLICATION_CREDENTIAL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: cc-gardener-backup
+                  key: backup-os-application-credential-id
+            - name: BACKUP_OS_APPLICATION_CREDENTIAL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cc-gardener-backup
+                  key: backup-os-application-credential-secret
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: cc-gardener-backup
+              defaultMode: 0755

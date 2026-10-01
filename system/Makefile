@@ -60,6 +60,9 @@ build-bootstrap-kubeadm:
 	@find bootstrap-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
+	@# Upstream RBAC only knows about kubeadmcontrolplanes; cc-cluster uses KubernikusControlPlane
+	@# See https://github.com/kubernetes-sigs/cluster-api/pull/13433
+	@$(SED) -i '/- kubeadmcontrolplanes/a\  - kubernikuscontrolplanes' bootstrap-kubeadm/templates/manager-rbac.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
@@ -216,8 +219,12 @@ build-metal-operator-remote:
 		-f metal-operator-remote/values-managed-resources.yaml | \
 		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | (.webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-remote-webhook-service:443" + .service.path})' - \
 		> metal-operator-remote/webhooks.yaml
-	# Bump patch version
-	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	# Bump patch version; pass DEV=1 to publish a pre-release dev build (0.0.0-<sha>) only picked up by the dev cluster pipeline
+	@if [ "$(DEV)" = "1" ]; then \
+		SHA=$$(git rev-parse --short HEAD) yq -i '.version = "0.0.0-" + strenv(SHA)' metal-operator-remote/Chart.yaml; \
+	else \
+		yq -i '.version = (.version | split(".") | .[2] = (.[2] | split("-") | .[0] | tonumber + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml; \
+	fi
 
 
 build-boot-operator:
@@ -244,7 +251,11 @@ build-metal-maintenance-operator-remote:
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
 		yq eval 'select(.kind != "Service" and .kind != "Deployment" and .metadata.name != "metal-maintenance-operator-leader-election-role" and .metadata.name != "metal-maintenance-operator-leader-election-rolebinding")' - \
 		> metal-maintenance-operator-remote/managedresources/crds-and-rbac.yaml
-	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml
+	@if [ "$(DEV)" = "1" ]; then \
+		SHA=$$(git rev-parse --short HEAD) yq -i '.version = "0.0.0-" + strenv(SHA)' metal-maintenance-operator-remote/Chart.yaml; \
+	else \
+		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml; \
+	fi
 
 build-argora-operator:
 	@helm dep up argora-operator
