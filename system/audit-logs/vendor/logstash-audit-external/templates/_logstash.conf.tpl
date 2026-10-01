@@ -244,7 +244,23 @@ filter {
             ]
           }
 
-          # ---- never store credentials, whatever the audit policy logs ----
+          # Admission patches can contain credentials independently of the resource bodies.
+          # Keep routing, authorization and mutation-summary annotations.
+          ruby {
+            code => '
+              annotations = event.get("annotations")
+              if annotations.is_a?(Hash)
+                removed = annotations.keys.select { |key| key.start_with?("patch.webhook.admission.k8s.io/") }
+                unless removed.empty?
+                  removed.each { |key| annotations.delete(key) }
+                  event.set("annotations", annotations)
+                  event.set("[sap][cc][audit][credential_body_removed]", true)
+                end
+              end
+            '
+          }
+
+          # ---- remove bodies of known credential-bearing requests ----
           # Requests on these resources carry credentials in their request or response
           # body. Drop both bodies and mark the event, so a policy that logs them can be
           # found without storing the data.
@@ -252,7 +268,7 @@ filter {
             if [requestObject] or [responseObject] {
               mutate {
                 remove_field => ["requestObject", "responseObject"]
-                add_field => { "[sap][cc][audit][credential_body_removed]" => "true" }
+                replace => { "[sap][cc][audit][credential_body_removed]" => "true" }
               }
               mutate {
                 convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }

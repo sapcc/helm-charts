@@ -145,15 +145,18 @@
     keep_time_key true
   </parse>
 </filter>
-# never store credentials, whatever the audit policy logs: requests on these resources
-# carry credentials in their request or response body. Drop both bodies and mark the
+# Remove admission patch annotations on every resource: patches can contain credentials
+# independently of the request and response bodies. Keep other audit annotations.
+# Requests on the listed resources carry credentials in their request or response
+# body. Drop both bodies and mark the
 # event, so a policy that logs them can be found without storing the data.
 # record_modifier changes the record itself; record_transformer would only change a copy.
 <filter kubeapi.**>
   @type record_modifier
-  remove_keys _credential_body
+  remove_keys _credential_body,_credential_annotations
   <record>
     _credential_body ${ ref = record["objectRef"]; if ref.is_a?(Hash) && (["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"].include?(ref["resource"]) || ["token", "adminkubeconfig", "viewerkubeconfig"].include?(ref["subresource"])) && (record["requestObject"] || record["responseObject"]); record.delete("requestObject"); record.delete("responseObject"); record["sap.cc.audit.credential_body_removed"] = true; end; nil }
+    _credential_annotations ${ annotations = record["annotations"]; if annotations.is_a?(Hash); count = annotations.length; annotations.delete_if { |key, _| key.start_with?("patch.webhook.admission.k8s.io/") }; record["sap.cc.audit.credential_body_removed"] = true if annotations.length < count; end; nil }
   </record>
 </filter>
 # remove fields which cause parsing errors in elastic and are not audit relevant
