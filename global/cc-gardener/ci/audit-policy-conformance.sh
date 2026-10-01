@@ -61,13 +61,7 @@ done
 
 # Overrides from a values checkout, if one is given.
 if [ -n "$VALUES_DIR" ]; then
-  while IFS= read -r f; do
-    for key in gardenPolicy virtualPolicy; do
-      yq "[.. | select(has(\"$key\")) | .$key] | .[0]" "$f" > "$TMP/override.yaml" 2>/dev/null || continue
-      grep -q 'kind: Policy' "$TMP/override.yaml" || continue
-      add_policy "${f#"$VALUES_DIR"/}:$key" "$TMP/override.yaml"
-    done
-  done < <(grep -rlE 'gardenPolicy|virtualPolicy' "$VALUES_DIR" --include='*.yaml')
+  python3 "$CHART_DIR/ci/audit-policy-overrides.py" "$VALUES_DIR" || FAIL=1
 fi
 
 if [ "${#POLICIES[@]}" -gt 0 ]; then
