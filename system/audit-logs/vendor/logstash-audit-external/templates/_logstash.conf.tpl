@@ -244,8 +244,11 @@ filter {
             ]
           }
 
-          # Admission patches can contain credentials independently of the resource bodies.
-          # Keep routing, authorization and mutation-summary annotations.
+          # ---- never store admission patches ----
+          # A mutating webhook's patch can contain the values it injected, independently of
+          # the resource bodies. Remove the patch annotations from every event, and keep the
+          # routing, authorization and mutation-summary annotations. This alone doesn't mark
+          # the event: webhooks routinely patch ordinary objects such as shoots.
           ruby {
             code => '
               annotations = event.get("annotations")
@@ -254,18 +257,18 @@ filter {
                 unless removed.empty?
                   removed.each { |key| annotations.delete(key) }
                   event.set("annotations", annotations)
-                  event.set("[sap][cc][audit][credential_body_removed]", true)
+                  event.set("[@metadata][admission_patch_removed]", true)
                 end
               end
             '
           }
 
-          # ---- remove bodies of known credential-bearing requests ----
+          # ---- never store credentials, whatever the audit policy logs ----
           # Requests on these resources carry credentials in their request or response
-          # body. Drop both bodies and mark the event, so a policy that logs them can be
-          # found without storing the data.
+          # body, or in an admission patch. Drop both bodies and mark the event, so a policy
+          # that logs them can be found without storing the data.
           if [objectRef][resource] in ["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"] or [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] {
-            if [requestObject] or [responseObject] {
+            if [requestObject] or [responseObject] or [@metadata][admission_patch_removed] {
               mutate {
                 remove_field => ["requestObject", "responseObject"]
                 replace => { "[sap][cc][audit][credential_body_removed]" => "true" }

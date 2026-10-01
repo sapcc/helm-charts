@@ -18,9 +18,12 @@ boolean removal markers and preservation of ordinary bodies and audit metadata.
 
 These filters protect the Gardener events received by `logstash-audit-external`
 and the Kubernikus infrastructure container logs selected by
-`fluent_audit_container.kubeAPIServer`. They remove bodies for the listed
-credential-bearing resources and all `patch.webhook.admission.k8s.io/*`
-annotations, marking either removal with `sap.cc.audit.credential_body_removed`.
+`fluent_audit_container.kubeAPIServer`. They remove all
+`patch.webhook.admission.k8s.io/*` annotations, and the bodies of the listed
+credential-bearing resources. `sap.cc.audit.credential_body_removed` marks only
+events of those resources that carried a body or a patch annotation; patch
+annotations on other objects are removed without it, because webhooks patch
+ordinary objects such as shoots all the time.
 Other annotations, including routing and authorization metadata, are retained.
 
 Keep API-server audit policies safe as well: filtering happens after local audit

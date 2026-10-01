@@ -53,7 +53,10 @@ def fixtures():
                 })
         if request is None and response is None:
             event["level"] = "Metadata"
-        cases.append((event, sensitive, patch or (sensitive and (request is not None or response is not None))))
+        # The marker flags credential content on credential-bearing requests only; patch
+        # annotations on other objects are removed without it, because webhooks patch
+        # ordinary objects (shoots, pods) all the time.
+        cases.append((event, sensitive, sensitive and (patch or request is not None or response is not None)))
 
     add("secret-create", "secrets", request={"stringData": {"password": SECRET}, "metadata": {
         "annotations": {"kubectl.kubernetes.io/last-applied-configuration": SECRET}}}, sensitive=True)
@@ -70,6 +73,7 @@ def fixtures():
     add("body-and-annotations", "secrets", request={"data": {"password": SECRET}}, sensitive=True, patch=True)
     add("annotations-only", "secrets", sensitive=True, patch=True)
     add("pod-annotations", "pods", request={"spec": {"containers": []}}, patch=True)
+    add("shoot-update-annotations", "shoots", request={"spec": {"purpose": "evaluation"}}, patch=True)
     add("metadata-control", "secrets", sensitive=True)
     add("shoot-control", "shoots", request={"spec": {"purpose": "testing"}})
     add("configmap-control", "configmaps", request={"data": {"safe": "value"}})
