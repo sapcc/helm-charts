@@ -58,6 +58,14 @@
     configMapKeyRef:
       name: log-router-etc
       key: LOG_ROUTER_MAX_CONCURRENT_FLUSHES
+# The configmap only renders this key when logRouter.max_buffer_memory_mb is
+# set, hence optional: unset leaves the limiter off instead of failing the pod.
+- name: LOG_ROUTER_MAX_BUFFER_MEMORY_MB
+  valueFrom:
+    configMapKeyRef:
+      name: log-router-etc
+      key: LOG_ROUTER_MAX_BUFFER_MEMORY_MB
+      optional: true
 - name: LOG_ROUTER_RABBITMQ_QUEUE
   valueFrom:
     configMapKeyRef:
