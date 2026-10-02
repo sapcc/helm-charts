@@ -145,13 +145,31 @@
     keep_time_key true
   </parse>
 </filter>
+# Never store admission patches or credentials, whatever the audit policy logs.
+# A mutating webhook's patch can contain the values it injected, so remove the patch
+# annotations from every event and keep the other annotations. That alone doesn't mark
+# the event: webhooks routinely patch ordinary objects.
+# Requests on the listed resources carry credentials in their request or response body,
+# or in an admission patch. Drop both bodies and mark the event, so a policy that logs
+# them can be found without storing the data.
+# record_modifier changes the record itself; record_transformer would only change a copy.
+<filter kubeapi.**>
+  @type record_modifier
+  remove_keys _admission_patch,_admission_patch_removed,_credential_body
+  <record>
+    _admission_patch ${ annotations = record["annotations"]; if annotations.is_a?(Hash); count = annotations.length; annotations.delete_if { |key, _| key.start_with?("patch.webhook.admission.k8s.io/") }; record["_admission_patch_removed"] = true if annotations.length < count; end; nil }
+    _credential_body ${ ref = record["objectRef"]; if ref.is_a?(Hash) && (["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"].include?(ref["resource"]) || ["token", "adminkubeconfig", "viewerkubeconfig"].include?(ref["subresource"])) && (record["requestObject"] || record["responseObject"] || record["_admission_patch_removed"]); record.delete("requestObject"); record.delete("responseObject"); record["sap.cc.audit.credential_body_removed"] = true; end; nil }
+  </record>
+</filter>
 # remove fields which cause parsing errors in elastic and are not audit relevant
+# requestObject is a list for JSON patches, so check each level is a map: digging into a
+# list with a string fails the filter, which drops the event and logs it with its body.
 <filter kubeapi.**>
   @type record_transformer
   enable_ruby
   remove_keys temp,$.requestObject.metadata.labels.app,$.requestObject.metadata.managedFields
   <record>
-     temp ${ unless record.dig("requestObject","metadata","labels","app").nil?; t = record.dig("requestObject","metadata","labels","app"); record["requestObject"]["metadata"]["labels"]["app_"] = t; end; nil;}
+     temp ${ ro = record["requestObject"]; if ro.is_a?(Hash) && ro["metadata"].is_a?(Hash) && ro["metadata"]["labels"].is_a?(Hash) && !ro["metadata"]["labels"]["app"].nil?; ro["metadata"]["labels"]["app_"] = ro["metadata"]["labels"]["app"]; end; nil;}
   </record>
 </filter>
 {{- end }}
