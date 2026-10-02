@@ -92,6 +92,7 @@ share_groups = {{ .Values.quota.share_groups }}
 share_group_snapshots = {{ .Values.quota.share_group_snapshots }}
 share_replicas = {{ .Values.quota.share_replicas }}
 replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
+share_server_replicas = {{ .Values.quota.share_server_replicas }}
 
 [neutron]
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
