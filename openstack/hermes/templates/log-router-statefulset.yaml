@@ -82,11 +82,14 @@ spec:
               mountPath: /data/wal
             - name: log-router-secrets
               mountPath: /var/run/secrets/log-router
+          # startup runs WAL recovery before the http server is up. after a long
+          # storage outage that can take well over 10m (eu-de-1 2026-10-01:
+          # ~150 partitions/min, 1500+ partitions), so give it 30m.
           startupProbe:
             httpGet:
               path: /healthcheck
               port: http
-            failureThreshold: 60
+            failureThreshold: 180
             periodSeconds: 10
           livenessProbe:
             httpGet:
