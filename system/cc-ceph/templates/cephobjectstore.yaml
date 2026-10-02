@@ -81,6 +81,10 @@ spec:
                   operator: In
                   values:
                     - {{ .Values.osd.nodeRole }}
+      {{- if .Values.objectstore.gateway.topologySpreadConstraints }}
+      topologySpreadConstraints:
+      {{- toYaml .Values.objectstore.gateway.topologySpreadConstraints | nindent 6 }}
+      {{- end }}
       # since the CephCluster's network provider is "host", we need to isolate 80/443 port listeners from each other
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
