@@ -79,7 +79,7 @@ function start_tempest_tests {
   for i in {1..5}; do
     echo "Creating tempest verifier (attempt $i)..."
 
-    rally verify delete {{ .Chart.Name }}-verifier >/dev/null 2>&1 || true
+    rally verify delete-verifier --id {{ .Chart.Name }}-verifier --force >/dev/null 2>&1 || true
 
     OUTPUT=$(rally --debug verify create-verifier \
       --type tempest \
