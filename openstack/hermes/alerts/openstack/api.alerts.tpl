@@ -291,4 +291,23 @@ groups:
     annotations:
       description: "Log Router is failing to write to the admin-tier storage. The admin tier provides unconditional compliance copies of all audit events. Sustained errors mean audit records are missing from the admin bucket."
       summary: "Log Router admin-tier write errors — compliance data at risk"
+
+  - alert: OpenstackHermesLogRouterFlushErrors
+    # 1h window on purpose: failed flushes come in bursts (one try per flush
+    # cycle), so a 5m rate drops back to 0 between tries and never holds 15m.
+    expr: sum(increase(log_router_flush_errors_total[1h])) > 0
+    for: 15m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      meta: "Log Router customer flushes failing in the last hour"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router customer flushes to object storage have been failing during the last hour. Events are kept in memory and the WAL until storage works again, so the WAL volume will grow. Check the log-router logs for the storage error (quota, auth, connectivity)."
+      summary: "Log Router customer flushes failing"
 {{- end }}
