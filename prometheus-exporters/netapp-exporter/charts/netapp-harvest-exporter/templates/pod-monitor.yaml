@@ -18,5 +18,10 @@ spec:
       availability-zone: {{ $az }}
   podMetricsEndpoints:
     - port: metrics
+      relabelings:
+        # PodMonitor does not copy pod labels onto metrics by default;
+        # map them so queries can filter e.g. by app (sapcc/helm-charts#12884).
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
 {{- end }}
 {{- end }}
