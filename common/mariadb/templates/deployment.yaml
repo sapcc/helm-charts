@@ -214,6 +214,9 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
 {{- end }}
+{{- if and .Values.slow_query_log.rotation.enabled (or .Values.slow_query_log.persistence.enabled .Values.persistence_claim.enabled) }}
+{{- include "mariadb.slowLogRotatorContainer" . | nindent 6 }}
+{{- end }}
 {{- if .Values.global.mariadb.native_sidecar.enabled }}
       containers:
 {{- end }}
@@ -230,13 +233,13 @@ spec:
             secretKeyRef:
               name: mariadb-{{.Values.name}}
               key: root-password
-{{- if .Values.slow_query_log.persistence.enabled }}
+{{- if or .Values.slow_query_log.persistence.enabled (and .Values.slow_query_log.rotation.enabled .Values.persistence_claim.enabled) }}
         - name: POD_NAME
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
         args:
-          - --slow-query-log-file={{ required "slow_query_log.dir required when slow_query_log.persistence.enabled" .Values.slow_query_log.dir }}/$(POD_NAME)-slow.log
+          - --slow-query-log-file={{ include "mariadb.slowLogCleanupDir" . }}/$(POD_NAME)-slow.log
 {{- end }}
         ports:
           - name: mariadb
@@ -330,6 +333,12 @@ spec:
           configMap:
             name: mariadb-{{.Values.name}}-set-root-password
             defaultMode: 0755
+{{- if and .Values.slow_query_log.rotation.enabled (or .Values.slow_query_log.persistence.enabled .Values.persistence_claim.enabled) }}
+        - name: slow-log-rotator-script
+          configMap:
+            name: mariadb-{{ .Values.name }}-slow-log-rotator
+            defaultMode: 0755
+{{- end }}
         - name: mysql-users-secret-file
           projected:
             sources:
