@@ -74,31 +74,34 @@ function start_tempest_tests {
     exit $rc
   fi
   # create tempest verifier with retry
+  VERIFIER_NAME="{{ .Chart.Name }}-verifier"
   VERIFY_RC=1
 
   for i in {1..5}; do
     echo "Creating tempest verifier (attempt $i)..."
+    if rally verify show-verifier --id "$VERIFIER_NAME" >/dev/null 2>&1; then
+      echo "Deleting leftover verifier $VERIFIER_NAME from previous attempt..."
+      rally verify delete-verifier --id "$VERIFIER_NAME" --force
+    fi
 
-    rally verify delete-verifier --id {{ .Chart.Name }}-verifier --force >/dev/null 2>&1 || true
-
-    OUTPUT=$(rally --debug verify create-verifier \
+    rally --debug verify create-verifier \
       --type tempest \
-      --name {{ .Chart.Name }}-verifier \
+      --name "$VERIFIER_NAME" \
       --system-wide \
       --source https://github.com/sapcc/tempest \
-      --version {{ default "ccloud-python3" .Values.tempest_branch }} 2>&1)
+      --version {{ default "ccloud-python3" .Values.tempest_branch }}
 
     VERIFY_RC=$?
-
-    echo "$OUTPUT"
 
     if [ $VERIFY_RC -eq 0 ]; then
       echo "Tempest verifier created successfully"
       break
     fi
 
-    echo "Failed to create verifier (probably git clone failed). Retrying in 15s..."
-    sleep 15
+    if [ $i -lt 5 ]; then
+      echo "Failed to create verifier (probably git clone failed). Retrying in 15s..."
+      sleep 15
+    fi
   done
 
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + VERIFY_RC))
