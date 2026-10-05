@@ -70,9 +70,9 @@ enforce_scope=False
 [secretstore]
 enable_multiple_secret_stores = True
 {{- $suffixes := list "software" "pkcs11" }}
-{{- range .Values.hsm.utimaco_instances }}
-{{- if .enabled }}
-{{- $suffixes = append $suffixes .name }}
+{{- range $name, $inst := .Values.hsm.utimaco_instances }}
+{{- if $inst.enabled }}
+{{- $suffixes = append $suffixes $name }}
 {{- end }}
 {{- end }}
 stores_lookup_suffix = {{ join ", " $suffixes }}
@@ -87,20 +87,20 @@ secret_store_plugin = store_crypto
 crypto_plugin = p11_crypto
 global_default = True
 
-{{- range .Values.hsm.utimaco_instances }}
-{{- if .enabled }}
+{{- range $name, $inst := .Values.hsm.utimaco_instances }}
+{{- if $inst.enabled }}
 
-[secretstore:{{ .name }}]
+[secretstore:{{ $name }}]
 secret_store_plugin = store_crypto
-crypto_plugin = {{ .name }}_crypto
+crypto_plugin = {{ $name }}_crypto
 
 {{- end }}
 {{- end }}
 
 {{- $appliances := list }}
-{{- range .Values.hsm.utimaco_instances }}
-{{- if .enabled }}
-{{- $appliances = append $appliances .name }}
+{{- range $name, $inst := .Values.hsm.utimaco_instances }}
+{{- if $inst.enabled }}
+{{- $appliances = append $appliances $name }}
 {{- end }}
 {{- end }}
 {{- if $appliances }}

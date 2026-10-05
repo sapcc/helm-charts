@@ -87,10 +87,11 @@ spec:
           - name: ChrystokiConfigurationPath
             value: "/thales/safenet/lunaclient/config"
           {{- end }}
-          {{- range .Values.hsm.utimaco_instances }}
-          {{- if .enabled }}
-          - name: CS_PKCS11_R3_CFG_{{ .name | upper | replace "-" "_" }}
-            value: "/utimaco-{{ .name }}/cs_pkcs11_R3.cfg"
+          {{- range $name, $inst := .Values.hsm.utimaco_instances }}
+          {{- if $inst.enabled }}
+          {{- $conf := index $.Values $name }}
+          - name: CS_PKCS11_R3_CFG_{{ $name | upper | replace "-" "_" }}
+            value: "{{ $conf.library_path | dir | dir }}/cs_pkcs11_R3.cfg"
           {{- end }}
           {{- end }}
           {{- if .Values.api.resources.enabled }}
@@ -191,10 +192,10 @@ spec:
               subPath: password
               readOnly: true
             {{- end }}
-            {{- range .Values.hsm.utimaco_instances }}
-            {{- if .enabled }}
-            - name: utimaco-volume-{{ .name }}
-              mountPath: /utimaco-{{ .name }}/
+            {{- range $name, $inst := .Values.hsm.utimaco_instances }}
+            {{- if and $inst.enabled (ne $inst.sidecar false) }}
+            - name: {{ $name | replace "_" "-" }}-volume
+              mountPath: /{{ $name | replace "_" "-" }}/
             {{- end }}
             {{- end }}
         {{- if .Values.hsm.enabled }}
@@ -233,10 +234,11 @@ spec:
               readOnly: true
             - name: luna
               mountPath: /thales/
-        {{- range .Values.hsm.utimaco_instances }}
-        {{- if and .enabled (ne .sidecar false) }}
-        - name: utimaco-{{ .name }}
-          image: {{required ".Values.global.registry is missing" $.Values.global.registry }}/loci-barbican:{{required (printf "hsm.utimaco_instances[%s].image is missing" .name) .image }}
+        {{- range $name, $inst := .Values.hsm.utimaco_instances }}
+        {{- if and $inst.enabled (ne $inst.sidecar false) }}
+        {{- $conf := index $.Values $name }}
+        - name: {{ $name | replace "_" "-" }}
+          image: {{required ".Values.global.registry is missing" $.Values.global.registry }}/loci-barbican:{{required (printf "%s.image is missing" $name) $conf.image }}
           imagePullPolicy: Always
           env:
             - name: CS_PKCS11_R3_CFG
@@ -245,16 +247,16 @@ spec:
           args:
             - |
               set -ex
-              echo "$(date) [{{ .name }}] starting init..."
+              echo "$(date) [{{ $name }}] starting init..."
               /scripts/barbican_utimaco.sh
-              echo "$(date) [{{ .name }}] init complete."
+              echo "$(date) [{{ $name }}] init complete."
               exec sleep infinity
           volumeMounts:
             - name: hsm-utimaco
               mountPath: /scripts/
               subPath:
               readOnly: true
-            - name: utimaco-volume-{{ .name }}
+            - name: {{ $name | replace "_" "-" }}-volume
               mountPath: /utimaco/
           {{- if $.Values.hsm.resources.enabled }}
           resources:
@@ -345,9 +347,9 @@ spec:
           emptyDir: {}
         {{ end }}
         {{- $enabledUtimaco := list }}
-        {{- range .Values.hsm.utimaco_instances }}
-        {{- if .enabled }}
-        {{- $enabledUtimaco = append $enabledUtimaco . }}
+        {{- range $name, $inst := .Values.hsm.utimaco_instances }}
+        {{- if and $inst.enabled (ne $inst.sidecar false) }}
+        {{- $enabledUtimaco = append $enabledUtimaco $name }}
         {{- end }}
         {{- end }}
         {{- if $enabledUtimaco }}
@@ -359,7 +361,7 @@ spec:
             - key: barbican_utimaco.sh
               path: barbican_utimaco.sh
         {{- range $enabledUtimaco }}
-        - name: utimaco-volume-{{ .name }}
+        - name: {{ . | replace "_" "-" }}-volume
           emptyDir: {}
         {{- end }}
         {{- end }}
