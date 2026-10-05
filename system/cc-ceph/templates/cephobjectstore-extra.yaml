@@ -110,14 +110,6 @@ spec:
                   operator: In
                   values:
                     - {{ $.Values.mon.nodeRole }} # ensure the admin RGW pods are not scheduled on the OSD nodes to avoid RGW metrics conflict
-      {{- $topologySpreadConstraints := $.Values.objectstore.gateway.topologySpreadConstraints }}
-      {{- if hasKey $instance.gateway "topologySpreadConstraints" }}
-      {{- $topologySpreadConstraints = $instance.gateway.topologySpreadConstraints }}
-      {{- end }}
-      {{- if $topologySpreadConstraints }}
-      topologySpreadConstraints:
-      {{- toYaml $topologySpreadConstraints | nindent 6 }}
-      {{- end }}
       # since the CephCluster's network provider is "host", we need to isolate 80/443 port listeners from each other
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
