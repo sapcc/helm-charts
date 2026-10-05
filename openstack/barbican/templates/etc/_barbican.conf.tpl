@@ -69,7 +69,10 @@ enforce_scope=False
 {{- if .Values.hsm.multistore.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
-{{- $suffixes := list "software" "pkcs11" }}
+{{- $suffixes := list "software" }}
+{{- if .Values.hsm.enabled }}
+{{- $suffixes = append $suffixes "pkcs11" }}
+{{- end }}
 {{- range $name, $inst := .Values.hsm.utimaco_instances }}
 {{- if $inst.enabled }}
 {{- $suffixes = append $suffixes $name }}
@@ -82,17 +85,24 @@ namespace = barbican.secretstore.plugin
 secret_store_plugin = store_crypto
 crypto_plugin = simple_crypto
 
+{{- if .Values.hsm.enabled }}
 [secretstore:pkcs11]
 secret_store_plugin = store_crypto
 crypto_plugin = p11_crypto
 global_default = True
+{{- end }}
 
+{{- $firstUtimaco := true }}
 {{- range $name, $inst := .Values.hsm.utimaco_instances }}
 {{- if $inst.enabled }}
 
 [secretstore:{{ $name }}]
 secret_store_plugin = store_crypto
 crypto_plugin = {{ $name }}_crypto
+{{- if and (not $.Values.hsm.enabled) $firstUtimaco }}
+global_default = True
+{{- end }}
+{{- $firstUtimaco = false }}
 
 {{- end }}
 {{- end }}
