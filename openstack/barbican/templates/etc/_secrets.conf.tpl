@@ -35,16 +35,17 @@ pkek_cache_ttl = {{ .Values.lunaclient.conn.pkek_cache_ttl }}
 pkek_cache_limit = {{ .Values.lunaclient.conn.pkek_cache_limit }}
 {{- end }}
 
-{{- range .Values.hsm.utimaco_instances }}
-{{- if .enabled }}
+{{- range $name, $inst := .Values.hsm.utimaco_instances }}
+{{- if $inst.enabled }}
+{{- $conf := index $.Values $name }}
 
-[hsm_partition_crypto_plugin:{{ .name }}]
-library_path = {{ .library_path | include "resolve_secret" }}
-mkek_label = {{ .mkek_label | include "resolve_secret" }}
+[hsm_partition_crypto_plugin:{{ $name }}]
+library_path = {{ $conf.library_path | include "resolve_secret" }}
+mkek_label = {{ $conf.mkek_label | include "resolve_secret" }}
 mkek_length = 32
-hmac_label = {{ .hmac_label | include "resolve_secret" }}
-encryption_mechanism = {{ .encryption_mechanism }}
-pkek_cache_ttl = {{ .pkek_cache_ttl }}
-plugin_name = {{ .name }}_crypto
+hmac_label = {{ $conf.hmac_label | include "resolve_secret" }}
+encryption_mechanism = {{ $conf.encryption_mechanism }}
+pkek_cache_ttl = {{ $conf.pkek_cache_ttl }}
+plugin_name = {{ $name }}_crypto
 {{- end }}
 {{- end }}
