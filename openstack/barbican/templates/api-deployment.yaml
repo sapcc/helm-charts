@@ -234,7 +234,7 @@ spec:
             - name: luna
               mountPath: /thales/
         {{- range .Values.hsm.utimaco_instances }}
-        {{- if .enabled }}
+        {{- if and .enabled (ne .sidecar false) }}
         - name: utimaco-{{ .name }}
           image: {{required ".Values.global.registry is missing" $.Values.global.registry }}/loci-barbican:{{required (printf "hsm.utimaco_instances[%s].image is missing" .name) .image }}
           imagePullPolicy: Always
