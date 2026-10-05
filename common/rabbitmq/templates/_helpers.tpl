@@ -96,6 +96,30 @@ Will strip "svc.kubernetes." if clusterDNSSearchDomain is something like "kubern
                 - operational
 {{- end }}
 
+{{/* spread the statefulset pods over nodes, see podAntiAffinity in values.yaml */}}
+{{- define "rabbitmq_pod_anti_affinity" }}
+{{- if .Values.podAntiAffinity }}
+        podAntiAffinity:
+  {{- if eq .Values.podAntiAffinity "required" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: {{ template "fullname" . }}
+            topologyKey: kubernetes.io/hostname
+  {{- else if eq .Values.podAntiAffinity "preferred" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: {{ template "fullname" . }}
+              topologyKey: kubernetes.io/hostname
+  {{- else }}
+    {{- fail (printf "podAntiAffinity must be \"\", \"preferred\" or \"required\", got %q" .Values.podAntiAffinity) }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
 {{- define "rabbitmq_node_reinstall_affinity" }}
           - weight: 1
             preference:
