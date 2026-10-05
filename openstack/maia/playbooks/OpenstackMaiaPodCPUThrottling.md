@@ -14,7 +14,7 @@ Maia API response times increase. Tenants experience slower metric queries, but 
 
 ## Diagnosis
 
-Identify the affected pod and container from the alert labels `{{ $labels.pod }}/{{ $labels.container }}`.
+Identify the affected pod and container from the alert labels `pod/container`.
 
 Check current resource usage:
 
@@ -22,7 +22,7 @@ Check current resource usage:
 kubectl -n maia top pod <pod-name>
 ```
 
-Review the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard to check the status of Maia components.
+Review the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard to check the status of Maia components.
 
 ## Resolution Steps
 

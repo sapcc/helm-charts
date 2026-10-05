@@ -14,9 +14,9 @@ No immediate impact, but metric freshness will degrade if left unaddressed. At t
 
 ## Diagnosis
 
-Identify the affected federation job from the alert label `{{ $labels.exported_job }}`.
+Identify the affected federation job from the alert label `exported_job`.
 
-Review the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for scrape duration trends.
+Review the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for scrape duration trends.
 
 Check logs of the Maia Prometheus pod for slow scrape or timeout messages:
 

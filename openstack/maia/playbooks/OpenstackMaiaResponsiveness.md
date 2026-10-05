@@ -14,7 +14,7 @@ Tenant PromQL queries and dashboard loads are slow. The service is degraded but 
 
 ## Diagnosis
 
-1. Review the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for request latency trends and identify which handler is slow (`query`, `query_range`, `federate`, etc.).
+1. Review the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for request latency trends and identify which handler is slow (`query`, `query_range`, `federate`, etc.).
 
 2. Check whether the underlying Prometheus is under heavy load (see also `OpenstackMaiaPrometheusAvail`):
    ```bash

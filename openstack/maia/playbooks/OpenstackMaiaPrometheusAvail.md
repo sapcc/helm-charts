@@ -21,7 +21,7 @@ kubectl -n maia get pods | grep prometheus
 kubectl -n maia logs <prometheus-maia-oprom-pod> --since=30m
 ```
 
-Review the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for TSDB error rate trends.
+Review the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for TSDB error rate trends.
 
 Check the Maia API logs for specific error messages:
 

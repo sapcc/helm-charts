@@ -16,7 +16,7 @@ Tenants cannot query metrics that originate from the affected federation source.
 
 ## Diagnosis
 
-Identify the affected federation target from the alert label `{{ $labels.exported_job }}`.
+Identify the affected federation target from the alert label `exported_job`.
 
 Check the health of the corresponding Prometheus instance:
 
@@ -24,7 +24,7 @@ Check the health of the corresponding Prometheus instance:
 kubectl get pods -A | grep <exported-job-name>
 ```
 
-Review the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for federation scrape health.
+Review the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for federation scrape health.
 
 ## Resolution Steps
 

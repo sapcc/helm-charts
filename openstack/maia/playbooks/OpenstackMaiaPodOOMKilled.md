@@ -29,7 +29,7 @@ Review application logs before the kill for memory-leak indicators:
 kubectl -n maia logs <pod-name> --previous
 ```
 
-Check memory usage trends on the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard.
+Check memory usage trends on the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard.
 
 ## Resolution Steps
 

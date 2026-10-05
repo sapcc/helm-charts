@@ -21,7 +21,7 @@ kubectl -n maia get pods
 kubectl -n maia logs deployment/maia
 ```
 
-Logs are also available in [OpenSearch Dashboards](https://logs.{{ $labels.region }}.cloud.sap/app/data-explorer/discover) filtered by `resource.k8s.namespace.name: maia`.
+Logs are also available in [OpenSearch Dashboards](https://logs.<region>.cloud.sap/app/data-explorer/discover) filtered by `resource.k8s.namespace.name: maia`.
 
 Look for crash loops or failed readiness probes:
 

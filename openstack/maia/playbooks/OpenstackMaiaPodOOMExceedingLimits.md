@@ -20,7 +20,7 @@ Check current memory saturation for all Maia pods:
 kubectl -n maia top pods
 ```
 
-Review the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for the memory trend of the specific pod.
+Review the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for the memory trend of the specific pod.
 
 ## Resolution Steps
 

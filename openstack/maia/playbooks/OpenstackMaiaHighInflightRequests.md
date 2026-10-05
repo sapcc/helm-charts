@@ -32,7 +32,7 @@ Check pod resource usage:
 kubectl -n maia top pods
 ```
 
-Review the [maia-overview](https://perses.{{ $labels.region }}.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for concurrency and latency trends.
+Review the [maia-overview](https://perses.<region>.cloud.sap/projects/observability/dashboards/maia-overview) dashboard for concurrency and latency trends.
 
 ## Resolution Steps
 
