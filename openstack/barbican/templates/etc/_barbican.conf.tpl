@@ -96,5 +96,17 @@ crypto_plugin = {{ .name }}_crypto
 
 {{- end }}
 {{- end }}
+
+{{- $appliances := list }}
+{{- range .Values.hsm.utimaco_instances }}
+{{- if .enabled }}
+{{- $appliances = append $appliances .name }}
+{{- end }}
+{{- end }}
+{{- if $appliances }}
+[hsm_appliances]
+appliances = {{ join ", " $appliances }}
+{{- end }}
+
 {{- end }}
 

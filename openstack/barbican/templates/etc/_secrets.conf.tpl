@@ -40,12 +40,11 @@ pkek_cache_limit = {{ .Values.lunaclient.conn.pkek_cache_limit }}
 
 [hsm_partition_crypto_plugin:{{ .name }}]
 library_path = {{ .library_path | include "resolve_secret" }}
-login = {{ .login | include "resolve_secret" }}
 mkek_label = {{ .mkek_label | include "resolve_secret" }}
 mkek_length = 32
 hmac_label = {{ .hmac_label | include "resolve_secret" }}
-slot_id = {{ .slot_id }}
 encryption_mechanism = {{ .encryption_mechanism }}
 pkek_cache_ttl = {{ .pkek_cache_ttl }}
+plugin_name = {{ .name }}_crypto
 {{- end }}
 {{- end }}
