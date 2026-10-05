@@ -25,6 +25,7 @@ hermes:
   # Component enable flags - all default to true for backward compatibility
   # RabbitMQ needs to be available for other components all the time (also during buildup) whereas the rest of hermes can be deployed laster.
   rabbitmq_enabled: true      # Deploy RabbitMQ StatefulSet
+  rabbitmq_dataplane_enabled: false # Separate RabbitMQ for data plane (ceph) audit events, read by log-router
   api_enabled: true           # Deploy Hermes API (deployment, service, ingress, secrets)
   logstash_enabled: true      # Deploy Logstash pipeline (deployment, service, configmap, secret)
   keystone_seed_enabled: true # Deploy Keystone OpenstackSeed
@@ -174,6 +175,61 @@ rabbitmq_notifications:
   serviceExternalTrafficPolicy: Local
   enableSsl: true
 
+# Data plane audit events (ceph rgw via prysm) get their own broker, so a
+# backlog there can't fill up the one keystone, nova etc. depend on.
+# Turned on per region with hermes.rabbitmq_dataplane_enabled.
+rabbitmq_dataplane:
+  kind: "statefulset"
+  use_alternate_registry: true
+  replicas: 3
+  pdr:
+    enabled: true
+    minAvailable: "51%"
+  persistence:
+    enabled: true
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  global:
+    rabbitmq:
+      native_sidecar:
+        enabled: false
+  credentialUpdater:
+    enabled: true
+  users:
+    # log-router. while logRouter.rabbitmq.also_read_notifications is on this
+    # has to match logRouter.rabbitmq.user/password, same creds on both brokers.
+    default:
+      user: logrouter
+      # password: DEFINED-IN-SECRETS
+    admin:
+      user: admin
+      # password: DEFINED-IN-SECRETS
+    # publisher (prysm sidecar on the ceph rgw side)
+    ceph:
+      user: ceph
+      # password: DEFINED-IN-SECRETS
+  alerts:
+    support_group: observability
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  serviceType: LoadBalancer
+  serviceExternalTrafficPolicy: Local
+  enableSsl: true
+
 # Pod Monitor
 exporter:
   enabled: false
@@ -252,6 +308,10 @@ logRouter:
     exchange: ""
     routing_key: "#"
     prefetch: "100"
+    # only used with hermes.rabbitmq_dataplane_enabled: keep reading the
+    # notifications broker too, so events already queued there drain during
+    # the cutover. turn off once its dataplane.audit queue is empty.
+    also_read_notifications: true
     # user/password injected by deployment pipeline
     # user:
     # password:
