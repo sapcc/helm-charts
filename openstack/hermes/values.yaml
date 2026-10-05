@@ -287,6 +287,10 @@ logRouter:
   debug: "false"
   flush_interval: "1m"
   shutdown_timeout: "30s"
+  # has to be longer than the whole shutdown: 10s per rabbitmq url (6 with the
+  # dataplane broker on), 10s kafka, then shutdown_timeout for the final flush.
+  # 60+10+30 = 100s, plus headroom. the k8s default of 30s kills the final flush.
+  termination_grace_period_seconds: 150
   ingest_channel_capacity: "10000"
   max_concurrent_flushes: "100"
   max_buffer_memory_mb: "1500"
