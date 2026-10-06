@@ -274,20 +274,10 @@ echo "All required environment variables are set."
 # Kubernetes and OpenStack Authentication
 #===================================================================================================
 
-# The /usr/local/bin/kubectl wrapper requires SSO credentials (KUBELOGON_USER).
-# In-cluster: skip it and use the versioned binary directly — it handles SA auth natively.
-if [[ -n "${KUBERNETES_SERVICE_HOST:-}" ]]; then
-    KUBECTL_VERSION="${KUBECTL_VERSION:-$(jq -r .kubectl < /usr/local/lib/kube-defaults.json)}"
-    kubectl() { "kubectl-v${KUBECTL_VERSION}" "$@"; }
-fi
-
 kubectl cluster-info || {
     echo "ERROR: Failed to connect to Kubernetes cluster"
     exit 1
 }
-
-## Set value to not bloat logs with kubectl version info
-export SKIP_VERSION_BANNERS=true
 
 echo "Using injected OpenStack application credentials for Swift access in region ${BACKUP_REGION}"
 
