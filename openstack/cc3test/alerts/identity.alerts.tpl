@@ -336,3 +336,41 @@ groups:
     annotations:
       description: "mod_shib accepted a SAML assertion from an unknown issuer or with a wrong AudienceRestriction in {{`{{ $labels.name }}`}}. BSI control SF.Fas.2 is not being enforced — cross-SP or rogue-IdP assertions may be accepted."
       summary: "SAML SF.Fas.2 issuer/audience validation not enforced"
+
+  - alert: SAMLTimingValidationFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLTimingValidation_(expired_assertion_rejected|premature_assertion_rejected|missing_not_on_or_after_rejected|expired_subject_confirmation_rejected)", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML assertion timing validation not enforced"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "mod_shib accepted a SAML assertion outside its valid time window in {{`{{ $labels.name }}`}}. BSI control SF.Fas.3 is not being enforced — expired or premature assertions may be accepted."
+      summary: "SAML SF.Fas.3 timing validation not enforced"
+
+  - alert: SAMLContextBindingFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAudienceRestriction_(wrong_audience_rejected|missing_audience_restriction_rejected)|TestSAMLInResponseToBinding_(wrong_in_response_to_rejected|missing_in_response_to_rejected)|TestSAMLCrossTenantIsolation_cross_tenant_assertion_rejected", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML assertion context binding not enforced"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "mod_shib accepted a SAML assertion with incorrect context binding in {{`{{ $labels.name }}`}}. BSI control SF.Fas.5 is not being enforced — wrong-audience, unsolicited, or cross-tenant assertions may be accepted."
+      summary: "SAML SF.Fas.5 context binding not enforced"
