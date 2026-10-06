@@ -93,7 +93,7 @@ groups:
       summary: Maia is not available
 
   - alert: OpenstackMaiaHighAuthFailureRate
-    expr: rate(maia_logon_failures_count{component="maia",namespace="maia"}[5m]) > 5
+    expr: sum by (component, namespace) (rate(maia_logon_failures_count{component="maia",namespace="maia"}[5m])) > 5
     for: 15m
     labels:
       component: '{{`{{ $labels.component }}`}}'
@@ -111,7 +111,7 @@ groups:
       summary: High rate of Maia authentication failures
 
   - alert: OpenstackMaiaHighInflightRequests
-    expr: maia_requests_inflight{component="maia",namespace="maia"} > 100
+    expr: sum by (component, namespace) (maia_requests_inflight{component="maia",namespace="maia"}) > 100
     for: 5m
     labels:
       component: '{{`{{ $labels.component }}`}}'
