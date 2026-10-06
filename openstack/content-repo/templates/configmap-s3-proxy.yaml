@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: s3-proxy
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+data:
+  config.yaml: |
+    log:
+      level: {{ .Values.s3_proxy.log.level | default "info" | quote }}
+      format: {{ .Values.s3_proxy.log.format | default "text" | quote }}
+
+    server:
+      listenAddr: ""
+      port: 8080
+      compress:
+        enabled: true
+
+    internalServer:
+      listenAddr: ""
+      port: 9090
+
+    targets:
+      repo:
+        mount:
+          path:
+            - /
+        actions:
+          GET:
+            enabled: true
+            config:
+              redirectToSignedUrl: true
+              signedUrlExpiration: {{ .Values.s3_proxy.signed_url_expiration | default "15m" | quote }}
+        bucket:
+          name: {{ .Values.s3_proxy.bucket.name | required ".Values.s3_proxy.bucket.name is missing" | quote }}
+          region: {{ .Values.s3_proxy.bucket.region | default "us-east-1" | quote }} # placeholder; Ceph/RadosGW ignores this
+          s3Endpoint: {{ .Values.s3_proxy.bucket.s3Endpoint | required ".Values.s3_proxy.bucket.s3Endpoint is missing" | quote }}
+          disableSSL: false
+          s3ForcePathStyle: true # required for non-AWS endpoints
+          credentials:
+            accessKey:
+              env: AWS_ACCESS_KEY_ID
+            secretKey:
+              env: AWS_SECRET_ACCESS_KEY
