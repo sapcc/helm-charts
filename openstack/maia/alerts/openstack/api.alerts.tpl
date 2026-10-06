@@ -14,7 +14,7 @@ groups:
       support_group: observability
       tier: os
       meta: 'Maia exporters lagging'
-      playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaExportersLag.md'
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
     annotations:
       description: "Maia exporter {{`{{ $labels.component }}`}} is predicted to break the 60s limit for data collection 7 days from now."
       summary: Maia exporters lagging
@@ -33,7 +33,7 @@ groups:
       support_group: observability
       meta: 'Maia API lags'
       no_alert_on_absence: "true"
-      playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaResponsiveness.md'
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
     annotations:
       description: Maia API does not fulfill the responsiveness goals (99% responses within 3 seconds)
       summary: Maia API lags
@@ -51,7 +51,7 @@ groups:
       tier: os
       support_group: observability
       meta: 'Maia availability affected by Prometheus issues'
-      playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaPrometheusAvail.md'
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
     annotations:
       description: Maia API is affected by errors when accessing the underlying Prometheus installation
       summary: Maia availability affected by Prometheus issues
@@ -69,7 +69,7 @@ groups:
       tier: os
       support_group: observability
       meta: 'Maia availability affected by Keystone issues'
-      playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaKeystoneAvail.md'
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
     annotations:
       description: Maia API is affected by errors when accessing Keystone
       summary: Maia availability affected by Keystone issues
@@ -87,7 +87,7 @@ groups:
       tier: os
       support_group: observability
       meta: "Maia Is not available"
-      playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaUp.md'
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
     annotations:
       description: Maia monitoring endpoint is down => Maia is down
       summary: Maia is not available
@@ -105,7 +105,7 @@ groups:
       tier: os
       support_group: observability
       meta: "High Maia authentication failure rate"
-      playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaHighAuthFailureRate.md'
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
     annotations:
       description: "Maia is seeing {{`{{ $value | humanize }}`}} failed authentication attempts/s (threshold: 5/s) sustained for 15 minutes. This may indicate brute-force attempts, a broken automation, or a credential rotation issue."
       summary: High rate of Maia authentication failures
@@ -123,7 +123,7 @@ groups:
       tier: os
       support_group: observability
       meta: "High number of concurrent Maia requests"
-      playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaHighInflightRequests.md'
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
     annotations:
       description: "Maia has {{`{{ $value }}`}} requests in-flight (threshold: 100) for 5 minutes. CPU/memory pressure may be elevated; check for runaway automation or long-running query loops."
       summary: High number of concurrent requests in Maia

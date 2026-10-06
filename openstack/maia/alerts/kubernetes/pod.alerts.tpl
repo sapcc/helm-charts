@@ -16,7 +16,7 @@ groups:
           dashboard: maia-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
-          playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaPodCPUThrottling.md'
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Container is constantly CPU-throttled
           description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is being CPU-throttled constantly. This is probably impacting performance, so check if we can increase the number of replicas or the resource requests/limits."
@@ -34,7 +34,7 @@ groups:
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
-          playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaPodSchedulingInsufficientMemory.md'
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Scheduling failed due to insufficient memory
           description: "The pod {{`{{ $labels.pod_name }}`}} failed to be scheduled. Insufficient memory!"
@@ -52,7 +52,7 @@ groups:
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
-          playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaPodOOMKilled.md'
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Pod was oomkilled
           description: "The pod {{`{{ $labels.pod_name }}`}} was oomkilled recently"
@@ -70,7 +70,7 @@ groups:
           dashboard: maia-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
-          playbook: 'https://github.com/sapcc/helm-charts/blob/master/openstack/maia/playbooks/OpenstackMaiaPodOOMExceedingLimits.md'
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Exceeding memory limits in 8h
           description: "The pod {{`{{ $labels.pod_name }}`}} will exceed its memory limit in 8h."
