@@ -1,0 +1,42 @@
+# Default values for jitterentropy-rngd.
+# This is a YAML-formatted file.
+
+owner-info:
+  support-group: identity
+  service: jitterentropy-rngd
+  maintainers:
+    - Boris Bobrov
+    - Rajiv Mucheli
+    - Fabian Ruff
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/jitterentropy-rngd
+
+images:
+  jitterentropy_rngd:
+    image: keppel.global.cloud.sap/ccloud/jitterentropy-rngd
+    tag: "1.2.9"
+
+# Arguments passed to the jitterentropy-rngd binary.
+#   --foreground : stay in the foreground (mandatory inside a container,
+#                  otherwise the daemon detaches and the container exits)
+#   --syslog     : send log messages to stderr so kubectl logs can see them
+#   --verbose    : more detailed logging
+args:
+  - --foreground
+  - --syslog
+  - --verbose
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 64Mi
+  requests:
+    cpu: 50m
+    memory: 32Mi
+
+nodeSelector: {}
+
+# Run on every node, including tainted (e.g. control-plane) nodes.
+tolerations:
+  - operator: Exists
+
+affinity: {}
