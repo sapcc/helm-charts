@@ -31,7 +31,7 @@ spec:
         {{- if .Values.image_refs.statsd_exporter }}
         image: {{ quote .Values.image_refs.statsd_exporter }}
         {{- else }}
-        image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/prom/statsd-exporter:{{ .Values.statsd.exporter_image_version }}
+        image: {{ include "shared-app-images.ref" (tuple $ "statsd-exporter" "latest") }}
         {{- end }}
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         securityContext:
