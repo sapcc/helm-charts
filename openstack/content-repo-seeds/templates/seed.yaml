@@ -1,3 +1,6 @@
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
 metadata:
@@ -14,7 +17,7 @@ spec:
       users:
         - name: content-repo
           description: Content Repo Service
-          password: '{{ .Values.content_repo.service_password | required ".Values.content_repo.service_password is missing" }}'
+          password: '{{ printf "%s/%s/content-repo/keystone-user/content-repo/password" $vbase $region | quote }}'
       projects:
         - name: content-repo-payloads
           role_assignments:
