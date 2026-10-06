@@ -17,6 +17,21 @@ OIDCPKCEMethod "S256"
 OIDCCryptoPassphrase "{{ .Values.federation.oidc.crypto_passphrase | include "resolve_secret_urlquery" }}"
 OIDCAuthRequestParams idp=#
 
+# Shared, unauthenticated memcached cache so any keystone-api replica can
+# validate the auth state/nonce and read the server-side session, removing the
+# intrinsic need for ingress session affinity. Mirrors the SAML SP's
+# StorageService type="MEMCACHE" approach.
+# Cache entry values are encrypted (OIDCCacheEncrypt defaults On for non-shm
+# backends) with OIDCCryptoPassphrase above; the connection itself is
+# unauthenticated and in cleartext (memcached runs without SASL/TLS).
+OIDCCacheType memcache
+# Short ".svc" form is deliberate and portable: the FQDN
+# svc.kubernetes.<region>.<tld> does not resolve in clusters using
+# cluster.local. This matches keystone-saml-federation's memcached_host().
+OIDCMemCacheServers "{{ .Release.Name }}-memcached.{{ .Release.Namespace }}.svc:{{ .Values.memcached.port | default 11211 }}"
+# Namespace OIDC entries in the shared memcached, mirroring Shibboleth's shib_.
+OIDCCacheKeyPrefix "oidc_"
+
 # vanity URL that must point to a protected path that does not have any content, such as an extension of the protected federated auth path.
 # you should use it as a redirect_uri in the IDP
 OIDCRedirectURI "https://{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}/v3/auth/OS-FEDERATION/websso/openid"
