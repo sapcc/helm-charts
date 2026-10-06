@@ -242,10 +242,15 @@ build-boot-operator-remote:
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
+build-metal-maintenance-operator:
+	@helm dep up metal-maintenance-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator/Chart.yaml
+
 build-metal-maintenance-operator-remote:
 	@helm dep up metal-maintenance-operator-remote
 	@helm template metal-maintenance-operator \
 		metal-maintenance-operator-remote/charts/metal-maintenance-operator*.tgz \
+		--include-crds \
 		-n kube-system \
 		-f metal-maintenance-operator-remote/values-managed-resources.yaml | \
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
