@@ -1,0 +1,21 @@
+{{- if eq .Values.agent.workload.kind "Job" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # A Job's pod template is immutable, so a fixed name cannot be relaunched by
+  # `helm upgrade`. Suffixing with the release revision gives each upgrade a
+  # fresh Job; pair with ttlSecondsAfterFinished to garbage-collect old ones.
+  name: {{ .Values.agent.name }}-{{ .Release.Revision }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.agent.name }}
+spec:
+  backoffLimit: {{ .Values.agent.workload.backoffLimit }}
+  {{- with .Values.agent.workload.ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ . }}
+  {{- end }}
+  template:
+    metadata:
+      {{- include "agent-sandbox.podMeta" . | nindent 6 }}
+    spec:
+      {{- tuple .Values.agent.workload.kind $ | include "agent-sandbox.podSpec" | nindent 6 }}
+{{- end }}
