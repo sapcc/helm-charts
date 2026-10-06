@@ -34,10 +34,37 @@ groups:
         expr: |
             netapp_snapmirror_capacity_total_bytes:single * on(volume) group_left() netapp_snapmirror_capacity_count
 
-      - record: netapp_snapmirror_capacity_total_bytes_for_limes
+      - record: netapp_snapmirror_capacity_total_bytes:backup_for_limes
         expr: |
             max by (availability_zone, project_id, share_id, share_type) (
                 last_over_time(netapp_snapmirror_capacity_total_bytes[15m]))
+
+      # SMAS-NAS (automated_failover) replicates the whole vserver, so there are no
+      # per-volume snapmirror relationships to count. Every manila volume on such an
+      # SVM is replicated exactly once, hence the plain capacity of the source volume.
+      # 'and on (svm)' is a pure membership filter: it keeps the volume capacity value
+      # untouched instead of scaling it by the snapmirror label value.
+      - record: netapp_snapmirror_capacity_total_bytes:automated_failover
+        expr: |
+            netapp_volume_total_bytes:manila{project_id!="", share_type!="", volume_type!="dp"}
+            and on (svm) max by (svm) (label_replace(
+                netapp_snapmirror_labels{policy_type="automated_failover"},
+                "svm", "$1", "source_vserver", "(.*)"))
+
+      - record: netapp_snapmirror_capacity_total_bytes:automated_failover_for_limes
+        expr: |
+            max by (availability_zone, project_id, share_id, share_type) (
+                last_over_time(netapp_snapmirror_capacity_total_bytes:automated_failover[15m]))
+
+      # Both replication flavours are billed through this single rule, so the metric can
+      # never be emitted twice for the same share. Each source is already deduplicated to
+      # one series per share by its own 'max by' above, and the sum is what limes has to
+      # charge: should a volume ever be part of SMAS-NAS *and* of a backend backup
+      # snapmirror, both replicas occupy space and both have to be accounted for.
+      - record: netapp_snapmirror_capacity_total_bytes_for_limes
+        expr: |
+            sum by (availability_zone, project_id, share_id, share_type) (
+                {__name__=~"netapp_snapmirror_capacity_total_bytes:(backup|automated_failover)_for_limes"})
 
       - record: netapp_snapmirror_capacity_used_bytes:single
         expr: |
@@ -53,10 +80,28 @@ groups:
         expr: |
             netapp_snapmirror_capacity_used_bytes:single * on(volume) group_left() netapp_snapmirror_capacity_count
 
-      - record: netapp_snapmirror_capacity_used_bytes_for_limes
+      - record: netapp_snapmirror_capacity_used_bytes:backup_for_limes
         expr: |
             max by (availability_zone, project_id, share_id, share_type) (
                 last_over_time(netapp_snapmirror_capacity_used_bytes[15m]))
+
+      # Same SMAS-NAS (automated_failover) reasoning as for the total bytes above.
+      - record: netapp_snapmirror_capacity_used_bytes:automated_failover
+        expr: |
+            netapp_volume_used_bytes:manila{project_id!="", share_type!="", volume_type!="dp"}
+            and on (svm) max by (svm) (label_replace(
+                netapp_snapmirror_labels{policy_type="automated_failover"},
+                "svm", "$1", "source_vserver", "(.*)"))
+
+      - record: netapp_snapmirror_capacity_used_bytes:automated_failover_for_limes
+        expr: |
+            max by (availability_zone, project_id, share_id, share_type) (
+                last_over_time(netapp_snapmirror_capacity_used_bytes:automated_failover[15m]))
+
+      - record: netapp_snapmirror_capacity_used_bytes_for_limes
+        expr: |
+            sum by (availability_zone, project_id, share_id, share_type) (
+                {__name__=~"netapp_snapmirror_capacity_used_bytes:(backup|automated_failover)_for_limes"})
 
       - record: netapp_volume_used_bytes_for_limes
         expr: |
