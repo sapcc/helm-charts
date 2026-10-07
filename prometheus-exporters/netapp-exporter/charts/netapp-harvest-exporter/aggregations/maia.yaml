@@ -151,6 +151,33 @@ groups:
         on (filer, svm, volume) group_left(share_id, project_id) netapp_volume_labels:manila
         ) by (share_id, project_id)
 
+    # Maia metric: SnapMirror Active Sync (SMAS / automated_failover) per-volume replication state.
+    # SMAS mirrors are SVM-level (source_volume=""), so the cross-AZ netapp_snapmirror_*:maia
+    # pipeline never matches them. The join here is single-AZ (source volume and the source SVM's
+    # SMAS relationship both live on the source filer), so it stays in maia.yaml rather than
+    # thanos-regional. One series per volume, only for volumes whose source vserver participates
+    # in an automated_failover relationship — non-SMAS volumes are excluded by the inner join.
+    #   smas_state   — relationship_state (in_sync / out_of_sync)
+    #   smas_healthy — healthy (true / false)
+    - record: netapp_volume_smas_labels:maia
+      expr: |
+        avg by (
+          host, vserver, volume, volume_type, share_name, share_id, share_type,
+          project_id, availability_zone, destination_vserver, smas_state, smas_healthy
+        ) (
+          label_replace(label_replace(label_replace(
+            netapp_volume_labels:manila{project_id!="", share_type!="", volume_type!="dp"}
+              * on (svm) group_left(relationship_state, healthy, destination_vserver)
+              max by (svm, relationship_state, healthy, destination_vserver) (
+                label_replace(
+                  netapp_snapmirror_labels{policy_type="automated_failover"},
+                  "svm", "$1", "source_vserver", "(.*)")
+              ),
+            "vserver", "$1", "svm", "(.*)"),
+            "smas_state", "$1", "relationship_state", "(.*)"),
+            "smas_healthy", "$1", "healthy", "(.*)")
+        )
+
     #
     # nfs connection metrics
     #
