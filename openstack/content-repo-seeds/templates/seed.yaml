@@ -18,6 +18,13 @@ spec:
         - name: content-repo
           description: Content Repo Service
           password: {{ printf "%s/%s/content-repo/keystone-user/content-repo/password" $vbase $region | quote }}
+        # migrated from swift-utils
+        - name: repo
+          description: Repo Service User
+          password: {{ printf "%s/%s/content-repo/keystone-user/repo/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role: service
       projects:
         - name: content-repo-payloads
           role_assignments:
@@ -29,3 +36,12 @@ spec:
               role: objectstore_viewer # to allow inspection by cloud admins into this project's Ceph account
             - group: CCADMIN_CLOUD_ADMINS@ccadmin
               role: objectstore_admin  # TODO: remove once <https://github.com/cobaltcore-dev/cloud-storage/issues/468> is resolved and the above role assignment can be used instead
+
+    - name: ccadmin
+      projects:
+        - name: master
+          role_assignments:
+            - user: repo@Default
+              role: objectstore_admin  # required for repo sync
+            - user: content-repo@Default
+              role: objectstore_viewer
