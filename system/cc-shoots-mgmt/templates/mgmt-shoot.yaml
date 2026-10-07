@@ -33,7 +33,9 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
-      {{- if $.Values.networking.overlay }}
+      {{- if $cluster.networking.vethMTU }}
+      vethMTU: {{ $cluster.networking.vethMTU | quote }}
+      {{- else if $.Values.networking.overlay }}
       vethMTU: "8930"
       {{- else }}
       vethMTU: "8950"

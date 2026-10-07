@@ -241,3 +241,22 @@ groups:
     annotations:
       description: "OIDC authentication through OpenStack API for {{`{{ $labels.service }}`}} is failing. CLI and SDK users cannot authenticate using OIDC tokens and automated workflows are broken."
       summary: "OIDC authentication using OpenStack api failed"
+
+  - alert: SAMLSignatureValidationFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLSignatureValidation_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML signature validation failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML signature validation test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Either mod_shib is accepting invalid/unsigned SAML assertions (SF.Fas.1/2 not enforced), or the valid SSO flow is broken."
+      summary: "SAML signature validation failing"
