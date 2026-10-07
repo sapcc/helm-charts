@@ -60,8 +60,8 @@ service_provider = VPN:cisco_ipsec:asr1k_neutron_l3.neutron.services.service_dri
 {{- end }}
 
 [oslo_policy]
-enforce_scope = False
-enforce_new_defaults = False
+enforce_scope = {{ .Values.oslo_policy.enforce_scope }}
+enforce_new_defaults = {{ .Values.oslo_policy.enforce_new_defaults }}
 
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
