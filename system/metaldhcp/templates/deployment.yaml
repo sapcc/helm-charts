@@ -22,6 +22,7 @@ spec:
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      serviceAccountName: metaldhcp
       hostNetwork: true
       affinity:
         nodeAffinity:
@@ -51,25 +52,30 @@ spec:
         - containerPort: 67
           name: dhcp
           protocol: UDP
+        - containerPort: 8080
+          name: health
+          protocol: TCP
         livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - ss -lun | grep :67
-          initialDelaySeconds: 10
-          periodSeconds: 30
-          failureThreshold: 5
-        readinessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - ss -lun | grep :67
+          httpGet:
+            path: /healthz
+            port: health
           initialDelaySeconds: 5
           periodSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 5
           failureThreshold: 3
-        resources: {}
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
         securityContext:
           runAsUser: 0
           allowPrivilegeEscalation: true
