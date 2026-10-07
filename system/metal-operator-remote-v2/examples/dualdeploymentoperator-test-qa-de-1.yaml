@@ -1,0 +1,175 @@
+# DualDeploymentOperator CR for test-qa-de-1 — throwaway test shoot
+#
+# APPLY:
+#   u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 apply -f dualdeploymentoperator-test-qa-de-1.yaml
+#
+# WATCH:
+#   u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 get dualdeploymentoperator -w
+#   u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 logs -f deploy/dual-deployment-operator-controller-manager
+#
+# TEARDOWN (order matters — delete CR first, then the shoot):
+#   u8s kubectl --context rt-qa-de-1 -n shoot--cp--test-qa-de-1 delete dualdeploymentoperator metal-operator-remote-v2
+#
+# PREREQUISITES:
+#   1. dual-deployment-operator installed on rt-qa-de-1 (TEST-PLAN.md step 2).
+#   2. metal-operator-remote-v2 chart pushed to keppel (TEST-PLAN.md step 1):
+#        helm push metal-operator-remote-v2-0.1.0.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+#   3. spec.source.helm.version below must match the pushed chart version.
+#   4. dual-deployment-operator on feature/deployment-chart-helm includes patch
+#      render-scoping (>= c37a676): the label `patch` transform silently no-ops on
+#      the seed render; on an older operator it would fail with SeedTransformFailed.
+#   5. shootAccess.secretName (dual-deployment-operator-shoot-access) is provisioned
+#      by the dual-deployment-operator install chart (shootRbac.enabled), not by this
+#      chart. Because the shoot creds are now install-chart-provisioned (independent of
+#      either render), applyOrder: ShootFirst no longer deadlocks — the old bootstrap
+#      reason for forcing SeedFirst is gone. ShootFirst is the operator CRD default and
+#      is validated end-to-end here; SeedFirst remains available for stricter
+#      seed-before-shoot ordering if a workload needs it.
+#
+# SHOOT ACCESS (u8s does not know test-qa-de-1 — not registry-enrolled):
+#   printf '%s' '{"apiVersion":"authentication.gardener.cloud/v1alpha1","kind":"AdminKubeconfigRequest","spec":{"expirationSeconds":3600}}' \
+#     | u8s kubectl --context g-qa-de-1 create -f - \
+#       --raw /apis/core.gardener.cloud/v1beta1/namespaces/garden/shoots/test-qa-de-1/adminkubeconfig \
+#     | yq -r '.status.kubeconfig' | base64 -d > test-qa-de-1.kubeconfig
+#   kubectl --kubeconfig test-qa-de-1.kubeconfig get ns
+apiVersion: dual-deployment-operator.cc.sap/v1alpha1
+kind: DualDeploymentOperator
+metadata:
+  name: metal-operator-remote-v2
+  namespace: shoot--cp--test-qa-de-1
+spec:
+  applyOrder: ShootFirst
+
+  shootNamespace: kube-system
+
+  shootAccess:
+    secretName: dual-deployment-operator-shoot-access
+    server: https://api.test-qa-de-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap
+
+  source:
+    helm:
+      repo: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+      name: metal-operator-remote-v2
+      version: 0.1.0   # <-- set to the version pushed in step 1
+
+      values:
+        global:
+          region: qa-de-1
+          clusterType: metal
+          tld: internal
+          linkerd_enabled: false
+          linkerd_requested: false
+
+        controllerManager:
+          manager:
+            # The seed CP namespace has NO egress to ghcr.io (deny-all + label-gated
+            # allow policies reach keppel only). Pull the controller image from the
+            # keppel ghcr mirror — same prefix as the --probe-image args below. The
+            # upstream chart default is ghcr.io/... which ImagePullBackOffs on the seed.
+            image:
+              repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-operator-controller-manager
+              tag: sha-23966a7
+            env:
+              KUBERNETES_SERVICE_HOST: api.test-qa-de-1.cp.external.rt-qa-de-1.soil-garden.qa-de-1.cloud.sap
+              KUBERNETES_CLUSTER_DOMAIN: cluster.local
+              KUBECONFIG: /var/run/remote-kubeconfig/kubeconfig
+            args:
+              - --mac-prefixes-file=/etc/macdb/macdb.yaml
+              - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.6.0
+              - --probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux-sci:2150.6.0-baremetal-capi-amd64-2150-6-0-297ce257
+              - --manager-namespace=metal-servers
+              - --dns-record-template-path=/etc/metal-operator/dns/bmc_dns.yaml
+              - --insecure=false
+              - --registry-url=https://metal-operator-remote.runtime.qa-de-1.cloud.sap
+              - --enforce-first-boot
+              - --enforce-power-off
+
+        dnsRecordTemplate:
+          enabled: true
+          zone: cc.qa-de-1.cloud.sap
+
+        virtualGardenLBIP: 10.245.234.16
+
+        macdb:
+          macPrefixes:
+            - macPrefix: c4cbe1b1
+              manufacturer: Dell
+              protocol: Redfish
+              port: 443
+              type: bmc
+              defaultCredentials:
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
+            - macPrefix: d08e79
+              manufacturer: Dell
+              protocol: Redfish
+              port: 443
+              type: bmc
+              defaultCredentials:
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
+            - macPrefix: 0894ef
+              manufacturer: Lenovo
+              protocol: Redfish
+              port: 443
+              type: bmc
+              defaultCredentials:
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
+            - macPrefix: 5ced8c
+              manufacturer: HPE
+              protocol: Redfish
+              port: 443
+              type: bmc
+              defaultCredentials:
+                - username: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/username" }}'
+                  password: '{{ resolve "vault+kvv2:///secrets/qa-de-1/ironic/ipmi-user/ironic/password" }}'
+
+      seedValues:
+        metal-operator-core:
+          controllerManager:
+            enable: false
+          crd:
+            enable: false
+          rbac:
+            enable: false
+          webhook:
+            enable: false
+          certmanager:
+            enable: false
+          networkPolicy:
+            enable: false
+          metrics:
+            enable: false
+          prometheus:
+            enable: false
+
+      shootValues:
+        metal-operator-core:
+          controllerManager:
+            enable: false
+          crd:
+            enable: true
+          rbac:
+            enable: true
+          webhook:
+            enable: true
+          certmanager:
+            enable: false
+          networkPolicy:
+            enable: false
+          metrics:
+            enable: false
+          prometheus:
+            enable: false
+
+  transformations:
+    - rewriteWebhookURL:
+        urlPrefix: https://metal-operator-remote-webhook-service:443
+    - patch:
+        target:
+          kind: ValidatingWebhookConfiguration
+        strategicMerge:
+          metadata:
+            labels:
+              dual-deployment-operator.cc.sap/webhook-injector: metal-operator

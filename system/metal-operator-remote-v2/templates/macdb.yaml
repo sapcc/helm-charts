@@ -1,0 +1,18 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: macdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+    # macdb BMC credentials must stay as vault+kvv2:// references.
+    # secrets-injector resolves them in-cluster on the seed.
+    # Do NOT add cloud.sap/inject-secrets:"false" — no opt-out needed.
+type: Opaque
+stringData:
+  macdb.yaml: |
+{{ toYaml .Values.macdb | indent 4 }}
+{{- end }}

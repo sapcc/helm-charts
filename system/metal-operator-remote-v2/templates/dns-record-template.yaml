@@ -1,0 +1,26 @@
+{{- if and (eq .Values.mode "seed") .Values.dnsRecordTemplate.enabled }}
+{{- if .Values.dnsRecordTemplate.zone }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dns-record-template
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+data:
+  bmc_dns.yaml: |
+    apiVersion: disco.stable.sap.cc/v1
+    kind: Record
+    metadata:
+      name: {{ "{{ .Hostname }}" }}
+      namespace: {{ "{{ .Namespace }}" }}
+    spec:
+      type: A
+      record: {{ "{{ .IP }}" }}
+      zoneName: {{ .Values.dnsRecordTemplate.zone }}
+      hosts:
+        - {{ "{{ .Hostname }}" }}
+{{- end }}
+{{- end }}
