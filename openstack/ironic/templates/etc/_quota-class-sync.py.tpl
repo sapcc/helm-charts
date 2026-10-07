@@ -1,34 +1,25 @@
-import os, sys, json, subprocess
+import sys
+import openstack
+import openstack.exceptions
 
-def openstack(args):
-    result = subprocess.run(["openstack"] + args + ["-f", "json"], capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"ERROR: {result.stderr}", file=sys.stderr)
-        sys.exit(1)
-    return json.loads(result.stdout)
+try:
+    conn = openstack.connect(timeout=60)
 
-nodes = openstack(["baremetal", "node", "list", "--fields", "resource_class", "--limit", "0"])
-resource_classes = {
-    n.get("Resource Class") or n.get("resource_class")
-    for n in nodes
-    if (n.get("Resource Class") or n.get("resource_class"))
-    and not (n.get("Resource Class") or n.get("resource_class", "")).startswith(("tempest-Resource_Class-", "ResClass-"))
-}
-print(f"Resource classes: {sorted(resource_classes)}")
+    nodes = list(conn.baremetal.nodes(fields=["resource_class"]))
+    resource_classes = {
+        n["resource_class"]
+        for n in nodes
+        if n.get("resource_class")
+        and not n["resource_class"].startswith(("tempest-Resource_Class-", "ResClass-"))
+    }
+    print(f"Resource classes: {sorted(resource_classes)}")
 
-token = subprocess.run(["openstack", "token", "issue", "-f", "value", "-c", "id"],
-                       capture_output=True, text=True).stdout.strip()
-nova_url = subprocess.run(["openstack", "endpoint", "list", "--service", "compute",
-                            "--interface", "public", "-f", "value", "-c", "URL"],
-                           capture_output=True, text=True).stdout.strip().rstrip("/")
-
-import urllib.request
-quotas = {"quota_class_set": {f"instances_{r}": 0 for r in resource_classes}}
-req = urllib.request.Request(
-    f"{nova_url}/os-quota-class-sets/flavors",
-    data=json.dumps(quotas).encode(),
-    headers={"X-Auth-Token": token, "Content-Type": "application/json"},
-    method="POST",
-)
-with urllib.request.urlopen(req) as resp:
-    print(f"Response: {resp.status}")
+    quotas = {"quota_class_set": {f"instances_{r}": 0 for r in resource_classes}}
+    resp = conn.compute.post(
+        "/os-quota-class-sets/flavors",
+        json=quotas,
+    )
+    print(f"Response: {resp.status_code}")
+except openstack.exceptions.SDKException as e:
+    print(f"ERROR: {e}", file=sys.stderr)
+    sys.exit(1)
