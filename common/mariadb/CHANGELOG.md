@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.44.0 - 2026/10/01
+* truncate the active slow-query log during the run once it exceeds `slow_query_log.rotation.max_size_mb` (default 1024), checked every `interval_seconds` (default 300) by a `slow-log-rotator` sidecar; `keep_previous` (default true) retains one `*.1` copy
+* the rotator runs as a native sidecar when `global.mariadb.native_sidecar.enabled`, otherwise as a regular sidecar container
+* chart version bumped
+
 ## v0.43.0 - 2026/09/24
 * prune slow-query logs older than `slow_query_log.cleanup.max_age_days` (default 14) on pod init
 * optionally write the slow query log to a dedicated PVC (`slow_query_log.persistence`); it is written per-pod as `<dir>/<pod>-slow.log` so `cleanup` prunes it across restarts, and the PVC auto-provisions as `<release>-mariadb-logs` by default

@@ -98,6 +98,10 @@ spec:
             value: "10"
           - name: audit-log-maxsize
             value: "100"
+          {{- range default (list) $cluster.apiServerExtraArgs }}
+          - name: {{ .name }}
+            value: {{ .value | quote }}
+          {{- end }}
         extraVolumes:
           - name: "authentication-config"
             hostPath: "/etc/kubernetes/authentication.yaml"

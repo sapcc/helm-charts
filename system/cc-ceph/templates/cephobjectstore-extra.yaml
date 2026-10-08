@@ -37,6 +37,20 @@ spec:
         dataPoolName: {{ $target.name }}.rgw.buckets.data
         dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
         default: {{ $target.default | default false }}
+        {{- if $target.storageClass }}
+        storageClasses:
+          - name: {{ $target.storageClass.name }}
+            dataPoolName: {{ $target.storageClass.dataPoolName }}
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- if  .Values.rgwTargetPlacements.economyPlacements }}
+{{- range $target := .Values.rgwTargetPlacements.economyPlacements }}
+      - name: {{ $target.name }}
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
 {{- end }}
 {{- end }}
 {{- if .Values.rgwTargetPlacements.placements }}

@@ -1,17 +1,27 @@
 {{- if .Values.podMonitor.enabled }}
+{{- range $az := .Values.global.availability_zones }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: {{ printf "%s-harvest-pod-monitor" .Release.Name | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-harvest-pod-monitor-%s" $.Release.Name $az | trunc 63 | trimSuffix "-" }}
   labels:
-    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+    prometheus: {{ printf "storage-metrics-product-%s" $az }}
 spec:
   namespaceSelector:
     matchNames:
-      - {{ .Release.Namespace }}
+      - {{ $.Release.Namespace }}
   selector:
     matchLabels:
       component: harvest-worker
+      # pod label set by netappsd (sapcc/netappsd#14)
+      availability-zone: {{ $az }}
   podMetricsEndpoints:
     - port: metrics
+      relabelings:
+        # PodMonitor does not copy pod labels onto metrics by default;
+        # map them so queries can filter e.g. by app (sapcc/helm-charts#12884).
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+{{- end }}
 {{- end }}

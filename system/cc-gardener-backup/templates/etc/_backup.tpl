@@ -274,14 +274,10 @@ echo "All required environment variables are set."
 # Kubernetes and OpenStack Authentication
 #===================================================================================================
 
-# kubectl uses the pod's ServiceAccount token automatically via in-cluster config.
 kubectl cluster-info || {
     echo "ERROR: Failed to connect to Kubernetes cluster"
     exit 1
 }
-
-## Set value to not bloat logs with kubectl version info
-export SKIP_VERSION_BANNERS=true
 
 echo "Using injected OpenStack application credentials for Swift access in region ${BACKUP_REGION}"
 
