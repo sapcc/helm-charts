@@ -24,7 +24,8 @@ spec:
           restartPolicy: Never
           containers:
           - name: backup
-            image: {{ include "shared-app-images.ref" (tuple . "alpine-kubectl-tools" "latest") }}
+            {{- $tags := include "cc-gardener-backup.tags_json" . | fromJson }}
+            image: "{{ required ".Values.global.registry is required" .Values.global.registry }}/shared-app-images/alpine-kubectl-tools:{{ index $tags "alpine-kubectl-tools" "latest" }}"
             imagePullPolicy: Always
             command:
               - /scripts/backup-garden-cluster.sh
