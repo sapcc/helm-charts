@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-onboarding-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metal-onboarding-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metal-onboarding-operator
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: metal-onboarding-operator
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: metal-onboarding-operator
+      containers:
+      - name: manager
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: IfNotPresent
+        args:
+        - --netbox-url={{ .Values.config.netboxURL }}
+        - --netbox-token-file=/var/run/secrets/netbox/{{ .Values.netbox.tokenSecret.key }}
+        {{- if .Values.config.dhcpLeaseNamespace }}
+        - --dhcp-lease-namespace={{ .Values.config.dhcpLeaseNamespace }}
+        {{- end }}
+        {{- if .Values.config.clusterName }}
+        - --cluster-name={{ .Values.config.clusterName }}
+        {{- end }}
+        - --leader-elect={{ .Values.config.leaderElect }}
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: netbox-token
+          mountPath: /var/run/secrets/netbox
+          readOnly: true
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: netbox-token
+        secret:
+          secretName: {{ .Values.netbox.tokenSecret.name }}
+          items:
+          - key: {{ .Values.netbox.tokenSecret.key }}
+            path: {{ .Values.netbox.tokenSecret.key }}
+      terminationGracePeriodSeconds: 10
