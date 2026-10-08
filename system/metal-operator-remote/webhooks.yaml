@@ -9,10 +9,46 @@ metadata:
     app.kubernetes.io/instance: validating-webhook-configuration
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: validatingwebhookconfiguration
-    helm.sh/chart: metal-operator-0.8.0-crds
+    helm.sh/chart: metal-operator-0.7.1-crds
     app.kubernetes.io/part-of: metal-operator
   name: metal-operator-validating-webhook-configuration
 webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      url: https://metal-operator-remote-webhook-service:443/validate-metal-ironcore-dev-v1alpha1-biossettings
+    failurePolicy: Fail
+    name: vbiossettings-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - metal.ironcore.dev
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - biossettings
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      url: https://metal-operator-remote-webhook-service:443/validate-metal-ironcore-dev-v1alpha1-biosversion
+    failurePolicy: Fail
+    name: vbiosversion-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - metal.ironcore.dev
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - biosversions
+    sideEffects: None
   - admissionReviewVersions:
       - v1
     clientConfig:
@@ -30,6 +66,42 @@ webhooks:
           - DELETE
         resources:
           - bmcsecrets
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      url: https://metal-operator-remote-webhook-service:443/validate-metal-ironcore-dev-v1alpha1-bmcsettings
+    failurePolicy: Fail
+    name: vbmcsettings-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - metal.ironcore.dev
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - bmcsettings
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      url: https://metal-operator-remote-webhook-service:443/validate-metal-ironcore-dev-v1alpha1-bmcversion
+    failurePolicy: Fail
+    name: vbmcversion-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - metal.ironcore.dev
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - bmcversions
     sideEffects: None
   - admissionReviewVersions:
       - v1
