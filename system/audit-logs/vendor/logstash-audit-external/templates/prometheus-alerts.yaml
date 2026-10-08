@@ -1,0 +1,15 @@
+{{- if .Values.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: logstash-audit-external
+  labels:
+    app: logstash-audit-external
+    tier: kubernetes
+    type: alerting-rules
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+
+spec:
+{{ .Files.Get "alerts/kube-audit.alerts" | indent 2 }}
+{{- end }}

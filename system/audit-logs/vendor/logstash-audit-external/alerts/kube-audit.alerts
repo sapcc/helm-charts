@@ -1,0 +1,14 @@
+groups:
+- name: kube-audit-credentials.alerts
+  rules:
+  - alert: KubeAuditCredentialBodyRemoved
+    expr: sum(increase(logstash_node_plugin_events_out_total{plugin_id="audit_credential_body_removed"}[30m])) > 0
+    labels:
+      context: audit-policy
+      service: kube-audit
+      severity: warning
+      support_group: containers
+      tier: k8s
+    annotations:
+      summary: A Gardener API server audit policy logs credential bodies
+      description: 'logstash-audit-external removed credential-bearing request or response bodies from {{ $value | humanize }} Gardener audit events in the last 30 minutes, so an audit policy logs Secret, token or kubeconfig bodies. Find the events with `sap.cc.audit.credential_body_removed: true` in the audit index and fix that cluster''s audit policy. Where each policy lives: https://operations.global.cloud.sap/docs/container/kubernetes/infrastructure-gardener/operations/maintenance/audit-policy-locations/'

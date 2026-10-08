@@ -158,8 +158,26 @@
   remove_keys _admission_patch,_admission_patch_removed,_credential_body
   <record>
     _admission_patch ${ annotations = record["annotations"]; if annotations.is_a?(Hash); count = annotations.length; annotations.delete_if { |key, _| key.start_with?("patch.webhook.admission.k8s.io/") }; record["_admission_patch_removed"] = true if annotations.length < count; end; nil }
-    _credential_body ${ ref = record["objectRef"]; if ref.is_a?(Hash) && (["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"].include?(ref["resource"]) || ["token", "adminkubeconfig", "viewerkubeconfig"].include?(ref["subresource"])) && (record["requestObject"] || record["responseObject"] || record["_admission_patch_removed"]); record.delete("requestObject"); record.delete("responseObject"); record["sap.cc.audit.credential_body_removed"] = true; end; nil }
+    _credential_body ${ ref = record["objectRef"]; if ref.is_a?(Hash) && (["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"].include?(ref["resource"]) || ["token", "adminkubeconfig", "viewerkubeconfig"].include?(ref["subresource"])) && (record["requestObject"] || record["responseObject"] || record["_admission_patch_removed"]); record.delete("requestObject"); record.delete("responseObject"); record["sap.cc.audit.credential_body_removed"] = true; record["_credential_body_removed"] = 1; end; nil }
   </record>
+</filter>
+# Count the events whose credential bodies were removed, for the
+# KubeAuditCredentialBodyRemoved alert. Records without the helper key are not counted.
+<filter kubeapi.**>
+  @type prometheus
+  <metric>
+    name fluentd_audit_kubeapi_credential_body_removed_total
+    type counter
+    desc Kube-apiserver audit events whose credential-bearing bodies were removed before shipping
+    key _credential_body_removed
+    <labels>
+      cluster $['sap.cc.cluster']
+    </labels>
+  </metric>
+</filter>
+<filter kubeapi.**>
+  @type record_modifier
+  remove_keys _credential_body_removed
 </filter>
 # remove fields which cause parsing errors in elastic and are not audit relevant
 # requestObject is a list for JSON patches, so check each level is a map: digging into a

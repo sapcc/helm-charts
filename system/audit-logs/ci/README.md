@@ -5,9 +5,10 @@ python3 system/audit-logs/ci/test-audit-filters.py --fluentd-image <deployment-f
 ```
 
 Requires Docker, Helm and yq v4. The Fluentd image must include the
-`multi_format` parser and `record_modifier` filter used by the chart. The
-Logstash image defaults to `docker.elastic.co/logstash/logstash-oss:8.15.3`;
-override it with `--logstash-image` when validating an image upgrade.
+`multi_format` parser, `record_modifier` filter and Prometheus plugin used by the
+chart. The Logstash image defaults to `docker.elastic.co/logstash/logstash-oss:8.15.3`;
+override it with `--logstash-image` when validating an image upgrade. Alert rules are
+validated with `promtool` from `--prometheus-image` (default `prom/prometheus:v2.53.2`).
 
 The suite renders both subcharts and runs their Kubernetes audit filters in
 the real collector processes, with synthetic input and local stdout output.
@@ -15,6 +16,11 @@ Containers have no network access and mount only temporary test fixtures,
 read-only. It checks credential-bearing resources, issued tokens/kubeconfigs,
 JSON patches, multiple admission patch annotations, annotation-only events,
 boolean removal markers and preservation of ordinary bodies and audit metadata.
+It also checks that each collector counts the events whose credential bodies it
+removed, which the `KubeAuditCredentialBodyRemoved` alerts watch: Logstash through
+the `audit_credential_body_removed` step (`logstash_node_plugin_events_out_total`
+from the bundled exporter), Fluentd through
+`fluentd_audit_kubeapi_credential_body_removed_total`.
 
 These filters protect the Gardener events received by `logstash-audit-external`
 and the Kubernikus infrastructure container logs selected by
