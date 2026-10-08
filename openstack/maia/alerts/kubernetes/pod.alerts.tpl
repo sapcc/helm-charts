@@ -14,8 +14,9 @@ groups:
           severity: info
           context: cpu
           dashboard: maia-overview
-          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Container is constantly CPU-throttled
           description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is being CPU-throttled constantly. This is probably impacting performance, so check if we can increase the number of replicas or the resource requests/limits."
@@ -30,9 +31,10 @@ groups:
           service: maia
           context: memory
           dashboard: maia-overview
-          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Scheduling failed due to insufficient memory
           description: "The pod {{`{{ $labels.pod_name }}`}} failed to be scheduled. Insufficient memory!"
@@ -47,9 +49,10 @@ groups:
           severity: info
           context: memory
           dashboard: maia-overview
-          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Pod was oomkilled
           description: "The pod {{`{{ $labels.pod_name }}`}} was oomkilled recently"
@@ -65,8 +68,9 @@ groups:
           severity: info
           context: memory
           dashboard: maia-overview
-          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
+          playbook: 'docs/support/playbook/maia/alerts/maia-pod-resources'
         annotations:
           summary: Exceeding memory limits in 8h
           description: "The pod {{`{{ $labels.pod_name }}`}} will exceed its memory limit in 8h."
