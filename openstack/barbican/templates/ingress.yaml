@@ -1,3 +1,4 @@
+{{- if include "barbican.tls.ingressActive" . }}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -15,7 +16,9 @@ metadata:
   annotations:
   {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
+    {{- if not (include "barbican.tls.serving" .) }}
     disco: "true"
+    {{- end }}
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
   {{- if .Values.ingress.enableRequestSizeLimit }}
@@ -39,3 +42,4 @@ spec:
               name: barbican-api
               port:
                 number: {{.Values.api_port_internal}}
+{{- end }}
