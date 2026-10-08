@@ -39,5 +39,12 @@ spec:
         - configmaps
         provider:
           type: aescbc
+  {{- if $cluster.controlPlaneZones }}
+  controlPlane:
+    zones:
+    {{- range $cluster.controlPlaneZones }}
+      - {{ . }}
+    {{- end }}
+  {{- end }}
   seedName: {{ include "cc-shoots-workerless.seedName" (dict "clusterName" $clusterName "cluster" $cluster "regionName" $regionName "seedType" $.Values.cluster.seedType) }}
 {{- end }}
