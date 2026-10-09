@@ -87,12 +87,22 @@ spec:
           - name: ChrystokiConfigurationPath
             value: "/thales/safenet/lunaclient/config"
           {{- end }}
+          {{- /* The Utimaco PKCS#11 library reads only the plain CS_PKCS11_R3_CFG env var
+                 (suffixed variants are ignored). barbican-api is a single process loading one
+                 libcs_pkcs11_R3.so, so all enabled utimaco instances share ONE config file with
+                 multiple [HSMCluster] sections (slots); per-project routing to a slot is done via
+                 hsm_partition_configs.slot_id in the DB, not this env var. Derive the path from the
+                 sidecar-enabled instance that mounts the shared config volume into this container. */}}
+          {{- $utimacoCfg := "" }}
           {{- range $name, $inst := .Values.hsm.utimaco_instances }}
-          {{- if $inst.enabled }}
+          {{- if and $inst.enabled (ne $inst.sidecar false) (not $utimacoCfg) }}
           {{- $conf := index $.Values $name }}
-          - name: CS_PKCS11_R3_CFG_{{ $name | upper | replace "-" "_" }}
-            value: "{{ $conf.library_path | dir | dir }}/cs_pkcs11_R3.cfg"
+          {{- $utimacoCfg = printf "%s/cs_pkcs11_R3.cfg" ($conf.library_path | dir | dir) }}
           {{- end }}
+          {{- end }}
+          {{- if $utimacoCfg }}
+          - name: CS_PKCS11_R3_CFG
+            value: {{ $utimacoCfg | quote }}
           {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
