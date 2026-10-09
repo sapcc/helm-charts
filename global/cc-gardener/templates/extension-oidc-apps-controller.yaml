@@ -165,8 +165,40 @@ spec:
       podSelector:
         matchLabels:
           oidc-application-controller/component: pod
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: garden
+      podSelector:
+        matchLabels:
+          oidc-application-controller/component: pod
   policyTypes:
   - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: egress-oidc-apps-to-virtual-garden-kube-apiserver
+  namespace: garden
+  annotations:
+    description: Allows oidc-apps-controller controlled pods in the garden namespace (e.g. garden Plutono / Alertmanager) to reach the virtual garden kube-apiserver. The per-shoot-namespace egress policy below does not cover the garden namespace.
+spec:
+  podSelector:
+    matchLabels:
+      oidc-application-controller/component: pod
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: garden
+      podSelector:
+        matchLabels:
+          app: kubernetes
+          role: apiserver
 
 
 ---
