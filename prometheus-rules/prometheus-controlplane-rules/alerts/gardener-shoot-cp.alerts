@@ -1,0 +1,33 @@
+groups:
+- name: gardener-shoot-cp.alerts
+  rules:
+
+    - alert: ShootControlPlaneAZDrift
+      expr: |
+        count by (namespace, topology_zone) (
+          kube_pod_info{
+            namespace=~"shoot--.*",
+            pod=~"kube-apiserver-.*",
+            topology_zone!=""
+          }
+        ) > 0
+      for: 10m
+      labels:
+        tier: k8s
+        service: gardener
+        severity: warning
+        context: availability-zone
+        meta: "{{ $labels.namespace }} apiserver in zone {{ $labels.topology_zone }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/shoot_cp_az_drift"
+      annotations:
+        summary: "Shoot control plane is in unexpected availability zone"
+        description: >
+          Shoot {{ $labels.namespace }} has its kube-apiserver pod(s) in zone
+          {{ $labels.topology_zone }}. If this shoot has spec.controlPlane.zones set,
+          verify the zone matches. If not yet pinned, consider pinning via
+          spec.controlPlane.zones to prevent re-roll on namespace re-create.
+        runbook: >
+          Check: ukg --context mgmt-qa-de-1 -n {{ $labels.namespace }} get pods -l role=apiserver -o wide
+          Fix: set spec.controlPlane.zones in the shoot's source manifest (cc-shoots-workerless chart values).
+          See: https://github.wdf.sap.corp/cc/unified-kubernetes/issues/943
