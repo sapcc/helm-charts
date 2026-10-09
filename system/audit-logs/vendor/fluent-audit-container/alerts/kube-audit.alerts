@@ -1,0 +1,14 @@
+groups:
+- name: kube-audit-credentials.alerts
+  rules:
+  - alert: KubeAuditCredentialBodyRemoved
+    expr: sum by (cluster) (increase(fluentd_audit_kubeapi_credential_body_removed_total[30m])) > 0
+    labels:
+      context: audit-policy
+      service: kube-audit
+      severity: warning
+      support_group: containers
+      tier: k8s
+    annotations:
+      summary: A Kubernikus kluster's audit policy logs credential bodies
+      description: 'fluent-audit-container removed credential-bearing request or response bodies from {{ $value | humanize }} audit events of `{{ $labels.cluster }}` in the last 30 minutes, so its audit policy logs Secret, token or kubeconfig bodies. Find the events with `sap.cc.audit.credential_body_removed: true` and fix the kube-master audit policy. Where each policy lives: https://operations.global.cloud.sap/docs/container/kubernetes/infrastructure-gardener/operations/maintenance/audit-policy-locations/'
