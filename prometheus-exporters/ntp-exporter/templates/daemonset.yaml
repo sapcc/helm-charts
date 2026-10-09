@@ -31,10 +31,11 @@ spec:
           image: {{ required ".Values.global.ghcrIoMirror missing" .Values.global.ghcrIoMirror }}/sapcc/ntp_exporter:{{ .Chart.AppVersion }}
           args:
             - "-ntp.server={{ required ".Values.ntp.server missing" .Values.ntp.server }}"
+            # Above the high-drift threshold (default 10ms) the exporter measures
+            # repeatedly for this long and reports the median. Keep it below the
+            # Prometheus scrape timeout (25s), or every scrape of a drifting node
+            # times out and the target shows up as down instead of as clock drift.
             - "-ntp.measurement-duration=10s"
-            {{- if .Values.ntp.highDrift }}
-            - "-ntp.high-drift={{ .Values.ntp.highDrift }}"
-            {{- end }}
           ports:
             - name: metrics
               containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
