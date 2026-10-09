@@ -1,0 +1,31 @@
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: content-repo-seed
+
+spec:
+  requires:
+    - {{ .Values.global.keystoneNamespace }}/keystone-seed
+    - monsoon3/domain-default-seed
+    - monsoon3/domain-ccadmin-seed
+
+  domains:
+    - name: Default
+      users:
+        - name: content-repo
+          description: Content Repo Service
+          password: '{{ printf "%s/%s/content-repo/keystone-user/content-repo/password" $vbase $region | quote }}'
+      projects:
+        - name: content-repo-payloads
+          role_assignments:
+            - user: content-repo@Default
+              role: service            # to validate users' Keystone tokens
+            - user: content-repo@Default
+              role: objectstore_admin  # to read/write objects in this project's Ceph account
+            - group: CCADMIN_CLOUD_ADMINS@ccadmin
+              role: objectstore_viewer # to allow inspection by cloud admins into this project's Ceph account
+            - group: CCADMIN_CLOUD_ADMINS@ccadmin
+              role: objectstore_admin  # TODO: remove once <https://github.com/cobaltcore-dev/cloud-storage/issues/468> is resolved and the above role assignment can be used instead
