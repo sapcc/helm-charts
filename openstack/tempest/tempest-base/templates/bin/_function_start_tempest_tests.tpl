@@ -129,6 +129,9 @@ function start_tempest_tests {
   export OS_USERNAME="neutron-tempestadmin1"
   export OS_TENANT_NAME="neutron-tempest-admin1"
   export OS_PROJECT_NAME="neutron-tempest-admin1"
+  {{- if .Values.tempest_common.object_store_url }}
+  export OS_OBJECT_STORE_ENDPOINT_OVERRIDE="{{ .Values.tempest_common.object_store_url }}/AUTH_$(openstack token issue -f value -c project_id)"
+  {{- end }}
   export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
   cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log
   if [[ $SERVICE_NAME == "cinder-tempest-vmdk" ]]; then
