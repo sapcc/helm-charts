@@ -210,6 +210,7 @@ complex-role:
   hidden: false
   cluster_permissions:
   - "read"
+  - "cluster_monitor"
   - "cluster:monitor/nodes/stats"
   - "cluster:admin/opensearch/ql/datasources/read"
   - "cluster:monitor/task/get"
