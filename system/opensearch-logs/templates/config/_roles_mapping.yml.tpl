@@ -16,10 +16,8 @@ adminrole:
   -  "admin"
   -  "admin2"
   backend_roles:
-{{- if .Values.global.restricted }}
-  - SCI_FORTLOGS_UNSCOPED_LOGS_ADMIN
-{{- else }}
-  - CC_IAS_TEAM_SUPERVISION
+{{- range .Values.global.ldap.opensearch_admin_groups }}
+  - {{ . }}
 {{- end }}
 
 anonymous_health_role:
@@ -41,10 +39,8 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-{{- if .Values.global.restricted }}
-  - SCI_FORTLOGS_UNSCOPED_LOGS_VIEWER
-{{- else }}
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
 {{- end }}
 
 compute:
@@ -86,10 +82,8 @@ kibana_server:
 kibana_user:
   reserved: false
   backend_roles:
-{{- if .Values.global.restricted }}
-  - SCI_FORTLOGS_UNSCOPED_LOGS_VIEWER
-{{- else }}
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
 {{- end }}
 
 maillog:
@@ -113,10 +107,8 @@ promrole:
   - "ronly2"
 {{- end }}
   backend_roles:
-{{- if .Values.global.restricted }}
-  - SCI_FORTLOGS_UNSCOPED_LOGS_VIEWER
-{{- else }}
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
 {{- end }}
 
 readall:
