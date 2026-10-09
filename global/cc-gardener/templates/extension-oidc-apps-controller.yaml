@@ -15,7 +15,7 @@ spec:
       values:
 {{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | indent 8 }}
         cacheSelectorStr: observability.gardener.cloud/app in (plutono, prometheus-shoot,
-          alertmanager-seed, alertmanager-shoot)
+          alertmanager-seed, alertmanager-shoot, prometheus-garden)
         clients:
         - clientId: {{ .oidcClientId | default $.Values.garden.dashboard.oidc.clientIDPublic }}
           name: oidc-apps-controller-users
@@ -107,6 +107,21 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: garden
           targetPort: 9093
+        - istioGateway:
+            create: true
+            tlsSecretRef: {{ .tlsSecretRef | required "Values.extensions.oidcAppsController.tlsSecretRef is required" }}
+            labels:
+              endpoint.shoot.gardener.cloud/advertise: "true"
+              endpoint.shoot.gardener.cloud/application: prometheus--prometheus-garden
+          labelSelector:
+            matchLabels:
+              operator.prometheus.io/name: garden
+              prometheus: garden
+          name: garden--prometheus-garden
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: garden
+          targetPort: 9090
         webhook:
           objectSelector:
             matchExpressions:
@@ -117,6 +132,7 @@ spec:
               - prometheus-shoot
               - alertmanager-seed
               - alertmanager-shoot
+              - prometheus-garden
 {{- end }}
 
 ---
