@@ -54,14 +54,7 @@
       key: 'postgres-password'
 - name: MONSOON_RAILS_SECRET_TOKEN
   valueFrom: { secretKeyRef:    { name: elektra-token, key: token } }
-{{- if .Values.sentryDSN }}
-- name: SENTRY_DSN
-{{- if eq .Values.sentryDSN "auto" }}
-  valueFrom: { secretKeyRef:    { name: sentry, key: elektra.DSN } }
-{{- else }}
-  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: sentryDSN } }
-{{- end }}
-{{- end }}
+
 - name: DOMAIN_MASTERDATA_INHERITANCE_BLACKLIST
   value: hcp03,monsoon3
 - name: CEREBRO_CUSTOM_ENDPOINT
