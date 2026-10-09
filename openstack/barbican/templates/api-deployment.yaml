@@ -238,7 +238,7 @@ spec:
         {{- if and $inst.enabled (ne $inst.sidecar false) }}
         {{- $conf := index $.Values $name }}
         - name: {{ $name | replace "_" "-" }}
-          image: {{required ".Values.global.registry is missing" $.Values.global.registry }}/loci-barbican:{{required (printf "%s.image is missing" $name) $conf.image }}
+          image: {{ if $conf.imageOverride }}{{ $conf.imageOverride }}{{ else }}{{required ".Values.global.registry is missing" $.Values.global.registry }}/loci-barbican:{{required (printf "%s.image is missing" $name) $conf.image }}{{ end }}
           imagePullPolicy: Always
           env:
             - name: CS_PKCS11_R3_CFG
