@@ -70,3 +70,5 @@
   value: {{ .Values.feedback_recipient_email | quote }}
 - name: SSO_PRECHECK_ENABLED
   value: {{ .Values.sso_precheck_enabled | quote }}  
+- name: IS_KEPPEL_SWIFT_REGION
+  value: {{ .Values.is_keppel_swift_region | default "false" | quote}}
