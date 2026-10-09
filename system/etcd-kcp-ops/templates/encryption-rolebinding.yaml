@@ -1,0 +1,18 @@
+{{- if .Values.encryptionRotation.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: etcd-encryption-rotation
+  namespace: {{ .Values.encryptionRotation.capiNamespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: encryption-rotation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: etcd-encryption-rotation
+subjects:
+  - kind: ServiceAccount
+    name: etcd-encryption-rotation
+    namespace: {{ .Release.Namespace }}
+{{- end }}
