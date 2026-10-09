@@ -1,0 +1,99 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: s3-proxy
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.s3_proxy.replicas | default 2 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      component: s3-proxy
+  template:
+    metadata:
+      labels:
+        component: s3-proxy
+      annotations:
+        checksum/configmap: {{ include "content-repo/templates/configmap-s3-proxy.yaml" . | sha256sum }}
+        checksum/secret: {{ include "content-repo/templates/secret-s3-proxy.yaml" . | sha256sum }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - s3-proxy
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          configMap:
+            name: s3-proxy
+      containers:
+        - name: s3-proxy
+          image: {{ .Values.global.ghcrIoMirror }}/oxyno-zeta/s3-proxy:{{ .Values.image_version_s3_proxy }}
+          imagePullPolicy: IfNotPresent
+          args: [ "--config", "/etc/s3-proxy" ]
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: s3-proxy
+                  key: access_key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: s3-proxy
+                  key: secret_key
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ "ALL" ]
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/s3-proxy
+              name: config
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9090
+            timeoutSeconds: 5
+            periodSeconds: 30
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9090
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
