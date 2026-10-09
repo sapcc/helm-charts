@@ -1,0 +1,53 @@
+{{- if not .Values.kos_conductor }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ironic-quota-class-sync
+  labels:
+    system: openstack
+    type: cronjob
+    component: ironic
+spec:
+  schedule: "37 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: ironic-quota-class-sync
+            image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python3
+            - /scripts/quota-class-sync.py
+            env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.global.keystone_api_endpoint_protocol_internal | default "http" }}://{{ include "keystone_api_endpoint_host_internal" . }}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
+            - name: OS_USERNAME
+              value: {{ .Values.global.ironicServiceUser | include "resolve_secret" }}
+            - name: OS_PASSWORD
+              value: {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword | include "resolve_secret" }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.global.keystone_service_domain | default "Default" }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.global.keystone_service_project | default "service" }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.keystone_service_domain | default "Default" }}
+            - name: OS_IDENTITY_API_VERSION
+              value: "3"
+            volumeMounts:
+            - mountPath: /scripts/quota-class-sync.py
+              name: ironic-etc
+              subPath: quota-class-sync.py
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          volumes:
+          - name: ironic-etc
+            configMap:
+              name: ironic-etc
+          {{- include "utils.trust_bundle.volumes" . | indent 10 }}
+{{- end }}

@@ -60,6 +60,18 @@ spec:
       {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
       {{- end }}
+      {{- if $conductor.site }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - {{ $conductor.site }}
+      {{- end }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
