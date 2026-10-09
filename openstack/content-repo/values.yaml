@@ -24,7 +24,11 @@ image_refs:
 image_version: DEFINED_IN_VALUES_FILE
 debug: false
 
+image_version_s3_proxy: '5.2.0'
+
 auth_url: DEFINED_IN_VALUES_FILE
+
+target_service_type: object-store
 
 # Map with auth passwords for Swift targets and sources. Only the
 # `target_auth_password` key is required.
@@ -32,6 +36,23 @@ passwords:
   target_auth_password: DEFINED_IN_VALUES_FILE
 
 statsd_hostname: DEFINED_IN_VALUES_FILE
+
+# S3 proxy serving the new Ceph-backed `repo-new.$REGION.cloud.sap` endpoint.
+s3_proxy:
+  replicas: 2
+  signed_url_expiration: 15m
+  # If set, a dedicated Service with externalIPs=[public_ip] serves plain HTTP
+  # on port 8080 for baremetal netboot firmware. Leave null to disable.
+  public_ip: null
+  log:
+    level: info
+    format: text
+  bucket:
+    name: DEFINED_IN_VALUES_FILE
+    region: us-east-1 # placeholder; Ceph/RadosGW ignores this
+    s3Endpoint: DEFINED_IN_VALUES_FILE
+    access_key: DEFINED_IN_VALUES_FILE
+    secret_key: DEFINED_IN_VALUES_FILE
 
 alerts:
   enabled: true
