@@ -1,0 +1,25 @@
+{{- if .Values.encryptionRotation.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: etcd-encryption-rotation
+  namespace: {{ .Values.encryptionRotation.capiNamespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: encryption-rotation
+rules:
+  # Read/write encryption config Secret
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: [{{ .Values.encryptionRotation.secretName | quote }}]
+    verbs: ["get", "update", "patch"]
+  # Patch KubeadmControlPlane files[]
+  - apiGroups: ["controlplane.cluster.x-k8s.io"]
+    resources: ["kubeadmcontrolplanes"]
+    resourceNames: [{{ .Values.encryptionRotation.kcpName | quote }}]
+    verbs: ["get", "patch"]
+  # Check Machine rollout status
+  - apiGroups: ["cluster.x-k8s.io"]
+    resources: ["machines"]
+    verbs: ["list"]
+{{- end }}

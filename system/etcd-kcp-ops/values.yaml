@@ -55,3 +55,21 @@ awsCredentials:
   accessKeyID:
   secretAccessKey:
   region:
+
+# Encryption key rotation CronJob (Mjolnir rotate-k8s)
+encryptionRotation:
+  enabled: false
+  schedule: "0 */8 * * *"
+  image:
+    repository: keppel.global.cloud.sap/ccloud/mjolnir
+    tag: latest
+  rotationDays: 90
+  secretLength: 32
+  nodesCount: 3
+  resources: "secrets.v1.,configmaps.v1.,bmcsecrets.v1alpha1.metal.ironcore.dev"
+  # CAPI namespace where KCP + encryption Secret live
+  capiNamespace: ""
+  # KCP name (same as cluster name)
+  kcpName: ""
+  # K8s Secret name for encryption config
+  secretName: etcd-encryption-config

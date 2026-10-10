@@ -377,6 +377,36 @@ spec:
       path: /etc/kubernetes/audit-policy.yaml
       permissions: "0644"
 
+{{/*
+  Etcd encryption config file delivery (new K8s Secret-based path only).
+  Reads the EncryptionConfiguration from a K8s Secret (managed by the seeding
+  template on first deploy, then by the rotation CronJob). Uses lookup to fetch
+  the Secret's content at deploy time. Falls back to encryptionConfigContent
+  value for CI testing (lookup returns nil during helm template).
+  Only activates when the cluster sets etcdEncryption: true explicitly.
+  Clusters using the legacy additionalConfig.secrets path (etcd.useEncryption)
+  are not affected.
+*/}}
+{{- if $cluster.etcdEncryption }}
+{{- $encConfig := "" }}
+{{- if $cluster.encryptionConfigContent }}
+  {{- $encConfig = $cluster.encryptionConfigContent }}
+{{- else }}
+  {{- $secretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
+  {{- $encSecret := lookup "v1" "Secret" $cluster.namespace $secretName }}
+  {{- if $encSecret }}
+    {{- $encConfig = index $encSecret.data "config" | b64dec }}
+  {{- end }}
+{{- end }}
+{{- if $encConfig }}
+    - content: |
+{{ $encConfig | trim | indent 8 }}
+      owner: root:root
+      path: /etc/kubernetes/enc/enc.yaml
+      permissions: "0600"
+{{- end }}
+{{- end }}
+
     format: ignition
     ignition:
       containerLinuxConfig:
