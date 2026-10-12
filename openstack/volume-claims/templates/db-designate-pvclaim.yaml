@@ -1,6 +1,7 @@
 {{- $region := .Values.global.region | required ".Values.global.region missing" }}
 {{/* For some reason, this PVC is controlled by the designate chart ONLY in eu-de-1, so we need to skip it here. */}}
-{{- if ne $region "eu-de-1" }}
+{{/* [eu-de-3] Let the designate deployment take care of this PVC. This one here does not cut it. */}}
+{{- if not (has $region (list "eu-de-1" "eu-de-3")) }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
