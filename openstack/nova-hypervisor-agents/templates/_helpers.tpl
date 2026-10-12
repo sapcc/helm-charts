@@ -107,14 +107,9 @@ Params:
 {{- define "nova.helpers.cell_name" }}
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
-  {{- $cellName := "" }}
-  {{- if has $cellId (list "cell1") }}
-    {{- $cellName = $cellId }}
-  {{- else }}
-    {{- $msgNameReq := printf "'.Values.%s.name' is required for cell '%s'" $cellId $cellId }}
-    {{- $cellValues := get $envAll.Values $cellId | required $msgNameReq }}
-    {{- $cellName = get $cellValues "name" | required $msgNameReq }}
-  {{- end }}
+  {{- $msgNameReq := printf "'.Values.%s.name' is required for cell '%s'" $cellId $cellId }}
+  {{- $cellValues := get $envAll.Values $cellId | required $msgNameReq }}
+  {{- $cellName := get $cellValues "name" | required $msgNameReq }}
   {{- print $cellName }}
 {{- end }}
 

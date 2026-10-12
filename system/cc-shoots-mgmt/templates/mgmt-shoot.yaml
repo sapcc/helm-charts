@@ -33,7 +33,9 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
-      {{- if $.Values.networking.overlay }}
+      {{- if $cluster.networking.vethMTU }}
+      vethMTU: {{ $cluster.networking.vethMTU | quote }}
+      {{- else if $.Values.networking.overlay }}
       vethMTU: "8930"
       {{- else }}
       vethMTU: "8950"
@@ -132,10 +134,10 @@ spec:
               assignmentMode: {{ default "Automatic" .assignmentMode }}
             {{- end }}
           calicoBgpConfig:
-            asNumber: {{ $cluster.networking.asNumber }}
+            asNumber: {{ include "asNumber" $cluster.networking.asNumber }}
             bgpPeer:
             {{- range $cluster.networking.bgpPeers }}
-            - asNumber: {{ printf "%.0f" (default $cluster.networking.asNumber .asNumber) }}
+            - asNumber: {{ include "asNumber" (default $cluster.networking.asNumber .asNumber) }}
               nodeSelector: {{ .nodeSelector }}
               peerIP: {{ .peerIP }}
               filters:

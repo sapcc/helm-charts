@@ -587,7 +587,9 @@ output {
       }
       {{- if .Values.logstash.kafka.enabled }}
       # Kafka output mirroring the Octobus audit filter above.
-      # Public CA, no client credentials at present (SSL server-auth only).
+      # Public-CA server cert. When logstash.kafka.username/password are set,
+      # authenticates with SASL_SSL + SCRAM-SHA-512 (FortLogs KafkaUser);
+      # otherwise SSL server-auth only.
       # Durability: acks=all + idempotence + unbounded retries — every
       # audit event must reach the SIEM, no duplicates on retry.
       kafka {
@@ -595,7 +597,13 @@ output {
         bootstrap_servers => "{{ .Values.global.forwarding.kafka.bootstrap_servers }}"
         topic_id => "{{ .Values.logstash.kafka.topic | default "hermes" }}"
         codec => "json"
+        {{- if and .Values.logstash.kafka.username .Values.logstash.kafka.password }}
+        security_protocol => "SASL_SSL"
+        sasl_mechanism => "{{ .Values.logstash.kafka.sasl_mechanism | default "SCRAM-SHA-512" }}"
+        sasl_jaas_config => 'org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}";'
+        {{- else }}
         security_protocol => "SSL"
+        {{- end }}
         ssl_endpoint_identification_algorithm => "{{ .Values.logstash.kafka.ssl_endpoint_identification_algorithm | default "" }}"
         compression_type => "{{ .Values.logstash.kafka.compression_type | default "zstd" }}"
         acks => "{{ .Values.logstash.kafka.acks | default "all" }}"

@@ -36,9 +36,30 @@ used by envFrom.secretRef.
 {{- define "setup_secret_env" -}}
 {{- if . }}
 {{- range . }}
+{{- if .value }}
 {{ .name }}: {{ .value | include "resolve_secret" | b64enc }}
+{{- else if .template }}
+{{ .name }}: {{ include .template.name .template.params | b64enc }}
+{{- end }}
 {{- end }}
 {{- else }}
 {}
 {{- end }}
+{{- end }}
+
+{{/*
+Create an rndc/tsig key block
+*/}}
+{{- define "key" -}}
+key "{{.keyname}}" {
+ algorithm "{{.algo}}";
+ secret "{{.secret}}";
+};
+{{- end }}
+
+{{/*
+base64 encode an rndc/tsig key block
+*/}}
+{{- define "base64_key" -}}
+{{ include "key" . | b64enc }}
 {{- end }}

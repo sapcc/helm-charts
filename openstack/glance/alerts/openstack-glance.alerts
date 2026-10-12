@@ -33,23 +33,6 @@ groups:
       description: 'Image {{ $labels.image_name }} with id {{ $labels.id }} in project_id {{ $labels.project_id }} is Killed'
       summary: 'Image is in Killed State'
 
-  - alert: OpenstackGlanceUnresolvedSentryIssues
-    expr: sentry_unresolved_issues_count{project="glance"} > 0
-    for: 3d
-    labels:
-      context: sentry-metrics
-      service: glance
-      severity: info
-      tier: os
-      sentry: 'glance/'
-      support_group: compute-storage-api
-      no_alert_on_absence: "true"
-    annotations:
-      description: glance has encountered unexpected errors and reported
-        them to Sentry. Please have a look at the list of unresolved issues
-        at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/glance/>.
-      summary: glance has reported issues to Sentry
-
   - alert: OpenstackGlanceRateLimitActionIsAbove50
     expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_requests_ratelimit_total{service="image", container="glance-api"}[2m]) * 60) > 50
     for: 5m

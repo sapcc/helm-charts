@@ -46,9 +46,9 @@ trust = True
 security_compliance = True
 
 [network]
-project_network_cidr = 10.199.0.0/16
+project_network_cidr = {{ .Values.tempest_common.project_network_cidr }}
 public_network_id = {{ .Values.tempest_common.public_network_id }}
-subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
+subnet_id = {{ required "Missing tempest_common.subnet_id!" .Values.tempest_common.subnet_id }}
 endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 
@@ -65,8 +65,8 @@ driver = fake-hardware
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
 #image_ref = CHANGE_ME_IMAGE_REF
 #image_ref_alt = CHANGEMEIMAGEREFALT
-image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
-image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+image_ref = {{ required "Missing tempest_common.image_ref!" .Values.tempest_common.image_ref }}
+image_ref_alt = {{ required "Missing tempest_common.image_ref_alt!" .Values.tempest_common.image_ref_alt }}
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
@@ -78,10 +78,10 @@ fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).te
 
 [compute-feature-enabled]
 resize = true
-cold_migration = false
-live_migration = false
-live_migrate_back_and_forth = false
-vnc_console = true
+cold_migration = {{ required "Missing tempest_common.compute_cold_migration!" .Values.tempest_common.compute_cold_migration }}
+live_migration = {{ required "Missing tempest_common.compute_live_migration!" .Values.tempest_common.compute_live_migration }}
+live_migrate_back_and_forth = {{ required "Missing tempest_common.compute_live_migrate_back_and_forth!" .Values.tempest_common.compute_live_migrate_back_and_forth }}
+vnc_console = {{ required "Missing tempest_common.compute_vnc_console!" .Values.tempest_common.compute_vnc_console }}
 vnc_server_header = WebSockify
 attach_encrypted_volume = false
 
@@ -94,9 +94,10 @@ catalog_type = volumev3
 endpoint_type = public
 min_microversion = 3.0
 max_microversion = latest
-vendor_name = VMware
-storage_protocol = vmdk
-disk_format = vmdk
+vendor_name = {{ required "Missing tempest_common.volume_vendor_name!" .Values.tempest_common.volume_vendor_name }}
+storage_protocol = {{ required "Missing tempest_common.volume_storage_protocol!" .Values.tempest_common.volume_storage_protocol }}
+disk_format = {{ required "Missing tempest_common.volume_disk_format!" .Values.tempest_common.volume_disk_format }}
+volume_type = {{ required "Missing tempest_common.volume_type!" .Values.tempest_common.volume_type }}
 volume_size = 3
 
 [volume-feature-enabled]

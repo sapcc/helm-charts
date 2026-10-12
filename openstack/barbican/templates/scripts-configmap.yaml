@@ -1,4 +1,4 @@
-{{- if .Values.barbican_nanny.db_secret_move.enabled }}
+{{- if or .Values.barbican_nanny.db_secret_move.enabled .Values.barbican_nanny.db_cleanup.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,6 +9,12 @@ metadata:
     component: barbican
 
 data:
+{{- if .Values.barbican_nanny.db_secret_move.enabled }}
   move-secrets.sh: |
 {{ include (print .Template.BasePath "/scripts/_move-secrets.sh.tpl") . | indent 4 }}
+{{- end }}
+{{- if .Values.barbican_nanny.db_cleanup.enabled }}
+  db-cleanup.sh: |
+{{ include (print .Template.BasePath "/scripts/_db-cleanup.sh.tpl") . | indent 4 }}
+{{- end }}
 {{- end}}

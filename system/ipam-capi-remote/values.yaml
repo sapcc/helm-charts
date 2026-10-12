@@ -15,7 +15,7 @@ controllerManager:
       kubernetesServiceHost: apiserver-url
     image:
       repository: controller
-      tag: v1.1.0
+      tag: v1.1.1
     resources:
       limits:
         cpu: 500m
@@ -33,7 +33,11 @@ controllerManager:
   replicas: 1
   strategy:
     type: Recreate
-  tolerations: []
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
   topologySpreadConstraints: []
   serviceAccountName: ipam-capi-remote-webhook-injector
 kubernetesClusterDomain: cluster.local

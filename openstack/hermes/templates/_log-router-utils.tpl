@@ -6,18 +6,43 @@
   {{- end -}}
 {{- end -}}
 
-{{- define "log_router_rabbitmq_urls" -}}
-{{- $replicas := int (required ".Values.rabbitmq_notifications.replicas is missing" $.Values.rabbitmq_notifications.replicas) -}}
+{{- /* one amqp url per broker pod: (list $ "<alias>" <replicas> <port>) */ -}}
+{{- define "log_router_rabbitmq_broker_urls" -}}
+{{- $ := index . 0 -}}
+{{- $alias := index . 1 -}}
+{{- $replicas := int (index . 2) -}}
+{{- $port := index . 3 -}}
 {{- if le $replicas 0 -}}
-  {{- fail ".Values.rabbitmq_notifications.replicas must be greater than zero when logRouter.enabled=true" -}}
+  {{- fail (printf ".Values.%s.replicas must be greater than zero when logRouter.enabled=true" $alias) -}}
 {{- end -}}
-{{- $service := printf "%s-rabbitmq-notifications" $.Release.Name -}}
+{{- $service := printf "%s-%s" $.Release.Name ($alias | replace "_" "-") -}}
 {{- $domain := printf "%s.svc.%s" $.Release.Namespace (required ".Values.global.clusterDNSSearchDomain is missing" $.Values.global.clusterDNSSearchDomain) -}}
-{{- $port := required ".Values.logRouter.rabbitmq.port is missing" $.Values.logRouter.rabbitmq.port -}}
 {{- $urls := list -}}
 {{- range $i := until $replicas -}}
   {{- $host := printf "%s-%d.%s.%s" $service $i $service $domain -}}
   {{- $urls = append $urls (printf "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@%s:%v/" $host $port) -}}
+{{- end -}}
+{{- join "," $urls -}}
+{{- end -}}
+
+{{- /*
+  rabbitmq_dataplane off: read rabbitmq_notifications only.
+  rabbitmq_dataplane on: read rabbitmq_dataplane, plus rabbitmq_notifications
+  while logRouter.rabbitmq.also_read_notifications is true (cutover).
+*/ -}}
+{{- define "log_router_rabbitmq_urls" -}}
+{{- $urls := list -}}
+{{- $readNotifications := true -}}
+{{- if $.Values.hermes.rabbitmq_dataplane_enabled -}}
+  {{- $dp := $.Values.rabbitmq_dataplane -}}
+  {{- $dpPort := 5672 -}}
+  {{- with $dp.ports }}{{ $dpPort = default 5672 .public }}{{ end -}}
+  {{- $urls = append $urls (include "log_router_rabbitmq_broker_urls" (list $ "rabbitmq_dataplane" (required ".Values.rabbitmq_dataplane.replicas is missing" $dp.replicas) $dpPort)) -}}
+  {{- $readNotifications = $.Values.logRouter.rabbitmq.also_read_notifications -}}
+{{- end -}}
+{{- if $readNotifications -}}
+  {{- $port := required ".Values.logRouter.rabbitmq.port is missing" $.Values.logRouter.rabbitmq.port -}}
+  {{- $urls = append $urls (include "log_router_rabbitmq_broker_urls" (list $ "rabbitmq_notifications" (required ".Values.rabbitmq_notifications.replicas is missing" $.Values.rabbitmq_notifications.replicas) $port)) -}}
 {{- end -}}
 {{- join "," $urls -}}
 {{- end -}}
@@ -58,6 +83,14 @@
     configMapKeyRef:
       name: log-router-etc
       key: LOG_ROUTER_MAX_CONCURRENT_FLUSHES
+# The configmap only renders this key when logRouter.max_buffer_memory_mb is
+# set, hence optional: unset leaves the limiter off instead of failing the pod.
+- name: LOG_ROUTER_MAX_BUFFER_MEMORY_MB
+  valueFrom:
+    configMapKeyRef:
+      name: log-router-etc
+      key: LOG_ROUTER_MAX_BUFFER_MEMORY_MB
+      optional: true
 - name: LOG_ROUTER_RABBITMQ_QUEUE
   valueFrom:
     configMapKeyRef:

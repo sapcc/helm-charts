@@ -1,0 +1,36 @@
+# Wrapper values for the dual-deployment-operator controller subchart (alias: controller).
+# Only values that diverge from the subchart defaults are set here.
+controller:
+  enabled: true
+
+  manager:
+    image:
+      # Pin by digest to the in-cluster-pullable keppel mirror. The @sha256: form suppresses
+      # the :tag suffix (manager.yaml:106 `contains "@"` guard).
+      repository: keppel.eu-de-2.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/dual-deployment-operator@sha256:66e753a85c99b6210fc875a179964d89e940c95f29eb9c07c18efcc613a6567e
+      pullPolicy: IfNotPresent
+    envOverrides:
+      # main.go:213: webhook setup runs unless ENABLE_WEBHOOKS == "false".
+      # certManager.enabled=false (default) → no TLS cert → webhook server crashloops.
+      ENABLE_WEBHOOKS: "false"
+
+  shootRbac:
+    # SHOOT-READY: emit the shoot-applier bootstrap ManagedResource + token-requestor Secret
+    # to the shoot. Per-shoot = per-shoot-cluster, so the static SA name is unique per shoot.
+    enabled: true
+    # required{} in applier-bootstrap.yaml:20-21 and remote-kubeconfig.yaml:13-14.
+    # These equal the chart defaults (values.yaml:177,179) but must be explicit here because
+    # enabled: true triggers the required{} checks at render time.
+    serviceAccountName: dual-deployment-operator-shoot-applier
+    serviceAccountNamespace: kube-system
+
+  metrics:
+    # Secure metrics endpoint needs a cert; certManager is off → disable metrics.
+    enabled: false
+
+  crd:
+    # Seed-scoped CRD. The prod release (shoot--cp--m-<region>) is the durable owner
+    # (crd.enabled: true). Non-owner releases set crd.enabled: false in their per-shoot
+    # values file. NEVER flip the owner to false (resource-policy: keep orphans the CRD).
+    enabled: true
+    keep: true
