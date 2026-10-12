@@ -102,6 +102,8 @@ promrole:
   users:
   - "promuser"
   - "promuser2"
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
 {{- if .Values.qalogs.enabled }}
   - "ronly"
   - "ronly2"
