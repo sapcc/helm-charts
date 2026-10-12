@@ -34,6 +34,10 @@ spec:
         {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
 {{- end }}
     spec:
+{{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+{{- end }}
       affinity:
 {{- if and .Values.backup_v2.cohost_with_mariadb .Values.backup_v2.enabled }}
         podAffinity:
@@ -81,6 +85,32 @@ spec:
             readOnly: true
           - name: init-file-root-sql
             mountPath: /etc/mysql/init-file
+{{- if or .Values.slow_query_log.persistence.enabled .Values.slow_query_log.cleanup.enabled }}
+      - name: slow-log-prepare
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        securityContext:
+          runAsUser: 0
+        command:
+          - /bin/bash
+          - -c
+          - |
+{{- if .Values.slow_query_log.persistence.enabled }}
+            [ "$(stat -c %U {{ include "mariadb.slowLogDir" . }})" = mysql ] || chown -R mysql:mysql {{ include "mariadb.slowLogDir" . }}
+{{- end }}
+{{- if .Values.slow_query_log.cleanup.enabled }}
+            find {{ include "mariadb.slowLogCleanupDir" . }} -maxdepth 1 -type f -name '*slow*.log*' -mtime +{{ .Values.slow_query_log.cleanup.max_age_days }} -delete 2>/dev/null || true
+{{- end }}
+            exit 0
+        volumeMounts:
+{{- if .Values.slow_query_log.persistence.enabled }}
+          - name: mariadb-logs-storage
+            mountPath: {{ include "mariadb.slowLogDir" . }}
+{{- else if .Values.persistence_claim.enabled }}
+          - name: mariadb-persistent-storage
+            mountPath: {{ include "mariadb.dataDir" . }}
+{{- end }}
+{{- end }}
 {{- if .Values.global.mariadb.native_sidecar.enabled }}
 {{- else }}
       containers:
@@ -184,6 +214,9 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
 {{- end }}
+{{- if and .Values.slow_query_log.rotation.enabled (or .Values.slow_query_log.persistence.enabled .Values.persistence_claim.enabled) }}
+{{- include "mariadb.slowLogRotatorContainer" . | nindent 6 }}
+{{- end }}
 {{- if .Values.global.mariadb.native_sidecar.enabled }}
       containers:
 {{- end }}
@@ -200,6 +233,14 @@ spec:
             secretKeyRef:
               name: mariadb-{{.Values.name}}
               key: root-password
+{{- if or .Values.slow_query_log.persistence.enabled (and .Values.slow_query_log.rotation.enabled .Values.persistence_claim.enabled) }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        args:
+          - --slow-query-log-file={{ include "mariadb.slowLogCleanupDir" . }}/$(POD_NAME)-slow.log
+{{- end }}
         ports:
           - name: mariadb
             containerPort: 3306
@@ -230,8 +271,12 @@ spec:
             mountPath: /run/mysqld
 {{- if .Values.persistence_claim.enabled }}
           - name: mariadb-persistent-storage
-            mountPath: /var/lib/mysql
+            mountPath: {{ include "mariadb.dataDir" . }}
             readOnly: false
+{{- end }}
+{{- if .Values.slow_query_log.persistence.enabled }}
+          - name: mariadb-logs-storage
+            mountPath: {{ include "mariadb.slowLogDir" . }}
 {{- end }}
           - mountPath: /usr/local/bin/docker-entrypoint.sh
             subPath: docker-entrypoint.sh
@@ -271,7 +316,12 @@ spec:
 {{- if .Values.persistence_claim.enabled }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
-           claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
+           claimName: {{ include "mariadb.dataPvcName" . }}
+{{- end }}
+{{- if .Values.slow_query_log.persistence.enabled }}
+        - name: mariadb-logs-storage
+          persistentVolumeClaim:
+            claimName: {{ include "mariadb.slowLogPvcName" . }}
 {{- end }}
         - name: initdb
           secret:
@@ -283,6 +333,12 @@ spec:
           configMap:
             name: mariadb-{{.Values.name}}-set-root-password
             defaultMode: 0755
+{{- if and .Values.slow_query_log.rotation.enabled (or .Values.slow_query_log.persistence.enabled .Values.persistence_claim.enabled) }}
+        - name: slow-log-rotator-script
+          configMap:
+            name: mariadb-{{ .Values.name }}-slow-log-rotator
+            defaultMode: 0755
+{{- end }}
         - name: mysql-users-secret-file
           projected:
             sources:

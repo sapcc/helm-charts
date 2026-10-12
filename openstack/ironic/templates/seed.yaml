@@ -653,11 +653,34 @@ spec:
       "resources:CUSTOM_BM_S8_C48_M12288_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
+  # Dell PowerEdge R6715 as Hypervisor
+  - name: "hv_s1_c48_m384_v0"
+    id: "2049"
+    vcpus: 48
+    ram: 393216
+    disk: 894
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 1 socket, 48 cores, 384GB RAM, AMD EPYC
+      "resources:CUSTOM_HV_S1_C48_M384_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Bull BullSequana SH81 as Hypervisor
+  - name: "hv_s8_c86_m4096_v0"
+    id: "2050"
+    vcpus: 688
+    ram: 4194304
+    disk: 960
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 8 socket, 86 cores, 4096GB RAM, Intel Granite Rapid
+      "resources:CUSTOM_HV_S8_C86_M4096_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
   # Default are special
   # cc3test does not get seeds
   # ccadmin gets role assignments for the master project and some additional project assignments
   # monsoon3 gets a special role assignment for cc-demo project
-  # s4 gets a special role assignment for S4_CFM_ADMINS group
   # iaas is excluded completely
 
   domains:
@@ -710,13 +733,6 @@ spec:
       role_assignments:
       - project: cc-demo
         role: baremetal_admin
-    {{- end }}
-    {{- if eq . "s4"}}
-    - name: S4_CFM_ADMINS
-      role_assignments:
-      - domain: s4
-        role: cloud_baremetal_admin
-        inherited: true
     {{- end }}
     - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:

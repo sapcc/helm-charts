@@ -98,6 +98,7 @@ auth_section = service_catalog
 {{- if .Values.swift_set_temp_url_key }}
 swift_set_temp_url_key = True
 {{- end }}
+service_type = {{ .Values.swift.service_type }}
 
 [neutron]
 auth_section = service_catalog

@@ -49,7 +49,8 @@ groups:
       summary: Hermes availability affected by storage errors while accessing Elasticsearch
 
   - alert: OpenstackHermesRabbitMQUnack
-    expr: sum(rabbitmq_queue_messages_unacked{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 10000
+    expr: sum(rabbitmq_queue_messages_unacked{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"}) by (kubernetes_name) > 10000
+    for: 15m
     labels:
       context: rabbitmq
       severity: warning
@@ -65,7 +66,7 @@ groups:
       summary: "RabbitMQ unacknowledged messages count"
 
   - alert: OpenstackHermesRabbitMQReady
-    expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 10000
+    expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"}) by (kubernetes_name) > 10000
     # for: requires the backlog to persist before firing, so a single scrape spike does not
     # trigger the alert and cause it to flap WARNING<->RESOLVED.
     for: 15m
@@ -87,7 +88,7 @@ groups:
   # queue is not being drained and the data volume is at real risk of filling. This tier pages;
   # the warning tier above only notifies.
   - alert: OpenstackHermesRabbitMQReadyCritical
-    expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 1000000
+    expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"}) by (kubernetes_name) > 1000000
     for: 15m
     labels:
       context: rabbitmq
@@ -109,9 +110,9 @@ groups:
   # fills the disk. This is a leading indicator, so it warns; a persistent strand escalates below.
   - alert: OpenstackHermesRabbitMQQueueStranded
     expr: |
-      (rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-notifications"} > 0)
+      (rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"} > 0)
       and on(pod)
-      (rabbitmq_queue_consumers{kubernetes_name=~".*rabbitmq-notifications"} == 0)
+      (rabbitmq_queue_consumers{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"} == 0)
     for: 10m
     labels:
       context: rabbitmq
@@ -131,9 +132,9 @@ groups:
   # hour will not, and the volume will fill. This pages, while the warning above only notifies.
   - alert: OpenstackHermesRabbitMQQueueStrandedPersistent
     expr: |
-      (rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-notifications"} > 0)
+      (rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"} > 0)
       and on(pod)
-      (rabbitmq_queue_consumers{kubernetes_name=~".*rabbitmq-notifications"} == 0)
+      (rabbitmq_queue_consumers{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"} == 0)
     for: 1h
     labels:
       context: rabbitmq
@@ -153,7 +154,7 @@ groups:
   # on that broker, which is the actual outage rather than a symptom. This is Hermes-owned and
   # pages immediately, rather than relying on a generic platform-level volume alert.
   - alert: OpenstackHermesRabbitMQDiskWatermark
-    expr: max(rabbitmq_alarms_free_disk_space_watermark{kubernetes_name=~".*rabbitmq-notifications"}) by (pod) == 1
+    expr: max(rabbitmq_alarms_free_disk_space_watermark{kubernetes_name=~".*rabbitmq-(notifications|dataplane)"}) by (pod) == 1
     for: 2m
     labels:
       context: rabbitmq
@@ -171,6 +172,7 @@ groups:
 
   - alert: OpenstackHermesLogstashPlugins
     expr: sum(increase(logstash_stats_pipeline_plugin_events_out[30m])) <= 0
+    for: 15m
     labels:
       context: logstash
       severity: warning
@@ -194,6 +196,7 @@ groups:
       tier: os
       support_group: observability
       service: hermes
+      no_alert_on_absence: "true" # kafka output is disabled by default; metric is absent when logstash.kafka.enabled=false
       dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash Kafka output plugin is failing to deliver audit events"
@@ -204,6 +207,7 @@ groups:
 
   - alert: OpenstackHermesLogstashPluginsJDBCStaticFailure
     expr: sum(rate(logstash_stats_pipeline_plugin_bulk_requests_errors{namespace=~"hermes",plugin="jdbc_static"}[10m])) + sum(rate(logstash_stats_pipeline_plugin_documents_non_retryable_failures{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
+    for: 5m
     labels:
       context: logstash
       severity: warning
@@ -262,7 +266,7 @@ groups:
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: critical
+      severity: warning
       support_group: observability
       tier: os
       meta: "Log Router is routing audit data to the DLQ after exhausting flush retries — data is not landing in the customer S3 bucket"

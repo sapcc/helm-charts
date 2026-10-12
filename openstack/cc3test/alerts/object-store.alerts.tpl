@@ -45,14 +45,14 @@ groups:
       support_group: storage
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
-      meta: "Openstack Ceph API is down"
+      meta: "Ceph API is down on st1-{​{ .Values.global.region }}"
       dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/operation/storage/ceph/ceph-alert/ceph-api-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "Openstack Ceph API is down."
-      summary: "Openstack Ceph API is down."
+      description: "Ceph API is down on st1-{​{ .Values.global.region }}"
+      summary: "Ceph API is down on st1-{​{ .Values.global.region }}"
 
   - alert: OpenstackCephApiFlapping
     expr: |
@@ -63,14 +63,14 @@ groups:
       support_group: storage
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
-      meta: "Openstack Ceph API is flapping"
+      meta: "Ceph API is flapping on st1-{​{ .Values.global.region }}"
       dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/operation/storage/ceph/ceph-alert/ceph-api-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "Openstack Ceph API is flapping"
-      summary: "Openstack Ceph API is flapping"
+      description: "Ceph API is flapping on st1-{​{ .Values.global.region }}"
+      summary: "Ceph API is flapping on st1-{​{ .Values.global.region }}"
 
   - alert: OpenstackCephCreateContainerFailed
     expr: cc3test_status{service="ceph", name=~"TestContainer_create_container", phase="call"} == 0

@@ -1,0 +1,52 @@
+{{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+{{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: s3-proxy
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+data:
+  config.yaml: |
+    log:
+      level: {{ .Values.s3_proxy.log.level | default "info" | quote }}
+      format: {{ .Values.s3_proxy.log.format | default "text" | quote }}
+
+    server:
+      listenAddr: ""
+      port: 8080
+      compress:
+        enabled: true
+
+    internalServer:
+      listenAddr: ""
+      port: 9090
+
+    targets:
+      repo:
+        mount:
+          path:
+            - /
+        actions:
+          GET:
+            enabled: true
+            config:
+              redirectToSignedUrl: true
+              redirectWithTrailingSlashForNotFoundFile: true
+              signedUrlExpiration: {{ .Values.s3_proxy.signed_url_expiration | default "15m" | quote }}
+        bucket:
+          name: content-repo
+          region: us-east-1 # placeholder; Ceph/RadosGW ignores this
+          s3Endpoint: https://rgw.st1.{{ $region }}.{{ $tld }}
+          disableSSL: false
+          s3ForcePathStyle: true # required for non-AWS endpoints
+          credentials:
+            accessKey:
+              env: AWS_ACCESS_KEY_ID
+            secretKey:
+              env: AWS_SECRET_ACCESS_KEY

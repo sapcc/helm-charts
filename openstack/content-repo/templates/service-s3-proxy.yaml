@@ -1,0 +1,56 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: s3-proxy
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+
+spec:
+  selector:
+    component: s3-proxy
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+
+{{- if .Values.s3_proxy.public_ip }}
+---
+# Plain HTTP endpoint on port 8080 for baremetal netboot firmware that cannot
+# do HTTPS. Mirrors how swift-proxy exposes its SAN HTTP port
+# (openstack/swift/templates/proxy-service.yaml).
+#
+# DNS record `repo-new.$REGION.cloud.sap` must point at .Values.s3_proxy.public_ip
+# (handled outside this chart via Designate/secrets.git).
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: s3-proxy-public
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+spec:
+  selector:
+    component: s3-proxy
+  externalIPs:
+    - {{ .Values.s3_proxy.public_ip }}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+{{- end }}

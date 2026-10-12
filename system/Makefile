@@ -1,7 +1,7 @@
-CLUSTER_API_VERSION ?= v1.13.4
-PROVIDER_METAL3_VERSION ?= v1.13.1
+CLUSTER_API_VERSION ?= v1.14.2
+PROVIDER_METAL3_VERSION ?= v1.14.0
 PROVIDER_METAL_VERSION ?= cf12acd520aa203db28f21a326a61fddc9720b95
-PROVIDER_IPAM_VERSION ?= v1.1.0
+PROVIDER_IPAM_VERSION ?= v1.1.1
 PROVIDER_HELM ?= v0.6.4
 PROVIDER_KUBERNIKUS_VERSION ?= 9ef3fb8f8b42f5606edb5044693adf62d434d4e0
 BAREMETAL_OPERATOR_VERSION ?= v0.13.1
@@ -18,7 +18,7 @@ endif
 build: build-cluster-api-core build-controlplane-kubeadm build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus build-provider-helm build-provider-ipam build-ipam-capi-remote build-provider-metal3 build-provider-metal
 
 build-cluster-api-core:
-	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//config/default,$(CLUSTER_API_VERSION))
+	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//core/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,cluster-api-core)
 	@find cluster-api-core/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#/{{ include "cluster-api-core.fullname" . }}-system/#/#g' {} \;
@@ -60,6 +60,9 @@ build-bootstrap-kubeadm:
 	@find bootstrap-kubeadm/crds -type f | xargs -n1 yq -i '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""'
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
+	@# Upstream RBAC only knows about kubeadmcontrolplanes; cc-cluster uses KubernikusControlPlane
+	@# See https://github.com/kubernetes-sigs/cluster-api/pull/13433
+	@$(SED) -i '/- kubeadmcontrolplanes/a\  - kubernikuscontrolplanes' bootstrap-kubeadm/templates/manager-rbac.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
@@ -175,7 +178,7 @@ build-metal-operator-remote:
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml | \
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - | \
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration" and .kind != "DaemonSet")' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."metal-operator-remote-webhook-injector") = "true"' - | \
 		yq eval '(select(.kind == "CustomResourceDefinition") | .metadata.labels."clusterctl.cluster.x-k8s.io") = ""' - \
 		> metal-operator-remote/managedresources/crds-and-rbac.yaml
@@ -216,8 +219,12 @@ build-metal-operator-remote:
 		-f metal-operator-remote/values-managed-resources.yaml | \
 		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | (.webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-remote-webhook-service:443" + .service.path})' - \
 		> metal-operator-remote/webhooks.yaml
-	# Bump patch version
-	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	# Bump patch version; pass DEV=1 to publish a pre-release dev build (0.0.0-<sha>) only picked up by the dev cluster pipeline
+	@if [ "$(DEV)" = "1" ]; then \
+		SHA=$$(git rev-parse --short HEAD) yq -i '.version = "0.0.0-" + strenv(SHA)' metal-operator-remote/Chart.yaml; \
+	else \
+		yq -i '.version = (.version | split(".") | .[2] = (.[2] | split("-") | .[0] | tonumber + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml; \
+	fi
 
 
 build-boot-operator:
@@ -235,16 +242,25 @@ build-boot-operator-remote:
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
+build-metal-maintenance-operator:
+	@helm dep up metal-maintenance-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator/Chart.yaml
+
 build-metal-maintenance-operator-remote:
 	@helm dep up metal-maintenance-operator-remote
 	@helm template metal-maintenance-operator \
 		metal-maintenance-operator-remote/charts/metal-maintenance-operator*.tgz \
+		--include-crds \
 		-n kube-system \
 		-f metal-maintenance-operator-remote/values-managed-resources.yaml | \
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
 		yq eval 'select(.kind != "Service" and .kind != "Deployment" and .metadata.name != "metal-maintenance-operator-leader-election-role" and .metadata.name != "metal-maintenance-operator-leader-election-rolebinding")' - \
 		> metal-maintenance-operator-remote/managedresources/crds-and-rbac.yaml
-	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml
+	@if [ "$(DEV)" = "1" ]; then \
+		SHA=$$(git rev-parse --short HEAD) yq -i '.version = "0.0.0-" + strenv(SHA)' metal-maintenance-operator-remote/Chart.yaml; \
+	else \
+		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml; \
+	fi
 
 build-argora-operator:
 	@helm dep up argora-operator

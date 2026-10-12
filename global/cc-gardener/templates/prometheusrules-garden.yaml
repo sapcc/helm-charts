@@ -1,0 +1,30 @@
+{{ if .Values.garden.prometheusRules.enabled -}}
+# Mirrors the gardener-operator garden-sap-* PrometheusRules. Collected by the
+# operator-managed prometheus-garden via ruleSelector matching label
+# prometheus: garden in the garden namespace. This file is tpl-processed, so
+# Prometheus {{ "{{ ... }}" }} expressions are escaped to survive templating.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: garden-sap-project
+  namespace: garden
+  labels:
+    prometheus: garden
+spec:
+  groups:
+  - name: project
+    rules:
+    - alert: ProjectCountReached
+      expr: count(garden_projects_status) > 0.9 * 5000
+      for: 60m
+      labels:
+        severity: warning
+        topology: garden
+      annotations:
+        summary: "Gardener project count has reached 90% of the 5000 project limit"
+        description: >-
+          The virtual garden currently holds {{ "{{ $value }}" }} projects, above 90%
+          of the maximum of 5000. Verify whether this growth is expected and, if the
+          limit is genuinely being approached, raise the projects count in the Garden
+          admission configuration.
+{{- end }}

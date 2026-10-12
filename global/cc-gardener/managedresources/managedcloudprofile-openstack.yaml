@@ -22,6 +22,9 @@ spec:
     {{- end }}
     machineImages:
       {{- toYaml .Values.extensions.openstack.machineImages | nindent 6 }}
+    {{- if .Values.extensions.openstack.machineCapabilities }}
+    machineCapabilities: {{ toYaml .Values.extensions.openstack.machineCapabilities | nindent 4 }}
+    {{- end }}
     providerConfig:
       apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
       kind: CloudProfileConfig
@@ -197,6 +200,10 @@ spec:
         - name: f5
       machineImages:
         {{- toYaml .Values.extensions.openstack.providerConfig.machineImages | nindent 8 }}
+  {{- if .Values.extensions.kubernetesVersionUpdate }}
+  kubernetesUpdate: {{ toYaml .Values.extensions.kubernetesVersionUpdate | nindent 4 }}
+  {{- end }}
+  machineImagesPaused: {{ .Values.extensions.openstack.machineImagesPaused }}
   machineImageUpdates:
   - imageName: gardenlinux
     source:
@@ -208,6 +215,13 @@ spec:
         {{- end }}
         namePrefix: {{ .Values.extensions.openstack.glance.namePrefix | quote }}
         keepLatest: {{ .Values.extensions.openstack.glance.keepLatest }}
+        versionOffset: {{ .Values.extensions.openstack.glance.versionOffset }}
+        {{- with .Values.extensions.openstack.excludedSuffixes }}
+        excludedSuffixes:
+          {{- range . }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
         projectName: {{ .Values.extensions.openstack.glance.projectName | quote }}
         projectDomainName: {{ .Values.extensions.openstack.glance.projectDomainName | quote }}
         username: {{ .Values.extensions.openstack.glance.username | quote }}

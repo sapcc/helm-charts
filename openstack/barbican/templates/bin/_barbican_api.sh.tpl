@@ -6,7 +6,7 @@ COMMAND="${@:-start}"
 
 function start () {
   for BARBICAN_WSGI_SCRIPT in barbican-wsgi-api; do
-    cp -a $(type -p ${BARBICAN_WSGI_SCRIPT}) /var/www/cgi-bin/barbican/
+    cp -a "$(type -p "${BARBICAN_WSGI_SCRIPT}")" /var/www/cgi-bin/barbican/
   done
 
   if [ -f /etc/apache2/envvars ]; then
@@ -29,4 +29,4 @@ function stop () {
   apachectl -k graceful-stop
 }
 
-$COMMAND
+"$COMMAND"

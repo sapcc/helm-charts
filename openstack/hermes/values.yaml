@@ -25,6 +25,7 @@ hermes:
   # Component enable flags - all default to true for backward compatibility
   # RabbitMQ needs to be available for other components all the time (also during buildup) whereas the rest of hermes can be deployed laster.
   rabbitmq_enabled: true      # Deploy RabbitMQ StatefulSet
+  rabbitmq_dataplane_enabled: false # Separate RabbitMQ for data plane (ceph) audit events, read by log-router
   api_enabled: true           # Deploy Hermes API (deployment, service, ingress, secrets)
   logstash_enabled: true      # Deploy Logstash pipeline (deployment, service, configmap, secret)
   keystone_seed_enabled: true # Deploy Keystone OpenstackSeed
@@ -39,6 +40,18 @@ hermes:
     queue_name: "notifications.info"
     # hostnames are derived from this template using the key of the targets entry
     host_template: "%s-rabbitmq-notifications.monsoon3"
+
+  # Per-token rate limiting for the Hermes API.
+  # 0 (default) disables rate limiting. Enable per region as needed.
+  # Typical values: requestsPerSecond=2, burst=10 for the default endpoints;
+  # downloadRequestsPerSecond=0.2, downloadBurst=3 for the heavier /download endpoint.
+  rateLimit:
+    requestsPerSecond: 0
+    burst: 0
+    downloadRequestsPerSecond: 0
+    downloadBurst: 0
+    evictionInterval: "5m"
+    maxIdlePeriod: "10m"
 
   # Audit-event publisher for hermes-api PUT/DELETE dataplane-config operations.
   # Reuses the rabbitmq_notifications subchart; events land on the
@@ -59,13 +72,19 @@ logstash:
   swift: true
   audit: true
   # Kafka output mirroring the Octobus audit filter.
-  # Off by default; enable per-region. Public CA, no client credentials.
+  # Off by default; enable per-region. Public-CA server cert.
   # global.forwarding.kafka.bootstrap_servers must be set in region secrets
   # (comma-separated host:port list, e.g. "broker1:9093,broker2:9093").
   kafka:
     enabled: false
     topic: hermes
     client_id: hermes-logstash
+    # SASL/SCRAM credentials for the FortLogs KafkaUser (write-all / write-all2).
+    # Set both in region secrets to switch the output to SASL_SSL; leave unset
+    # to keep SSL-only (for regions where broker auth isn't enforced yet).
+    # username:
+    # password:
+    sasl_mechanism: SCRAM-SHA-512
     # Durability-first defaults: every audit event must reach the SIEM.
     # acks=all + idempotence + high retries survive single-broker loss
     # without dropping or duplicating events. Requires broker-side
@@ -156,6 +175,61 @@ rabbitmq_notifications:
   serviceExternalTrafficPolicy: Local
   enableSsl: true
 
+# Data plane audit events (ceph rgw via prysm) get their own broker, so a
+# backlog there can't fill up the one keystone, nova etc. depend on.
+# Turned on per region with hermes.rabbitmq_dataplane_enabled.
+rabbitmq_dataplane:
+  kind: "statefulset"
+  use_alternate_registry: true
+  replicas: 3
+  pdr:
+    enabled: true
+    minAvailable: "51%"
+  persistence:
+    enabled: true
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  global:
+    rabbitmq:
+      native_sidecar:
+        enabled: false
+  credentialUpdater:
+    enabled: true
+  users:
+    # log-router. while logRouter.rabbitmq.also_read_notifications is on this
+    # has to match logRouter.rabbitmq.user/password, same creds on both brokers.
+    default:
+      user: logrouter
+      # password: DEFINED-IN-SECRETS
+    admin:
+      user: admin
+      # password: DEFINED-IN-SECRETS
+    # publisher (prysm sidecar on the ceph rgw side)
+    ceph:
+      user: ceph
+      # password: DEFINED-IN-SECRETS
+  alerts:
+    support_group: observability
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  serviceType: LoadBalancer
+  serviceExternalTrafficPolicy: Local
+  enableSsl: true
+
 # Pod Monitor
 exporter:
   enabled: false
@@ -213,8 +287,13 @@ logRouter:
   debug: "false"
   flush_interval: "1m"
   shutdown_timeout: "30s"
+  # has to be longer than the whole shutdown: 10s per rabbitmq url (6 with the
+  # dataplane broker on), 10s kafka, then shutdown_timeout for the final flush.
+  # 60+10+30 = 100s, plus headroom. the k8s default of 30s kills the final flush.
+  termination_grace_period_seconds: 150
   ingest_channel_capacity: "10000"
   max_concurrent_flushes: "100"
+  max_buffer_memory_mb: "1500"
 
   # Read-only login role for hermes's dataplane_config table.
   # The hermes postgres seed creates this user; hermez's migration 001 grants
@@ -232,7 +311,11 @@ logRouter:
     queue: "dataplane.audit"
     exchange: ""
     routing_key: "#"
-    prefetch: "10"
+    prefetch: "100"
+    # only used with hermes.rabbitmq_dataplane_enabled: keep reading the
+    # notifications broker too, so events already queued there drain during
+    # the cutover. turn off once its dataplane.audit queue is empty.
+    also_read_notifications: true
     # user/password injected by deployment pipeline
     # user:
     # password:
@@ -266,10 +349,10 @@ logRouter:
 
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "100m"
     limits:
-      memory: "512Mi"
+      memory: "4Gi"
       cpu: "500m"
 
 hermes-postgresql:
