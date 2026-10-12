@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-compute-cleanup
+spec:
+  timeZone: "{{ .Values.timeZone }}"
+  schedule: "{{ .Values.compute.schedule }}"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: compute-cleanup
+            image: "{{ if .Values.global.registry }}{{ .Values.global.registry }}/{{ end }}{{ .Values.imageName }}:{{ .Values.imageVersion }}"
+            command:
+            - compute-cleanup
+            env:
+            - name: OS_REGION_NAME
+              value: "{{ .Values.global.region }}"
+            - name: OS_AUTH_URL
+              value: "https://identity-3.{{ .Values.global.region }}.{{ .Values.global.tld }}/v3"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "{{ .Values.projectDomainName | required "projectDomainName missing" }}"
+            - name: OS_PROJECT_NAME
+              value: "{{ .Values.projectName | required "projectName missing" }}"
+            - name: OS_USER_DOMAIN_NAME
+              value: "{{ .Values.userDomainName | required "userDomainName missing" }}"
+            - name: OS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}"
+                  key: username
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}"
+                  key: password
+            - name: OS_COMPUTE_API_VERSION # autodetection breaks setting tags
+              value: "{{ .Values.computeApiVersion }}"
+            - name: OS_IDENTITY_API_VERSION
+              value: "{{ .Values.identityApiVersion }}"
+            volumeMounts:
+            - name: bin
+              mountPath: /usr/local/bin
+          restartPolicy: OnFailure
+          volumes:
+            - name: bin
+              configMap:
+                name: {{ .Release.Name }}-bin
+                defaultMode: 0755
