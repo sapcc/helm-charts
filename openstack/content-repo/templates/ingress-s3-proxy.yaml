@@ -19,8 +19,23 @@ spec:
   tls:
     - secretName: tls-repo-new
       hosts:
+        {{- if eq $region "eu-de-3" }}
+        - 'repo.{{ $region }}.{{ $tld }}'
+        {{- end }}
         - 'repo-new.{{ $region }}.{{ $tld }}'
   rules:
+    {{- if eq $region "eu-de-3" }}
+    - host: 'repo.{{ $region }}.{{ $tld }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: s3-proxy
+                port:
+                  number: 80
+    {{- end }}
     - host: 'repo-new.{{ $region }}.{{ $tld }}'
       http:
         paths:
