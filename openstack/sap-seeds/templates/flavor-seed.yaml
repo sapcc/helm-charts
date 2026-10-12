@@ -6,12 +6,35 @@ spec:
   requires:
   - monsoon3/nova-flavor-seed
   flavors:
-{{- range $name := sortAlpha (keys .Values.flavors) }}
-  {{- $values := index $.Values.flavors $name }}
-  {{- if hasKey $values "id" }}
+  ### From .Values.flavors.(templates x hypervisors)
+{{- range $hyp, $hypervisor := $.Values.flavors.hypervisors }}
+  {{- $hypervisorSpec := default (dict) $hypervisor.spec  }}
+  {{- range $ver, $version := $hypervisor.variants }}
+    {{- $hypervisorVerSpec := merge (default (dict) $hypervisor.spec) $hypervisorSpec }}
+      {{- range $cat, $category := $.Values.flavors.templates }}
+          {{- $categorySpec := default (dict) $category.spec }}
+          {{- range $cpu, $cpus:= $category.variants }}
+              {{- $cpuSpec := merge (default (dict) $cpus.spec) $categorySpec }}
+              {{- range $ram, $rams:= $cpus.variants }}
+                  {{- $ramSpec := merge (default (dict) $rams.spec) $cpuSpec }}
+                  {{- $name := list $cat $hyp $cpu $ram $ver | join "_"}}
+                  {{- $overrides := get $.Values.flavors.overrides $name | default (dict) }}
+                  {{- $spec := merge $overrides $hypervisorVerSpec $ramSpec }}
+  - name: {{ $name }}
+    {{- toYaml $spec | nindent 4 }}
+              {{- end }}
+          {{- end }}
+      {{- end }}
+  {{- end }}
+{{- end }}
+  ### From .Values.flavors.untemplated
+{{- range $name, $values := $.Values.flavors.untemplated }}
   - name: {{ $name }}
     {{- toYaml $values | nindent 4 }}
-  {{- else }}
-  # {{ $name }} has no ID
-  {{- end }}
+{{- end }}
+  ### HANA flavors
+{{- if .Values.use_hana_exclusive }}
+{{ include (print .Template.BasePath "/_flavors_hana_exclusive.tpl") . | indent 2 }}
+{{- else }}
+{{ include (print .Template.BasePath "/_flavors_hana_no_exclusive.tpl") . | indent 2 }}
 {{- end }}
