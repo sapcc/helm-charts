@@ -1,0 +1,177 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: dhcpleases.dhcp.metal.ironcore.dev
+spec:
+  group: dhcp.metal.ironcore.dev
+  names:
+    kind: DHCPLease
+    listKind: DHCPLeaseList
+    plural: dhcpleases
+    singular: dhcplease
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.macAddress
+      name: MAC
+      type: string
+    - jsonPath: .spec.hostname
+      name: Hostname
+      type: string
+    - jsonPath: .spec.clientID
+      name: ClientID
+      priority: 1
+      type: string
+    - jsonPath: .spec.ip
+      name: IP
+      type: string
+    - jsonPath: .spec.gateway
+      name: Gateway
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          DHCPLease records an IPv4 lease issued by metaldhcp. It is the durable allocation
+          ledger (the oob plugin rebuilds its in-memory allocator from these on startup) and
+          the event that triggers the onboarding flow in the onboarding operator. metaldhcp
+          owns these objects; the object name is the normalized MAC (e.g. "3cecefaabbcc") so
+          re-leases patch the same object.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              clientID:
+                description: ClientID is the DHCPv4 client identifier (option 61)
+                  from the request, if present.
+                type: string
+              gateway:
+                description: Gateway is the pool gateway for the assigned address.
+                type: string
+              hostname:
+                description: |-
+                  Hostname is the client hostname, either from option 12 in the request or from a
+                  static lease config entry.
+                type: string
+              ip:
+                type: string
+              leaseTime:
+                description: LeaseTime is the lease duration offered for this address.
+                  Updated on re-lease.
+                type: string
+              macAddress:
+                type: string
+            required:
+            - ip
+            - macAddress
+            type: object
+        type: object
+    selectableFields:
+    - jsonPath: .spec.macAddress
+    - jsonPath: .spec.ip
+    served: true
+    storage: true
+    subresources: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: oobsubnets.dhcp.metal.ironcore.dev
+spec:
+  group: dhcp.metal.ironcore.dev
+  names:
+    kind: OOBSubnet
+    listKind: OOBSubnetList
+    plural: oobsubnets
+    singular: oobsubnet
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.cidr
+      name: CIDR
+      type: string
+    - jsonPath: .spec.gateway
+      name: Gateway
+      priority: 1
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          OOBSubnet defines an IPv4 pool for out-of-band / BMC management ports. It is
+          synced into the cluster by an external entity (the onboarding operator / NetBox
+          sync) and is read-only to metaldhcp. The oob plugin selects the subnet whose
+          CIDR matches the DHCP relay/link information and allocates a free address from it.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              bootURL:
+                description: |-
+                  BootURL, when set, is sent as the DHCP boot file URL (BootFileName field) in
+                  the offer/ack. Used for per-pool UEFI HTTP boot or iPXE chain-loading.
+                type: string
+              cidr:
+                description: CIDR is the IPv4 network from which addresses are allocated,
+                  e.g. "10.0.1.0/24".
+                type: string
+              gateway:
+                description: Gateway, when set, is excluded from allocation and offered
+                  as the router.
+                type: string
+              leaseTime:
+                description: |-
+                  LeaseTime is the default lease duration for addresses from this subnet. When
+                  unset the server-wide lease_time plugin value applies.
+                type: string
+              rangeEnd:
+                type: string
+              rangeStart:
+                description: |-
+                  RangeStart and RangeEnd optionally narrow allocation to a window within CIDR
+                  (inclusive). When unset the whole usable host range is used.
+                type: string
+            required:
+            - cidr
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources: {}

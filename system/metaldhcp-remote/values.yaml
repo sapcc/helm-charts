@@ -1,0 +1,55 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/metaldhcp-remote
+
+image:
+  repository: keppel.eu-de-2.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/metaldhcp
+  tag: "sha-87a7345"
+
+# remoteAPIServer is the m-cluster kube-apiserver address (host:port).
+# Gardener injects the token/CA into the metaldhcp-remote-kubeconfig Secret via token-requestor.
+remoteAPIServer: ""
+
+# managedResourceNamespace is the shoot control plane namespace where ManagedResource
+# objects are created so Gardener reconciles CRDs and RBAC to the m-cluster.
+# Example: shoot--cp--m-qa-de-100
+managedResourceNamespace: ""
+
+# externalIP is the fixed OOB IP assigned to this DHCP server via LoadBalancer.
+# DHCP clients and relay agents send requests to this address.
+externalIP: ""
+
+server:
+  listenAddr: "0.0.0.0:67"
+  leaseTime: 3600s
+  logLevel: info
+  netmask: "255.255.255.0"
+  healthAddr: ":8080"
+
+oob:
+  # subnetLabels selects OOBSubnet CRs as allocation pools.
+  subnetLabels:
+    - key: dhcp
+      value: "true"
+  staticLeases: []
+  # - mac: "aa:bb:cc:dd:ee:ff"
+  #   ip: 10.0.0.200
+  #   hostname: node-static-01
+  dnsServers: []
+  # - 147.204.9.200
+  # - 147.204.9.201
+  domain: ""
+  # domain: cc.qa-de-1.cloud.sap
+  ntpServers: []
+  # - 132.163.96.1
+
+tftp:
+  enabled: false
+  # ipxeURL: when set, an init container downloads the binary from this URL and serves
+  # it as snponly.efi. When unset, the binary baked into the image at /ipxe/snponly.efi
+  # is used. The advertised TFTP filename is always snponly.efi regardless.
+  # ipxeURL: https://boot-operator.example.com/snponly.efi
+
+debug:
+  enabled: false
+  image: nicolaka/netshoot

@@ -46,6 +46,9 @@ spec:
       - name: metaldhcp
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: IfNotPresent
+        env:
+          - name: KUBECONFIG
+            value: /var/run/remote-kubeconfig/kubeconfig
         args:
           - --config=/etc/metaldhcp/config.yaml
         ports:
@@ -88,6 +91,10 @@ spec:
         volumeMounts:
         - mountPath: /etc/metaldhcp
           name: config
+        - mountPath: /var/run/remote-kubeconfig
+          name: remote-kubeconfig
+        - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+          name: remote-serviceaccount
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
@@ -95,3 +102,14 @@ spec:
       - configMap:
           name: metaldhcp
         name: config
+      - configMap:
+          name: metaldhcp-remote-kubeconfig
+        name: remote-kubeconfig
+      - secret:
+          secretName: metaldhcp-remote-kubeconfig
+          items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+        name: remote-serviceaccount
