@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: flatcar-modprobe
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: flatcar-modprobe
+spec:
+  selector:
+    matchLabels:
+      app: flatcar-modprobe
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: flatcar-modprobe
+    spec:
+      tolerations:
+        - operator: Exists
+      initContainers:
+        {{- range .Values.modules }}
+        - name: modprobe-{{ . | replace "_" "-" }}
+          image: {{ $.Values.image }}
+          command:
+            - sh
+            - -c
+            - modprobe {{ . }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: modules
+              mountPath: /lib/modules
+              readOnly: true
+        {{- end }}
+      containers:
+        - name: check
+          image: {{ .Values.image }}
+          command:
+            - sh
+            - -c
+            - |
+              out="node=${NODE_NAME}"
+              {{- range .Values.modules }}
+              grep -q '^{{ . }} ' /proc/modules 2>/dev/null && out="${out} {{ . }}=loaded" || out="${out} {{ . }}=NOT_LOADED"
+              {{- end }}
+              echo "$out"
+              sleep infinity
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: proc
+              mountPath: /proc
+              readOnly: true
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: modules
+          hostPath:
+            path: /lib/modules
