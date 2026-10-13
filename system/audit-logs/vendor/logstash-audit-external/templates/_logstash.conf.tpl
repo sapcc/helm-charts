@@ -244,6 +244,44 @@ filter {
             ]
           }
 
+          # ---- never store admission patches ----
+          # A mutating webhook's patch can contain the values it injected, independently of
+          # the resource bodies. Remove the patch annotations from every event, and keep the
+          # routing, authorization and mutation-summary annotations. This alone doesn't mark
+          # the event: webhooks routinely patch ordinary objects such as shoots.
+          ruby {
+            code => '
+              annotations = event.get("annotations")
+              if annotations.is_a?(Hash)
+                removed = annotations.keys.select { |key| key.start_with?("patch.webhook.admission.k8s.io/") }
+                unless removed.empty?
+                  removed.each { |key| annotations.delete(key) }
+                  event.set("annotations", annotations)
+                  event.set("[@metadata][admission_patch_removed]", true)
+                end
+              end
+            '
+          }
+
+          # ---- never store credentials, whatever the audit policy logs ----
+          # Requests on these resources carry credentials in their request or response
+          # body, or in an admission patch. Drop both bodies and mark the event, so a policy
+          # that logs them can be found without storing the data.
+          if [objectRef][resource] in ["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"] or [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] {
+            if [requestObject] or [responseObject] or [@metadata][admission_patch_removed] {
+              # The id makes the exporter count these events
+              # (logstash_node_plugin_events_out_total) for the KubeAuditCredentialBodyRemoved alert.
+              mutate {
+                id => "audit_credential_body_removed"
+                remove_field => ["requestObject", "responseObject"]
+                replace => { "[sap][cc][audit][credential_body_removed]" => "true" }
+              }
+              mutate {
+                convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }
+              }
+            }
+          }
+
           # ---- fix responseObject.status type conflict ----
           # When responseObject is a K8s Status (error response), the "status" field
           # is a string ("Failure"/"Success") which conflicts with the object mapping
