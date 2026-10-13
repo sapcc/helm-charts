@@ -1,6 +1,7 @@
 path_keywords:
   - images
   - members
+  - namespaces
   - schemas
   - stores
   - tags
