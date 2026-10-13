@@ -264,21 +264,48 @@ filter {
           }
 
           # ---- never store credentials, whatever the audit policy logs ----
-          # Requests on these resources carry credentials in their request or response
-          # body, or in an admission patch. Drop both bodies and mark the event, so a policy
-          # that logs them can be found without storing the data.
-          if [objectRef][resource] in ["secrets", "tokenreviews", "internalsecrets", "bmcsecrets"] or [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] {
+          # Remove every body that can hold a credential and mark the event, so a policy
+          # that logs them can be found without storing the data:
+          # - Secrets, InternalSecrets and BMCSecrets: the response, the request (except a
+          #   delete's DeleteOptions) and admission patches, which can carry injected values.
+          # - TokenReviews: both bodies; the request holds the token under review.
+          # - The token, adminkubeconfig and viewerkubeconfig subresources: the response,
+          #   which holds the issued credential. Their request (audiences, expiration) is kept.
+          if [objectRef][resource] in ["secrets", "internalsecrets", "bmcsecrets"] {
+            if [requestObject] and [verb] not in ["delete", "deletecollection"] {
+              mutate {
+                remove_field => ["requestObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+            if [responseObject] or [@metadata][admission_patch_removed] {
+              mutate {
+                remove_field => ["responseObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+          } else if [objectRef][resource] == "tokenreviews" {
             if [requestObject] or [responseObject] or [@metadata][admission_patch_removed] {
-              # The id makes the exporter count these events
-              # (logstash_node_plugin_events_out_total) for the KubeAuditCredentialBodyRemoved alert.
               mutate {
-                id => "audit_credential_body_removed"
                 remove_field => ["requestObject", "responseObject"]
-                replace => { "[sap][cc][audit][credential_body_removed]" => "true" }
+                replace => { "[@metadata][credential_body_removed]" => "true" }
               }
-              mutate {
-                convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }
-              }
+            }
+          } else if [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] and [responseObject] {
+            mutate {
+              remove_field => ["responseObject"]
+              replace => { "[@metadata][credential_body_removed]" => "true" }
+            }
+          }
+          if [@metadata][credential_body_removed] {
+            # The id makes the exporter count these events
+            # (logstash_node_plugin_events_out_total) for the KubeAuditCredentialBodyRemoved alert.
+            mutate {
+              id => "audit_credential_body_removed"
+              replace => { "[sap][cc][audit][credential_body_removed]" => "true" }
+            }
+            mutate {
+              convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }
             }
           }
 

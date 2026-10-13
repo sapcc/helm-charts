@@ -32,13 +32,22 @@ ANNOTATIONS = {
 }
 
 
+REQUEST, RESPONSE = ("requestObject",), ("responseObject",)
+BOTH = REQUEST + RESPONSE
+DELETE_OPTIONS = {"kind": "DeleteOptions", "apiVersion": "meta.k8s.io/v1", "propagationPolicy": "Background"}
+TOKEN_REQUEST = {"spec": {"audiences": ["review"], "expirationSeconds": 3600}}
+KUBECONFIG_REQUEST = {"spec": {"expirationSeconds": 600}}
+
+
 def fixtures():
     cases = []
 
-    def add(name, resource=None, subresource=None, request=None, response=None, sensitive=False, patch=False):
+    def add(name, resource=None, subresource=None, verb="create", request=None, response=None,
+            removed=(), marked=False, patch=False):
         event = {
             "kind": "Event", "apiVersion": "audit.k8s.io/v1", "auditID": name,
-            "level": "RequestResponse", "stage": "ResponseComplete", "verb": "create",
+            "level": "RequestResponse" if response is not None else "Request" if request is not None else "Metadata",
+            "stage": "ResponseComplete", "verb": verb,
             "requestReceivedTimestamp": STAMP, "stageTimestamp": STAMP,
             "user": {"username": "synthetic-review"}, "annotations": copy.deepcopy(ANNOTATIONS),
         }
@@ -55,30 +64,41 @@ def fixtures():
                 event["annotations"][PATCH_PREFIX + suffix] = json.dumps({
                     "patchType": "JSONPatch", "patch": [{"op": "add", "path": "/data/password", "value": SECRET}],
                 })
-        if request is None and response is None:
-            event["level"] = "Metadata"
-        # The marker flags credential content on credential-bearing requests only; patch
-        # annotations on other objects are removed without it, because webhooks patch
-        # ordinary objects (shoots, pods) all the time.
-        cases.append((event, sensitive, sensitive and (patch or request is not None or response is not None)))
+        cases.append((event, set(removed), marked))
 
+    # Secrets and the like: the stored object holds the credential, in every response and
+    # write request. A delete's request is DeleteOptions, which holds none.
     add("secret-create", "secrets", request={"stringData": {"password": SECRET}, "metadata": {
-        "annotations": {"kubectl.kubernetes.io/last-applied-configuration": SECRET}}}, sensitive=True)
-    add("secret-get", "secrets", response={"data": {"password": SECRET}}, sensitive=True)
-    add("secret-list", "secrets", response={"items": [{"data": {"password": SECRET}}]}, sensitive=True)
-    add("secret-json-patch", "secrets", request=[{"op": "add", "path": "/data/password", "value": SECRET}], sensitive=True)
-    add("token-review", "tokenreviews", request={"spec": {"token": SECRET}}, sensitive=True)
-    add("sa-token", "serviceaccounts", "token", response={"status": {"token": SECRET}}, sensitive=True)
-    add("workload-token", "workloadidentities", "token", response={"status": {"token": SECRET}}, sensitive=True)
-    for subresource in ("adminkubeconfig", "viewerkubeconfig"):
-        add(subresource, "shoots", subresource, response={"status": {"kubeconfig": SECRET}}, sensitive=True)
+        "annotations": {"kubectl.kubernetes.io/last-applied-configuration": SECRET}}}, removed=REQUEST, marked=True)
+    add("secret-get", "secrets", verb="get", response={"data": {"password": SECRET}}, removed=RESPONSE, marked=True)
+    add("secret-list", "secrets", verb="list", response={"items": [{"data": {"password": SECRET}}]}, removed=RESPONSE, marked=True)
+    add("secret-json-patch", "secrets", verb="patch", request=[{"op": "add", "path": "/data/password", "value": SECRET}],
+        removed=REQUEST, marked=True)
+    add("secret-delete", "secrets", verb="delete", request=DELETE_OPTIONS)
+    add("secret-delete-response", "secrets", verb="delete", request=DELETE_OPTIONS, response={"data": {"password": SECRET}},
+        removed=RESPONSE, marked=True)
     for resource in ("bmcsecrets", "internalsecrets"):
-        add(resource, resource, request={"data": {"password": SECRET}}, sensitive=True)
-    add("body-and-annotations", "secrets", request={"data": {"password": SECRET}}, sensitive=True, patch=True)
-    add("annotations-only", "secrets", sensitive=True, patch=True)
+        add(resource, resource, request={"data": {"password": SECRET}}, removed=REQUEST, marked=True)
+    # TokenReviews: the request holds the token under review.
+    add("token-review", "tokenreviews", request={"spec": {"token": SECRET}}, removed=BOTH, marked=True)
+    # Issued tokens and kubeconfigs: only the response holds the credential.
+    add("sa-token", "serviceaccounts", "token", response={"status": {"token": SECRET}}, removed=RESPONSE, marked=True)
+    add("sa-token-request", "serviceaccounts", "token", request=TOKEN_REQUEST)
+    add("sa-token-request-response", "serviceaccounts", "token", request=TOKEN_REQUEST,
+        response={"status": {"token": SECRET}}, removed=RESPONSE, marked=True)
+    add("workload-token", "workloadidentities", "token", response={"status": {"token": SECRET}}, removed=RESPONSE, marked=True)
+    for subresource in ("adminkubeconfig", "viewerkubeconfig"):
+        add(subresource, "shoots", subresource, response={"status": {"kubeconfig": SECRET}}, removed=RESPONSE, marked=True)
+        add(subresource + "-request", "shoots", subresource, request=KUBECONFIG_REQUEST)
+    # Patch annotations are removed from every event. The marker flags credential content
+    # only: patches on Secrets and the like, not on other objects, which webhooks patch
+    # (shoots, pods) all the time.
+    add("body-and-annotations", "secrets", request={"data": {"password": SECRET}}, removed=REQUEST, marked=True, patch=True)
+    add("annotations-only", "secrets", marked=True, patch=True)
+    add("token-request-annotations", "serviceaccounts", "token", request=TOKEN_REQUEST, patch=True)
     add("pod-annotations", "pods", request={"spec": {"containers": []}}, patch=True)
-    add("shoot-update-annotations", "shoots", request={"spec": {"purpose": "evaluation"}}, patch=True)
-    add("metadata-control", "secrets", sensitive=True)
+    add("shoot-update-annotations", "shoots", verb="update", request={"spec": {"purpose": "evaluation"}}, patch=True)
+    add("metadata-control", "secrets")
     add("shoot-control", "shoots", request={"spec": {"purpose": "testing"}})
     add("configmap-control", "configmaps", request={"data": {"safe": "value"}})
     add("rbac-json-patch", "clusterrolebindings", request=[{"op": "add", "path": "/subjects/-", "value": {"name": "review"}}])
@@ -141,13 +161,13 @@ def verify(name, output, cases):
     assert len(events) == len(cases), f"{name}: expected {len(cases)} events, got {len(events)}\n{output}"
     actual = {event["auditID"]: event for event in events}
     assert len(actual) == len(cases), f"{name}: duplicate events"
-    for before, sensitive, marked in cases:
+    for before, removed, marked in cases:
         event = actual[before["auditID"]]
         assert event.get("annotations") == ANNOTATIONS, (name, before["auditID"], "annotations")
         marker = event.get(MARKER) if name == "fluentd" else event.get("sap", {}).get("cc", {}).get("audit", {}).get("credential_body_removed")
         assert marker is (True if marked else None), (name, before["auditID"], "marker must be a boolean")
         for key in ("requestObject", "responseObject"):
-            if sensitive:
+            if key in removed:
                 assert key not in event, (name, before["auditID"], key)
             else:
                 assert event.get(key) == before.get(key), (name, before["auditID"], key)
