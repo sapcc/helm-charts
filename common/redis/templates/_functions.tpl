@@ -28,7 +28,7 @@
 {{/* -----BEGIN TAGS_JSON PAYLOAD----- */}}
 {
   "alpine-kubectl": {
-    "latest": "latest-20261007122613"
+    "latest": "latest-20261013091840"
   },
   "alpine-valkey": {
     "9.1": "9.1-20261013085953"
