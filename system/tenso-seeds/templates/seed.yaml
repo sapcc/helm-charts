@@ -1,3 +1,7 @@
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
 metadata:
@@ -16,27 +20,27 @@ spec:
       description: 'Translation and delivery service for lifecycle events'
       enabled:     true
       endpoints:
-        - region:    '{{ $.Values.global.region }}'
+        - region:    '{{ $region }}'
           interface: public
           enabled:   true
-          url:       'https://tenso.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+          url:       'https://tenso.{{ $region }}.{{ $tld }}'
 
   domains:
     - name: Default
       users:
         - name: tenso
           description: Tenso Service
-          password: '{{ .Values.tenso.service_password | required ".Values.tenso.service_password is missing" }}'
+          password: {{ printf "%s/%s/tenso/keystone-user/service/password" $vbase $region | quote }}
         - name: tenso-ansible
           description: Technical User for submitting events into Tenso from Ansible
-          password: '{{ .Values.tenso.ansible_user_password | required ".Values.tenso.ansible_user_password is missing" }}'
+          password: {{ printf "%s/%s/tenso/keystone-user/tenso-ansible/password" $vbase $region | quote }}
           role_assignments:
             # The policy identifies this user by name instead of by role, but we need a project role somewhere to discover Tenso via Keystone catalog.
             - project: service
               role:    service
         - name: tenso-concourse
           description: Technical User for submitting events into Tenso from Concourse
-          password: '{{ .Values.tenso.concourse_user_password | required ".Values.tenso.concourse_user_password is missing" }}'
+          password: {{ printf "%s/concourse/common/keystone-user-password/tenso-%s/value" $vbase ($region | contains "qa" | ternary "qa" "prod") | quote }}
           role_assignments:
             # The policy identifies this user by name instead of by role, but we need a project role somewhere to discover Tenso via Keystone catalog.
             - project: service
