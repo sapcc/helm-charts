@@ -66,7 +66,6 @@ spec:
             - project: service
               role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
         {{- end }}
-      {{- if ne .Values.keppel.driver "swift" }}
       projects:
         - name: keppel-payloads # NOTE: in buildup, there is _probably_ a Limes dependency here, because the Ceph account for this project is probably only created once Limes assigns quota to it
           role_assignments:
@@ -82,7 +81,6 @@ spec:
               role: objectstore_viewer # to allow inspection by cloud admins into this project's Ceph account
             - group: CCADMIN_CLOUD_ADMINS@ccadmin
               role: objectstore_admin # TODO: remove once <https://github.com/cobaltcore-dev/cloud-storage/issues/468> is resolved and the above role assignment can be used instead
-      {{- end }}
 
     - name: ccadmin
       groups:
