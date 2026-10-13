@@ -1,10 +1,13 @@
+{{- $targets := include "content-repo.targets" . | fromYaml }}
 {{- range $repo, $config := .Values.repos }}
 {{- if not $config.disabled }}
+{{- range $targetName, $targetCfg := $targets }}
+{{- $suffix := include "content-repo.target_suffix" $targetName }}
 apiVersion: batch/v1
 kind: CronJob
 
 metadata:
-  name: content-repo-{{ $repo }}
+  name: content-repo-{{ $repo }}{{ $suffix }}
   labels:
     system: openstack
     component: content-repo
@@ -20,7 +23,7 @@ spec:
       template:
         metadata:
           labels:
-            component: content-repo-{{ $repo }}
+            component: content-repo-{{ $repo }}{{ $suffix }}
           annotations:
             checksum/check.etc: {{ include "content-repo/templates/configmap.yaml" $ | sha256sum }}
             checksum/check.secrets: {{ include "content-repo/templates/secret.yaml" $ | sha256sum }}
@@ -44,7 +47,7 @@ spec:
             {{- end }}
             imagePullPolicy: IfNotPresent
             args:
-              - /etc/http-import/config/{{ $repo }}.yaml
+              - /etc/http-import/config/{{ $repo }}{{ $suffix }}.yaml
             env:
               - name: 'DEBUG'
                 value: 'false'
@@ -77,5 +80,6 @@ spec:
                 cpu: '150m'
                 memory: '3584Mi'
 ---
+{{- end }}
 {{- end }}
 {{- end }}

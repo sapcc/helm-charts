@@ -13,6 +13,33 @@ alerts:
   prometheus: infra-frontend
 passwords:
   target_auth_password: secret
+  ceph_auth_password: secret
+
+targets:
+  default:
+    user_name:           repo
+    user_domain_name:    Default
+    project_name:        master
+    project_domain_name: ccadmin
+    service_type:        object-store
+    password_key:        target_auth_password
+  ceph:
+    user_name:           repo
+    user_domain_name:    Default
+    project_name:        master
+    project_domain_name: ccadmin
+    service_type:        object-store-ceph
+    password_key:        ceph_auth_password
+
+repos:
+  test-repo:
+    jobs:
+      - from:
+          url: https://example.com/repo/
+          type: "''"
+        to:
+          container:     test-container
+          object_prefix: test-prefix/
 
 s3_proxy:
   bucket:
