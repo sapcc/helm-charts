@@ -3,6 +3,7 @@
 {{- $clusterType := include "cc-shoots-workerless.clusterType" $ }}
 {{- $supportGroup := include "cc-shoots-workerless.supportGroup" $ }}
 {{- $clusterKubernetes := get $cluster "kubernetes" | default dict }}
+{{- $controlPlaneZones := get $cluster "controlPlaneZones" | default list }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
@@ -39,10 +40,10 @@ spec:
         - configmaps
         provider:
           type: aescbc
-  {{- if $cluster.controlPlaneZones }}
+  {{- if $controlPlaneZones }}
   controlPlane:
     zones:
-    {{- range $cluster.controlPlaneZones }}
+    {{- range $controlPlaneZones }}
       - {{ . }}
     {{- end }}
   {{- end }}
