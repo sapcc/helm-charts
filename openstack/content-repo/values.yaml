@@ -28,7 +28,10 @@ image_version_s3_proxy: '5.2.0'
 
 auth_url: DEFINED_IN_VALUES_FILE
 
-# Swift target where swift-http-import writes replicated content.
+# Legacy single-target config. Still honored: when .Values.targets is unset
+# this block is synthesized into a single-entry targets map under the key
+# "default", keeping the legacy unsuffixed resource names and TARGET_AUTH_PASSWORD
+# env var. Prefer .Values.targets below when running multiple backends.
 target:
   user_name: repo
   user_domain_name: Default
@@ -36,10 +39,43 @@ target:
   project_domain_name: ccadmin
   service_type: object-store
 
-# Map with auth passwords for Swift targets and sources. Only the
-# `target_auth_password` key is required.
+# Multi-target config for running swift-http-import against multiple backends
+# simultaneously (e.g. during a swift->ceph transition period).
+#
+# The entry named "default" is rendered without a suffix, preserving back-compat
+# resource names: config file <repo>.yaml, CronJob content-repo-<repo>, statsd
+# prefix repo.<repo>, and env var TARGET_AUTH_PASSWORD.
+#
+# Any additional entry named <target> produces:
+#   - config file  <repo>-<target>.yaml
+#   - CronJob      content-repo-<repo>-<target>
+#   - statsd prefix repo.<repo>-<target>
+#   - env var      <TARGET>_AUTH_PASSWORD   (upper-cased, hyphens→underscores)
+#
+# Each entry references a key from .Values.passwords via `password_key`.
+#
+# targets:
+#   default:
+#     user_name:           repo
+#     user_domain_name:    Default
+#     project_name:        master
+#     project_domain_name: ccadmin
+#     service_type:        object-store
+#     password_key:        target_auth_password
+#   ceph:
+#     user_name:           repo
+#     user_domain_name:    Default
+#     project_name:        master
+#     project_domain_name: ccadmin
+#     service_type:        object-store-ceph
+#     password_key:        ceph_auth_password
+
+# Map with auth passwords for Swift/Ceph targets and sources.
+# `target_auth_password` is required for the default (swift) target.
+# Add `ceph_auth_password` when using a `ceph` entry in .Values.targets.
 passwords:
   target_auth_password: DEFINED_IN_VALUES_FILE
+  # ceph_auth_password: DEFINED_IN_VALUES_FILE
 
 statsd_hostname: DEFINED_IN_VALUES_FILE
 
