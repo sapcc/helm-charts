@@ -15,7 +15,9 @@ the real collector processes, with synthetic input and local stdout output.
 Containers have no network access and mount only temporary test fixtures,
 read-only. It checks credential-bearing resources, issued tokens/kubeconfigs,
 JSON patches, multiple admission patch annotations, annotation-only events,
-boolean removal markers and preservation of ordinary bodies and audit metadata.
+boolean removal markers and preservation of ordinary bodies and audit metadata,
+including the bodies that hold no credential: a delete's DeleteOptions and the
+request of a token or kubeconfig request.
 It also checks that each collector counts the events whose credential bodies it
 removed, which the `KubeAuditCredentialBodyRemoved` alerts watch: Logstash through
 the `audit_credential_body_removed` step (`logstash_node_plugin_events_out_total`
@@ -25,11 +27,17 @@ from the bundled exporter), Fluentd through
 These filters protect the Gardener events received by `logstash-audit-external`
 and the Kubernikus infrastructure container logs selected by
 `fluent_audit_container.kubeAPIServer`. They remove all
-`patch.webhook.admission.k8s.io/*` annotations, and the bodies of the listed
-credential-bearing resources. `sap.cc.audit.credential_body_removed` marks only
-events of those resources that carried a body or a patch annotation; patch
-annotations on other objects are removed without it, because webhooks patch
-ordinary objects such as shoots all the time.
+`patch.webhook.admission.k8s.io/*` annotations, and every body that can hold a
+credential: for Secrets, InternalSecrets and BMCSecrets the response and the
+request (except a delete's DeleteOptions), for TokenReviews both, and for the
+`token`, `adminkubeconfig` and `viewerkubeconfig` subresources the response,
+which holds the issued credential. `sap.cc.audit.credential_body_removed` marks
+only events from which such a body was removed, and Secret-like events that
+carried a patch annotation; patch annotations on other objects are removed
+without it, because webhooks patch ordinary objects such as shoots all the
+time. The marker therefore means that an audit policy recorded a credential,
+as `global/cc-gardener/ci/audit-policy-check.py` defines it; a policy that logs
+token or kubeconfig requests at `Request` level doesn't set it.
 Other annotations, including routing and authorization metadata, are retained.
 
 Keep API-server audit policies safe as well: filtering happens after local audit
