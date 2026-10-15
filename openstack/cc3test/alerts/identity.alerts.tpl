@@ -260,3 +260,62 @@ groups:
     annotations:
       description: "SAML signature validation test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Either mod_shib is accepting invalid/unsigned SAML assertions (SF.Fas.1/2 not enforced), or the valid SSO flow is broken."
       summary: "SAML signature validation failing"
+
+  - alert: SAMLAuthFlowFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML authentication flow failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML auth flow test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Either unauthenticated access is no longer redirecting to the IdP, or password authentication is not being blocked for federated domain users."
+      summary: "SAML authentication flow failing"
+
+  - alert: SAMLAudienceRestrictionFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAudienceRestriction_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML audience restriction and context binding failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML audience restriction test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. mod_shib may be accepting assertions intended for a different service provider or tenant (SF.Fas.5 context binding not enforced)."
+      summary: "SAML audience restriction and context binding failing"
+
+
+  - alert: SAMLTimingValidationFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLTimingValidation_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML timing and replay validation failing"
+      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML timing validation test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. mod_shib may be accepting expired, future-dated, or replayed SAML assertions (SF.Fas.3 timing controls not enforced)."
+      summary: "SAML timing and replay validation failing"
+
