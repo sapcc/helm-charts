@@ -3,6 +3,9 @@ set -ex
 
 # seed just enough to have a functional v3 api
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf bootstrap \
+{{- if not .Values.api.immutable_roles }}
+    --no-immutable-roles \
+{{- end }}
     --bootstrap-username {{ .Values.api.adminUser }} \
     --bootstrap-password {{ required "A valid .Values.api.adminPassword required!" .Values.api.adminPassword | include "resolve_secret" }} \
     --bootstrap-project-name {{ .Values.api.adminProjectName }} \
