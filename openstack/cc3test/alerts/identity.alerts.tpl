@@ -319,22 +319,3 @@ groups:
       description: "SAML timing validation test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. mod_shib may be accepting expired, future-dated, or replayed SAML assertions (SF.Fas.3 timing controls not enforced)."
       summary: "SAML timing and replay validation failing"
 
-  - alert: SAMLTestsNotRunning
-    expr: |
-        sum without (pod, instance) (
-          increase(cc3test_total{service="keystone", name=~"TestSAML.+", when="call"}[20m])
-        ) == 0
-    for: 30m
-    labels:
-      severity: warning
-      support_group: identity
-      service: "{{`{{ $labels.service }}`}}"
-      context: "{{`{{ $labels.service }}`}}"
-      meta: "SAML cc3test tests for {{`{{ $labels.name }}`}} are not running for more than 30 minutes"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
-      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
-      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
-    annotations:
-      description: "SAML cc3test tests for {{`{{ $labels.name }}`}} have not run in more than 30 minutes. SAML federation security controls (BSI SF.Fas.1/2, #1181) may not be monitored."
-      summary: "SAML cc3test tests not running"
