@@ -1,5 +1,7 @@
 [DEFAULT]
-debug = {{ .Values.debug }}
+{{- if .Values.debug }}
+debug = true
+{{- end }}
 prometheus = true
 prometheus_listen = 0.0.0.0:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
 pprof = {{ .Values.pprof.enabled }}
