@@ -1,0 +1,18 @@
+{{- if eq .Values.agent.workload.kind "Deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.agent.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.agent.name }}
+spec:
+  replicas: {{ .Values.agent.workload.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.agent.name }}
+  template:
+    metadata:
+      {{- include "agent-sandbox.podMeta" . | nindent 6 }}
+    spec:
+      {{- tuple .Values.agent.workload.kind $ | include "agent-sandbox.podSpec" | nindent 6 }}
+{{- end }}
