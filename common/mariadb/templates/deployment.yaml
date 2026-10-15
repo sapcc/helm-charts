@@ -184,20 +184,14 @@ spec:
         {{- range $flag := .Values.metrics.flags }}
           - "--{{$flag}}"
         {{- end }}
+        {{- with .Values.metrics.livenessProbe }}
         livenessProbe:
-          httpGet:
-            path: /
-            port: 9104
-            scheme: HTTP
-          periodSeconds: 20
-          timeoutSeconds: 10
+{{ toYaml . | indent 10 }}
+        {{- end }}
+        {{- with .Values.metrics.readinessProbe }}
         readinessProbe:
-          httpGet:
-            path: /
-            port: 9104
-            scheme: HTTP
-          periodSeconds: 20
-          timeoutSeconds: 10
+{{ toYaml . | indent 10 }}
+        {{- end }}
         env:
           - name: LOGLEVEL
             value: {{ default "info" .Values.metrics.loglevel }}
