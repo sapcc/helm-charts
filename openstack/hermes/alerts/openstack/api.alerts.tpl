@@ -275,20 +275,20 @@ groups:
       description: "Log Router flush retries have been exhausted and partitions are being routed to the DLQ. Audit events are not being written to the primary S3/Ceph bucket. Check S3 connectivity, bucket Object Lock configuration, and credentials."
       summary: "Log Router falling back to DLQ — data not reaching S3"
 
-  - alert: OpenstackHermesLogRouterAdminWriteErrors
-    expr: sum(rate(log_router_admin_write_errors_total[5m])) > 0
-    for: 5m
+  - alert: OpenstackHermesLogRouterAllWritesDenied
+    expr: sum(increase(log_router_events_dropped_total{reason="access_denied"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
+    for: 15m
     labels:
       context: log-router
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: critical
+      severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router admin-tier write errors — compliance audit copies may be missing from the admin bucket"
+      meta: "Log Router: every customer bucket write is denied, events are being dropped"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "Log Router is failing to write to the admin-tier storage. The admin tier provides unconditional compliance copies of all audit events. Sustained errors mean audit records are missing from the admin bucket."
-      summary: "Log Router admin-tier write errors — compliance data at risk"
+      description: "Log Router is dropping events as access_denied and nothing has been flushed for 15m. One customer revoking access does not do this; it usually means the log-router service user lost its object storage role or credentials."
+      summary: "Log Router writes denied for all tenants"
 {{- end }}
