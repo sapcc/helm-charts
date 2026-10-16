@@ -243,6 +243,7 @@ complex-role:
     - "indices:monitor/settings/get"
     - "indices:admin/create"
     - "indices:admin/mappings/get"
+    - "indices:data/read/search"
     - "indices:data/read/search*"
     - "indices:admin/get"
   tenant_permissions:
