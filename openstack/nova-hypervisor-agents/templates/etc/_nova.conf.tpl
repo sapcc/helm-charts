@@ -28,8 +28,6 @@ sync_power_state_unexpected_call_stop = false
 
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
-{{- include "osprofiler" . }}
-
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
