@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-onboarding-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metal-onboarding-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metal-onboarding-operator
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: metal-onboarding-operator
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    spec:
+      serviceAccountName: metal-onboarding-operator
+      containers:
+      - name: manager
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: IfNotPresent
+        args:
+        - --netbox-url={{ .Values.config.netboxURL }}
+        - --netbox-token-file=/var/run/secrets/netbox/{{ .Values.netbox.tokenSecret.key }}
+        {{- if .Values.config.dhcpLeaseNamespace }}
+        - --dhcp-lease-namespace={{ .Values.config.dhcpLeaseNamespace }}
+        {{- end }}
+        {{- if .Values.config.clusterName }}
+        - --cluster-name={{ .Values.config.clusterName }}
+        {{- end }}
+        - --leader-elect={{ .Values.config.leaderElect }}
+        {{- if .Values.labelMap }}
+        - --label-map-file=/etc/moo/label-map.yaml
+        {{- end }}
+        env:
+        - name: KUBECONFIG
+          value: /var/run/remote-kubeconfig/kubeconfig
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: netbox-token
+          mountPath: /var/run/secrets/netbox
+          readOnly: true
+        {{- if .Values.labelMap }}
+        - name: label-map
+          mountPath: /etc/moo
+          readOnly: true
+        {{- end }}
+        - name: remote-kubeconfig
+          mountPath: /var/run/remote-kubeconfig
+        - name: remote-serviceaccount
+          mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: netbox-token
+        secret:
+          secretName: {{ .Values.netbox.tokenSecret.name }}
+          items:
+          - key: {{ .Values.netbox.tokenSecret.key }}
+            path: {{ .Values.netbox.tokenSecret.key }}
+      {{- if .Values.labelMap }}
+      - name: label-map
+        configMap:
+          name: metal-onboarding-operator-label-map
+      {{- end }}
+      - configMap:
+          name: metal-onboarding-operator-remote-kubeconfig
+        name: remote-kubeconfig
+      - secret:
+          secretName: metal-onboarding-operator-remote-kubeconfig
+          items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+        name: remote-serviceaccount
+      terminationGracePeriodSeconds: 10
