@@ -17,6 +17,34 @@ groups:
         In AZ {{ $labels.availability_zone }}, more than 80% of all {{ $labels.service }}/{{ $labels.resource }}
         capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
 
+  - alert: CephAllocatedCapacityAbove75Percent
+    expr: (stabilized:limes_capacity_blocked_percent_per_az{service="ceph"} > 75) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    for: 10m
+    labels:
+      severity: warning
+      service: capacity-ops
+      support_group: storage
+    annotations:
+      summary: "Blocked capacity above 75% on an autogrowing resource"
+      description: |
+        In AZ {{ $labels.availability_zone }}, more than 75% of all {{ $labels.service }}/{{ $labels.resource }}
+        capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
+        Please Inform Product Owner, Service Owner, Deliver Owner for respective service via email.
+
+  - alert: CephAllocatedCapacityAbove80Percent
+    expr: (stabilized:limes_capacity_blocked_percent_per_az{service="ceph"} > 80) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    for: 10m
+    labels:
+      severity: critical
+      service: capacity-ops
+      support_group: storage
+    annotations:
+      summary: "Blocked capacity above 80% on an autogrowing resource"
+      description: |
+        In AZ {{ $labels.availability_zone }}, more than 80% of all {{ $labels.service }}/{{ $labels.resource }}
+        capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
+        Please Inform Product Owner, Service Owner, Deliver Owner for respective service via email.
+
   - alert: LimesBlockedCapacityDangerouslyHigh
     expr: (stabilized:limes_capacity_blocked_percent_per_az > on (service, resource) group_left () stabilized:limes_autogrow_quota_overcommit_threshold_percent) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
     for: 10m
@@ -52,12 +80,15 @@ groups:
       # ^ ignore AZ resources without real usage (this is important for resources that have capacity only in some AZs, because `capacity == 0` in a single AZ forces `allows_quota_overcommit = false` in that AZ)
     for: 10m
     labels:
-      severity: warning
+      # TODO: make this alert `severity: critical` across the board (requires clarifying who does 24/7 support for the non-storage services)
+      severity: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" -}} critical {{- else -}} warning {{- end }}'
+      # NOTE: alerts for storage services are routed to `support_group: storage` directly per their request
+      support_group: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" -}} storage {{- else -}} capacity-ops {{- end }}'
       service: capacity-ops
-      support_group: capacity-ops
     annotations:
       summary: 'Quota overcommit disabled ("safe mode") because of high allocation'
       description: |
         In AZ {{ $labels.availability_zone }}, the resource {{ $labels.service }}/{{ $labels.resource }} does not allow quota overcommit anymore.
         Growth quota and base quota may be severely limited. This may happen because a customer took out a very large commitment.
         Please check if there is a capacity shortage, or if customer commitments can be reduced to reenable normal growth quota and base quota distribution.
+        Please Inform Product Owner, Service Owner, Deliver Owner for respective service via email.
