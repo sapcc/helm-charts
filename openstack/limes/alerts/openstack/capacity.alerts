@@ -52,9 +52,11 @@ groups:
       # ^ ignore AZ resources without real usage (this is important for resources that have capacity only in some AZs, because `capacity == 0` in a single AZ forces `allows_quota_overcommit = false` in that AZ)
     for: 10m
     labels:
-      severity: warning
+      # TODO: make this alert `severity: critical` across the board (requires clarifying who does 24/7 support for the non-storage services)
+      severity: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" -}} critical {{- else -}} warning {{- end }}'
+      # NOTE: alerts for storage services are routed to `support_group: storage` directly per their request
+      support_group: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" -}} storage {{- else -}} capacity-ops {{- end }}'
       service: capacity-ops
-      support_group: capacity-ops
     annotations:
       summary: 'Quota overcommit disabled ("safe mode") because of high allocation'
       description: |
