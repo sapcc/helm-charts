@@ -79,12 +79,17 @@ spec:
             value: {{ $.Values.controlplane.port | quote }}
           - name: authentication-config
             value: "/etc/kubernetes/authentication.yaml"
-          {{- if hasKey $cluster "etcdEncryption" }}
-          {{- if $cluster.etcdEncryption }}
+          {{- if $cluster.encryptionConfigContent }}
+          - name: encryption-provider-config
+            value: "/etc/kubernetes/enc/enc.yaml"
+          {{- else }}
+          {{- $encSecretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
+          {{- if lookup "v1" "Secret" $cluster.namespace $encSecretName }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
-          {{- else if $.Values.etcd.useEncryption }}
+          {{- end }}
+          {{- if and (not $cluster.etcdEncryption) $.Values.etcd.useEncryption }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
@@ -108,15 +113,23 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
-        {{- if hasKey $cluster "etcdEncryption" }}
-        {{- if $cluster.etcdEncryption }}
+        {{- if $cluster.encryptionConfigContent }}
+          - name: "encryption-config"
+            hostPath: "/etc/kubernetes/enc/enc.yaml"
+            mountPath: "/etc/kubernetes/enc/enc.yaml"
+            readOnly: true
+            pathType: File
+        {{- else }}
+        {{- $encSecretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
+        {{- if lookup "v1" "Secret" $cluster.namespace $encSecretName }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
             readOnly: true
             pathType: File
         {{- end }}
-        {{- else if $.Values.etcd.useEncryption }}
+        {{- end }}
+        {{- if and (not $cluster.etcdEncryption) $.Values.etcd.useEncryption }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
@@ -381,8 +394,11 @@ spec:
   Etcd encryption config file delivery (new K8s Secret-based path only).
   Reads the EncryptionConfiguration from a K8s Secret (managed by the seeding
   template on first deploy, then by the rotation CronJob). Uses lookup to fetch
-  the Secret's content at deploy time. Falls back to encryptionConfigContent
-  value for CI testing (lookup returns nil during helm template).
+  the Secret's content at deploy time. On first deploy, lookup returns nil
+  (Secret is created in the same release) so nothing renders — the extraArgs
+  and extraVolumes are also gated on lookup, ensuring the API server only
+  references enc.yaml once it actually exists on the node.
+  Falls back to encryptionConfigContent value for CI testing.
   Only activates when the cluster sets etcdEncryption: true explicitly.
   Clusters using the legacy additionalConfig.secrets path (etcd.useEncryption)
   are not affected.
