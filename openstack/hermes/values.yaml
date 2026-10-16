@@ -386,7 +386,10 @@ hermes-postgresql:
     # SELECT on dataplane_config to this login user.
     log-router: {}
   config:
-    max_connections: 64
+    # hermez 16 + per log-router replica 10 config + 32 shard lock connections
+    # (LOG_ROUTER_SHARD_LOCK_MAX_CONNS), plus a hermez rolling update: 116 of
+    # the 122 left after reserved and superuser connections.
+    max_connections: 128
   persistence:
     enabled: true
     size: 10Gi
