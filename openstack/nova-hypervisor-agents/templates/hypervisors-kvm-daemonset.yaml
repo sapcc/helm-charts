@@ -68,10 +68,11 @@ spec:
       hostAliases:
       {{- $activeCell := include "nova.helpers.get_active_cell" . }}
       {{- $rabbitmq := include "nova.helpers.get_rabbitmq_by_cell" (tuple . $activeCell) | fromJson }}
+      {{- $envAll := . }}
       {{- range $ip := $rabbitmq.externalIPs }}
       - ip: {{ $ip }}
         hostnames:
-          - {{ include "nova.helpers.cell_rabbitmq_host" (tuple . $activeCell) }}
+          - {{ include "nova.helpers.cell_rabbitmq_host" (tuple $envAll $activeCell) }}
       {{- end }}
       initContainers:
       - name: kubernetes-entrypoint
