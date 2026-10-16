@@ -277,7 +277,7 @@ groups:
 
   - alert: OpenstackHermesLogRouterAllWritesDenied
     expr: sum(increase(log_router_events_dropped_total{reason="access_denied"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
-    for: 15m
+    for: 5m
     labels:
       context: log-router
       dashboard: hermes-log-router
@@ -286,9 +286,26 @@ groups:
       severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router: every customer bucket write is denied, events are being dropped"
+      meta: "Log Router: every write is denied by the object store, events are being dropped"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "Log Router is dropping events as access_denied and nothing has been flushed for 15m. One customer revoking access does not do this; it usually means the log-router service user lost its object storage role or credentials."
+      description: "Log Router is dropping events as access_denied and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration). A lost storage role does not show up here, see OpenstackHermesLogRouterFlushFailing."
       summary: "Log Router writes denied for all tenants"
+
+  - alert: OpenstackHermesLogRouterFlushFailing
+    expr: sum(increase(log_router_flush_errors_total[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
+    for: 5m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      meta: "Log Router cannot write to object storage, events are kept in the WAL"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router has had flush errors and flushed nothing for 15m, so it cannot write anywhere. Likely causes are a lost storage role (RGW answers 401), RGW or Keystone being down, or bad credentials. Events are kept in the WAL and retried, nothing is dropped yet, but the WAL grows until this is fixed."
+      summary: "Log Router cannot flush to object storage"
 {{- end }}
