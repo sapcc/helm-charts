@@ -2,6 +2,9 @@
 {{- $root := index . 0 }}
 {{- $name := index . 1 }}
 {{- $hv := index . 2 }}
+{{- if eq $name "compute" }}
+{{- fail "The hypervisor name 'compute' is reserved for the shared ConfigMap. Use a different name." }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
