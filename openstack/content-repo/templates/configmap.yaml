@@ -13,6 +13,7 @@ data:
 {{- range $repo, $config := .Values.repos }}
 {{- if not $config.disabled }}
 {{- range $targetName, $targetCfg := $targets }}
+{{- if or (not $config.only_target) (eq $targetName $config.only_target) }}
 {{- $suffix := include "content-repo.target_suffix" $targetName }}
   {{$repo}}{{$suffix}}.yaml: |
     swift:
@@ -105,6 +106,7 @@ data:
         immutable: {{ coalesce $job.immutable $config.immutable }}
         {{- end }}
       {{- end }}
+{{ end }}
 {{ end }}
 {{ end }}
 {{ end }}

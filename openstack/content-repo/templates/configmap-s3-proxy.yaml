@@ -1,6 +1,4 @@
 {{- if .Values.s3_proxy.enabled -}}
-{{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld"    -}}
-{{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
 
 apiVersion: v1
 kind: ConfigMap
@@ -41,9 +39,9 @@ data:
               redirectWithTrailingSlashForNotFoundFile: true
               signedUrlExpiration: {{ .Values.s3_proxy.signed_url_expiration | default "15m" | quote }}
         bucket:
-          name: content-repo
-          region: us-east-1 # placeholder; Ceph/RadosGW ignores this
-          s3Endpoint: https://rgw.st1.{{ $region }}.{{ $tld }}
+          name: {{ .Values.s3_proxy.bucket.name | required ".Values.s3_proxy.bucket.name is required" | quote }}
+          region: us-east-1 # placeholder; Ceph/RadosGW and Swift s3api ignore this
+          s3Endpoint: {{ .Values.s3_proxy.bucket.s3Endpoint | required ".Values.s3_proxy.bucket.s3Endpoint is required" | quote }}
           disableSSL: false
           s3ForcePathStyle: true # required for non-AWS endpoints
           credentials:
