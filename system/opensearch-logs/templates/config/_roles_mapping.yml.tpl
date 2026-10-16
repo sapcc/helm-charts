@@ -102,12 +102,13 @@ promrole:
   users:
   - "promuser"
   - "promuser2"
-{{- range .Values.global.ldap.opensearch_dashboard_groups }}
-  - {{ . }}
-{{- end }}
 {{- if .Values.qalogs.enabled }}
   - "ronly"
   - "ronly2"
+{{- end }}
+  backend_roles:
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
 {{- end }}
 
 readall:
