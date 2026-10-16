@@ -150,21 +150,21 @@ spec:
           command:
           - "nova-compute"
           env:
-            - name: OS_DEFAULT__MY_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
+          - name: OS_DEFAULT__MY_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
             valueFrom:
               secretKeyRef:
                 name: sentry
                 key: nova.DSN.python
-            {{- end }}
-{{- if or $hypervisor.python_warnings .Values.python_warnings }}
+          {{- end }}
+          {{- if or $hypervisor.python_warnings .Values.python_warnings }}
           - name: PYTHONWARNINGS
             value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
-{{- end }}
+          {{- end }}
           volumeMounts:
           - mountPath: /var/lib/nova
             name: var-lib-nova
