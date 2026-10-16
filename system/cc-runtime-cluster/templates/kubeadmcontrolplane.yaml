@@ -405,14 +405,12 @@ spec:
 */}}
 {{- if $cluster.etcdEncryption }}
 {{- $encConfig := "" }}
+{{- $secretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
+{{- $encSecret := lookup "v1" "Secret" $cluster.namespace $secretName }}
 {{- if $cluster.encryptionConfigContent }}
   {{- $encConfig = $cluster.encryptionConfigContent }}
-{{- else }}
-  {{- $secretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
-  {{- $encSecret := lookup "v1" "Secret" $cluster.namespace $secretName }}
-  {{- if $encSecret }}
-    {{- $encConfig = index $encSecret.data "config" | b64dec }}
-  {{- end }}
+{{- else if $encSecret }}
+  {{- $encConfig = index $encSecret.data "config" | b64dec }}
 {{- end }}
 {{- if $encConfig }}
     - content: |
@@ -420,6 +418,19 @@ spec:
       owner: root:root
       path: /etc/kubernetes/enc/enc.yaml
       permissions: "0600"
+{{- end }}
+{{/* Deliver enc_previous.yaml (retired keys backup) if the Secret has config-previous.
+     This file is never loaded by the API server — it exists only for manual recovery.
+     Mjolnir writes config-previous during the cleanup phase; helm converges to the same state. */}}
+{{- if $encSecret }}
+{{- $configPrevious := index $encSecret.data "config-previous" | default "" }}
+{{- if $configPrevious }}
+    - content: |
+{{ $configPrevious | b64dec | trim | indent 8 }}
+      owner: root:root
+      path: /etc/kubernetes/enc/enc_previous.yaml
+      permissions: "0600"
+{{- end }}
 {{- end }}
 {{- end }}
 
