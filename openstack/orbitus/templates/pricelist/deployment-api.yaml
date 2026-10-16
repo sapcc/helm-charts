@@ -1,0 +1,83 @@
+{{- range $name, $config := .Values.pricelist.apis }}
+{{- if not $config.skip }}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: pricelist-{{ $name }}-api
+  labels:
+    app: pricelist-{{ $name }}-api
+    release: "{{ $.Release.Name }}"
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ $config.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: {{ $config.replicas }}
+  selector:
+    matchLabels:
+      name: pricelist-{{ $name }}-api
+  template:
+    metadata:
+      labels:
+        name: pricelist-{{ $name }}-api
+        app: pricelist-{{ $name }}-api
+      annotations:
+        checksum/configmap: {{ include "orbitus/templates/pricelist/configmap.yaml" $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: api
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: pricelist
+        - name: pricelist-data
+          emptyDir: {}
+      initContainers:
+        {{ include "pricelist_init_container" $ | indent 8 }}
+      containers:
+        - name: api
+          image: {{ include "pricelist_image" $ }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - pricelist-regional-{{ $name }}-api
+            - ":80"
+          env:
+            {{ include "pricelist_common_envvars" $ | indent 12 }}
+            {{- if $config.has_db }}
+            {{ include "pricelist_db_envvars" $ | indent 12 }}
+            {{- end }}
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/pricelist
+              name: config
+            - mountPath: /pricelist-data
+              name: pricelist-data
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          {{- if $.Values.pricelist.resources.enabled }}
+          resources:
+            limits:
+              cpu: '1'
+              memory: {{ $config.memory_limit }}
+            requests:
+              cpu: {{ $config.cpu_request }}
+              memory: {{ $config.memory_limit }}
+          {{- end }}
+{{- end }}
+{{- end }}

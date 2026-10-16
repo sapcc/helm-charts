@@ -1,0 +1,58 @@
+global:
+  linkerd_requested: true
+  is_global_region: false
+
+linkerd-support:
+  annotate_namespace: true
+
+owner-info:
+  support-group: containers
+  service: orbitus
+  maintainers:
+    - Storage Resource Services
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/orbitus/
+
+pricelist:
+    dryrun: true
+    image_tag: DEFINED_IN_VALUES_FILE
+    pricelist_data_image_tag: DEFINED_IN_VALUES_FILE
+    apis:
+      editor:   { skip: false, cpu_request: 100m, memory_limit: 512Mi, replicas: 1, has_db: false }
+      consumer: { skip: false, cpu_request: 100m, memory_limit: 512Mi, replicas: 2, has_db: true }
+
+    # Whether to apply resource requests/limits to containers.
+    resources:
+      enabled: false
+
+postgresql:
+  postgresVersion: 18
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 50Gi
+  databases:
+    pricelist: {}
+  users:
+    pricelist: {}
+  config:
+    log_min_duration_statement: 250
+    max_connections: 128
+  sharedMemoryLimit: 128Mi
+  alerts:
+    support_group: containers
+
+pgbackup:
+  alerts:
+    support_group: containers
+
+pgmetrics:
+  alerts:
+    support_group: containers
+
+alerts:
+  enabled: true
+  # Names of the Prometheus to which the alerts should be assigned to.
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes

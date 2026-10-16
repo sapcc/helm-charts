@@ -1,0 +1,70 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: orbitus-pricelist-data-metrics
+  labels:
+    app: orbitus-pricelist-data-metrics
+    release: "{{ .Release.Name }}"
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: pricelist-data-metrics
+  template:
+    metadata:
+      labels:
+        name: pricelist-data-metrics
+      annotations:
+        checksum/configmap: {{ include "orbitus/templates/pricelist/configmap.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: metrics
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: pricelist
+        - name: pricelist-data
+          emptyDir: {}
+      initContainers:
+        {{ include "pricelist_init_container" . | indent 8 }}
+      containers:
+        - name: metrics
+          image: {{ include "pricelist_image" . }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - pricelist-regional-data-metrics
+            - ":8080"
+          env:
+            {{ include "pricelist_common_envvars" . | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/pricelist
+              name: config
+            - mountPath: /pricelist-data
+              name: pricelist-data
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          ports:
+            - name: metrics
+              containerPort: 8080
+          {{- if .Values.pricelist.resources.enabled }}
+          resources:
+            limits:
+              cpu: '1'
+              memory: '512Mi'
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+          {{- end }}
