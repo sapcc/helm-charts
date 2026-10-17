@@ -45,3 +45,19 @@ groups:
         In AZ {{ $labels.availability_zone }}, there are pending commitments for {{ $labels.service }}/{{ $labels.resource }}
         that Limes is unable to confirm. Please check if there is a capacity shortage and hardware needs to be ordered.
         The problematic commitments can be located through the cloud-admin Resource Management UI. Look for the `+pending` label.
+
+  - alert: LimesQuotaOvercommitDisabled
+    expr: stabilized:limes_cluster_resource_allows_quota_overcommit == 0
+      and on (availability_zone, service, resource) (sum by (availability_zone, resource, resource) (limes_project_usage_per_az) > 0)
+      # ^ ignore AZ resources without real usage (this is important for resources that have capacity only in some AZs, because `capacity == 0` in a single AZ forces `allows_quota_overcommit = false` in that AZ)
+    for: 10m
+    labels:
+      severity: warning
+      service: capacity-ops
+      support_group: capacity-ops
+    annotations:
+      summary: 'Quota overcommit disabled ("safe mode") because of high allocation'
+      description: |
+        In AZ {{ $labels.availability_zone }}, the resource {{ $labels.service }}/{{ $labels.resource }} does not allow quota overcommit anymore.
+        Growth quota and base quota may be severely limited. This may happen because a customer took out a very large commitment.
+        Please check if there is a capacity shortage, or if customer commitments can be reduced to reenable normal growth quota and base quota distribution.

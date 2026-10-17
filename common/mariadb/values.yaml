@@ -30,6 +30,11 @@ slow_query_log:
   cleanup:
     enabled: true  # removes old slowlogs on pod init
     max_age_days: 14
+  rotation:
+    enabled: true
+    max_size_mb: 1024
+    interval_seconds: 300
+    keep_previous: true
   persistence:
     enabled: false
     autoprovision: false
@@ -303,6 +308,24 @@ metrics:
   image: prom/mysqld-exporter
   image_version: v0.20.0
   port: "9104"
+  # Probes for the mysqld-exporter sidecar; empty by default (disabled), since
+  # MariaDB readiness depends on this sidecar's readiness. Previous values:
+  # livenessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: 9104
+  #     scheme: HTTP
+  #   periodSeconds: 20
+  #   timeoutSeconds: 10
+  # readinessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: 9104
+  #     scheme: HTTP
+  #   periodSeconds: 20
+  #   timeoutSeconds: 10
+  livenessProbe: {}
+  readinessProbe: {}
   flags:
     - collect.binlog_size
     - collect.info_schema.processlist

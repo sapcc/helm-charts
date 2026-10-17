@@ -11,6 +11,14 @@ data:
 {{ include (print .Template.BasePath "/etc/_barbican-api-paste.ini.tpl") . | indent 4 }}
   barbican.conf: |
 {{ include (print .Template.BasePath "/etc/_barbican.conf.tpl") . | indent 4 }}
+{{- if (include "barbican.tls.serving" .) }}
+  ssl-load.conf: |
+{{ include (print .Template.BasePath "/etc/_ssl-load.conf.tpl") . | indent 4 }}
+  tls-hardening.conf: |
+{{ include (print .Template.BasePath "/etc/_tls-hardening.conf.tpl") . | indent 4 }}
+  apache-hardening.conf: |
+{{ include (print .Template.BasePath "/etc/_apache-hardening.conf.tpl") . | indent 4 }}
+{{- end }}
   policy.yaml: |
 {{ include (print .Template.BasePath "/etc/_barbican-policy.yaml.tpl") . | indent 4 }}
   logging.ini: |
@@ -31,8 +39,9 @@ data:
 {{- end }}
   statsd-exporter.yaml: |
     defaults:
-      timer_type: histogram
-      buckets: [.025, .1, .25, 1, 2.5]
+      observer_type: histogram
+      histogram_options:
+        buckets: [.025, .1, .25, 1, 2.5]
       match_type: glob
       glob_disable_ordering: false
       ttl: 0 # metrics do not expire

@@ -1,0 +1,12 @@
+{{- if and .Values.slow_query_log.rotation.enabled (or .Values.slow_query_log.persistence.enabled .Values.persistence_claim.enabled) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: mariadb-{{ .Values.name }}-slow-log-rotator
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "cm" "slow-log-rotator") | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/mariadb-slow-log-rotator.sh").AsConfig . | indent 2 }}
+{{- end }}

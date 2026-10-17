@@ -244,6 +244,71 @@ filter {
             ]
           }
 
+          # ---- never store admission patches ----
+          # A mutating webhook's patch can contain the values it injected, independently of
+          # the resource bodies. Remove the patch annotations from every event, and keep the
+          # routing, authorization and mutation-summary annotations. This alone doesn't mark
+          # the event: webhooks routinely patch ordinary objects such as shoots.
+          ruby {
+            code => '
+              annotations = event.get("annotations")
+              if annotations.is_a?(Hash)
+                removed = annotations.keys.select { |key| key.start_with?("patch.webhook.admission.k8s.io/") }
+                unless removed.empty?
+                  removed.each { |key| annotations.delete(key) }
+                  event.set("annotations", annotations)
+                  event.set("[@metadata][admission_patch_removed]", true)
+                end
+              end
+            '
+          }
+
+          # ---- never store credentials, whatever the audit policy logs ----
+          # Remove every body that can hold a credential and mark the event, so a policy
+          # that logs them can be found without storing the data:
+          # - Secrets, InternalSecrets and BMCSecrets: the response, the request (except a
+          #   delete's DeleteOptions) and admission patches, which can carry injected values.
+          # - TokenReviews: both bodies; the request holds the token under review.
+          # - The token, adminkubeconfig and viewerkubeconfig subresources: the response,
+          #   which holds the issued credential. Their request (audiences, expiration) is kept.
+          if [objectRef][resource] in ["secrets", "internalsecrets", "bmcsecrets"] {
+            if [requestObject] and [verb] not in ["delete", "deletecollection"] {
+              mutate {
+                remove_field => ["requestObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+            if [responseObject] or [@metadata][admission_patch_removed] {
+              mutate {
+                remove_field => ["responseObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+          } else if [objectRef][resource] == "tokenreviews" {
+            if [requestObject] or [responseObject] or [@metadata][admission_patch_removed] {
+              mutate {
+                remove_field => ["requestObject", "responseObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+          } else if [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] and [responseObject] {
+            mutate {
+              remove_field => ["responseObject"]
+              replace => { "[@metadata][credential_body_removed]" => "true" }
+            }
+          }
+          if [@metadata][credential_body_removed] {
+            # The id makes the exporter count these events
+            # (logstash_node_plugin_events_out_total) for the KubeAuditCredentialBodyRemoved alert.
+            mutate {
+              id => "audit_credential_body_removed"
+              replace => { "[sap][cc][audit][credential_body_removed]" => "true" }
+            }
+            mutate {
+              convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }
+            }
+          }
+
           # ---- fix responseObject.status type conflict ----
           # When responseObject is a K8s Status (error response), the "status" field
           # is a string ("Failure"/"Success") which conflicts with the object mapping

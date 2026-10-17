@@ -495,6 +495,26 @@ spec:
                         type: object
                       description: LivenessProbe allows changing the livenessProbe configuration for a given daemon
                       type: object
+                    muteHealthWarning:
+                      additionalProperties:
+                        description: MuteHealthWarningSpec configures muting of a Ceph health warning.
+                        properties:
+                          policy:
+                            description: Policy controls whether to mute or unmute a Ceph health warning.
+                            enum:
+                              - mute
+                              - unmute
+                            type: string
+                        required:
+                          - policy
+                        type: object
+                      description: MuteHealthWarning configures muting of Ceph health warnings.
+                      maxProperties: 10
+                      minProperties: 0
+                      type: object
+                      x-kubernetes-validations:
+                        - message: keys must be valid Ceph health check codes
+                          rule: self.all(k, k.matches('^[A-Z]+(_[A-Z]+)+$'))
                     startupProbe:
                       additionalProperties:
                         description: ProbeSpec is a wrapper around Probe so it can be enabled or disabled for a Ceph daemon
@@ -877,7 +897,7 @@ spec:
                                       resources:
                                         description: |-
                                           resources represents the minimum resources the volume should have.
-                                          If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                          Users are allowed to specify resource requirements
                                           that are lower than previous value but must still be higher than capacity recorded in the
                                           status field of the claim.
                                           More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -961,15 +981,13 @@ spec:
                                           volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                                           If specified, the CSI driver will create or update the volume with the attributes defined
                                           in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                                          it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-                                          will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-                                          If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-                                          will be set by the persistentvolume controller if it exists.
+                                          it can be changed after the claim is created. An empty string or nil value indicates that no
+                                          VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+                                          this field can be reset to its previous value (including nil) to cancel the modification.
                                           If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                                           set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                           exists.
                                           More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                          (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                         type: string
                                       volumeMode:
                                         description: |-
@@ -1103,7 +1121,7 @@ spec:
                             resources:
                               description: |-
                                 resources represents the minimum resources the volume should have.
-                                If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                Users are allowed to specify resource requirements
                                 that are lower than previous value but must still be higher than capacity recorded in the
                                 status field of the claim.
                                 More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -1187,15 +1205,13 @@ spec:
                                 volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                                 If specified, the CSI driver will create or update the volume with the attributes defined
                                 in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                                it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-                                will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-                                If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-                                will be set by the persistentvolume controller if it exists.
+                                it can be changed after the claim is created. An empty string or nil value indicates that no
+                                VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+                                this field can be reset to its previous value (including nil) to cancel the modification.
                                 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                                 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                 exists.
                                 More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                               type: string
                             volumeMode:
                               description: |-
@@ -1336,7 +1352,7 @@ spec:
                                   resources:
                                     description: |-
                                       resources represents the minimum resources the volume should have.
-                                      If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                      Users are allowed to specify resource requirements
                                       that are lower than previous value but must still be higher than capacity recorded in the
                                       status field of the claim.
                                       More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -1420,15 +1436,13 @@ spec:
                                       volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                                       If specified, the CSI driver will create or update the volume with the attributes defined
                                       in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                                      it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-                                      will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-                                      If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-                                      will be set by the persistentvolume controller if it exists.
+                                      it can be changed after the claim is created. An empty string or nil value indicates that no
+                                      VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+                                      this field can be reset to its previous value (including nil) to cancel the modification.
                                       If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                                       set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                       exists.
                                       More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                      (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                     type: string
                                   volumeMode:
                                     description: |-
@@ -1469,6 +1483,12 @@ spec:
                           default: 5
                           description: Only performance counters greater than or equal to this option are fetched
                           format: int64
+                          type: integer
+                        port:
+                          description: Port is the listening port of the ceph-exporter process. Defaults to 9926.
+                          format: int32
+                          maximum: 65535
+                          minimum: 1
                           type: integer
                         statsPeriodSeconds:
                           default: 5
@@ -2245,7 +2265,7 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-                          This is an alpha field and requires enabling the
+                          This field depends on the
                           DynamicResourceAllocation feature gate.
 
                           This field is immutable. It can only be set for containers.
@@ -2307,6 +2327,27 @@ spec:
                     cephx:
                       description: 'CephX configures CephX key settings. More: https://docs.ceph.com/en/latest/dev/cephx/'
                       properties:
+                        allowedCiphers:
+                          description: |-
+                            AllowedCiphers is an advanced configuration that can disrupt cluster availability!
+                            Review Rook documentation carefully before setting this in a production cluster!
+
+                            AllowedCiphers sets the Ceph config `auth_allowed_ciphers` to the list given.
+                            If the list is empty, Rook will enable support for all ciphers.
+                          items:
+                            description: |-
+                              A CephX key type represents a cipher type for CephX keys.
+                              Supported values: aes, aes256k.
+                            enum:
+                              - aes
+                              - aes256k
+                            maxLength: 7
+                            minLength: 3
+                            type: string
+                          maxItems: 2
+                          minItems: 1
+                          type: array
+                          x-kubernetes-list-type: set
                         csi:
                           description: |-
                             CSI configures CephX key rotation settings for the Ceph-CSI daemons in the current Kubernetes cluster.
@@ -2332,7 +2373,7 @@ spec:
                                 this new value (generation values are not necessarily incremental, though that is the
                                 intended use case). If this is set to less than or equal to the current key generation, keys
                                 are not rotated.
-                              format: int32
+                              format: int64
                               maximum: 4294967295
                               minimum: 0
                               type: integer
@@ -2348,7 +2389,24 @@ spec:
                                 - Disabled
                                 - KeyGeneration
                               type: string
+                            keyType:
+                              description: |-
+                                KeyType specifies the desired CephX key cipher type.
+                                If unspecified, Ceph's default will be used.
+                                If KeyRotationPolicy is Disabled or unspecified (default), modifying this value will never
+                                initiate key rotation.
+                                If KeyRotationPolicy is set to an enabled value (any other value), modifying this may
+                                initiate key rotation.
+                              enum:
+                                - aes
+                                - aes256k
+                              maxLength: 7
+                              minLength: 3
+                              type: string
                           type: object
+                          x-kubernetes-validations:
+                            - message: keyGeneration cannot be removed once set
+                              rule: '!has(oldSelf.keyGeneration) || has(self.keyGeneration)'
                         daemon:
                           description: |-
                             Daemon configures CephX key settings for local Ceph daemons managed by Rook and part of the
@@ -2362,7 +2420,7 @@ spec:
                                 this new value (generation values are not necessarily incremental, though that is the
                                 intended use case). If this is set to less than or equal to the current key generation, keys
                                 are not rotated.
-                              format: int32
+                              format: int64
                               maximum: 4294967295
                               minimum: 0
                               type: integer
@@ -2378,7 +2436,24 @@ spec:
                                 - Disabled
                                 - KeyGeneration
                               type: string
+                            keyType:
+                              description: |-
+                                KeyType specifies the desired CephX key cipher type.
+                                If unspecified, Ceph's default will be used.
+                                If KeyRotationPolicy is Disabled or unspecified (default), modifying this value will never
+                                initiate key rotation.
+                                If KeyRotationPolicy is set to an enabled value (any other value), modifying this may
+                                initiate key rotation.
+                              enum:
+                                - aes
+                                - aes256k
+                              maxLength: 7
+                              minLength: 3
+                              type: string
                           type: object
+                          x-kubernetes-validations:
+                            - message: keyGeneration cannot be removed once set
+                              rule: '!has(oldSelf.keyGeneration) || has(self.keyGeneration)'
                         rbdMirrorPeer:
                           description: |-
                             RBDMirrorPeer configures CephX key settings of the `rbd-mirror-peer` user that is used for creating
@@ -2394,7 +2469,7 @@ spec:
                                 this new value (generation values are not necessarily incremental, though that is the
                                 intended use case). If this is set to less than or equal to the current key generation, keys
                                 are not rotated.
-                              format: int32
+                              format: int64
                               maximum: 4294967295
                               minimum: 0
                               type: integer
@@ -2410,7 +2485,24 @@ spec:
                                 - Disabled
                                 - KeyGeneration
                               type: string
+                            keyType:
+                              description: |-
+                                KeyType specifies the desired CephX key cipher type.
+                                If unspecified, Ceph's default will be used.
+                                If KeyRotationPolicy is Disabled or unspecified (default), modifying this value will never
+                                initiate key rotation.
+                                If KeyRotationPolicy is set to an enabled value (any other value), modifying this may
+                                initiate key rotation.
+                              enum:
+                                - aes
+                                - aes256k
+                              maxLength: 7
+                              minLength: 3
+                              type: string
                           type: object
+                          x-kubernetes-validations:
+                            - message: keyGeneration cannot be removed once set
+                              rule: '!has(oldSelf.keyGeneration) || has(self.keyGeneration)'
                       type: object
                     keyRotation:
                       description: KeyRotation defines options for rotation of OSD disk encryption keys.
@@ -2570,7 +2662,7 @@ spec:
                                   Claims lists the names of resources, defined in spec.resourceClaims,
                                   that are used by this container.
 
-                                  This is an alpha field and requires enabling the
+                                  This field depends on the
                                   DynamicResourceAllocation feature gate.
 
                                   This field is immutable. It can only be set for containers.
@@ -2744,7 +2836,7 @@ spec:
                                     resources:
                                       description: |-
                                         resources represents the minimum resources the volume should have.
-                                        If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                        Users are allowed to specify resource requirements
                                         that are lower than previous value but must still be higher than capacity recorded in the
                                         status field of the claim.
                                         More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -2828,15 +2920,13 @@ spec:
                                         volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                                         If specified, the CSI driver will create or update the volume with the attributes defined
                                         in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                                        it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-                                        will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-                                        If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-                                        will be set by the persistentvolume controller if it exists.
+                                        it can be changed after the claim is created. An empty string or nil value indicates that no
+                                        VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+                                        this field can be reset to its previous value (including nil) to cancel the modification.
                                         If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                                         set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                         exists.
                                         More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                        (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                       type: string
                                     volumeMode:
                                       description: |-
@@ -3917,7 +4007,7 @@ spec:
                                   Claims lists the names of resources, defined in spec.resourceClaims,
                                   that are used by this container.
 
-                                  This is an alpha field and requires enabling the
+                                  This field depends on the
                                   DynamicResourceAllocation feature gate.
 
                                   This field is immutable. It can only be set for containers.
@@ -4098,7 +4188,7 @@ spec:
                                     resources:
                                       description: |-
                                         resources represents the minimum resources the volume should have.
-                                        If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                        Users are allowed to specify resource requirements
                                         that are lower than previous value but must still be higher than capacity recorded in the
                                         status field of the claim.
                                         More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -4182,15 +4272,13 @@ spec:
                                         volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                                         If specified, the CSI driver will create or update the volume with the attributes defined
                                         in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                                        it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-                                        will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-                                        If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-                                        will be set by the persistentvolume controller if it exists.
+                                        it can be changed after the claim is created. An empty string or nil value indicates that no
+                                        VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+                                        this field can be reset to its previous value (including nil) to cancel the modification.
                                         If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                                         set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                         exists.
                                         More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                        (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                       type: string
                                     volumeMode:
                                       description: |-
@@ -4350,7 +4438,7 @@ spec:
                               resources:
                                 description: |-
                                   resources represents the minimum resources the volume should have.
-                                  If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                  Users are allowed to specify resource requirements
                                   that are lower than previous value but must still be higher than capacity recorded in the
                                   status field of the claim.
                                   More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -4434,15 +4522,13 @@ spec:
                                   volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
                                   If specified, the CSI driver will create or update the volume with the attributes defined
                                   in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                                  it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-                                  will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-                                  If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-                                  will be set by the persistentvolume controller if it exists.
+                                  it can be changed after the claim is created. An empty string or nil value indicates that no
+                                  VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+                                  this field can be reset to its previous value (including nil) to cancel the modification.
                                   If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
                                   set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
                                   exists.
                                   More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-                                  (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
                                 type: string
                               volumeMode:
                                 description: |-
@@ -4586,6 +4672,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
                     cephExporter:
                       description: Ceph Exporter represents the cephx key rotation status of the ceph exporter daemon
@@ -4608,6 +4701,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
                     crashCollector:
                       description: Crash Collector represents the cephx key rotation status of the crash collector daemon
@@ -4630,6 +4730,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
                     csi:
                       description: CSI shows the CephX key status for Ceph-CSI components.
@@ -4652,6 +4759,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                         priorKeyCount:
                           description: PriorKeyCount reports the number of prior-generation CephX keys that remain active for the related component
                           type: integer
@@ -4677,6 +4791,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
                     mon:
                       description: Mon represents the CephX key status of the Monitor daemons
@@ -4699,6 +4820,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
                     osd:
                       description: OSD shows the CephX key status of of OSDs
@@ -4721,6 +4849,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
                     rbdMirrorPeer:
                       description: RBDMirrorPeer represents the cephx key rotation status of the `rbd-mirror-peer` user
@@ -4743,6 +4878,13 @@ spec:
                             Generation `0` indicates that keys existed prior to the implementation of key tracking.
                           format: int32
                           type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
                   type: object
                 conditions:
