@@ -87,12 +87,12 @@ filter {
   if ![initiator][project_id] and ![initiator][domain_id] {
     if [project] {
       mutate {
-        add_field => { "%{[project]}" => "%{[initiator][project_id]}"  }
+        add_field => { "[initiator][project_id]" => "%{[project]}" }
         id => "f06a_mutate_initiator_project_id"
         }
     } else if [domain] {
       mutate {
-        add_field => { "%{[domain]}" => "%{[initiator][domain_id]}"}
+        add_field => { "[initiator][domain_id]" => "%{[domain]}" }
         id => "f06b_mutate_initiator_domain_id"
       }
     }
