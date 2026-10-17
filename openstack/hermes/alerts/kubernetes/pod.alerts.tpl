@@ -88,3 +88,39 @@ groups:
         annotations:
           summary: Exceeding memory limits in 8h
           description: "The pod {{`{{ $labels.pod_name }}`}} will exceed its memory limit in 8h."
+
+{{- if .Values.logRouter.enabled }}
+      # the WAL is a bbolt file and never shrinks, so this tracks the high-water
+      # mark, not current backlog. thresholds are high on purpose.
+      - alert: OpenstackHermesLogRouterWALVolumeFilling
+        expr: max by (persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"} / kubelet_volume_stats_capacity_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"}) > 0.8
+        for: 30m
+        labels:
+          severity: warning
+          support_group: observability
+          tier: os
+          service: hermes
+          context: log-router
+          dashboard: hermes-log-router
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+          meta: "{{`{{ $labels.persistentvolumeclaim }}`}}"
+        annotations:
+          summary: Log Router WAL volume over 80%
+          description: "WAL volume {{`{{ $labels.persistentvolumeclaim }}`}} is over 80% full. Either flushes are failing and the backlog is growing, or the bbolt file grew during an earlier outage and needs compacting. Check log-router flush errors first."
+
+      - alert: OpenstackHermesLogRouterWALVolumeAlmostFull
+        expr: max by (persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"} / kubelet_volume_stats_capacity_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"}) > 0.9
+        for: 10m
+        labels:
+          severity: critical
+          support_group: observability
+          tier: os
+          service: hermes
+          context: log-router
+          dashboard: hermes-log-router
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+          meta: "{{`{{ $labels.persistentvolumeclaim }}`}}"
+        annotations:
+          summary: Log Router WAL volume over 90%
+          description: "WAL volume {{`{{ $labels.persistentvolumeclaim }}`}} is over 90% full. When it fills, log-router can't persist new events. Fix the storage problem behind the flush errors, or expand the PVC."
+{{- end }}
