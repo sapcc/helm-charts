@@ -71,7 +71,7 @@ for i in $modules;
         else
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
         fi
- 
+
         if test -f "${i}-additional-metrics.yaml"; then
                 #cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
                 sed -i "/max_repetitions: 25/e cat ${i}-additional-metrics.yaml" ../_snmp-exporter-${i}.yaml
