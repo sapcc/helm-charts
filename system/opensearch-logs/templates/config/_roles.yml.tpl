@@ -210,6 +210,7 @@ complex-role:
   hidden: false
   cluster_permissions:
   - "read"
+  - "cluster_monitor"
   - "cluster:monitor/nodes/stats"
   - "cluster:admin/opensearch/ql/datasources/read"
   - "cluster:monitor/task/get"
@@ -242,6 +243,7 @@ complex-role:
     - "indices:monitor/settings/get"
     - "indices:admin/create"
     - "indices:admin/mappings/get"
+    - "indices:data/read/search"
     - "indices:data/read/search*"
     - "indices:admin/get"
   tenant_permissions:
