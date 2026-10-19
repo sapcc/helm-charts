@@ -79,15 +79,9 @@ spec:
             value: {{ $.Values.controlplane.port | quote }}
           - name: authentication-config
             value: "/etc/kubernetes/authentication.yaml"
-          {{- if $cluster.encryptionConfigContent }}
+          {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
-          {{- else }}
-          {{- $encSecretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
-          {{- if lookup "v1" "Secret" $cluster.namespace $encSecretName }}
-          - name: encryption-provider-config
-            value: "/etc/kubernetes/enc/enc.yaml"
-          {{- end }}
           {{- end }}
           {{- if and (not $cluster.etcdEncryption) $.Values.etcd.useEncryption }}
           - name: encryption-provider-config
@@ -113,21 +107,12 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
-        {{- if $cluster.encryptionConfigContent }}
+        {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
             readOnly: true
             pathType: File
-        {{- else }}
-        {{- $encSecretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
-        {{- if lookup "v1" "Secret" $cluster.namespace $encSecretName }}
-          - name: "encryption-config"
-            hostPath: "/etc/kubernetes/enc/enc.yaml"
-            mountPath: "/etc/kubernetes/enc/enc.yaml"
-            readOnly: true
-            pathType: File
-        {{- end }}
         {{- end }}
         {{- if and (not $cluster.etcdEncryption) $.Values.etcd.useEncryption }}
           - name: "encryption-config"
@@ -391,46 +376,49 @@ spec:
       permissions: "0644"
 
 {{/*
-  Etcd encryption config file delivery (new K8s Secret-based path only).
-  Reads the EncryptionConfiguration from a K8s Secret (managed by the seeding
-  template on first deploy, then by the rotation CronJob). Uses lookup to fetch
-  the Secret's content at deploy time. On first deploy, lookup returns nil
-  (Secret is created in the same release) so nothing renders — the extraArgs
-  and extraVolumes are also gated on lookup, ensuring the API server only
-  references enc.yaml once it actually exists on the node.
-  Falls back to encryptionConfigContent value for CI testing.
+  Etcd encryption config file delivery (K8s Secret-based path).
+  enc.yaml and enc_previous.yaml are delivered as CAPI
+  files[].contentFrom.secret references — a static {name, key} ref, not inline
+  content. helm renders the reference without lookup; CAPI dereferences the
+  Secret at bootstrap-data generation time (and requeues until the seed lands).
+  This means a single helm upgrade --install both seeds the Secret and activates
+  encryption (no two-deploy), and the key content never enters the KCP spec so
+  there is no helm/mjolnir render-parity invariant on files[].
+  The seeding template seeds config and config-previous (present-but-empty) so
+  both references resolve on the first deploy; the rotation CronJob (mjolnir)
+  owns both keys afterward and triggers rollouts via spec.rollout.after.
+  Falls back to encryptionConfigContent inline value for CI testing (no Secret).
   Only activates when the cluster sets etcdEncryption: true explicitly.
   Clusters using the legacy additionalConfig.secrets path (etcd.useEncryption)
   are not affected.
 */}}
 {{- if $cluster.etcdEncryption }}
-{{- $encConfig := "" }}
 {{- $secretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
-{{- $encSecret := lookup "v1" "Secret" $cluster.namespace $secretName }}
 {{- if $cluster.encryptionConfigContent }}
-  {{- $encConfig = $cluster.encryptionConfigContent }}
-{{- else if $encSecret }}
-  {{- $encConfig = index $encSecret.data "config" | b64dec }}
-{{- end }}
-{{- if $encConfig }}
     - content: |
-{{ $encConfig | trim | indent 8 }}
+{{ $cluster.encryptionConfigContent | trim | indent 8 }}
       owner: root:root
       path: /etc/kubernetes/enc/enc.yaml
       permissions: "0600"
-{{- end }}
-{{/* Deliver enc_previous.yaml (retired keys backup) if the Secret has config-previous.
-     This file is never loaded by the API server — it exists only for manual recovery.
-     The rotation CronJob writes config-previous during the cleanup phase; helm converges to the same state. */}}
-{{- if $encSecret }}
-{{- $configPrevious := index $encSecret.data "config-previous" | default "" }}
-{{- if $configPrevious }}
-    - content: |
-{{ $configPrevious | b64dec | trim | indent 8 }}
+{{- else }}
+    - contentFrom:
+        secret:
+          name: {{ $secretName }}
+          key: config
+      owner: root:root
+      path: /etc/kubernetes/enc/enc.yaml
+      permissions: "0600"
+{{/* enc_previous.yaml (retired keys backup) — never loaded by the API server,
+     exists only for manual recovery. The seeding template seeds config-previous
+     present-but-empty; the rotation CronJob writes the retired key during the
+     cleanup phase. Delivered as a static ref so it resolves on the first deploy. */}}
+    - contentFrom:
+        secret:
+          name: {{ $secretName }}
+          key: config-previous
       owner: root:root
       path: /etc/kubernetes/enc/enc_previous.yaml
       permissions: "0600"
-{{- end }}
 {{- end }}
 {{- end }}
 
