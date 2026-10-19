@@ -41,8 +41,8 @@
 {{- end -}}
 
 {{/*
-  The init container copies the region-specific pricelist out of the data image into the shared
-  emptyDir, so the main container reads it from /pricelist/pricelist.json.gz.
+  The pricelist init container copies the region-specific pricelist out of the data image into the shared
+  emptyDir. The main container reads from: /pricelist-data/pricelist.json.gz
 */}}
 {{- define "pricelist_init_container" }}
 - name: pricelist-loader
