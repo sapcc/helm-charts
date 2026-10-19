@@ -9,10 +9,13 @@ campfire:
   mail_type:
     expire:
       subject: "Information about expiring commitments"
-      condition: "about to expire"
+      condition: "are about to expire"
     confirmed:
       subject: "Information about confirmed commitments"
-      condition: "confirmed and ready to use"
+      condition: "were confirmed and are ready to use"
+    transferred:
+      subject: "Information about transferred commitments"
+      condition: "were (partially) transferred to other projects after posting on the public marketplace"
 
 linkerd-support:
   annotate_namespace: true
@@ -51,6 +54,10 @@ limes:
       with_volume_subresources: true
       with_snapshot_subresources: true
       ignore_public_volume_types: "tempest.+"
+      manage_private_volume_types: "kvm-pilot"
+      category_display_names:
+        vmware: "Premium SSD"
+        standard_hdd: "Standard HDD"
 
     ironic:
       with_subcapacities: true
@@ -60,6 +67,7 @@ limes:
       capacity_calculation:
         capacity_balance: 0.75
         share_networks: 250
+        share_server_replicas: 250
         shares_per_pool: 1000
         snapshots_per_share: 5
         with_subcapacities: true
@@ -68,10 +76,15 @@ limes:
       prometheus_api_for_netapp_metrics:
         url: http://prometheus-storage.infra-monitoring.svc:9090
       share_types: [] # see regional values.yaml
+      category_display_names:
+        default: "Premium SSD"
+        hypervisor_storage: "Hypervisor Storage"
+        premium: "KVM Premium SSD"
 
     nova:
       with_subcapacities: true
       with_subresources: true
+      with_hw_version_resources: true # TODO: remove when Cortex integration goes live
       flavor_selection:
         required_extra_specs: { "vmware:hv_enabled" : "True" } # consider only VMware flavors
       hypervisor_selection:
@@ -85,6 +98,19 @@ limes:
         score_ignores_disk: true
         score_ignores_ram: true
       ignored_traits: [ CUSTOM_HW_SAPPHIRE_RAPIDS ]
+      category_for_split_flavor:
+        - { key: 'instances_hana_.+_v2', value: {name: 'per_flavor_hana_sapphire_rapids', display_name: 'HANA Flavors (Sapphire Rapids)'} }
+        - { key: 'instances_hana_.+', value: {name: 'per_flavor_hana_cascade_lake', display_name: 'HANA Flavors (Cascade Lake)'} }
+
+    designate:
+      prometheus_config:
+        api:
+          url: http://prometheus-openstack.prometheus-openstack.svc:9090
+        queries:
+          zones: count(openstack_designate_zones{project_id="{{.ProjectUUID}}",status!="DELETED"})
+          recordsets_per_zone: max(openstack_designate_recordsets{project_id="{{.ProjectUUID}}"})
+
+    swift: {}
 
   # Map with entries like:
   #
@@ -93,6 +119,11 @@ limes:
   #     rabbitmq_user: hare
   #     rabbitmq_password: blowfish
   passwords: DEFINED_IN_VALUES_FILE
+
+  # Values for the $LIMES_API_DOMAIN_NAME_{V1,V2} environment variables. Must be supplied in regional values.
+  api_domain_names:
+    v1: null
+    v2: null
 
   # This section of the YAML must be identical to the "clusters" section of the
   # Limes configuration file.
@@ -110,7 +141,13 @@ limes:
   resources:
     enabled: false
 
+  # May contain the `spec` section of an OpenstackSeed object.
+  # Intended for giving specialized role assignments to customers as part of support tickets
+  # (esp. cross-domain role assignments that are difficult to set up without cloud-admin access).
+  customer_seed: null
+
 postgresql:
+  postgresVersion: 18
   persistence:
     enabled: true
     size: 10Gi
@@ -119,6 +156,8 @@ postgresql:
   users:
     limes: {}
   sharedMemoryLimit: 128Mi
+
+  priorityClassName: important-payload
 
   config:
     log_min_duration_statement: 250
@@ -148,10 +187,10 @@ pgmetrics:
           # all service types without scrape errors. This ensures that an absence
           # of errors does not trigger a metric absence alert.
           query: >
-            SELECT cs.type AS service_name, SUM(CASE WHEN ps.scrape_error_message = '' THEN 0 ELSE 1 END) AS gauge
-            FROM project_services_v2 ps
-            JOIN cluster_services cs ON cs.id = ps.service_id
-            GROUP BY cs.type
+            SELECT s.type AS service_name, SUM(CASE WHEN ps.scrape_error_message = '' THEN 0 ELSE 1 END) AS gauge
+            FROM project_services ps
+            JOIN services s ON s.id = ps.service_id
+            GROUP BY s.type
           metrics:
             - service_name:
                 usage: "LABEL"
@@ -163,12 +202,13 @@ pgmetrics:
         limes_mismatch_project_quota:
           # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.
           query: >
-            SELECT cs.type AS service_name, COUNT(*) as count
-            FROM project_resources_v2 pr
-            JOIN cluster_resources cr ON cr.id = pr.resource_id
-            JOIN cluster_services cs ON cs.id = cr.service_id
-            WHERE pr.backend_quota != pr.quota
-            GROUP BY cs.type
+            SELECT s.type AS service_name, COUNT(*) as count
+            FROM project_az_resources pazr
+            JOIN az_resources azr ON azr.id = pazr.az_resource_id
+            JOIN resources r ON r.id = azr.resource_id
+            JOIN services s ON s.id = r.service_id
+            WHERE azr.az = 'total' AND pazr.backend_quota != pazr.quota
+            GROUP BY s.type
             UNION SELECT 'none' AS service_name, 0 AS count
           metrics:
             - service_name:
@@ -185,19 +225,13 @@ pgmetrics:
           # about it. Just like eventual consistency in general, this is just how Swift behaves. Therefore this metric only
           # considers quota inconsistencies in Swift if they are large (in specific, larger than 1 TiB = 1099511627776 byte).
           query: >
-            WITH tmp AS (
-              SELECT 1 
-              FROM project_az_resources_v2 pazr
-              JOIN cluster_az_resources cazr ON cazr.id = pazr.az_resource_id
-              JOIN cluster_resources cr ON cr.id = cazr.resource_id
-              JOIN cluster_services cs ON cs.id = cr.service_id
-              JOIN project_resources_v2 pr ON pr.resource_id = cr.id AND pr.project_id = pazr.project_id
-              JOIN project_services_v2 ps ON ps.service_id = cs.id AND ps.project_id = pr.project_id
-              GROUP BY ps.id, cs.type, cr.name, pr.quota
-              HAVING SUM(pazr.usage) > pr.quota
-                AND NOT (cs.type = 'swift' AND cr.name = 'capacity' AND SUM(pazr.usage) < pr.quota + 1099511627776)
-            )
-            SELECT COUNT(*) AS count FROM tmp
+            SELECT COUNT(*) AS count
+            FROM project_az_resources pazr
+            JOIN az_resources azr ON azr.id = pazr.az_resource_id
+            JOIN resources r ON r.id = azr.resource_id
+            WHERE azr.az = 'total'
+              AND pazr.usage > pazr.quota
+              AND NOT (r.path = 'swift/capacity' AND pazr.usage < pazr.quota + 1099511627776)
           metrics:
             - count:
                 usage: "GAUGE"
@@ -211,38 +245,18 @@ pgmetrics:
                 usage: "GAUGE"
                 description: "Number of projects in the Limes DB"
 
-        limes_project_resources_by_type:
-          query: >
-            SELECT cs.type AS service, cr.name AS resource, COUNT(*) AS count
-            FROM project_resources_v2 pr
-            JOIN cluster_resources cr ON cr.id = pr.resource_id
-            JOIN cluster_services cs ON cs.id = cr.service_id
-            GROUP BY cs.type, cr.name
-          metrics:
-            - service:
-                usage: "LABEL"
-                description: "Service type"
-            - resource:
-                usage: "LABEL"
-                description: "Resource name"
-            - count:
-                usage: "GAUGE"
-                description: "Number of projects that have a project_resources entry for this service and resource"
-
         # This metric is federated into prometheus-kubernetes for alerting in
         # Kubernikus. (Low free Swift quota means Kubernikus might become unable to
         # do etcd backups.)
         limes_free_swift_quota:
           query: >
-            SELECT p.uuid AS project_id, p.name AS project, d.name AS domain, GREATEST(pr.backend_quota - pazr.usage, 0) AS gauge
+            SELECT p.uuid AS project_id, p.name AS project, d.name AS domain, GREATEST(pazr.backend_quota - pazr.usage, 0) AS gauge
             FROM domains d
             JOIN projects p ON p.domain_id = d.id
-            JOIN project_az_resources_v2 pazr ON pazr.project_id = p.id
-            JOIN cluster_az_resources cazr ON cazr.id = pazr.az_resource_id
-            JOIN cluster_resources cr ON cr.id = cazr.resource_id 
-            JOIN cluster_services cs ON cs.id = cr.service_id
-            JOIN project_resources_v2 pr ON pr.resource_id = cr.id AND pr.project_id = pazr.project_id
-            WHERE cs.type = 'swift' AND cazr.az = 'any'
+            JOIN project_az_resources pazr ON pazr.project_id = p.id
+            JOIN az_resources azr ON azr.id = pazr.az_resource_id
+            JOIN resources r ON r.id = azr.resource_id
+            WHERE r.path = 'swift/capacity' AND azr.az = 'total'
           metrics:
             - gauge:
                 usage: "GAUGE"
@@ -259,18 +273,18 @@ pgmetrics:
 
         limes_support_group:
           query: >
-            SELECT 1 AS mapping, type AS service, CASE
+            SELECT 1 AS mapping, type AS service_name, CASE
               WHEN type IN ('compute', 'cinder', 'ironic', 'manila', 'nova') THEN 'compute-storage-api'
               WHEN type IN ('archer', 'designate', 'neutron', 'octavia')     THEN 'network-api'
               WHEN type IN ('cronus')                                        THEN 'email'
               WHEN type IN ('ceph', 'swift')                                 THEN 'storage'
               ELSE 'containers' END AS support_group
-            FROM cluster_services GROUP BY type
+            FROM services GROUP BY type
           metrics:
             - mapping:
                 usage: "GAUGE"
                 description: "Mapping between Limes service types and support group names"
-            - service:
+            - service_name:
                 usage: "LABEL"
                 description: "Service type in Limes"
             - support_group:

@@ -6,11 +6,11 @@ rally_debug = True
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
-test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
+test_accounts_file = /{{ .Chart.Name }}-etc-secret/tempest_accounts.yaml
 default_credentials_domain_name = tempest
 admin_project_name = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
 admin_domain_name = tempest
 admin_domain_scope = True
 
@@ -24,12 +24,12 @@ admin_domain_scope = False
 disable_ssl_certificate_validation = True
 auth_version = v3
 username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret"}}
 domain_name = tempest
 admin_role = admin
 admin_domain_name = tempest
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
 catalog_type = identity
 user_unique_last_password_count = 5
 user_lockout_duration = 300
@@ -49,14 +49,14 @@ security_compliance = True
 build_timeout=10800
 
 [network]
-project_network_cidr = 10.199.0.0/16
+project_network_cidr = {{ .Values.tempest_common.project_network_cidr }}
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
 build_interval=20
-subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
+subnet_id = {{ required "Missing tempest_common.subnet_id!" .Values.tempest_common.subnet_id }}
 
 [network-feature-enabled]
 ipv6 = False
@@ -93,7 +93,7 @@ snapshot = False
 shelve = False
 
 [validation]
-image_ssh_user = cirros
+image_ssh_user = ccloud
 image_alt_ssh_user = ccloud
 
 [volume]

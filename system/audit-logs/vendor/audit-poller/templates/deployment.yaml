@@ -33,16 +33,26 @@ spec:
           containerPort: {{ .Values.metricsPort }}
           protocol: TCP
         env:
+          - name: TOKEN_USER
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: tokenUser
           - name: TOKEN_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: audit-poller-secrets
-                key: tokenPassword
+                key: tokenPassword  
+          - name: CHANGELOG_USER
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: changelogUser
           - name: CHANGELOG_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: audit-poller-secrets
-                key: changelogPassword
+                key: changelogPassword  
         volumeMounts:
           - name: audit-poller-etc
             mountPath: /config/config.yaml

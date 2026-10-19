@@ -1,0 +1,32 @@
+{{- $dnsRecordTemplate := (index .Values "metal-operator-core").controllerManager.dnsRecordTemplate | default dict }}
+{{- if $dnsRecordTemplate.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Namespace }}-metal-operator-dns-record-manager
+rules:
+  - apiGroups:
+      - disco.stable.sap.cc
+    resources:
+      - records
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Namespace }}-metal-operator-dns-record-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Namespace }}-metal-operator-dns-record-manager
+subjects:
+  - kind: ServiceAccount
+    name: metal-operator-controller-manager
+    namespace: {{ .Release.Namespace }}
+{{- end }}

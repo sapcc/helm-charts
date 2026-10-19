@@ -58,6 +58,10 @@ sap_disable_incremental_backup = {{ .Values.sap_disable_incremental_backup }}
 sap_allow_independent_snapshots = {{ .Values.sap_allow_independent_snapshots }}
 sap_allow_independent_clone = {{ .Values.sap_allow_independent_clone }}
 
+# graceful shutdown timeout for oslo.service (seconds)
+# Derived from pod.terminationGracePeriodSeconds to stay in sync
+graceful_shutdown_timeout = {{ .Values.pod.terminationGracePeriodSeconds.volume }}
+
 {{ include "ini_sections.oslo_messaging_rabbit" . }}
 
 [keystone_authtoken]

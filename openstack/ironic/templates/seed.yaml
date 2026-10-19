@@ -15,14 +15,15 @@ spec:
   {{- end }}
   - monsoon3/nova-seed
   - monsoon3/neutron-seed
-  - swift/swift-seed
 
   roles:
   - name: cloud_baremetal_admin
   - name: baremetal_admin
   - name: baremetal_viewer
+  - name: objectstore_admin
   - name: cloud_image_admin
   - name: cloud_compute_admin
+  - name: cloud_objectstore_admin
 
   services:
   - name: ironic
@@ -31,10 +32,10 @@ spec:
     endpoints:
     - interface: admin
       region: {{ .Values.global.region }}
-      url: http://ironic-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6385
+      url: http://{{ include "ironic_api_endpoint_host_admin" . }}:6385
     - interface: internal
       region: {{ .Values.global.region }}
-      url: http://ironic-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6385
+      url: http://{{ include "ironic_api_endpoint_host_internal" . }}:6385
     - interface: public
       region: {{ .Values.global.region }}
       url: https://{{ include "ironic_api_endpoint_host_public" .}}
@@ -44,10 +45,10 @@ spec:
     endpoints:
     - interface: admin
       region: {{ .Values.global.region }}
-      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+      url: http://{{ include "ironic_inspector_endpoint_host_admin" . }}:{{ .Values.inspector.port_internal }}
     - interface: internal
       region: {{ .Values.global.region }}
-      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+      url: http://{{ include "ironic_inspector_endpoint_host_internal" . }}:{{ .Values.inspector.port_internal }}
     - interface: public
       region: {{ .Values.global.region }}
       url: https://{{ include "ironic_inspector_endpoint_host_public" .}}
@@ -580,12 +581,106 @@ spec:
       "resources:CUSTOM_HV_S4_C32_M1024_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
+  # New Lenovo SR950 V3 with Sapphire Rapids and 16TB
+  - name: "hv_s8_c48_m16384_v0"
+    id: "2044"
+    vcpus: 384
+    ram: 16777216
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": BareMetal 8 sockets, 48 cores, 16TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S8_C48_M16384_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # new HPE proliant dl345 AMD server
+  - name: "hv_s1_c72_m1152_v0"
+    id: "2045"
+    vcpus: 72
+    ram: 1179648
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 1 socket, 72 cores, 1152GB RAM, AMD EPYC
+      "resources:CUSTOM_HV_S1_C72_M1152_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # GPU Nodes Lenovo ThinkSystem SR675 V3 with Nvidia RTX6000
+  - name: "bg_s2_c96_m1536_v1"
+    id: "2046"
+    vcpus: 192
+    ram: 1572864
+    disk: 1788
+    is_public: true
+    extra_specs:
+      "catalog:description": GPU Baremetal 2 Socket AMD Epyc 6x Nvidia RTX6000
+      "resources:CUSTOM_BG_S2_C96_M1536_V1": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # GPU Nodes Lenovo ThinkSystem SR680a V3 with Nvidia HGX B200
+  - name: "bg_s2_c48_m2048_v1"
+    id: "2047"
+    vcpus: 96
+    ram: 2097152
+    disk: 960
+    is_public: true
+    extra_specs:
+      "catalog:description": GPU Baremetal 2 Socket Intel Xeon Platinum 8568Y Nvidia HGX B200
+      "resources:CUSTOM_BG_S2_C48_M2048_V1": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Lenovo ThinkSystem SR950 V3 as Hypervisor with 8s12T
+  - name: "hv_s8_c48_m12288_v0"
+    id: "2048"
+    vcpus: 384
+    ram: 12582912
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 8 sockets, 48 cores, 12TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S8_C48_M12288_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Lenovo ThinkSystem SR950 V3 as Baremetal with 8s12T
+  - name: "bm_s8_c48_m12288_v0"
+    id: "22048"
+    vcpus: 384
+    ram: 12582912
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Baremetal 8 sockets, 48 cores, 12TB RAM, Sapphire Rapids
+      "resources:CUSTOM_BM_S8_C48_M12288_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Dell PowerEdge R6715 as Hypervisor
+  - name: "hv_s1_c48_m384_v0"
+    id: "2049"
+    vcpus: 48
+    ram: 393216
+    disk: 894
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 1 socket, 48 cores, 384GB RAM, AMD EPYC
+      "resources:CUSTOM_HV_S1_C48_M384_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Bull BullSequana SH81 as Hypervisor
+  - name: "hv_s8_c86_m4096_v0"
+    id: "2050"
+    vcpus: 688
+    ram: 4194304
+    disk: 960
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 8 socket, 86 cores, 4096GB RAM, Intel Granite Rapid
+      "resources:CUSTOM_HV_S8_C86_M4096_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # Default are special
   # cc3test does not get seeds
   # ccadmin gets role assignments for the master project and some additional project assignments
   # monsoon3 gets a special role assignment for cc-demo project
-  # s4 gets a special role assignment for S4_CFM_ADMINS group
   # iaas is excluded completely
 
   domains:
@@ -607,9 +702,6 @@ spec:
         role: cloud_image_admin
       - project: service
         role: cloud_objectstore_admin
-    - name: ipmi_exporter
-      description: IPMI Exporter for MB Monitoring
-      password: '{{ required ".Values.global.ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | include "resolve_secret" }}'
 
   {{- range $domains}}
   {{- if and (not (hasPrefix "iaas-" .)) (not (eq . "Default"))}}
@@ -641,13 +733,6 @@ spec:
       role_assignments:
       - project: cc-demo
         role: baremetal_admin
-    {{- end }}
-    {{- if eq . "s4"}}
-    - name: S4_CFM_ADMINS
-      role_assignments:
-      - domain: s4
-        role: cloud_baremetal_admin
-        inherited: true
     {{- end }}
     - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:

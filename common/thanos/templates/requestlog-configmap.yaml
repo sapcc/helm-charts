@@ -1,0 +1,21 @@
+{{- if .Values.enabled }}
+{{- if $.Values.query.requestLog.enabled }}
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-query-requestlog-configmap
+  labels:
+    app.kubernetes.io/component: query
+data:
+  request_log.yaml: |
+    http:
+      options:
+        decision:
+          log_start: true
+          log_end: true
+        level: {{ $root.Values.query.requestLog.level }}
+{{- end }}
+{{- end }}
+{{- end }}

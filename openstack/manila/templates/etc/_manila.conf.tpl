@@ -65,6 +65,18 @@ server_migration_driver_continue_update_interval = {{ .Values.server_migration_d
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
 ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
+# SCI: we don't want snapshot_policy here as driver_updatable_metadata,
+# because we configured 'netapp_volume_snapshot_policy_exceptions' option
+driver_updatable_metadata = cross_volume_dedupe
+driver_updatable_subnet_metadata = showmount,pnfs
+# Prevent shares from transitioning to 'ensuring' status (2025.1 default changed to True)
+update_shares_status_on_ensure = False
+
+# manila by default would put "{project_id}_" as prefix, but since we anyhow don't have cross-project share servers, we can skip that.
+# obviously having shares with the same mount point name in the same share server is not possible,
+# but this cannot be solved by a prefix (for that case we have the share instance uuid, if mount point name is not used)
+default_mount_point_prefix = {{ .Values.mount_point_prefix | default "''" }}
+
 statsd_port = {{ .Values.rpc_statsd_port }}
 statsd_enabled = {{ .Values.rpc_statsd_enabled }}
 
@@ -92,8 +104,27 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 endpoint_type = internalURL
 insecure = True
 
+{{- if .Values.designate.enabled }}
+[designate]
+enabled = true
+ttl = {{ .Values.designate.ttl | default 300 }}
+endpoint_type = {{ .Values.designate.endpoint_type | default "publicURL" }}
+region_name = {{ .Values.designate.region_name | default .Values.global.region }}
+auth_type = v3password
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+insecure = True
+{{- end }}
+
+
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
+# Set False to preserve old Keystone RBAC behavior (non-scoped); 2025.1 defaults changed to True
+# look out for "using the intended scope is required" warnings in log
+enforce_new_defaults = False
+enforce_scope = False
 
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}

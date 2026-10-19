@@ -8,6 +8,9 @@ force_metadata=True
 enable_isolated_metadata=True
 metadata_proxy_socket = /run/metadata_proxy/metadata_proxy
 dnsmasq_dns_servers = {{required "A valid .Values.dns_forwarders required!" .Values.dns_forwarders}}
+{{- if .Values.ntp_servers }}
+dnsmasq_ntp_servers = {{.Values.ntp_servers}}
+{{- end }}
 dhcp_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 num_sync_threads = {{.Values.agent.dhcp.num_sync_threads | default 4 }}

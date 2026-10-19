@@ -67,10 +67,10 @@ groups:
 
     # We need to take average of the metrics to avoid exporting multiplied values，in case same filer is scraped by multiple harvest worker.
     - record: netapp_volume_total_bytes:maia2
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_total_bytes:pre{project_id!=""})
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_total_bytes:manila{project_id!=""})
 
     - record: netapp_volume_used_bytes:maia2
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_used_bytes:pre{project_id!=""})
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_used_bytes:manila{project_id!=""})
 
     - record: netapp_volume_available_bytes:maia2
       expr: netapp_volume_total_bytes:maia2 - netapp_volume_used_bytes:maia2
@@ -132,33 +132,51 @@ groups:
       expr: netapp_volume_inode_files_used_percentage:maia2 or sum (netapp_volume_inode_files_used_percentage:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
 
     #
-    # snampirror relationship
+    # snapmirror relationship
     #
-    # NOTE: We enrich snapmirror metrics using exported metrics from target region.
-    # It's done via the promquery exporter in `netapp_metrics_federation` subchart.
-    - record: netapp_snapmirror_labels:maia
+    # netapp_snapmirror_*:maia records are computed centrally in
+    # aggregations/thanos-regional/snapmirror.yaml (via Thanos Ruler), because they
+    # combine :local (source+destination filers can be in different AZs) and
+    # :remote (cross-region, from netapp-metrics-federation) — a single AZ-scoped
+    # Prometheus cannot see either.
+
+    # Maia metrics: openstack_manila_share_snapmirror_snapshot_size_bytes
+    # Description: Snapshot size induced by share replicas or other snapmirror relationships
+    - record: netapp_volume_snapmirror_snapshot_size_bytes:maia
       expr: |
-        go_build_info{app_kubernetes_io_instance="netapp-snapmirror-federation",
-          region!~"ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1"}
-        or {__name__=~"netapp_snapmirror_labels:localbkp|netapp_snapmirror_labels:remotebkp"}
+        sum (
+          sum (
+            netapp_snapshot_size{volume=~"share_.*", snapshot=~"snapmirror.*"}
+          ) by (filer, svm, volume) *
+        on (filer, svm, volume) group_left(share_id, project_id) netapp_volume_labels:manila
+        ) by (share_id, project_id)
 
-    - record: netapp_snapmirror_lag_time:maia
-      expr: '{__name__="netapp_snapmirror_lag_time:federated"}'
-
-    - record: netapp_snapmirror_last_transfer_size:maia
-      expr: '{__name__="netapp_snapmirror_last_transfer_size:federated"}'
-
-    - record: netapp_snapmirror_last_transfer_duration:maia
-      expr: '{__name__="netapp_snapmirror_last_transfer_duration:federated"}'
-
-    - record: netapp_snapmirror_last_transfer_duration:maia
-      expr: '{__name__="netapp_snapmirror_last_transfer_duration:federated"}'
-
-    - record: netapp_snapmirror_source_snapshot_count:maia
-      expr: '{__name__="netapp_snapmirror_source_snapshot_count:federated"}'
-
-    - record: netapp_snapmirror_destination_snapshot_count:maia
-      expr: '{__name__="netapp_snapmirror_destination_snapshot_count:federated"}'
+    # Maia metric: SnapMirror Active Sync (SMAS / automated_failover) per-volume replication state.
+    # SMAS mirrors are SVM-level (source_volume=""), so the cross-AZ netapp_snapmirror_*:maia
+    # pipeline never matches them. The join here is single-AZ (source volume and the source SVM's
+    # SMAS relationship both live on the source filer), so it stays in maia.yaml rather than
+    # thanos-regional. One series per volume, only for volumes whose source vserver participates
+    # in an automated_failover relationship — non-SMAS volumes are excluded by the inner join.
+    #   smas_state   — relationship_state (in_sync / out_of_sync)
+    #   smas_healthy — healthy (true / false)
+    - record: netapp_volume_smas_labels:maia
+      expr: |
+        avg by (
+          host, vserver, volume, volume_type, share_name, share_id, share_type,
+          project_id, availability_zone, destination_vserver, smas_state, smas_healthy
+        ) (
+          label_replace(label_replace(label_replace(
+            netapp_volume_labels:manila{project_id!="", share_type!="", volume_type!="dp"}
+              * on (svm) group_left(relationship_state, healthy, destination_vserver)
+              max by (svm, relationship_state, healthy, destination_vserver) (
+                label_replace(
+                  netapp_snapmirror_labels{policy_type="automated_failover"},
+                  "svm", "$1", "source_vserver", "(.*)")
+              ),
+            "vserver", "$1", "svm", "(.*)"),
+            "smas_state", "$1", "relationship_state", "(.*)"),
+            "smas_healthy", "$1", "healthy", "(.*)")
+        )
 
     #
     # nfs connection metrics
@@ -169,4 +187,3 @@ groups:
           count (netapp_nfs_clients_idle_duration{app="netapp-harvest-exporter-manila"}) by (volume, filer) *
           on (volume, filer) group_left (project_id, share_id, share_name, share_type, volume_type)
           netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
-

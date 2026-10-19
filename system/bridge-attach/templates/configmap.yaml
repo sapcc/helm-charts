@@ -1,0 +1,49 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bridge-attach-script
+  labels:
+    app.kubernetes.io/name: bridge-attach
+data:
+  add-iface-to-bridge.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [[ $# -ne 2 ]]; then
+        echo "Usage: $0 <interface> <bridge>" >&2
+        exit 1
+    fi
+
+    iface=$1
+    bridge=$2
+    sleep_secs=5
+
+    while ! ip link show "$bridge" >/dev/null 2>&1; do
+        echo "Bridge '$bridge' not found, retrying in ${sleep_secs}s..."
+        sleep "$sleep_secs"
+    done
+
+    if [[ ! -e "/sys/class/net/$iface" ]]; then
+        echo "Interface '$iface' not found." >&2
+        exit 1
+    fi
+
+    current_master=""
+    if [[ -L "/sys/class/net/$iface/master" ]]; then
+        current_master=$(basename "$(readlink "/sys/class/net/$iface/master")")
+    fi
+
+    if [[ "$current_master" == "$bridge" ]]; then
+        echo "Interface '$iface' is already attached to bridge '$bridge'."
+        exit 0
+    fi
+
+    if [[ -n "$current_master" ]]; then
+        echo "Interface '$iface' is currently attached to '$current_master', moving to '$bridge'..."
+    else
+        echo "Adding interface '$iface' to bridge '$bridge'..."
+    fi
+    ip link set "$iface" master "$bridge"
+    echo "Done."
+{{- end }}

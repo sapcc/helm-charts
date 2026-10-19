@@ -14,6 +14,8 @@ spec:
   replicas: 1
   shards: 1
 
+  priorityClassName: {{ default "important-payload" $.Values.priorityClassName }} 
+
   {{ if $.Values.rbac.create -}}
   serviceAccountName: {{ include "serviceAccount.name" (list $name $root) }}
   {{- end }}
@@ -105,6 +107,15 @@ spec:
   scrapeInterval: {{ $.Values.scrapeInterval }}
   {{ end }}
 
+  # Convert all classic histograms to native histograms with custom buckets (NHCB).
+  convertClassicHistogramsToNHCB: {{ $.Values.convertClassicHistogramsToNHCB }}
+
+  # Enable scraping of classic histograms that are also exposed as native histograms.
+  scrapeClassicHistograms: {{ $.Values.scrapeClassicHistograms }}
+
+  # Enable scraping of native histograms.
+  scrapeNativeHistograms: {{ $.Values.scrapeNativeHistograms }}
+
   {{ if $.Values.configMaps }}
   # Mount additional configmaps from the same namespace.
   configMaps:
@@ -178,7 +189,12 @@ spec:
     {{ end }}
     logLevel: {{ default "warn" $.Values.thanos.logLevel }}
 {{ toYaml $.Values.thanos.spec | indent 4 }}
-  {{- end -}}
+  {{- end }}
+
+  # See: https://github.com/prometheus-operator/prometheus-operator/issues/8763 for more details
+  {{- if $.Values.disableCompaction }}
+  disableCompaction: true
+  {{- end }}
 
   {{ if $.Values.resources }}
   # Kubernetes resource requests and limits if configured.

@@ -1,0 +1,56 @@
+{{- if .Values.encryptionRotation.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-encryption-rotation
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: encryption-rotation
+spec:
+  schedule: {{ .Values.encryptionRotation.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            {{- include "chart.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: encryption-rotation
+        spec:
+          serviceAccountName: etcd-encryption-rotation
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: rotate
+              image: "{{ .Values.encryptionRotation.image.repository }}:{{ .Values.encryptionRotation.image.tag }}"
+              args:
+                - etcd-secrets
+                - rotate-k8s
+                - --secret-name={{ .Values.encryptionRotation.secretName }}
+                - --secret-namespace={{ .Values.encryptionRotation.capiNamespace }}
+                - --kcp-name={{ .Values.encryptionRotation.kcpName }}
+                - --kcp-namespace={{ .Values.encryptionRotation.capiNamespace }}
+                - --rotation-days={{ .Values.encryptionRotation.rotationDays }}
+                - --secret-length={{ .Values.encryptionRotation.secretLength }}
+                - --nodes-count={{ .Values.encryptionRotation.nodesCount }}
+                - --resources={{ .Values.encryptionRotation.resources }}
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+{{- end }}

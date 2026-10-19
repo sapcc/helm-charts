@@ -1,6 +1,7 @@
 {{- define "ironic_deployment" -}}
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
+{{- $cellName := include "nova.helpers.cell_name" (tuple . "cell1") }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -42,14 +43,17 @@ spec:
         configmap-ironic-etc-hash: {{ tuple . $hypervisor | include "ironic_configmap" | sha256sum }}
         secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1"))) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "nova-compute"]
+          command: ["nova-compute"]
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
@@ -74,7 +78,7 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- if $hypervisor.default.statsd_enabled }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
@@ -111,14 +115,14 @@ spec:
               name: nova-console
               items:
               {{- range $type := list "serial" "shellinabox" }}
-              - key: console-cell1-{{ $type }}.conf
-                path: nova.conf.d/console-cell1-{{ $type }}.conf
+              - key: console-{{ $cellName }}-{{ $type }}.conf
+                path: nova.conf.d/console-{{ $cellName }}-{{ $type }}.conf
               {{- end }}
           - secret:
               name: nova-etc
               items:
-              - key: cell1.conf
-                path: nova.conf.d/cell1-secrets.conf
+              - key: {{ $cellName }}.conf
+                path: nova.conf.d/{{ $cellName }}-secrets.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.osprofiler.enabled }}

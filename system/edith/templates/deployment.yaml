@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
          - name: {{ .Release.Name }}
-           image: {{ required ".Values.edith.image.registry missing" .Values.edith.image.registry }}/{{ .Release.Name }}:{{ required ".Values.edith.image.tag missing" .Values.edith.image.tag }}
+           image: "{{ required ".Values.edith.image.registry missing" .Values.edith.image.registry }}/{{ .Release.Name }}:{{ required ".Values.edith.image.tag missing" .Values.edith.image.tag }}"
            ports:
              - name: webhook
                containerPort: {{ required ".Values.edith.port" .Values.edith.port }}
@@ -27,9 +27,14 @@ spec:
              - mountPath: /edith/app_config
                name: {{ .Release.Name }}-config
                readOnly: true
+             - mountPath: /mnt
+               name: edith-pvc
       volumes:
         - configMap:
             name: {{ .Release.Name }}-config
           name: {{ .Release.Name }}-config
+        - name: edith-pvc
+          persistentVolumeClaim:
+            claimName: {{ .Values.edith.pvcname }}
   strategy:
     type: Recreate

@@ -14,6 +14,7 @@ rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
 healthcheck_enabled = True
+allow_cross_pool_batch_members_update = {{ if hasKey .Values "allow_cross_pool_batch_members_update" }}{{ .Values.allow_cross_pool_batch_members_update }}{{ else }}true{{ end }}
 
 # Enable/disable exposing API endpoints. By default, both v1 and v2 are enabled.
 api_v1_enabled = False
@@ -144,4 +145,19 @@ allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifie
 enabled = true
 service_type = loadbalancer
 config_file = /etc/octavia/watcher.yaml
+{{- end }}
+
+{{ if .Values.rate_limit.enabled }}
+[rate_limit]
+enabled = true
+service_type = loadbalancer
+config_file = /etc/octavia/ratelimit.yaml
+rate_limit_by = {{ .Values.rate_limit.rate_limit_by }}
+max_sleep_time_seconds: {{ .Values.rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_secret_file = {{ .Values.rate_limit.backend_secret_file }}
+backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
 {{- end }}

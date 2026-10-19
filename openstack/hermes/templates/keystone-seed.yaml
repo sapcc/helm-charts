@@ -1,3 +1,4 @@
+{{- if .Values.hermes.keystone_seed_enabled }}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "cc3test" "ccadmin" "Default") $cdomains -}}
 {{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
@@ -16,9 +17,15 @@ spec:
   - {{ $.Values.global.keystoneNamespace }}/domain-{{ replace "_" "-" . | lower }}-seed
   {{- end}}
   {{- end}}
+  {{- if .Values.logRouter.enabled }}
+  - monsoon3/ceph-seed
+  {{- end}}
 
   roles:
     - name: audit_viewer
+    {{- if .Values.logRouter.enabled }}
+    - name: audit_admin
+    {{- end }}
 
   services:
     - name:        hermes
@@ -50,6 +57,18 @@ spec:
             role: audit_viewer
           - project: admin
             role: audit_viewer
+      {{- if .Values.logRouter.enabled }}
+      projects:
+        # Scope for log-router's token once logRouter.swift.writerProject is
+        # switched. Plain objectstore_admin (not cloud_objectstore_admin, which
+        # is RGW admin) so the writer only reaches buckets it or the customer
+        # owns. Same pattern as keppel-payloads.
+        - name: hermes-dataplane
+          description: Hermes dataplane writer, owns no customer data
+          role_assignments:
+            - user: hermes@Default
+              role: objectstore_admin
+      {{- end }}
       groups:
         - name: administrators
           role_assignments:
@@ -78,6 +97,15 @@ spec:
           role: audit_viewer
         - group: CCADMIN_MONITORING_USERS
           role: audit_viewer
+      {{- if $.Values.logRouter.enabled }}
+      - name: cloud_admin
+        role_assignments:
+        # Cloud-scoped: grants cloud_objectstore_admin across every project in
+        # the Ceph RGW Keystone integration — same pattern as Keppel (to
+        # read/write blobs from/into customer Swift/RGW accounts).
+        - user: hermes@Default
+          role: cloud_objectstore_admin
+      {{- end }}
       {{- end }}
       groups:
       - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
@@ -143,3 +171,4 @@ spec:
           inherited: true
     {{- end }}
     {{- end }}
+{{- end }}

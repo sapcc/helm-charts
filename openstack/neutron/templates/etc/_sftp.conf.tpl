@@ -18,7 +18,7 @@ swift_timeout = 180
 swift_expire = 1209600
 
 # OpenStack configurations
-os_identity_endpoint   = "http://keystone.{{ default .Release.Namespace .Values.global.keystoneNamespace }}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3"
+os_identity_endpoint   = "{{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3"
 os_username            = "{{.Values.sftp.user}}"
 os_password            = "{{ .Values.sftp.os_password | required "Please set .Values.sftp.os_password" | include "resolve_secret"}}"
 os_user_domain_name    = "Default"

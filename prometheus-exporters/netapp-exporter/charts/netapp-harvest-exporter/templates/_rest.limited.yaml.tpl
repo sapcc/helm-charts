@@ -1,5 +1,6 @@
 collector: Rest
 schedule:
+  - counter: 24h
   - data: 180s
 objects:
   Aggregate: aggr.yaml

@@ -30,11 +30,24 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
-{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
-        linkerd.io/inject: enabled
+{{- if $.Values.linkerd.mariadb.enabled }}
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
 {{- end }}
     spec:
+{{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+{{- end }}
       affinity:
+{{- if and .Values.backup_v2.cohost_with_mariadb .Values.backup_v2.enabled }}
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: {{ include "fullName" . }}-backup
+            topologyKey: kubernetes.io/hostname
+{{- end }}
+
         nodeAffinity:
 {{- if .Values.nodeAffinity }}
       {{- with .Values.nodeAffinity }}
@@ -72,70 +85,40 @@ spec:
             readOnly: true
           - name: init-file-root-sql
             mountPath: /etc/mysql/init-file
-      containers:
-      - name: mariadb
+{{- if or .Values.slow_query_log.persistence.enabled .Values.slow_query_log.cleanup.enabled }}
+      - name: slow-log-prepare
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
-        lifecycle:
-          postStart:
-            exec:
-              command: ["sh", "-c", "while ! mariadb-admin ping --silent; do sleep 1; done; mariadb-upgrade"]
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-{{.Values.name}}
-              key: root-password
-        ports:
-          - name: mariadb
-            containerPort: 3306
-        {{- if .Values.livenessProbe.enabled }}
-        livenessProbe:
-          exec:
-            command: ["sh", "-c", "exec mariadb-admin status"]
-          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-          successThreshold: {{ .Values.livenessProbe.successThreshold }}
-          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
-        {{- end }}
-        {{- if .Values.readinessProbe.enabled }}
-        readinessProbe:
-          exec:
-            command: ["sh", "-c", "exec mariadb-admin status"]
-          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-          successThreshold: {{ .Values.readinessProbe.successThreshold }}
-          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-        {{- end }}
-        resources:
-{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
-        volumeMounts:
-          - name: mariadb-socket
-            mountPath: /run/mysqld
-{{- if .Values.persistence_claim.enabled }}
-          - name: mariadb-persistent-storage
-            mountPath: /var/lib/mysql
-            readOnly: false
+        securityContext:
+          runAsUser: 0
+        command:
+          - /bin/bash
+          - -c
+          - |
+{{- if .Values.slow_query_log.persistence.enabled }}
+            [ "$(stat -c %U {{ include "mariadb.slowLogDir" . }})" = mysql ] || chown -R mysql:mysql {{ include "mariadb.slowLogDir" . }}
 {{- end }}
-          - mountPath: /usr/local/bin/docker-entrypoint.sh
-            subPath: docker-entrypoint.sh
-            name: mariadb-entrypoint
-            readOnly: true
-          - mountPath: /etc/mysql/mariadb.conf.d/
-            name: mariadb-etc
-          - mountPath: /root/.my.cnf
-            subPath: ".my.cnf"
-            name: mariadb-client
-          - name: initdb
-            mountPath: /docker-entrypoint-initdb.d
-          - name: mysql-users-secret-file
-            mountPath: /etc/mysql/mysql-users-secret
-            readOnly: true
-          - name: init-file-root-sql
-            mountPath: /etc/mysql/init-file
+{{- if .Values.slow_query_log.cleanup.enabled }}
+            find {{ include "mariadb.slowLogCleanupDir" . }} -maxdepth 1 -type f -name '*slow*.log*' -mtime +{{ .Values.slow_query_log.cleanup.max_age_days }} -delete 2>/dev/null || true
+{{- end }}
+            exit 0
+        volumeMounts:
+{{- if .Values.slow_query_log.persistence.enabled }}
+          - name: mariadb-logs-storage
+            mountPath: {{ include "mariadb.slowLogDir" . }}
+{{- else if .Values.persistence_claim.enabled }}
+          - name: mariadb-persistent-storage
+            mountPath: {{ include "mariadb.dataDir" . }}
+{{- end }}
+{{- end }}
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+{{- else }}
+      containers:
+{{- end }}
       - name: user-credential-updater
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+        restartPolicy: Always
+{{- end }}
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.credentialUpdater.image }}:{{ .Values.credentialUpdater.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         securityContext:
@@ -168,6 +151,9 @@ spec:
             name: initdb
 {{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
       - name: readiness
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+        restartPolicy: Always
+{{- end }}
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
         command:
           - pod_readiness
@@ -187,6 +173,9 @@ spec:
 {{- end }}
 {{- if .Values.metrics.enabled }}
       - name: metrics
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+        restartPolicy: Always
+{{- end }}
         image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.metrics.image }}:{{ .Values.metrics.image_version }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         args:
@@ -195,20 +184,14 @@ spec:
         {{- range $flag := .Values.metrics.flags }}
           - "--{{$flag}}"
         {{- end }}
+        {{- with .Values.metrics.livenessProbe }}
         livenessProbe:
-          httpGet:
-            path: /
-            port: 9104
-            scheme: HTTP
-          periodSeconds: 20
-          timeoutSeconds: 10
+{{ toYaml . | indent 10 }}
+        {{- end }}
+        {{- with .Values.metrics.readinessProbe }}
         readinessProbe:
-          httpGet:
-            path: /
-            port: 9104
-            scheme: HTTP
-          periodSeconds: 20
-          timeoutSeconds: 10
+{{ toYaml . | indent 10 }}
+        {{- end }}
         env:
           - name: LOGLEVEL
             value: {{ default "info" .Values.metrics.loglevel }}
@@ -225,6 +208,86 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
 {{- end }}
+{{- if and .Values.slow_query_log.rotation.enabled (or .Values.slow_query_log.persistence.enabled .Values.persistence_claim.enabled) }}
+{{- include "mariadb.slowLogRotatorContainer" . | nindent 6 }}
+{{- end }}
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+      containers:
+{{- end }}
+      - name: mariadb
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["sh", "-c", "while ! mariadb-admin ping --silent; do sleep 1; done; mariadb-upgrade"]
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: root-password
+{{- if or .Values.slow_query_log.persistence.enabled (and .Values.slow_query_log.rotation.enabled .Values.persistence_claim.enabled) }}
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        args:
+          - --slow-query-log-file={{ include "mariadb.slowLogCleanupDir" . }}/$(POD_NAME)-slow.log
+{{- end }}
+        ports:
+          - name: mariadb
+            containerPort: 3306
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "exec mariadb-admin status"]
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "exec mariadb-admin status"]
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
+        volumeMounts:
+          - name: mariadb-socket
+            mountPath: /run/mysqld
+{{- if .Values.persistence_claim.enabled }}
+          - name: mariadb-persistent-storage
+            mountPath: {{ include "mariadb.dataDir" . }}
+            readOnly: false
+{{- end }}
+{{- if .Values.slow_query_log.persistence.enabled }}
+          - name: mariadb-logs-storage
+            mountPath: {{ include "mariadb.slowLogDir" . }}
+{{- end }}
+          - mountPath: /usr/local/bin/docker-entrypoint.sh
+            subPath: docker-entrypoint.sh
+            name: mariadb-entrypoint
+            readOnly: true
+          - mountPath: /etc/mysql/mariadb.conf.d/
+            name: mariadb-etc
+          - mountPath: /root/.my.cnf
+            subPath: ".my.cnf"
+            name: mariadb-client
+          - name: initdb
+            mountPath: /docker-entrypoint-initdb.d
+          - name: mysql-users-secret-file
+            mountPath: /etc/mysql/mysql-users-secret
+            readOnly: true
+          - name: init-file-root-sql
+            mountPath: /etc/mysql/init-file
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
         - name: mariadb-socket
@@ -247,7 +310,12 @@ spec:
 {{- if .Values.persistence_claim.enabled }}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
-           claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
+           claimName: {{ include "mariadb.dataPvcName" . }}
+{{- end }}
+{{- if .Values.slow_query_log.persistence.enabled }}
+        - name: mariadb-logs-storage
+          persistentVolumeClaim:
+            claimName: {{ include "mariadb.slowLogPvcName" . }}
 {{- end }}
         - name: initdb
           secret:
@@ -259,6 +327,12 @@ spec:
           configMap:
             name: mariadb-{{.Values.name}}-set-root-password
             defaultMode: 0755
+{{- if and .Values.slow_query_log.rotation.enabled (or .Values.slow_query_log.persistence.enabled .Values.persistence_claim.enabled) }}
+        - name: slow-log-rotator-script
+          configMap:
+            name: mariadb-{{ .Values.name }}-slow-log-rotator
+            defaultMode: 0755
+{{- end }}
         - name: mysql-users-secret-file
           projected:
             sources:

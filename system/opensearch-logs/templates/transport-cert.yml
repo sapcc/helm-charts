@@ -1,17 +1,68 @@
 {{- if .Values.scaleout.enabled }}
+# Self-signed issuer to bootstrap the CA
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: opensearch-logs
+spec:
+  selfSigned: {}
+---
+# CA certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: opensearch-logs-ca
+  namespace: opensearch-logs
+spec:
+  isCA: true
+  commonName: opensearch-logs-ca
+  secretName: opensearch-logs-ca-secret
+  duration: 87600h
+  renewBefore: 720h
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+---
+# CA-backed issuer
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: opensearch-logs-ca-issuer
+  namespace: opensearch-logs
+spec:
+  ca:
+    secretName: opensearch-logs-ca-secret
+---
+# Transport cert
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: opensearch
   namespace: opensearch-logs
 spec:
+  commonName: 'opensearch-logs-node.{{ .Values.global.region }}'
   dnsNames:
-  - '*.opensearch-logs.{{ .Values.global.region }}.cloud.sap'
+  - '*.opensearch-logs.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-master.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-master-headless.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-data.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-data-headless.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-data-kvm.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-data-kvm-headless.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-client.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-client-headless.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-snapshots.opensearch-logs.svc.cluster.local'
+  - '*.opensearch-logs-snapshots-headless.opensearch-logs.svc.cluster.local'
+  - opensearch-logs-master-headless
+  - opensearch-logs-master-headless.opensearch-logs
+  - opensearch-logs-master-headless.opensearch-logs.svc.cluster.local
   issuerRef:
-    group: certmanager.cloud.sap
-    kind: DigicertIssuer
-    name: digicert-issuer
+    name: opensearch-logs-ca-issuer
+    kind: Issuer
   secretName: cert-manager
+  duration: 8760h
+  renewBefore: 720h
   privateKey:
     algorithm: RSA
     encoding: PKCS8

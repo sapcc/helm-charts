@@ -16,36 +16,32 @@ adminrole:
   -  "admin"
   -  "admin2"
   backend_roles:
-  - CC_IAS_TEAM_SUPERVISION
+{{- range .Values.global.ldap.opensearch_admin_groups }}
+  - {{ . }}
+{{- end }}
 
-data:
-  reserved: false
-  users:
-  - "data"
-  - "data2"
+anonymous_health_role:
+  backend_roles:
+  - "opendistro_security_anonymous_backendrole"
 
 audit:
   reserved: false
   users:
   - "audit"
   - "audit2"
-
-jump:
+awx:
   reserved: false
   users:
-  - "jump"
-  - "jump2"
+  - "awx"
+  - "awx2"
 
-logstash:
+complex-role:
   reserved: false
-  users:
-  - "logstash"
-
-storage:
-  reserved: false
-  users:
-  - "storage"
-  - "storage2"
+  hidden: false
+  backend_roles:
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
+{{- end }}
 
 compute:
   reserved: false
@@ -53,17 +49,11 @@ compute:
   - "compute"
   - "compute2"
 
-awx:
+data:
   reserved: false
   users:
-  - "awx"
-  - "awx2"
-
-otel:
-  reserved: false
-  users:
-  - "otel"
-  - "otel2"
+  - "data"
+  - "data2"
 
 jaeger:
   reserved: false
@@ -71,42 +61,11 @@ jaeger:
   - "jaeger"
   - "jaeger2"
 
-complex-role:
-  reserved: false
-  hidden: false
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
-
-kibana_user:
-  reserved: false
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
-
-readall:
-  reserved: false
-  backend_roles:
-  - "readall"
-
-manage_snapshots:
-  reserved: false
-  backend_roles:
-  - "snapshotrestore"
-
-kibana_server:
-  reserved: true
-  users:
-  - "kibanaserver"
-  - "kibanaserver2"
-
-promrole:
+jump:
   reserved: false
   users:
-  - "promuser"
-  - "promuser2"
-  - "ronly"
-  - "ronly2"
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+  - "jump"
+  - "jump2"
 
 jupyterhub:
   reserved: false
@@ -114,24 +73,69 @@ jupyterhub:
   - "jupyterhub"
   - "jupyterhub2"
 
+kibana_server:
+  reserved: true
+  users:
+  - "kibanaserver"
+  - "kibanaserver2"
+
+kibana_user:
+  reserved: false
+  backend_roles:
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
+{{- end }}
+
 maillog:
   reserved: false
   users:
   - "maillog"
   - "maillog2"
 
-oraboskvmrole:
-  reserved: false	
-  users:
-  - "oraboskvm"
-  - "oraboskvm2"
+manage_snapshots:
+  reserved: false
+  backend_roles:
+  - "snapshotrestore"
 
-syslog:
+promrole:
   reserved: false
   users:
-  - "syslog"
-  - "syslog2"
+  - "promuser"
+  - "promuser2"
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
+{{- end }}
+{{- if .Values.qalogs.enabled }}
+  - "ronly"
+  - "ronly2"
+{{- end }}
 
-anonymous_health_role:
+readall:
+  reserved: false
   backend_roles:
-  - "opendistro_security_anonymous_backendrole"
+  - "readall"
+
+storage:
+  reserved: false
+  users:
+  - "storage"
+  - "storage2"
+
+{{- if eq .Values.global.region "qa-de-1" }}
+security_analytics_full_access:
+  reserved: false
+  users:
+  - "securityanalytics"
+  backend_roles:
+  - VAULT_QA_ROLE_CYBER-SECURITY_METADATA_READ
+
+alerting_full_access:
+  reserved: false
+  users:
+  - "securityanalytics"
+
+siem_terraform_operator:
+  reserved: false
+  users:
+  - "securityanalytics"
+{{- end }}

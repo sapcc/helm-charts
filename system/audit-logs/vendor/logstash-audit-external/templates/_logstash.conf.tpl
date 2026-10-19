@@ -18,13 +18,25 @@ input {
     tags => ["audit"]
     user => '${AUDIT_HTTP_USER}'
     password => '${AUDIT_HTTP_PWD}'
-{{ if eq .Values.global.clusterType "metal" -}}
+{{ if ne .Values.global.clusterType "scaleout" -}}
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
     ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
     threads => 12
 {{- end }}
+  }
+{{- end }}
+{{- if .Values.mtls.enabled }}
+  http {
+    id => "input_mtls"
+    port  => {{.Values.input_mtls_port}}
+    tags => ["kube-api"]
+    ssl_enabled => true
+    ssl_certificate => '/tls-secret/tls.crt'
+    ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
+    threads => 12
   }
 {{- end }}
 {{- if .Values.beats.enabled }}
@@ -105,14 +117,22 @@ filter {
   }
 
 # Change type of audit relevant HSM syslogs
-  if [syslog_hostname] and [syslog_hostname] == "hsm01" {
+  if [syslog_hostname] and [syslog_hostname] =~ /hsm/ {
+    mutate {
+        replace => { "type" => "audit" }
+        add_field => { "[sap][cc][audit][source]" => "hsm" }
+    }
+  }
+  if [hostname] and [hostname] =~ /hsm/ {
     mutate {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
   }
   if [type] == "syslog" {
-    drop{}
+    mutate {
+      add_tag => ["dropped_syslog"]
+    }
   }
  }
  {{- end }}
@@ -189,7 +209,133 @@ filter {
         }
       }
     }
-  }
+    if ("kube-api" in [tags]) {
+            split {
+              field => "items"
+          }
+
+          if [items][annotations][shoot.gardener.cloud/name] {
+            grok {
+              match => { "[items][annotations][shoot.gardener.cloud/name]" => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
+            }
+          }
+
+          mutate {
+            add_field => { "[sap][cc][cluster]" => "%{[items][annotations][shoot.gardener.cloud/name]}"}
+            add_field => { "[sap][cc][audit][source]" => "kube-api"}
+            add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
+          }
+          # ---- flatten items ----
+          ruby {
+                 code => '
+                      event.get("items").each { |k, v|
+                          event.set(k,v)
+                          }
+                          event.remove("items")
+                '
+         }
+
+          # ---- remove managedFields entirely (contains dot-only keys that ES rejects) ----
+          # Must be AFTER items flatten so the field paths are correct
+          mutate {
+            remove_field => [
+              "[requestObject][metadata][managedFields]",
+              "[responseObject][metadata][managedFields]"
+            ]
+          }
+
+          # ---- never store admission patches ----
+          # A mutating webhook's patch can contain the values it injected, independently of
+          # the resource bodies. Remove the patch annotations from every event, and keep the
+          # routing, authorization and mutation-summary annotations. This alone doesn't mark
+          # the event: webhooks routinely patch ordinary objects such as shoots.
+          ruby {
+            code => '
+              annotations = event.get("annotations")
+              if annotations.is_a?(Hash)
+                removed = annotations.keys.select { |key| key.start_with?("patch.webhook.admission.k8s.io/") }
+                unless removed.empty?
+                  removed.each { |key| annotations.delete(key) }
+                  event.set("annotations", annotations)
+                  event.set("[@metadata][admission_patch_removed]", true)
+                end
+              end
+            '
+          }
+
+          # ---- never store credentials, whatever the audit policy logs ----
+          # Remove every body that can hold a credential and mark the event, so a policy
+          # that logs them can be found without storing the data:
+          # - Secrets, InternalSecrets and BMCSecrets: the response, the request (except a
+          #   delete's DeleteOptions) and admission patches, which can carry injected values.
+          # - TokenReviews: both bodies; the request holds the token under review.
+          # - The token, adminkubeconfig and viewerkubeconfig subresources: the response,
+          #   which holds the issued credential. Their request (audiences, expiration) is kept.
+          if [objectRef][resource] in ["secrets", "internalsecrets", "bmcsecrets"] {
+            if [requestObject] and [verb] not in ["delete", "deletecollection"] {
+              mutate {
+                remove_field => ["requestObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+            if [responseObject] or [@metadata][admission_patch_removed] {
+              mutate {
+                remove_field => ["responseObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+          } else if [objectRef][resource] == "tokenreviews" {
+            if [requestObject] or [responseObject] or [@metadata][admission_patch_removed] {
+              mutate {
+                remove_field => ["requestObject", "responseObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+          } else if [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] and [responseObject] {
+            mutate {
+              remove_field => ["responseObject"]
+              replace => { "[@metadata][credential_body_removed]" => "true" }
+            }
+          }
+          if [@metadata][credential_body_removed] {
+            # The id makes the exporter count these events
+            # (logstash_node_plugin_events_out_total) for the KubeAuditCredentialBodyRemoved alert.
+            mutate {
+              id => "audit_credential_body_removed"
+              replace => { "[sap][cc][audit][credential_body_removed]" => "true" }
+            }
+            mutate {
+              convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }
+            }
+          }
+
+          # ---- fix responseObject.status type conflict ----
+          # When responseObject is a K8s Status (error response), the "status" field
+          # is a string ("Failure"/"Success") which conflicts with the object mapping
+          # from Shoot resources where status is a complex object.
+          if [responseObject][kind] == "Status" {
+            mutate {
+              rename => { "[responseObject][status]" => "[responseObject][statusText]" }
+            }
+          }
+          if [responseStatus][status] {
+            mutate {
+              rename => { "[responseStatus][status]" => "[responseStatus][statusText]" }
+            }
+          }
+
+          # ---- use API server timestamp for correct event ordering ----
+          # requestReceivedTimestamp is when the API server received the request,
+          # which is the authoritative "when did this happen" time.
+          # Without this, @timestamp reflects batching/forwarding time which
+          # causes events from different API servers to appear out of order.
+          date {
+            match => ["requestReceivedTimestamp", "ISO8601"]
+            target => "@timestamp"
+            tag_on_failure => ["_dateparsefailure_requestReceivedTimestamp"]
+          }
+        }
+      }
 
 
 output {
@@ -216,6 +362,20 @@ output {
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
       http_method => "post"
+    }
+  } else if [type] == "kube-api" or "kube-api" in [tags] {
+    http {
+      id => "output_kube-api"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
+      url => "https://{{ .Values.global.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if "dropped_syslog" in [tags] {
+    file {
+      id => "output_dropped_syslog"
+      path => "/dev/stdout"
+      codec => json_lines
     }
   }
 }

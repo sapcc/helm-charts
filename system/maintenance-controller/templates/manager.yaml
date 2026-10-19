@@ -22,8 +22,7 @@ spec:
       labels:
         app: maintenance-controller
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: kubernetes
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}

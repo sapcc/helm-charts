@@ -8,7 +8,7 @@
     "context_is_baremetal_admin": "rule:context_is_admin or rule:admin",
     "context_is_viewer":  "rule:context_is_baremetal_admin or rule:viewer",
 
-    "show_password": "rule:context_is_admin",
+    "show_password": "!",
     "show_instance_secrets": "rule:context_is_admin",
 
     "baremetal:node:get": "rule:context_is_viewer",

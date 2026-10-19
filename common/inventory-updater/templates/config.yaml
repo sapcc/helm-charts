@@ -8,6 +8,19 @@ data:
 
     connection_timeout: {{ required ".Values.updater.connection_timeout" .Values.updater.connection_timeout }}
     scrape_interval: {{ required ".Values.updater.scrape_interval" .Values.updater.scrape_interval }}
+    workers: {{ .Values.updater.workers | default 10 }}
 
     netbox:
-{{ toYaml .Values.updater.netbox | nindent 6 }}
+{{ omit .Values.updater.netbox "token" | toYaml | nindent 6 }}
+{{- if .Values.updater.manufacturer_aliases }}
+    manufacturer_aliases:
+{{ .Values.updater.manufacturer_aliases | toYaml | nindent 6 }}
+{{- end }}
+{{- if .Values.updater.lom_manufacturers }}
+    lom_manufacturers:
+{{ .Values.updater.lom_manufacturers | toYaml | nindent 6 }}
+{{- end }}
+{{- if .Values.updater.bmc_interface_names }}
+    bmc_interface_names:
+{{ .Values.updater.bmc_interface_names | toYaml | nindent 6 }}
+{{- end }}

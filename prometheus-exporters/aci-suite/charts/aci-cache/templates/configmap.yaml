@@ -1,0 +1,18 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.fullname }}-config
+  labels:
+    {{- include "aci-cache.labels" . | nindent 4 }}
+data:
+  valkey.conf: |
+    bind 0.0.0.0
+    port {{ .Values.service.port }}
+    protected-mode yes
+    tcp-keepalive 300
+    timeout 0
+    daemonize no
+    databases 16
+    appendonly yes
+{{- end }}

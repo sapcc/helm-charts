@@ -1,10 +1,11 @@
 [hermes]
 PolicyFilePath = "/etc/hermes/policy.json"
+storage_driver = "opensearch"
 
 [API]
 ListenAddress = "0.0.0.0:80"
 
-[elasticsearch]
+[opensearch]
 url = "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"
 
 [keystone]
@@ -14,3 +15,11 @@ password = "{{.Values.hermes.password | default "default"}}"
 user_domain_name = "Default"
 project_domain_name = "Default"
 project_name = "service"
+
+[API.RateLimit]
+RequestsPerSecond = {{.Values.hermes.rateLimit.requestsPerSecond | default 0}}
+Burst = {{.Values.hermes.rateLimit.burst | default 0}}
+DownloadRequestsPerSecond = {{.Values.hermes.rateLimit.downloadRequestsPerSecond | default 0}}
+DownloadBurst = {{.Values.hermes.rateLimit.downloadBurst | default 0}}
+EvictionInterval = "{{.Values.hermes.rateLimit.evictionInterval | default "5m"}}"
+MaxIdlePeriod = "{{.Values.hermes.rateLimit.maxIdlePeriod | default "10m"}}"

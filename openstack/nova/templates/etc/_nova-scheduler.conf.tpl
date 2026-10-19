@@ -9,6 +9,9 @@ statsd_enabled = {{ .Values.scheduler.rpc_statsd_enabled }}
 discover_hosts_in_cells_interval = 60
 workers = {{ .Values.scheduler.workers }}
 driver_task_period = {{ .Values.scheduler.driver_task_period | default 60 }}
+{{- range $k, $v := .Values.scheduler.config.scheduler }}
+{{ $k }} = {{ $v }}
+{{- end }}
 
 [filter_scheduler]
 available_filters = {{ .Values.scheduler.available_filters | default "nova.scheduler.filters.all_filters" }}
@@ -42,3 +45,9 @@ external_scheduler_api_url = {{ .Values.scheduler.external_scheduler_api_url }}
 {{- if .Values.scheduler.external_scheduler_timeout }}
 external_scheduler_timeout = {{ .Values.scheduler.external_scheduler_timeout }}
 {{- end}}
+{{- if ne .Values.scheduler.external_scheduler_retries nil }}
+external_scheduler_retries = {{ .Values.scheduler.external_scheduler_retries }}
+{{- end }}
+{{- if ne .Values.scheduler.external_scheduler_retry_sleep_seconds nil }}
+external_scheduler_retry_sleep_seconds = {{ .Values.scheduler.external_scheduler_retry_sleep_seconds }}
+{{- end }}

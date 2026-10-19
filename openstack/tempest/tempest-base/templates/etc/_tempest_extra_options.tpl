@@ -7,11 +7,11 @@ rally_debug = True
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
-test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
+test_accounts_file = /{{ .Chart.Name }}-etc-secret/tempest_accounts.yaml
 default_credentials_domain_name = tempest
 admin_project_name = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
 admin_domain_name = tempest
 admin_domain_scope = True
 
@@ -25,12 +25,12 @@ admin_domain_scope = False
 disable_ssl_certificate_validation = True
 auth_version = v3
 username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret"}}
 domain_name = tempest
 admin_role = admin
 admin_domain_name = tempest
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret"}}
 catalog_type = identity
 user_unique_last_password_count = 5
 user_lockout_duration = 300
@@ -50,17 +50,20 @@ security_compliance = True
 build_timeout=600
 
 [network]
-project_network_cidr = 10.199.0.0/16
+project_network_cidr = {{ .Values.tempest_common.project_network_cidr }}
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
 build_interval=20
-subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
+subnet_id = {{ required "Missing tempest_common.subnet_id!" .Values.tempest_common.subnet_id }}
 
 [network-feature-enabled]
 ipv6 = False
+
+[neutron_plugin_options]
+max_mtu = 9000
 
 [baremetal]
 max_microversion = 1.78
@@ -70,10 +73,8 @@ driver = fake-hardware
 
 [compute]
 # image_ref and image_ref_alt will be changed to the image-id during init-script as the image-id can change over time.
-#image_ref = CHANGE_ME_IMAGE_REF
-#image_ref_alt = CHANGEMEIMAGEREFALT
-image_ref = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
-image_ref_alt = 84f9f266-3f11-4447-ae6c-f7940b2f5eb1
+image_ref = {{ required "Missing tempest_common.image_ref!" .Values.tempest_common.image_ref }}
+image_ref_alt = {{ required "Missing tempest_common.image_ref_alt!" .Values.tempest_common.image_ref_alt }}
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
@@ -81,26 +82,26 @@ flavor_ref = 20
 flavor_ref_alt = 30
 min_microversio = 2.1
 max_microversion = latest
-fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
+fixed_network_name = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 build_timeout=600
-compute_volume_common_az = qa-de-1b
+compute_volume_common_az = {{ required "Missing tempest_common.compute_volume_common_az!" .Values.tempest_common.compute_volume_common_az }}
 
 [compute-feature-enabled]
 resize = True
 unified_limits = False
-cold_migration = False
-live_migration = False
-live_migrate_back_and_forth = False
-vnc_console = False
+cold_migration = {{ required "Missing tempest_common.compute_cold_migration!" .Values.tempest_common.compute_cold_migration }}
+live_migration = {{ required "Missing tempest_common.compute_live_migration!" .Values.tempest_common.compute_live_migration }}
+live_migrate_back_and_forth = {{ required "Missing tempest_common.compute_live_migrate_back_and_forth!" .Values.tempest_common.compute_live_migrate_back_and_forth }}
+vnc_console = {{ required "Missing tempest_common.compute_vnc_console!" .Values.tempest_common.compute_vnc_console }}
 vnc_server_header = WebSockify
 serial_console = False
 spice_console = False
 attach_encrypted_volume = False
 
 [share]
-share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
-alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
-admin_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
+share_network_id = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
+alt_share_network_id = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
+admin_share_network_id = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
 run_revert_to_snapshot_tests = False
 run_multiple_share_replicas_tests = False
 run_share_group_tests = False
@@ -126,12 +127,12 @@ catalog_type = volumev3
 endpoint_type = public
 min_microversion = 3.0
 max_microversion = latest
-vendor_name = VMware
-storage_protocol = vstorageobject
-disk_format = vmdk
+vendor_name = {{ required "Missing tempest_common.volume_vendor_name!" .Values.tempest_common.volume_vendor_name }}
+storage_protocol = {{ required "Missing tempest_common.volume_storage_protocol!" .Values.tempest_common.volume_storage_protocol }}
+disk_format = {{ required "Missing tempest_common.volume_disk_format!" .Values.tempest_common.volume_disk_format }}
+volume_type = {{ required "Missing tempest_common.volume_type!" .Values.tempest_common.volume_type }}
 volume_size = 10
 build_timeout=600
-volume_type = vmware
 
 [volume-feature-enabled]
 backup = true
@@ -150,6 +151,6 @@ keystone = True
 octavia = True
 
 [dns]
-nameservers = 10.114.1.233,147.204.35.140,147.204.35.141
+nameservers = {{ required "Missing tempest_common.dns_nameservers!" .Values.tempest_common.dns_nameservers }}
 
 {{ end }}

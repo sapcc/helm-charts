@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
+replicaCount: 3
 debug: false
 
 global:
@@ -17,9 +17,11 @@ image:
 postgresql:
   enabled: true
   alerts:
-    support_group: network-api
+    support_group: containers
   databases:
-    archer: {}
+    archer:
+      sqlOnStartup: |
+        ALTER ROLE archer SET idle_in_transaction_session_timeout = '5min';
   extensions:
     pgcrypto: []
   persistence:
@@ -34,9 +36,72 @@ pgbackup:
 
 pgmetrics:
   alerts:
-    support_group: network-api
+    support_group: containers
   databases:
-    archer: {}
+    archer:
+      customMetrics:
+        archer_services:
+          query: >
+            SELECT
+              COALESCE(status, 'none') AS status,
+              COALESCE(provider, 'none') AS provider,
+              COALESCE(health_status, 'none') AS health_status,
+              COUNT(*) AS gauge
+            FROM service
+            GROUP BY status, provider, health_status
+            UNION SELECT 'none', 'none', 'none', 0
+          metrics:
+            - status:
+                usage: "LABEL"
+                description: "Service status"
+            - provider:
+                usage: "LABEL"
+                description: "Service provider (tenant/cp)"
+            - health_status:
+                usage: "LABEL"
+                description: "Service health status"
+            - gauge:
+                usage: "GAUGE"
+                description: "Total number of services"
+
+        archer_endpoints:
+          query: >
+            SELECT
+              COALESCE(status, 'none') AS status,
+              COUNT(*) AS gauge
+            FROM endpoint
+            GROUP BY status
+            UNION SELECT 'none', 0
+          metrics:
+            - status:
+                usage: "LABEL"
+                description: "Endpoint status"
+            - gauge:
+                usage: "GAUGE"
+                description: "Total number of endpoints"
+
+        archer_agents:
+          query: >
+            SELECT
+              COALESCE(host, 'none') AS host,
+              COALESCE(provider, 'none') AS provider,
+              enabled::text AS enabled,
+              COALESCE(EXTRACT(epoch FROM (now() - heartbeat_at)), 0) AS heartbeat_age_seconds
+            FROM agents
+            UNION SELECT 'none', 'none', 'false', 0
+          metrics:
+            - host:
+                usage: "LABEL"
+                description: "Agent host"
+            - provider:
+                usage: "LABEL"
+                description: "Agent provider"
+            - enabled:
+                usage: "LABEL"
+                description: "Agent enabled status"
+            - heartbeat_age_seconds:
+                usage: "GAUGE"
+                description: "Age in seconds since last agent heartbeat (for stale agent detection)"
 
 alerts:
   enabled: true
@@ -62,6 +127,11 @@ ingress:
 metrics:
   port: 9090
 
+# net/http/pprof profiling endpoints, bound to localhost (reach via `kubectl port-forward`).
+pprof:
+  enabled: true
+  port: 6060
+
 audit:
   enabled: true
   user: rabbitmq
@@ -72,10 +142,11 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 cp_network_interface: bond1
+multusSelector: bond1
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -102,11 +173,76 @@ service:
   port: 8000
 
 resources:
-  api: {}
-  f5-agent: {}
-  ni-agent: {}
-  linuxbridge_agent: {}
-  socat: {}
+  api:
+    requests:
+      memory: "64Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "1000m"
+  f5_agent:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+  ni_agent:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+  linuxbridge_agent:
+    requests:
+      memory: "512Mi"
+      cpu: "256m"
+    limits:
+      memory: "1Gi"
+      cpu: "2000m"
+
+linuxbridge_agent:
+  secretName: ""
+  default_log_levels:
+    - neutron.plugins.ml2.drivers.agent._common_agent=WARN
+    - neutron.agent.securitygroups_rpc=WARN
+    - oslo_messaging._drivers.amqpdriver=WARN
+  logging:
+    formatters:
+      context:
+        class: oslo_log.formatters.ContextFormatter
+    handlers:
+      stdout:
+        class: StreamHandler
+        args: "(sys.stdout,)"
+        formatter: context
+    loggers:
+      root:
+        handlers: stdout
+        level: INFO
+      neutron.plugins.ml2.drivers.agent._common_agent:
+        handlers: stdout
+        level: WARNING
+      neutron.agent.securitygroups_rpc:
+        handlers: stdout
+        level: WARNING
+      oslo_messaging._drivers.amqpdriver:
+        handlers: stdout
+        level: WARNING
+  rabbitmq:
+    # Default: neutron-rabbitmq.<namespace>.svc.<cluster domain>
+    host: ""
+    namespace: monsoon3
+    use_discovery_record: false
+    port: 5672
+    virtual_host: ""
+    defaultUser: neutron_1
+  extraEnv:
+    - name: OS_DEFAULT__HOST
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
 
 autoscaling:
   enabled: false
@@ -116,7 +252,7 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 agents:
-  ni: {}
+  f5_prometheus_url: http://prometheus-infra-collector.infra-monitoring.svc:9090
   f5: {}
 
 nodeSelector: {}

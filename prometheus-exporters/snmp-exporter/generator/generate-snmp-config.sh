@@ -66,12 +66,14 @@ for i in $modules;
             rm -f  _snmp-exporter-${i}.yaml.tmp
         fi
  
-        if [[ "$i" =~ ^(f5mgmt|f5physical|f5customer|f5gtm|f5archer)$ ]]; then
+        if [[ "$i" =~ ^(f5mgmt|f5physical|f5physicalrseries|f5customer|f5gtm|f5archer)$ ]]; then
             sed -i "s/- name: /- name: snmp_f5_/g" ../_snmp-exporter-${i}.yaml
         else
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
         fi
- 
+
+        sed -i '/^        enum_values:/{:a;N;/\n          /ba;d}' ../_snmp-exporter-${i}.yaml
+
         if test -f "${i}-additional-metrics.yaml"; then
                 #cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
                 sed -i "/max_repetitions: 25/e cat ${i}-additional-metrics.yaml" ../_snmp-exporter-${i}.yaml

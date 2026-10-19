@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kmip.corename" . }}
+  labels:
+    {{- include "kmip.labels" . | nindent 4 }}
+    app: {{ include "kmip.corename" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: backend
+    component: kmip
+  annotations:
+    secret.reloader.stakater.com/reload: "kmip-secrets,kmip-barbican-etc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{- if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "kmip.corename" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "kmip.labels" . | nindent 8 }}
+        app: {{ include "kmip.corename" . }}
+        name: {{ include "kmip.corename" . }}
+        alert-tier: os
+        alert-service: kmip
+      annotations:
+        secrets-etc-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
+      containers:
+        - name: kmip-core
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{ required "Values.kmip.pykmipCoreImageVersion is missing" .Values.kmip.pykmipCoreImageVersion }}
+          imagePullPolicy: {{ .Values.kmip.pullPolicy }}
+          env:
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: os_username
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: os_password
+            - name: OS_AUTH_TYPE
+              value: "v3password"
+            - name: OS_REGION_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: os_region_name
+            - name: OS_PROJECT_DOMAIN_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: os_project_domain_name
+            - name: OS_IDENTITY_API_VERSION
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: os_identity_api_version
+            - name: OS_PROJECT_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: os_project_name
+            - name: OS_USER_DOMAIN_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: os_user_domain_name
+          ports:
+            - name: kmip
+              containerPort: {{ .Values.service.ports.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            requests:
+              memory: 0
+              cpu: 0
+          volumeMounts:
+            - name: kmip-barbican-etc
+              mountPath: /etc/pykmip/server.conf
+              subPath: kmip-server.conf
+              readOnly: true
+            - name: kmip-acme-certificates
+              mountPath: /etc/pykmip/certs/server.crt
+              subPath: tls.crt
+              readOnly: true
+            - name: kmip-acme-certificates
+              mountPath: /etc/pykmip/certs/server.key
+              subPath: tls.key
+              readOnly: true
+            - name: kmip-ca-certificates
+              mountPath: /etc/pykmip/certs/ca.crt
+              subPath: ca.crt
+              readOnly: true
+      volumes:
+        - name: kmip-barbican-etc
+          secret:
+            secretName: kmip-barbican-etc
+        - name: kmip-ca-certificates
+          secret:
+            secretName: kmip-ca-certificates
+        - name: kmip-acme-certificates
+          secret:
+            secretName: kmip-acme-certificates

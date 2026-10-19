@@ -370,15 +370,15 @@ metrics:
 
   qfp_nat_datapath_stats:
     regex: >-
-      Subcode #(\d+)\s+(\S+)\s+(\d+)
-    value: $3
+      SC#(\d+)\s+([A-Z_]+)\s+(\d+)\s+(\d+)\s+(\d+)
+    value: $4
     multi_value: true
     labels:
       subcode: $1
       reason: $2
-    description: Drop subcodes and counters for QFP NAT processing
+    description: Drop subcodes and counters for QFP NAT Stats
     metric_type_name: counter
-    command: show platform hardware qfp active feature nat datapath stats
+    command: show platform hardware qfp active feature nat datapath stats diff
     timeout_secs: 10
 
   qfp_nat_datapath_gatein:
@@ -677,6 +677,32 @@ metrics:
     command: show run ntp | in "peer|server"
     timeout_secs: 5
 
+  xr_icmp_frag_drop_count:
+    regex: >-
+      ^(\S+)\s+\S+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*$
+    multi_value: true
+    value: $3
+    labels:
+      accepted_count: $2
+      drop_reason: $1
+    description: ICMP Type 3 Code 4 drop rate monitoring
+    metric_type_name: gauge
+    command: show lpts pifib hardware static-police location 0/0/CPU0 | include "PUNT_FRAG_NEEDED"
+    timeout_secs: 5
+
+  xr_icmp_frag_accepted_count:
+    regex: >-
+      ^(\S+)\s+\S+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*$
+    multi_value: true
+    value: $2
+    labels:
+      drop_count: $3
+      drop_reason: $1
+    description: ICMP Type 3 Code 4 accept rate monitoring
+    metric_type_name: gauge
+    command: show lpts pifib hardware static-police location 0/0/CPU0 | include "PUNT_FRAG_NEEDED"
+    timeout_secs: 5
+
 batches:
   aci-leaf:
     - xr_tcam_learn_disabled
@@ -744,6 +770,8 @@ batches:
     - xr_ntp_peer_offset
     - xr_ntp_peer_dispersion
     - xr_ntp_configured
+    - xr_icmp_frag_drop_count
+    - xr_icmp_frag_accepted_count
 
 devices:
   cisco-ios-xe:
@@ -756,4 +784,4 @@ devices:
     init_command: terminal length 0
   cisco-ios-xr:
     prompt_regex: ^\S+\#$
-    init_command: terminal length 0
+    init_command: terminal length 0 ; terminal width 0

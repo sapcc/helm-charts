@@ -1,0 +1,143 @@
+{{- if $.Values.cloudProviderMetal.enabled }}
+{{- range $cluster := .Values.clusters }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-provider-config
+  namespace: {{ $cluster.namespace }}
+data:
+  cloudprovider.conf: |
+    clusterName: {{ $cluster.name }}
+    networking:
+      configureNodeAddresses: true
+      ipamKind:
+        apiGroup: ipam.cluster.x-k8s.io
+        kind: IPAddress
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-controller-manager
+  namespace: {{ $cluster.namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-controller-manager
+  namespace: {{ $cluster.namespace }}
+  labels:
+    app: kubernetes
+    role: manager
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: kubernetes
+      role: manager
+  template:
+    metadata:
+      labels:
+        app: kubernetes
+        role: manager
+    spec:
+      automountServiceAccountToken: true
+      serviceAccountName: cloud-controller-manager
+      hostNetwork: {{ default false $.Values.cloudProviderMetal.hostNetwork }}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - effect: NoSchedule
+          key: node.cloudprovider.kubernetes.io/uninitialized
+          value: "true"
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+        - effect: NoSchedule
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+      containers:
+        - name: manager
+          image: {{ $.Values.cloudProviderMetal.image.repository }}:{{ $.Values.cloudProviderMetal.image.tag }}
+          command:
+            - /metal-cloud-controller-manager
+          args:
+            - --cloud-provider=metal
+            - --concurrent-service-syncs=10
+            - --leader-elect=true
+            - --secure-port=10258
+            - --requestheader-client-ca-file=/etc/config/ca
+            - --use-service-account-credentials
+            - --v=2
+            - --cloud-config=/etc/kubernetes/cloudprovider/cloudprovider.conf
+            - --cluster-cidr={{ $.Values.controlplane.podSubnet }}
+            - --configure-cloud-routes=false
+            - --kubeconfig=/var/run/secrets/capi/kubeconfig
+            - --authentication-kubeconfig=/var/run/secrets/capi/kubeconfig
+            - --authorization-kubeconfig=/var/run/secrets/capi/kubeconfig
+            - --metal-namespace={{ $cluster.namespace }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 10258
+              name: metrics
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 2
+            httpGet:
+              path: /healthz
+              port: 10258
+              scheme: HTTPS
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 15
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /etc/config
+              name: kube-root-ca
+              readOnly: true
+            - mountPath: /etc/kubernetes/cloudprovider
+              name: cloud-provider-config
+            - mountPath: /var/run/secrets/capi
+              name: kubeconfig
+              readOnly: true
+      volumes:
+        - name: kube-root-ca
+          configMap:
+            items:
+              - key: ca.crt
+                path: ca
+            name: kube-root-ca.crt
+        - name: cloud-provider-config
+          configMap:
+            name: cloud-provider-config
+            defaultMode: 420
+        - name: kubeconfig
+          secret:
+            secretName: {{ $cluster.name }}-kubeconfig
+            items:
+              - key: value
+                path: kubeconfig
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-controller-manager-metrics-service
+  namespace: {{ $cluster.namespace }}
+spec:
+  ports:
+    - name: metrics
+      targetPort: 10258
+      port: 10258
+      protocol: TCP
+  selector:
+    app: kubernetes
+    role: manager
+{{- end }}
+{{- end }}

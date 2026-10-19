@@ -1,0 +1,185 @@
+{{- $az_long := "" }}
+{{- $cp := "" }}
+{{- $apod := "" }}
+{{- range $agent := .Values.agents.cp }}
+  {{- range $az, $apods := $.Values.global.apods }}
+    {{- if has $agent.physical_network $apods }}
+      {{- $az_long = $az }}
+      {{- $apod = $agent.physical_network }}
+      {{- $cp = $agent.physical_network }}
+    {{- end }}
+  {{- end }}
+
+  {{- if not $apod }}
+    {{- $az_long = $.Values.global.default_availability_zone }}
+    {{- $cp = $agent.physical_network }}
+  {{- end }}
+
+  {{- $name := printf "archer-network-agent-%s" $cp }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "archer.labels" $ | nindent 4 }}
+spec:
+  updateStrategy:
+  {{- if or (eq $.Values.global.region "qa-de-1") (eq $.Values.global.region "qa-de-2") }}
+    type: RollingUpdate
+{{- else }}
+    type: OnDelete
+{{- end }}
+  replicas: {{ $agent.replicas }}
+  selector:
+    matchLabels:
+      {{- include "archer.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: agent
+      name: {{ $name }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        kubectl.kubernetes.io/default-container: archer-network-agent
+        checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") $ | sha256sum }}
+        checksum/neutron-linuxbridge-etc: {{ include (print $.Template.BasePath "/configmap-neutron-linuxbridge.yaml") $ | sha256sum }}
+        checksum/neutron-linuxbridge-secret: {{ include (print $.Template.BasePath "/neutron-secret.yaml") $ | sha256sum }}
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "namespace": "{{ default $.Release.Namespace $.Values.global.keystoneNamespace }}", "interface":"{{ $agent.network_interface | default $.Values.cp_network_interface }}" }]'
+        {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
+        config.linkerd.io/skip-inbound-ports: "1-65535"
+        config.linkerd.io/skip-outbound-ports: "1-65535"
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "archer.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: agent
+        name: {{ $name }}
+    spec:
+      serviceAccountName: {{ include "archer.serviceAccountName" $ }}
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: component
+                      operator: In
+                      values:
+                        - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                    - key: component
+                      operator: In
+                      values:
+                        - agent
+      nodeSelector:
+        {{- with $.Values.multusSelector }}
+        {{ $.Values.multusSelectorKey | default "multus" }}: {{ . }}
+        {{- end }}
+        topology.kubernetes.io/zone: {{ $az_long }}
+        {{- with $apod }}
+        {{ $.Values.nodeSeclectorKey | default "kubernetes.cloud.sap/apod" }}: {{ $apod }}
+        {{- end }}
+      initContainers:
+        - name: wait-for-server
+          image: "{{ $.Values.global.registry }}/kubernetes-entrypoint:{{ $.Values.image.kubernetes_entrypoint_version }}"
+          env:
+            - name: NAMESPACE
+              value: {{ $.Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: {{ include "archer.fullname" $ }}
+            - name: COMMAND
+              value: "true"
+      containers:
+        - name: archer-network-agent
+          securityContext:
+            privileged: false
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN        # veth create/delete, LinkSetUp, AddrAdd, LinkSetNsFd
+                - SYS_ADMIN        # unshare(CLONE_NEWNET), setns, /var/run/netns bind-mount
+                - SYS_CHROOT       # HAProxy chroot in isolated namespace
+                - SETUID           # HAProxy drops to unprivileged uid
+                - SETGID           # HAProxy drops to unprivileged gid
+                - NET_BIND_SERVICE # HAProxy binds :::<service-port>, ports may be <1024
+                - KILL             # signal HAProxy processes across uid boundary
+          image: "{{ $.Values.global.registry }}/archer:{{ $.Values.image.tag }}"
+          command: ["/usr/bin/archer-ni-agent"]
+          args: ["--config-file=/etc/archer/archer.ini"]
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: archer-network-agent
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: archer-network-agent
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: archer.DSN
+            - name: AVAILABILITY_ZONE
+              value: {{ $az_long }}
+            - name: PHYSICAL_NETWORK
+              value: {{ $cp }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "archer.pgUserSecretName" $ }}
+                  key: postgres-password
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "archer.secretName" $ }}
+                  key: service_user_password
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" $.Values.metrics.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml $.Values.resources.ni_agent | nindent 12 }}
+          volumeMounts:
+            - name: etc-archer
+              mountPath: /etc/archer
+              readOnly: true
+        {{- $lbExtraEnv := concat ($.Values.linuxbridge_agent.extraEnv | default (list)) (list (dict "name" "OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS" "value" (printf "%s:%s" $cp (required ".Values.cp_network_interface required" $.Values.cp_network_interface)))) }}
+        {{- $lbValues := dict
+            "secretName" (include "archer.neutronSecretName" $)
+            "imageVersion" ($.Values.linuxbridge_agent.imageVersion | default $.Values.image.neutron_version)
+            "extraEnv" $lbExtraEnv
+            "resources" $.Values.resources.linuxbridge_agent
+            "extraConfigs" ($.Values.linuxbridge_agent.extraConfigs | default (list))
+            "extraConfigDirs" ($.Values.linuxbridge_agent.extraConfigDirs | default (list))
+            "extraVolumeMounts" ($.Values.linuxbridge_agent.extraVolumeMounts | default (list))
+            "extraVolumes" ($.Values.linuxbridge_agent.extraVolumes | default (list))
+        }}
+        {{- include "archer.neutron-linuxbridge-agent.container" (dict "root" $ "values" $lbValues) | nindent 8 }}
+      volumes:
+        {{- include "archer.neutron-linuxbridge-agent.volumes" (dict "root" $ "values" $lbValues) | nindent 8 }}
+        - name: etc-archer
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: {{ include "archer.fullname" $ }}-etc
+                  items:
+                    - key: archer.ini
+                      path: archer.ini
+{{- end }}

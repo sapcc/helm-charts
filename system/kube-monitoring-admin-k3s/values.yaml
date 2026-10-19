@@ -129,7 +129,26 @@ absent-metrics-operator:
 prometheus-crds:
   enabled: true
 
+ntp-exporter:
+  enabled: true
+
+oomkill-exporter:
+  enabled: true
+
+blackbox-exporter:
+  enabled: true
+
+kubelet-stats-metrics:
+  enabled: true
+
+# x509-certificate-exporter uses a strict values.schema.json (additionalProperties:
+# false), so its enable toggle lives in a separate top-level key rather than under
+# the subchart's own values. The Chart.yaml condition points at x509CertificateExporter.enabled.
+x509CertificateExporter:
+  enabled: true
+
 kube-state-metrics:
+  enabled: true
   image:
     registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
     repository: kube-state-metrics/kube-state-metrics
@@ -143,14 +162,17 @@ kube-state-metrics:
       cpu: 100m
 
 kube-state-metrics-exporter:
+  enabled: true
   prometheusName: kubernetes
 
 ping-exporter:
+  enabled: true
   targets:
     - ingress.admin.cloud.sap
     - 8.8.8.8
 
 prometheus-node-exporter:
+  enabled: true
   image:
     registry: keppel.global.cloud.sap
     repository: ccloud-dockerhub-mirror/prom/node-exporter
@@ -166,6 +188,7 @@ prometheus-node-exporter:
     image:
       registry: keppel.global.cloud.sap
       repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
+      tag: v0.22.1
 
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
@@ -190,11 +213,13 @@ prometheus-node-exporter:
     pspEnabled: false
 
 prometheus-kubernetes-rules:
+  enabled: true
   prometheusName: kubernetes
   kubelet:
     goroutinesHighCount: "8000"
 
 kubernikus-monitoring:
+  enabled: true
   prometheusName: kubernetes
 
 event-exporter:
@@ -291,14 +316,16 @@ falco:
           tag: pci
 
 x509-certificate-exporter:
-  enabled: false
+  migration:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
   secretsExporter:
     podAnnotations:
       prometheus.io/port: "9793"
       prometheus.io/scrape: "true"
       prometheus.io/targets: kubernetes
   hostPathsExporter:
-    daemonSets: null
+    daemonSets: {}
   service:
     create: false
   prometheusServiceMonitor:

@@ -4,9 +4,11 @@ set -euo pipefail
 # nova-manage has the config for the API DB via /etc/nova/nova.conf.d
 # When accessing a cell, we explicitly have to specify the config for the DB.
 nova_manage_api="nova-manage"
-nova_manage_cell1="nova-manage --config-file /etc/nova/nova.conf --config-file /etc/nova/nova-cell1.conf"
-{{- if .Values.cell2.enabled }}
-nova_manage_cell2="nova-manage --config-file /etc/nova/nova.conf --config-file /etc/nova/nova-{{ .Values.cell2.name }}.conf"
+{{- $cellsNonzero := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+{{- $envAll := . }}
+{{- range $cellId := $cellsNonzero }}
+{{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+nova_manage_{{ $cellId }}="nova-manage --config-file /etc/nova/nova.conf --config-file /etc/nova/nova-{{ $cellName }}.conf"
 {{- end }}
 
 # First create/update the api db, as it contains the cell-mappings
@@ -60,10 +62,9 @@ get_transport_url_from_file() {
 	EOF
 }
 
-
-found_cell0="false"
-found_cell1="false"
-found_cell2="false"
+{{ range $cellId := include "nova.helpers.cell_ids_all" . | fromJsonArray }}
+found_{{ $cellId }}="false"
+{{- end }}
 while read line; do
   cell_name=$(echo "$line" | cut -d'|' -f2 | tr -d '[:space:]')
   cell_uuid=$(echo "$line" | cut -d'|' -f3 | tr -d '[:space:]')
@@ -84,19 +85,14 @@ while read line; do
             "${transport_url}" "none:/" \
             "${database_connection}" "$(get_connection_from_file /etc/nova/nova-cell0.conf)"
       ;;
-    cell1)
-      found_cell1="true"
+{{- range $cellId := $cellsNonzero }}
+{{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+    {{ printf "%s)" $cellName }}
+      found_{{ $cellId }}="true"
+      echo "Found existing {{ $cellId }}..."
       update_cell "${cell_name}" "${cell_uuid}" \
-            "${transport_url}" "$(get_transport_url_from_file /etc/nova/nova-cell1.conf)" \
-            "${database_connection}" "$(get_connection_from_file /etc/nova/nova-cell1.conf)"
-      ;;
-{{ if .Values.cell2.enabled }}
-    {{.Values.cell2.name}})
-      found_cell2="true"
-      echo "Found existing cell2..."
-      update_cell "${cell_name}" "${cell_uuid}" \
-            "${transport_url}" "$(get_transport_url_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)" \
-            "${database_connection}" "$(get_connection_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)"
+            "${transport_url}" "$(get_transport_url_from_file /etc/nova/nova-{{ $cellName }}.conf)" \
+            "${database_connection}" "$(get_connection_from_file /etc/nova/nova-{{ $cellName }}.conf)"
       ;;
 {{- end }}
   esac
@@ -107,32 +103,33 @@ if [ "${found_cell0}" = "false" ]; then
   $nova_manage_api cell_v2 map_cell0 \
       --database_connection "$(get_connection_from_file /etc/nova/nova-cell0.conf)"
 fi
-if [ "${found_cell1}" = "false" ]; then
-  echo "Creating cell1..."
-  $nova_manage_api cell_v2 create_cell --verbose \
-      --name "cell1" \
-      --transport-url "$(get_transport_url_from_file /etc/nova/nova-cell1.conf)" \
-      --database_connection "$(get_connection_from_file /etc/nova/nova-cell1.conf)"
-  $nova_manage_api cell_v2 discover_hosts
-fi
 
-{{ if .Values.cell2.enabled }}
-if [ "$found_cell2" = "false" ]; then
-  echo "Creating cell2..."
+discover_hosts="false"
+{{- range $cellId := $cellsNonzero }}
+{{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+if [ "${found_{{ $cellId }}}" = "false" ]; then
+  echo "Creating {{ $cellId }}..."
   $nova_manage_api cell_v2 create_cell --verbose \
-      --name "{{.Values.cell2.name}}" \
-      --transport-url "$(get_transport_url_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)" \
-      --database_connection "$(get_connection_from_file /etc/nova/nova-{{ .Values.cell2.name }}.conf)"
+      --name "{{ $cellName }}" \
+      --transport-url "$(get_transport_url_from_file /etc/nova/nova-{{ $cellName }}.conf)" \
+      --database_connection "$(get_connection_from_file /etc/nova/nova-{{ $cellName }}.conf)"
+  discover_hosts="true"
 fi
 {{- end }}
 
-echo "Migrating cell0 and cell1"
-$nova_manage_cell1 db sync
+if [ "${discover_hosts}" = "true" ]; then
+  $nova_manage_api cell_v2 discover_hosts
+fi
+{{- range $index, $cellId := $cellsNonzero }}
+{{- if eq $index 0 }}
 
-{{- if .Values.cell2.enabled }}
+echo "Migrating cell0 and {{ $cellId }}"
+$nova_manage_{{ $cellId }} db sync
+{{- else }}
 
-echo "Migrating cell2"
-$nova_manage_cell2 db sync --local_cell
+echo "Migrating {{ $cellId }}"
+$nova_manage_{{ $cellId }} db sync --local_cell
+{{- end }}
 {{- end }}
 
 # online data migration run by online-migration-job

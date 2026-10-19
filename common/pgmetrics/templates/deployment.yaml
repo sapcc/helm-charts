@@ -4,11 +4,12 @@
 
 {{- range $dbName := keys .Values.databases | sortAlpha }}
 {{- $dbSettings := index $.Values.databases $dbName }}
+{{- $sanitizedDbName := include "pgmetrics.sanitizeName" $dbName }}
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
+  name: {{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }}
   {{- if $.Values.reloader.enabled }}
   annotations:
     reloader.stakater.com/search: "true"
@@ -20,13 +21,13 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
+      name: {{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }}
   template:
     metadata:
       labels:
-        name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
+        name: {{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }}
         app: {{ $.Release.Name }}-pgmetrics
-        component: {{ $dbName }}
+        component: {{ $sanitizedDbName }}
         type: metrics
       annotations:
         kubectl.kubernetes.io/default-container: metrics
@@ -35,7 +36,7 @@ spec:
         linkerd.io/inject: enabled
         {{- end }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ quote $.Values.alerts.prometheus }}
+        prometheus.io/targets: {{ tpl $.Values.alerts.prometheus $ | quote }}
     spec:
       containers:
       - name: metrics
@@ -55,7 +56,7 @@ spec:
           - name: metrics
             containerPort: 9187
         args:
-          - "--extend.query-path=/conf/custom-metrics-{{ $dbName }}.yaml"
+          - "--extend.query-path=/conf/custom-metrics-{{ $sanitizedDbName }}.yaml"
           - "--log.level=info"
           {{- range $collector, $enabled := $.Values.collectors }}
           - "--{{ if not $enabled }}no-{{- end }}collector.{{ $collector }}"

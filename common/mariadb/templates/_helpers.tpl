@@ -12,12 +12,129 @@
 {{- end -}}
 {{- end -}}
 
+{{/* MariaDB data directory (datadir mount point). */}}
+{{- define "mariadb.dataDir" -}}
+/var/lib/mysql
+{{- end -}}
+
+{{/* Name of the data PVC; keeps the deployment claimName and the volume alert in sync. */}}
+{{- define "mariadb.dataPvcName" -}}
+{{- .Values.persistence_claim.name | default (include "fullName" .) -}}
+{{- end -}}
+
+{{/* Name of the dedicated slow-log PVC referenced by the deployment. */}}
+{{- define "mariadb.slowLogPvcName" -}}
+{{- .Values.slow_query_log.persistence.name | default (printf "%s-logs" (include "fullName" .)) -}}
+{{- end -}}
+
+{{/* Directory the slow query log lives in (dedicated volume mount point). */}}
+{{- define "mariadb.slowLogDir" -}}
+{{- .Values.slow_query_log.dir -}}
+{{- end -}}
+
+{{/* Directory scanned by the slow-log cleanup: the dedicated volume when enabled, else the datadir. */}}
+{{- define "mariadb.slowLogCleanupDir" -}}
+{{- if .Values.slow_query_log.persistence.enabled -}}
+{{- include "mariadb.slowLogDir" . -}}
+{{- else -}}
+{{- include "mariadb.dataDir" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Sidecar that truncates the active slow log once it grows past the configured size. */}}
+{{- define "mariadb.slowLogRotatorContainer" -}}
+- name: slow-log-rotator
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+  restartPolicy: Always
+{{- end }}
+  image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+  imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+  securityContext:
+    runAsUser: 999
+    allowPrivilegeEscalation: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+  command:
+    - /bin/bash
+    - /scripts/mariadb-slow-log-rotator.sh
+  env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: SLOW_LOG_DIR
+      value: {{ include "mariadb.slowLogCleanupDir" . | quote }}
+    - name: MAX_SIZE_MB
+      value: {{ .Values.slow_query_log.rotation.max_size_mb | int | quote }}
+    - name: INTERVAL_SECONDS
+      value: {{ .Values.slow_query_log.rotation.interval_seconds | int | quote }}
+    - name: KEEP_PREVIOUS
+      value: {{ .Values.slow_query_log.rotation.keep_previous | quote }}
+  volumeMounts:
+    - name: slow-log-rotator-script
+      mountPath: /scripts
+      readOnly: true
+{{- if .Values.slow_query_log.persistence.enabled }}
+    - name: mariadb-logs-storage
+      mountPath: {{ include "mariadb.slowLogDir" . }}
+{{- else if .Values.persistence_claim.enabled }}
+    - name: mariadb-persistent-storage
+      mountPath: {{ include "mariadb.dataDir" . }}
+{{- end }}
+{{- end -}}
+
 {{- define "mariadb.resolve_secret_squote" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}
         {{"{{"}} resolve "{{ $str }}" | replace "'" "''" | squote {{"}}"}}
     {{- else -}}
         {{ $str | replace "'" "''" | squote }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+  Emit S3 object-lock keys for a backup_v2 storage target, merging per-target
+  overrides onto the chart-level default (backup_v2.object_lock) per field.
+  Emits nothing when effectively disabled.
+  Usage:
+    include "mariadb.backup_v2.object_lock" (dict "target" $target.object_lock "default" .Values.backup_v2.object_lock)
+*/}}
+
+{{- define "mariadb.backup_v2.object_lock" -}}
+{{- $target := default (dict) .target -}}
+{{- $default := default (dict) .default -}}
+{{- $enabled := default false $default.enabled -}}
+{{- if hasKey $target "enabled" -}}{{- $enabled = $target.enabled -}}{{- end -}}
+{{- if $enabled -}}
+{{- $mode := default "COMPLIANCE" $default.lock_mode -}}
+{{- if hasKey $target "lock_mode" -}}{{- $mode = $target.lock_mode -}}{{- end -}}
+{{- if not (has $mode (list "COMPLIANCE" "GOVERNANCE")) -}}
+{{- fail (printf "backup_v2.object_lock.lock_mode must be COMPLIANCE or GOVERNANCE, got %q" $mode) -}}
+{{- end -}}
+{{- $days := default 7 $default.retention_days -}}
+{{- if hasKey $target "retention_days" -}}{{- $days = $target.retention_days -}}{{- end -}}
+{{- if not (gt (int $days) 0) -}}
+{{- fail (printf "backup_v2.object_lock.retention_days must be a positive integer, got %v" $days) -}}
+{{- end -}}
+object_lock_enabled: true
+object_lock_mode: {{ $mode | quote }}
+object_lock_retention_days: {{ $days }}
+{{- end -}}
+{{- end -}}
+
+{{/* Emit SSE-C keys for a backup_v2 S3 target; per-target overrides default. */}}
+{{- define "mariadb.backup_v2.sse_c" -}}
+{{- $target := default (dict) .target -}}
+{{- $key := default "" .default -}}
+{{- if hasKey $target "sse_customer_key" -}}{{- $key = $target.sse_customer_key -}}{{- end -}}
+{{- if $key -}}
+sse_customer_algorithm: "AES256"
+sse_customer_key: {{ include "mariadb.resolve_secret_squote" $key }}
 {{- end -}}
 {{- end -}}
 
@@ -133,3 +250,14 @@ helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
   {{- end }}
 {{- end }}
 
+{{/*
+Default pod labels for linkerd
+*/}}
+{{- define "mariadb.linkerdPodAnnotations" }}
+  {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+linkerd.io/inject: enabled
+    {{- if or $.Values.global.linkerd_use_native_sidecar $.Values.global.mariadb.native_sidecar.enabled }}
+config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+    {{- end }}
+  {{- end }}
+{{- end }}

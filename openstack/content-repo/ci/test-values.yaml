@@ -3,3 +3,45 @@ global:
   region: regionOne
   registry: registry.example.com/ccloud
   dockerHubMirror: registry.example.com/dockerhub
+  ghcrIoMirror: registry.example.com/ghcr
+
+image_version: v1
+
+auth_url: https://identity.example.com/v3
+statsd_hostname: statsd.example.com
+alerts:
+  prometheus: infra-frontend
+passwords:
+  target_auth_password: secret
+  ceph_auth_password: secret
+
+targets:
+  default:
+    user_name:           repo
+    user_domain_name:    Default
+    project_name:        master
+    project_domain_name: ccadmin
+    service_type:        object-store
+    password_key:        target_auth_password
+  ceph:
+    user_name:           repo
+    user_domain_name:    Default
+    project_name:        master
+    project_domain_name: ccadmin
+    service_type:        object-store-ceph
+    password_key:        ceph_auth_password
+
+repos:
+  test-repo:
+    jobs:
+      - from:
+          url: https://example.com/repo/
+          type: "''"
+        to:
+          container:     test-container
+          object_prefix: test-prefix/
+
+s3_proxy:
+  bucket:
+    access_key: AKIAEXAMPLE
+    secret_key: SECRETEXAMPLE

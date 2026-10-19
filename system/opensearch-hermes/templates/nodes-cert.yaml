@@ -4,14 +4,32 @@ metadata:
   name: nodes-cert
   namespace: hermes
 spec:
+  commonName: 'opensearch-hermes-node.{{ .Values.global.region }}'
+  duration: 8760h
+  renewBefore: 720h
   dnsNames:
-  - '*.opensearch-hermes.{{ .Values.global.region }}.cloud.sap'
+  {{- if .Values.global.gardener.enabled }}
+  - '*.opensearch-hermes.hermes.svc.cluster.local'
+  - '*.opensearch-hermes-headless.hermes.svc.cluster.local'
+  - '*.opensearch-hermes-master.hermes.svc.cluster.local'
+  - '*.opensearch-hermes-master-headless.hermes.svc.cluster.local'
+  {{- else }}
+  - '*.opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  - '*.opensearch-hermes-headless.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  - '*.opensearch-hermes-master.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  - '*.opensearch-hermes-master-headless.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  {{- end }}
+  - opensearch-hermes-master-headless
+  - opensearch-hermes-master-headless.hermes
+  - opensearch-hermes-master-headless.hermes.svc.cluster.local
   issuerRef:
-    group: certmanager.cloud.sap
-    kind: DigicertIssuer
-    name: digicert-issuer
+    name: opensearch-hermes-ca-issuer
+    kind: Issuer
   secretName: nodes-cert
   privateKey:
     algorithm: RSA
     encoding: PKCS8
     size: 2048
+  usages:
+    - client auth
+    - server auth

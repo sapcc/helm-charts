@@ -42,7 +42,9 @@ redis:
     maxmemory-samples: 5
 
   metrics:
-    prometheus: infra-frontend
+    # uses infra-frontend for Kubernikus-based scaleout clusters
+    # uses obs-metrics-product in Gardener-based controlplane clusters
+    prometheus: '{{ if eq .Values.global.clusterType "scaleout" }}infra-frontend{{ else }}obs-metrics-product{{ end }}'
     resources:
       limits:
         memory: 48Mi

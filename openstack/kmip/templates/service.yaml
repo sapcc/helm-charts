@@ -5,7 +5,7 @@ metadata:
   name: kmip-barbican
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ include "kmip.fullname" . }}-barbican
+    app: {{ include "kmip.restapiname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -15,19 +15,11 @@ metadata:
   annotations:
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
-  type: {{ .Values.service.type }}
-  externalIPs:
-    - {{ .Values.service.externalIPs }}
-  sessionAffinity: None
-  externalTrafficPolicy: Local
+  type: ClusterIP
   selector:
-    app: {{ include "kmip.fullname" . }}-barbican
+    app: {{ include "kmip.restapiname" . }}
   ports:
-    - name: http
-      port: {{ .Values.service.ports.port }}
-      targetPort: 5696
-      protocol: TCP
     - name: restapi
-      port: 5006
-      targetPort: 5006
+      port: 5005
+      targetPort: 5005
       protocol: TCP

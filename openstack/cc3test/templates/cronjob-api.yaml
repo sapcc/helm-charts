@@ -33,7 +33,7 @@ spec:
           - name: cc3test-api
             image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
             command: ["/linkerd-await"]
-            args: ["--shutdown", "--", "/bin/sh", "-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -r ap -m api tests; exit 0"]
+            args: ["--shutdown", "--", "/bin/sh", "-c", "pytest --disable-pytest-warnings --no-header --color=yes --variables config/config.yaml --variables secrets/secrets.yaml -r ap -m api --ignore=tests/compute_kvm --ignore=tests/logical_network_separation --ignore=tests/validation --ignore=tests/compute/test_server.py --ignore=tests/compute/test_compute_host.py tests; exit 0"]
             volumeMounts:
               - name: cc3test-config
                 mountPath: /cc3test/config

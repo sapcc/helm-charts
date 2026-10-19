@@ -3,13 +3,17 @@ debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
 verbose = true
 
+{{- with .Values.max_db_limit }}
+max_db_limit = {{ . }}
+{{- end }}
+
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
 
 log_config_append = /etc/keystone/logging.conf
 logging_context_format_string = %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(instance)s%(message)s
 logging_default_format_string = %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
 logging_exception_prefix = %(process)d ERROR %(name)s %(instance)s
-logging_user_identity_format = usr %(user)s prj %(tenant)s dom %(domain)s usr-dom %(user_domain)s prj-dom %(project_domain)s
+logging_user_identity_format = usr %(user)s prj %(project)s dom %(domain)s usr-dom %(user_domain)s prj-dom %(project_domain)s
 
 notification_format = {{ .Values.api.notifications.format | default "cadf" | quote }}
 {{ range $message_type := .Values.api.notifications.opt_out }}
@@ -34,7 +38,7 @@ Note: the federation-related methods must be in the beginning of the list.
 This goes against the official keystone documentation.
 This allows them to work even if the "external" method is present.
 */}}
-methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
+methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ if .Values.federation.saml.enabled }}saml2,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
@@ -142,7 +146,9 @@ disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inacti
 {{- end }}
 
 [oslo_middleware]
-enable_proxy_headers_parsing = true
+# When the pod terminates TLS directly there is no trusted proxy in front, so
+# Forwarded/X-Forwarded-* headers supplied by clients must not be trusted.
+enable_proxy_headers_parsing = {{ if include "keystone.tls.ingressActive" . }}true{{ else }}false{{ end }}
 
 [oslo_policy]
 # This option controls whether or not to enforce scope when evaluating
@@ -186,8 +192,23 @@ allow_credentials = true
 expose_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token
 allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token,X-Project-Id,X-Project-Name,X-Project-Domain-Id,X-Project-Domain-Name,X-Domain-Id,X-Domain-Name,X-User-Id,X-User-Name,X-User-Domain-name
 {{- end }}
-{{- if .Values.federation.oidc.enabled }}
+{{- if or .Values.federation.oidc.enabled .Values.federation.saml.enabled }}
 [federation]
+{{- if and .Values.federation.oidc.enabled (not .Values.federation.saml.enabled) }}
 remote_id_attribute = HTTP_OIDC_ISS
+{{- else if and .Values.federation.saml.enabled (not .Values.federation.oidc.enabled) }}
+remote_id_attribute = Shib-Identity-Provider
+{{- else }}
+# Both OIDC and SAML are enabled; remote_id_attribute is set per-protocol
+# via the federation protocol configuration in Keystone, not globally.
+# Default to OIDC here; SAML uses Shib-Identity-Provider via protocol config.
+remote_id_attribute = HTTP_OIDC_ISS
+{{- end }}
 trusted_dashboard = https://dashboard.{{ .Values.global.region }}.cloud.sap/verify-auth-token
+{{- if .Values.debug }}
+trusted_dashboard = http://localhost:4001/verify-auth-token
+trusted_dashboard = https://localhost:4001/verify-auth-token
+trusted_dashboard = http://127.0.0.1:4001/verify-auth-token
+trusted_dashboard = https://127.0.0.1:4001/verify-auth-token
+{{- end }}
 {{- end }}

@@ -1,0 +1,26 @@
+# Test values simulating the real case from cases.md
+# Cluster values that DON'T explicitly set runtimeClusterValues.image
+# but DO set values.image to a custom repository
+
+extensions:
+  aws:
+    enabled: true
+    values:
+      image:
+        repository: keppel.qa-de-1.cloud.sap/test-repo/europe-docker_pkg_dev/sap-se-gcp-k8s-delivery/releases-public/europe-docker_pkg_dev/gardener-project/releases/gardener/extensions/provider-aws
+        tag: sha256:0347ea563c58fbd71463c05ff159f18cf23fb10b408476533ff766a02587565e
+      imageVectorOverwrite:
+        images:
+          - name: aws-custom-route-controller
+            repository: keppel.qa-de-1.cloud.sap/test-repo/europe-docker_pkg_dev/sap-se-gcp-k8s-delivery/releases-public/europe-docker_pkg_dev/gardener-project/releases/gardener/aws-custom-route-controller
+            tag: sha256:d18a20d959f99d3611df91c18d8d310835ccbe2e66950191c1a62abce1c8605c
+      replicaCount: 1
+    runtimeClusterValues:
+      # NOTE: image is NOT set here - only imageVectorOverwrite
+      # This means Helm will merge with chart defaults, giving us the default repository
+      # But we want it to cascade from values.image instead!
+      imageVectorOverwrite:
+        images:
+          - name: aws-custom-route-controller
+            repository: keppel.qa-de-1.cloud.sap/test-repo/europe-docker_pkg_dev/sap-se-gcp-k8s-delivery/releases-public/europe-docker_pkg_dev/gardener-project/releases/gardener/aws-custom-route-controller
+            tag: sha256:d18a20d959f99d3611df91c18d8d310835ccbe2e66950191c1a62abce1c8605c

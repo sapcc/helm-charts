@@ -1,0 +1,122 @@
+groups:
+- name: cc3test-prometheus.alerts
+  rules:
+  - alert: CCloudPrometheusKubernetesGlobalDown
+    expr: |
+        cc3test_status{type="datapath",
+            name="TestPrometheus_datapath-prometheus_kubernetes_internal_global",
+            phase="call"
+        } == 0
+    for: 20m
+    labels:
+      severity: warning
+      support_group: observability
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
+      summary: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
+
+  - alert: CCloudPrometheusDown
+    expr: |
+        max_over_time(
+        cc3test_status{type="datapath",
+            name=~"TestPrometheus_datapath-prometheus.+",
+            name!="TestPrometheus_datapath-prometheus_kubernetes_internal_global",
+            name!="TestPrometheus_datapath-prometheus_internal_kubernikus_master_eu_nl_1",
+            name!="TestPrometheus_datapath-prometheus_internal_customer_qa_de_1",
+            phase="call"
+        }[30m]) == 0
+    for: 8m 
+    labels:
+      severity: critical
+      support_group: observability
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
+      summary: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
+
+  - alert: CCloudPrometheusDownKMaster
+    expr: |
+        max_over_time(
+        cc3test_status{type="datapath",
+            name="TestPrometheus_datapath-prometheus_internal_kubernikus_master_eu_nl_1",
+            phase="call"
+        }[20m]) == 0
+    for: 8m 
+    labels:
+      severity: warning
+      support_group: observability
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is down on k-master"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Prometheus {{`{{ $labels.name }}`}} is down on k-master cluster"
+      summary: "CCloud Prometheus {{`{{ $labels.name }}`}} is down on k-master cluster"
+
+  - alert: CCloudPrometheusFlapping
+    expr: |
+        changes(cc3test_status{type="datapath",
+            name=~"TestPrometheus_datapath-prometheus.+",
+            phase="call"
+        }[30m]) > 8
+    labels:
+      severity: warning
+      support_group: observability
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is flapping"
+      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Prometheus {{`{{ $labels.name }}`}} is flapping"
+      summary: "CCloud Prometheus {{`{{ $labels.name }}`}} is flapping"
+
+  - alert: PrometheusSSOCertificateExpiresInLessThan2Week
+    expr: last_over_time(cc3test_cert_expires_in_days{type="prometheus-sso"}[1d]) < 15
+    # we want a critical alert 15 days before (fixing during business hours is sufficient -> warning)
+    labels:
+      severity: warning
+      support_group: observability
+      tier: os
+      service: prometheus
+      context: prometheus-sso
+      meta: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 15 days"
+      dashboard: cc3test-certificate-status?var-service=prometheus
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service=prometheus"
+    annotations:
+      description: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 15 days"
+      summary: "Certificate expires"
+
+  - alert: PrometheusSSOCertificateExpiresInLessThan4Week
+    expr: last_over_time(cc3test_cert_expires_in_days{type="prometheus-sso"}[1d]) < 30
+    # we want a warning alert 30 days before
+    labels:
+      severity: info
+      support_group: observability
+      tier: os
+      service: prometheus
+      context: prometheus-sso
+      meta: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 30 days"
+      dashboard: cc3test-certificate-status?var-service=prometheus
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service=prometheus"
+    annotations:
+      description: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 30 days"
+      summary: "Certificate expires"

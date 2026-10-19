@@ -1,5 +1,220 @@
 # Changelog
 
+## v0.44.1 - 2026/10/15
+* move the `metrics` (mysqld-exporter) sidecar probes to `metrics.livenessProbe` / `metrics.readinessProbe`; leave them empty by default
+  * MariaDB readiness depends on the metrics sidecar readiness
+  * a failed probe might restart the exporter and make the database unavailable
+* chart version bumped
+
+## v0.44.0 - 2026/10/01
+* truncate the active slow-query log during the run once it exceeds `slow_query_log.rotation.max_size_mb` (default 1024), checked every `interval_seconds` (default 300) by a `slow-log-rotator` sidecar; `keep_previous` (default true) retains one `*.1` copy
+* the rotator runs as a native sidecar when `global.mariadb.native_sidecar.enabled`, otherwise as a regular sidecar container
+* chart version bumped
+
+## v0.43.0 - 2026/09/24
+* prune slow-query logs older than `slow_query_log.cleanup.max_age_days` (default 14) on pod init
+* optionally write the slow query log to a dedicated PVC (`slow_query_log.persistence`); it is written per-pod as `<dir>/<pod>-slow.log` so `cleanup` prunes it across restarts, and the PVC auto-provisions as `<release>-mariadb-logs` by default
+* opt-in data-PVC free-space alert at `alerts.pvc_free_enabled` (threshold `alerts.pvc_free_threshold`, default 0.20; severity `alerts.pvc_free_severity`, default warning)
+* fix `context` label typo (`datbase`) on the too-many-connections alert
+* chart version bumped
+
+## v0.42.3 - 2026/09/23
+* add `tolerations` value (default `[]`) to `deployment.yaml` and `sync-statefulset.yaml`
+* chart version bumped
+
+## v0.42.2 - 2026/08/25
+* MariaDB version updated to [10.11.19](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.19)
+* `maria-back-me-up` updated to `10.11-20260825091346`
+* chart version bumped
+
+## v0.42.1 - 2026/08/20
+* `maria-back-me-up` updated to `10.11-20260820143216` with ceph-s3 fixes
+* updated optional `go-maria-sync` deployment image tag
+* updated sidecar images:
+  * `mysqld-exporter` updated to `v0.20.0`
+  * `mariadb-credentials-updater`
+  * `pod-readiness`
+* chart version bumped
+
+## v0.42.0 - 2026/07/13
+* support SSE-C for Ceph S3 backup uploads
+  * default at `global.mariadb.backup_v2.ceph_s3.sse_customer_key`
+  * per-target override at `global.mariadb.backup_v2.ceph_s3.targets[].sse_customer_key` (set to `""` to opt out of an inherited default)
+* chart version bumped
+
+## v0.41.0 - 2026/07/06
+* support configurable S3 object lock on backup uploads
+  * default at `backup_v2.object_lock.{enabled,lock_mode,retention_days}`
+  * per-target overrides at `global.mariadb.backup_v2.aws.object_lock` and `global.mariadb.backup_v2.ceph_s3.targets[].object_lock`
+* `maria-back-me-up` updated to `10.11-20260706142324` for object-lock upload support
+* chart version bumped
+
+## v0.40.0 - 2026/07/03
+* optionally cohost the mariadb and the mariadb-backup pods on the same node via the `.Values.backup_v2.cohost_with_mariadb` flag
+* chart version bumped
+
+## v0.39.0 - 2026/06/22
+* support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
+* drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys
+* chart version bumped
+
+## v0.38.2 - 2026/06/16
+* use global.mariadb.backup_v2 for ceph s3 access and secret key
+* chart version bumped
+
+## v0.38.1 - 2026/06/11
+* `maria-back-me-up` updated to `10.11-20260611113653`
+  * fixes aws s3 upload
+* chart version bumped
+
+## v0.38.0 - 2026/06/03
+* MariaDB version updated to [10.11.18](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.18)
+* `maria-back-me-up` updated to `10.11-20260603173712`
+* chart version bumped
+
+## v0.37.0 - 2026/05/21
+* MariaDB version updated to [10.11.17](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.17)
+* `maria-back-me-up` updated to `10.11-20260521084302`
+* `user-credential-updater` updated to `python3.13-alpine3.23-20260506191108`
+* `pod-readiness` updated to `20260521132613`
+* chart version bumped
+
+## v0.36.0 - 2026/05/14
+* skip mariadb PVC mount in backup deployment when access modes don't include `ReadWriteMany`
+* `maria-back-me-up` updated to `10.11-20260515121634`
+* chart version bumped
+
+## v0.35.1 - 2026/05/06
+* fixed pvc storage_class templating
+* chart version bumped
+
+## v0.35.0 - 2026/04/14
+* add Ceph S3 storage backend support for backup-v2
+* fix Swift template to use `values.yaml` fields instead of hardcoded values
+* chart version bumped
+
+## v0.34.0 - 2026/04/01
+* remove unneeded privileges from the `backup` user
+* add `replace_grants` user option: when `true`, revokes all existing privileges before re-granting
+* add missing `serviceAccount` configuration for backup-v2 deployment
+* `maria-back-me-up` updated to `10.11-20260409091116`
+* chart version bumped
+
+## v0.33.1 - 2026/03/27
+* updated sidecar image:
+  * `mysqld-exporter` image updated to `0.19.0`
+* chart version bumped
+
+## v0.33.0 - 2026/03/03
+* Add InnoDB buffer pool Prometheus alerts: `MariaDBBufferPoolNearlyFull` (warning, < 10% free) and `MariaDBBufferPoolExhausted` (critical, < 2.5% free)
+
+## v0.32.0 - 2026/02/10
+* MariaDB version updated to [10.11.16](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.16)
+* `maria-back-me-up` updated to `20260210150801`
+* `user-credential-updater` updated to `python3.13-alpine3.23-20260207085008`
+* `pod-readiness` updated to `20260210104857`
+* `go-maria-sync` updated to `20260205163034`
+* chart version bumped
+
+## v0.31.0 - 2025/11/26
+* Fixed `go-maria-sync` preStop hook command to use `sh` instead of `bash`
+* Added an option to scale down `go-maria-sync` statefulset instead of removing it.
+
+Example:
+```yaml
+mariadb:
+  sync:
+    enabled: true
+    replicas: 0
+```
+
+## v0.30.0 - 2025/11/10
+* MariaDB version updated to [10.11.15](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.15)
+  * several InnoDB fixes
+* `maria-back-me-up` updated to `20251111085940`
+* `user-credential-updater` updated to `python3.13-alpine3.22-20251015235217`
+* `pod-readiness` updated to `20251110100847`
+* chart version bumped
+
+## v0.29.0 - 2025/10/28
+* Add an option to run all sidecar containers as a native sidecar.
+
+This option is enabled by default.
+
+Example configuration values:
+```yaml
+global:
+  mariadb:
+    native_sidecar:
+      enabled: true
+```
+
+## v0.28.1 - 2025/10/27
+* mysqld-exporter now collects data from mysql.user table
+
+New metrics available:
+```
+mysql_mysql_max_connections
+mysql_mysql_max_questions
+mysql_mysql_max_updates
+mysql_mysql_max_user_connections
+```
+
+## v0.28.0 - 2025/10/22
+* Added an option to run `go-maria-sync`, which could be used to populate empty database with the backup and binary log of another database.
+
+Example:
+```yaml
+mariadb:
+  sync:
+    enabled: true
+    backup:
+      service: test
+      swift:
+        password: swiftBackupPassword
+    source:
+      host: some-database-mariadb
+      password: sourceRootPassword
+    target:
+      host: test-mariadb
+      password: targetRootPassword
+    databases:
+      - test
+```
+
+## v0.27.4 - 2025/09/29
+* updated sidecar images:
+  * `mysqld-exporter` image updated to `0.18.0`
+  * `maria-back-me-up` image updated to `20250929115625`
+  * `user-credentials-updater` image updated to `python3.13-alpine3.22-20250818200546`
+  * `pod-readiness` image updated to `20250929115624`
+* chart version bumped
+
+## v0.27.3 - 2025/09/24
+* Add an option to enable `owner-info` dependency chart to be able to install `mariadb` as a stand-alone chart
+* chart version bumped
+
+## v0.27.2 - 2025/08/23
+Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
+* chart version bumped
+
+## v0.27.1 - 2025/08/13
+* MariaDB version updated to [10.11.14](https://mariadb.com/docs/release-notes/community-server/mariadb-10-11-series/mariadb-10.11.14-release-notes)
+  * several critical (InnoDB) fixes
+* chart version bumped
+
+## v0.27.0 - 2025/07/31
+* Added an option to drop the database user using the values configuration
+
+Example:
+```yaml
+mariadb:
+  users:
+    test:
+      enabled: false
+```
+This will result in the `test` user being dropped from the MariaDB.
+
 ## v0.26.1 - 2025/07/22
 * `maria-back-me-up` updated to `20250722132533`
 * chart version bumped

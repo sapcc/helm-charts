@@ -11,7 +11,7 @@ global:
       enabled: true
 
 image: library/rabbitmq
-imageTag: 4.1.2-management
+imageTag: 4.3.6-management
 ## Specify a imagePullPolicy
 ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
 ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -80,6 +80,10 @@ resources:
 ##
 nodeAffinity: {}
 
+# keep statefulset pods on different nodes: "" (off), "preferred" or "required".
+# "required" leaves a pod Pending when there is no free node for it.
+podAntiAffinity: ""
+
 metrics:
   enabled: true
   user: monitoring
@@ -127,13 +131,17 @@ customConfig:
   # to set a custom limit please use the following format: 50MB or 1GB
   # if not set default value of 50MB will be used
   # disk_free_limit.absolute: 500MB
+  # Enables deprecated non-durable (transient) non-exclusive queues
+  # (disabled by default as of RabbitMQ `4.3.0`, will be removed in a later version)
+  deprecated_features.permit.transient_nonexcl_queues: 'true'
 
 credentialUpdater:
   enabled: true
   image: rabbitmq-user-credential-updater
-  imageTag: '20250730094138'
+  imageTag: '20260925091552'
 
-enableSsl: false
+enableSsl: true
+addServiceNameToDnsNames: true
 certificate:
   issuerRef:
     name: "digicert-issuer"

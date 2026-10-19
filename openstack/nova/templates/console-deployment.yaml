@@ -1,13 +1,9 @@
 {{ $envAll := . }}
-{{- $cells := dict "cell1" false }}
-{{- if .Values.cell2.enabled }}
-  {{ $_ := set $cells .Values.cell2.name true }}
-{{- end }}
-{{- range $cell_name, $is_cell2 := $cells }}
+{{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
   {{- range $type, $config := $envAll.Values.consoles }}
     {{- if and $config.enabled (not $config.custom_deployment) }}
 ---
-{{ tuple $envAll $cell_name $type $is_cell2 $config | include "nova.console_deployment" }}
+{{ tuple $envAll $cellId $type $config | include "nova.console_deployment" }}
     {{- end }}
   {{- end }}
 {{- end }}

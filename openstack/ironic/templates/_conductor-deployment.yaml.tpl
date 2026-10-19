@@ -17,10 +17,17 @@ metadata:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
-  replicas: 1
+  replicas: {{ $conductor.replicas | default 1 }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
+  {{- if gt (int ($conductor.replicas | default 1)) 1 }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  {{- else }}
     type: Recreate
+  {{- end }}
   selector:
     matchLabels:
     {{- if $conductor.name }}
@@ -50,6 +57,21 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
+      {{- if $conductor.site }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - {{ $conductor.site }}
+      {{- end }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
@@ -75,13 +97,10 @@ spec:
         env:
         - name: PYTHONWARNINGS
           value: ignore:Unverified HTTPS request
-        {{- if .Values.logging.handlers.sentry }}
-        - name: SENTRY_DSN
-          valueFrom:
-            secretKeyRef:
-              name: sentry
-              key: {{ .Chart.Name }}.DSN.python
-        {{- end }}
+        # workaround for OSSN-0099
+        - name: IRONIC_THREAD_STACK_SIZE
+          value: "8388608"
+        {{- include "utils.sentry_config" . | indent 8 }}
         - name: PGAPPNAME
           valueFrom:
             fieldRef:
@@ -160,7 +179,7 @@ spec:
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       - name: console
-        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.nginx.image is missing" .Values.nginx.image }}:{{ required ".Values.nginx.imageTag is missing" .Values.nginx.imageTag }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.console | indent 10 }}
@@ -169,14 +188,15 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
-          - mountPath: /etc/nginx/conf.d
-            name: nginx-confd
           - mountPath: /etc/nginx/conf.d/default.conf
-            name: ironic-console-nginxconf
-            subPath: nginx.conf
+            name: ironic-console-default
+            subPath: default.conf
           - mountPath: /etc/nginx/conf.d/dhparam.pem
             name: ironic-console-dhparam
             subPath: dhparam.pem
+          - mountPath: /etc/nginx/nginx.conf
+            name: ironic-console-nginx
+            subPath: nginx.conf
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
@@ -197,7 +217,7 @@ spec:
           periodSeconds: 3
       {{- if $conductor.default.statsd_enabled }}
       - name: oslo-exporter
-        image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         args:
         - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:
@@ -240,14 +260,15 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
-      - name: nginx-confd
-        emptyDir: {}
-      - name: ironic-console-nginxconf
+      - name: ironic-console-nginx
+        configMap:
+          name: ironic-console-nginx
+      - name: ironic-console-default
         secret:
           secretName: ironic-console-secret
           items:
-          - key: nginx.conf
-            path: nginx.conf
+          - key: default.conf
+            path: default.conf
       - name: ironic-console-dhparam
         secret:
           secretName: {{ .Release.Name }}-secrets

@@ -4,6 +4,17 @@ metadata:
   name: ceph-seed
 
 spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-monsoon3-seed
+
+  roles:
+  - name: cloud_objectstore_admin
+  - name: cloud_objectstore_viewer
+  - name: objectstore_admin
+  - name: objectstore_viewer
+
   services:
     - name:        ceph
       type:        object-store-ceph
@@ -33,8 +44,35 @@ spec:
           description: CEPH Object Store Service
           password: '{{ $.Values.global.ceph_barbican_service_password }}'
     - name: Default
+      users:
+        - name: db_backup
+          description: DB backup store user
+          password: '{{ $.Values.global.ceph_db_backup_service_password }}'
+    - name: Default
       projects:
       - name: admin
         role_assignments:
         - user: ceph-barbican@Default
           role: reader # ceph-barbican needs as minimal as possible access role, the access to keys is managed by barbican ACL
+
+    - name: ccadmin
+      projects:
+      - name: cloud_admin
+        role_assignments:
+        - group: CCADMIN_CLOUD_ADMINS
+          role: cloud_objectstore_admin
+      - name: master
+        role_assignments:
+        - group: CCADMIN_CLOUD_ADMINS
+          role: objectstore_admin
+        - group: CCADMIN_DOMAIN_ADMINS
+          role: objectstore_admin
+        - user: db_backup@Default
+          role: objectstore_admin
+
+    - name: monsoon3
+      projects:
+      - name: cc-demo
+        role_assignments:
+        - group: MONSOON3_DOMAIN_ADMINS
+          role: objectstore_admin

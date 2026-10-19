@@ -14,58 +14,214 @@
 
 Listen 0.0.0.0:5000
 
+{{- /* mod_wsgi request/queue/script timestamps (microsecond epoch), exposed as
+       Apache env vars by WSGIServerMetrics. Downstream: queue_wait = script_start
+       - queue_start. Logged as strings so unset ("-") stays valid JSON. Only
+       emitted when metrics (and thus WSGIServerMetrics On) are enabled. */ -}}
+{{- $wsgiJson := "" -}}
+{{- $wsgiPlain := "" -}}
+{{- if .Values.api.metrics.enabled -}}
+{{- $wsgiJson = ",\\\"wsgi_request_start\\\":\\\"%{mod_wsgi.request_start}e\\\",\\\"wsgi_queue_start\\\":\\\"%{mod_wsgi.queue_start}e\\\",\\\"wsgi_script_start\\\":\\\"%{mod_wsgi.script_start}e\\\"" -}}
+{{- $wsgiPlain = " wsgi_request_start=%{mod_wsgi.request_start}e wsgi_queue_start=%{mod_wsgi.queue_start}e wsgi_script_start=%{mod_wsgi.script_start}e" -}}
+{{- end -}}
+{{- if .Values.use_json }}
 ErrorLog /dev/stdout
-
-LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %h %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" combined
-LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %{X-Forwarded-For}i %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"" proxy
-
+ErrorLogFormat "%M"
+LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%a\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"{{ $wsgiJson }}}" json_combined
+LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%{X-Forwarded-For}i\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"{{ $wsgiJson }}}" json_proxy
+SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+CustomLog /dev/stdout json_combined env=!forwarded
+CustomLog /dev/stdout json_proxy env=forwarded
+{{- else }}
+ErrorLog /dev/stdout
+LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %h %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"{{ $wsgiPlain }}" combined
+LogFormat "%{%Y-%m-%d %T}t.%{msec_frac}t %{pid}P INFO apache \"%{X-Openstack-Request-ID}i\" %{X-Forwarded-For}i %l %u \"%r\" %>s %b %{ms}T \"%{Referer}i\" \"%{User-Agent}i\"{{ $wsgiPlain }}" proxy
 SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 CustomLog /dev/stdout combined env=!forwarded
 CustomLog /dev/stdout proxy env=forwarded
+{{- end }}
+
 
 {{- if .Values.federation.oidc.enabled }}
 <Location "/v3/auth/OS-FEDERATION/websso/openid">
     AuthType "openid-connect"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 <Location "/v3/auth/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/websso">
     AuthType "openid-connect"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 <Location "/v3/auth/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/auth">
     AuthType "openid-connect"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 # Location a non-browser apps can communicate with
 <Location "/v3/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/auth">
     # AuthType here is not "openid-connect" since apps going here do not support browser flow
     AuthType "auth-openidc"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 {{- end }}
 
-<VirtualHost *:5000>
+{{- if .Values.api.metrics.enabled }}
+# Enable mod_wsgi request/process metrics so the per-process worker sampler
+# (loaded via WSGIImportScript below) can read mod_wsgi.process_metrics().
+WSGIServerMetrics On
+{{- end }}
+
+# Single WSGI daemon group shared by the internal (:5000) and, when enabled, the
+# external TLS (:443) vhosts. Defined at server scope so both can reference it
+# and the worker count (and thus the memory footprint) stays fixed regardless of
+# the TLS state.
+WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+{{- if .Values.api.metrics.enabled }}
+# Load the worker-pool sampler into every keystone-public daemon process.
+# It reports each process's active_requests to statsd for Prometheus.
+WSGIImportScript /scripts/wsgi-sampler.py process-group=keystone-public application-group=%{GLOBAL}
+{{- end }}
+
+{{- if (include "keystone.tls.serving" .) }}
+# External HTTPS endpoint
+# mod_ssl is loaded via a conf-enabled snippet, which is parsed after
+# ports.conf, so its ssl_module-gated Listen 443 does not apply here.
+Listen 0.0.0.0:443
+
+<VirtualHost *:443>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
-    WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+
+    SSLEngine on
+    SSLCertificateFile /mnt/secrets/tls.crt
+    SSLCertificateKeyFile /mnt/secrets/tls.key
+
+    # HTTP security response headers
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    # script-src hash allows only the inline auto-submit in
+    # _sso_callback_template.html.tpl (kept in sync by the drift guard in
+    # keystone.tls.validate); default-src 'self' otherwise.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'sha256-oBahlBFQem+nMs1JwgcBB03Hy8nRh5e8qEGTOcxmAuM='"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Strip the external-auth trust-key header from inbound requests, as the
+    # ingress did when it fronted this endpoint. Both spellings are removed
+    # because WSGI folds '-' and '_' to the same HTTP_X_TRUSTED_KEY env var.
+    RequestHeader unset X-Trusted-Key
+    RequestHeader unset X_Trusted_Key
+
+    RequestHeader unset SSL-Client-Cert
+    RequestHeader unset SSL_Client-Cert
+    RequestHeader unset SSL-Client_Cert
+    RequestHeader unset SSL_CLIENT_CERT
+    RequestHeader unset SSL-Client-Verify
+    RequestHeader unset SSL_Client-Verify
+    RequestHeader unset SSL-Client_Verify
+    RequestHeader unset SSL_CLIENT_VERIFY
+    {{- /* The issuer/subject DN env vars have four underscore-separated tokens,
+           so a client can spell the injected header with '-' or '_' at each of
+           the three separators; strip every combination. */}}
+    {{- range $dn := list "I" "S" }}
+    {{- range $s1 := list "-" "_" }}
+    {{- range $s2 := list "-" "_" }}
+    {{- range $s3 := list "-" "_" }}
+    RequestHeader unset SSL{{ $s1 }}Client{{ $s2 }}{{ $dn }}{{ $s3 }}DN
+    {{- end }}{{- end }}{{- end }}{{- end }}
+
+    {{- if .Values.services.ingress.x509.ca }}
+    SSLVerifyClient optional
+    SSLVerifyDepth 3
+    SSLCACertificateFile /etc/apache2/x509-ca/ca.crt
+
+    # Reconstruct, from the verified TLS session, the client-certificate request
+    # headers cc_x509 consumes (same format NGINX forwarded when it terminated
+    # TLS). Every inbound spelling is stripped first so a client cannot inject
+    # them; only these Apache-set values, sourced from the verified handshake,
+    # reach the WSGI app.
+    RequestHeader set SSL-Client-Cert "expr=%{escape:%{SSL:SSL_CLIENT_CERT}}"
+    RequestHeader set SSL-Client-Verify "expr=%{SSL:SSL_CLIENT_VERIFY}"
+    RequestHeader set SSL-Client-I-DN "expr=%{SSL:SSL_CLIENT_I_DN}"
+    RequestHeader set SSL-Client-S-DN "expr=%{SSL:SSL_CLIENT_S_DN}"
+    {{- end }}
+
     WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     LimitRequestBody 114688
+    LimitRequestFieldSize 16380
     <IfVersion >= 2.4>
       ErrorLogFormat "%{cu}t %M"
     </IfVersion>
     ErrorLog /dev/stdout
 
+    {{- if .Values.use_json }}
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout json_combined env=!forwarded
+    CustomLog /dev/stdout json_proxy env=forwarded
+    {{- else }}
     SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
     CustomLog /dev/stdout combined env=!forwarded
     CustomLog /dev/stdout proxy env=forwarded
+    {{- end }}
 
     KeepAliveTimeout 61
+
+    {{- if .Values.federation.saml.enabled }}
+    <LocationMatch "^/Shibboleth\.sso(/|$)">
+        SetHandler shib
+    </LocationMatch>
+    IncludeOptional /etc/apache2/conf-enabled/federation-saml.d/*.conf
+    {{- end }}
+</VirtualHost>
+{{- end }}
+
+# Internal HTTP endpoint (protected by Linkerd mTLS at the network layer)
+<VirtualHost *:5000>
+    ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    LimitRequestBody 114688
+    # LimitRequestFieldSize is needed because of OIDC, 2*default
+    LimitRequestFieldSize 16380
+    <IfVersion >= 2.4>
+      {{- if .Values.use_json }}
+        ErrorLogFormat "%M"
+      {{- else }}
+        ErrorLogFormat "%{cu}t %M"
+      {{- end }}
+    </IfVersion>
+    ErrorLog /dev/stdout
+    {{- if .Values.use_json }}
+        SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+        CustomLog /dev/stdout json_combined env=!forwarded
+        CustomLog /dev/stdout json_proxy env=forwarded
+    {{- else }}
+        SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+        CustomLog /dev/stdout combined env=!forwarded
+        CustomLog /dev/stdout proxy env=forwarded
+    {{- end }}
+    KeepAliveTimeout 61
+
+    {{- if .Values.federation.saml.enabled }}
+    # Shibboleth handler — matches the default /Shibboleth.sso and all
+    # per-tenant handler URLs (/Shibboleth.sso/<tenant>/*).
+    # Each tenant's ApplicationOverride has its own handlerURL so the ACS
+    # endpoint is unique per tenant, ensuring correct applicationId routing.
+    <LocationMatch "^/Shibboleth\.sso(/|$)">
+        SetHandler shib
+    </LocationMatch>
+
+    # Per-tenant auth endpoints (one .conf per tenant, mounted from the
+    # keystone-saml-federation-saml-tenants ConfigMap; ConfigMap content comes
+    # from the federation repo's generated/<region>/federation-saml.d/).
+    IncludeOptional /etc/apache2/conf-enabled/federation-saml.d/*.conf
+    {{- end }}
 </VirtualHost>
 
 Alias /identity /var/www/cgi-bin/keystone/keystone-wsgi-public

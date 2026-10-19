@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "os-user-rotate.fullname" . }}
+  labels:
+    k8s-app: os-user-rotate
+spec:
+  selector:
+    matchLabels:
+      k8s-app: os-user-rotate
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        secret.reloader.stakater.com/reload: "{{ include "os-user-rotate.fullname" . }}"
+        secret/checksum: {{ include ( print $.Template.BasePath "/secret.yaml" ) . | sha256sum }}
+      labels:
+        k8s-app: os-user-rotate
+        {{- include "os-user-rotate.labels" . | nindent 8 }}
+    spec:
+      tolerations:
+      - operator: Exists
+      hostPID: true
+      initContainers:
+      - name: rotate-user-password
+        image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+        securityContext:
+          privileged: true
+        command:
+        - sh
+        - -c
+        args:
+        - |-
+          set -e
+          USERNAME=$(cat /secret/username)
+          PASSWORD=$(cat /secret/password)
+
+          # Verify the user exists on the host
+          chroot /hostmount id "$USERNAME"
+
+          # Set the new password
+          printf '%s:%s\n' "$USERNAME" "$PASSWORD" | chroot /hostmount chpasswd
+
+          # Verify the password was set: shadow entry must contain a valid hash
+          SHADOW_HASH=$(chroot /hostmount getent shadow "$USERNAME" | cut -d: -f2)
+          if [ -z "$SHADOW_HASH" ] || [ "$SHADOW_HASH" = "!" ] || [ "$SHADOW_HASH" = "!!" ] || [ "$SHADOW_HASH" = "*" ]; then
+            echo "ERROR: password for $USERNAME is locked or was not properly set"
+            exit 1
+          fi
+          echo "SUCCESS: password for $USERNAME has been set and verified"
+        volumeMounts:
+        - name: hostmount
+          mountPath: /hostmount
+          readOnly: false
+        - name: secret
+          mountPath: /secret
+      containers:
+        - name: pause
+          image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/pause-amd64:3.1
+      volumes:
+      - name: hostmount
+        hostPath:
+          path: /
+      - name: secret
+        secret:
+          secretName: {{ include "os-user-rotate.fullname" . }}
+          defaultMode: 0600

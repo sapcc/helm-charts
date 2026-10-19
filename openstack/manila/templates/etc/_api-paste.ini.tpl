@@ -5,7 +5,9 @@
 [composite:osapi_share]
 use = call:manila.api:root_app_factory
 /: apiversions
+{{- if .Values.api_v1_enabled }}
 /v1: openstack_share_api
+{{- end }}
 /v2: openstack_share_api_v2
 
 {{- define "audit_pipe" -}}

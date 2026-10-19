@@ -1,17 +1,8 @@
 {{/* vim: set filetype=mustache: */}}
 {{/*
-Expand the name of the chart.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "percona-xtradb-cluster.name" -}}
-{{- default "pxc" .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-
 {{- define "fullName" -}}
 {{- $name := default "percona-pxc" .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
@@ -24,6 +15,15 @@ https://www.percona.com/doc/percona-xtradb-cluster/LATEST/wsrep-system-index.htm
 {{- define "percona-cluster.shortname" -}}
 {{- $name := default "pxc" .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 32 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "percona-cluster.resolve_secret_squote" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" | squote {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "'" "''" | squote }}
+{{- end -}}
 {{- end -}}
 
 {{/* Helper to turn list into a comma-separated string */}}

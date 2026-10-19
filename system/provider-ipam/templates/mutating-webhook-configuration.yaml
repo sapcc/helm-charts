@@ -9,7 +9,48 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
-  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-ipam.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: default.globalinclusterippool.ipam.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - ipam.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - globalinclusterippools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "provider-ipam.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterprefixpool
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: default.globalinclusterprefixpool.ipam.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - ipam.cluster.x-k8s.io
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - globalinclusterprefixpools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
   clientConfig:
     service:
       name: '{{ include "provider-ipam.fullname" . }}-webhook-service'
@@ -31,15 +72,14 @@ webhooks:
   sideEffects: None
 - admissionReviewVersions:
   - v1
-  - v1beta1
   clientConfig:
     service:
       name: '{{ include "provider-ipam.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool
+      path: /mutate-ipam-cluster-x-k8s-io-v1alpha2-inclusterprefixpool
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: default.globalinclusterippool.ipam.cluster.x-k8s.io
+  name: default.inclusterprefixpool.ipam.cluster.x-k8s.io
   rules:
   - apiGroups:
     - ipam.cluster.x-k8s.io
@@ -49,5 +89,5 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - globalinclusterippools
+    - inclusterprefixpools
   sideEffects: None

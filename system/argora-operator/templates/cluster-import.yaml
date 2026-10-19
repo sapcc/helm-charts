@@ -1,0 +1,19 @@
+{{- if .Values.clusterImport -}}
+{{- range $name, $clusters := .Values.clusterImport }}
+---
+apiVersion: argora.cloud.sap/v1alpha1
+kind: ClusterImport
+metadata:
+  name: {{ $name }}
+  namespace: argora-system
+spec:
+  clusters:
+  {{- range $cluster := $clusters }}
+  - {{ toYaml (omit $cluster "bmcUser" "bmcPassword") | nindent 4 | trim }}
+    {{- if and $cluster.bmcUser $cluster.bmcPassword }}
+    bmcCredentialsRef:
+      name: bmc-{{ $cluster.name }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

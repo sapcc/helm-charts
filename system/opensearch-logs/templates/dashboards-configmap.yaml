@@ -1,0 +1,14 @@
+{{- if ne .Values.global.region "qa-de-1" }}
+{{- $root := . }}
+{{- $basePath := .Template.BasePath }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboards
+data:
+{{- range $path, $_ := .Files.Glob "templates/dashboards/_*.ndjson.tpl" }}
+{{- $fileName := base $path | trimPrefix "_" | trimSuffix ".tpl" }}
+  {{ $fileName }}: |
+{{ include (print $basePath "/dashboards/" (base $path)) $root | indent 4 }}
+{{- end }}
+{{- end }}

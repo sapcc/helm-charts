@@ -1,3 +1,4 @@
+{{- if .Values.hermes.logstash_enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,9 +27,10 @@ spec:
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
+        configmap.reloader.stakater.com/reload: "logstash-etc"
+        secret.reloader.stakater.com/reload: "logstash-secret"
+        deployment.reloader.stakater.com/pause-period: "60s"
     spec:
-      nodeSelector:
-        zone: farm
       volumes:
         - name: hermes-etc
           projected:
@@ -37,6 +39,12 @@ spec:
                 name: logstash-secret
             - configMap:
                 name: logstash-etc
+      {{- if .Values.global.gardener.enabled }}
+        - name: ca-cert
+          secret:
+            defaultMode: 444
+            secretName: rest-cert
+      {{- end }}
       containers:
         - name: logstash
           image: {{.Values.global.registry}}/hermes-logstash:{{.Values.hermes_image_version_logstash}}
@@ -82,7 +90,7 @@ spec:
                   name: logstash-secret
                   key: "RABBITMQ_{{ upper $key }}_PASSWORD"
             {{- end }}
-
+            {{- if .Values.logstash.audit }}
             # Metis / DB
             - name: METIS_USER
               valueFrom:
@@ -95,7 +103,8 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: METIS_PASSWORD
-
+            {{- end }}
+            {{- if .Values.logstash.swift }}
             # Swift / S3
             - name: SWIFT_ACCESS_KEY
               valueFrom:
@@ -108,7 +117,7 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: SWIFT_SECRET_KEY
-
+            {{- end }}
             # OpenSearch
             - name: OPENSEARCH_USER
               valueFrom:
@@ -121,9 +130,28 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: OPENSEARCH_PASSWORD
+            {{- if and .Values.logstash.kafka.enabled .Values.logstash.kafka.username .Values.logstash.kafka.password }}
+            # Kafka SASL/SCRAM credentials (FortLogs KafkaUser)
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: KAFKA_USERNAME
+
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: KAFKA_PASSWORD
+            {{- end }}
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
+            {{- if .Values.global.gardener.enabled }}
+            - name: ca-cert
+              mountPath: /etc/logstash/certs/ca.crt
+              subPath: ca.crt
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /
@@ -148,17 +176,21 @@ spec:
               cpu: {{required ".Values.resources_requests_cpu_ls is missing" .Values.resources_requests_cpu_ls}}
 
         - name: logstash-exporter
-          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/kuskoman/logstash-exporter:v1.9.1
           imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "-c"]
-          ## Delay start of logstash-exporter to give logstash more time to come online.
-          args:
-            - >-
-              sleep 120;
-              exec /logstash_exporter
-                --logstash.endpoint=http://localhost:9600
-                --web.listen-address=:9198
+          env:
+            - name: LOGSTASH_URL
+              value: "http://localhost:9600"
+            - name: PORT
+              value: "9198"
+          startupProbe:
+            httpGet:
+              path: /healthcheck
+              port: 9198
+            failureThreshold: 24
+            periodSeconds: 10
           ports:
             - name: ls-exporter
               containerPort: 9198
               protocol: TCP
+{{- end }}

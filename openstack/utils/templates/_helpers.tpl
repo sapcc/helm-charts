@@ -31,12 +31,23 @@ propagate=0
 {{- end }}
 
 {{- define "osprofiler" }}
+{{- include "utils.osprofiler_public" . }}
+{{- include "utils.osprofiler_secret" . | trim | trimPrefix "[profiler]" }}
+{{- end }}
+
+{{- define "utils.osprofiler_public" }}
 {{- if .Values.osprofiler.enabled }}
 [profiler]
 enabled = true
-connection_string = jaeger://localhost:6831
-hmac_keys = {{ .Values.global.osprofiler.hmac_keys | include "resolve_secret" }}
+connection_string = {{ .Values.osprofiler.connection_string | default "jaeger://localhost:6831" }}
 trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
+{{- end }}
+{{- end }}
+
+{{- define "utils.osprofiler_secret" }}
+{{- if .Values.osprofiler.enabled }}
+[profiler]
+hmac_keys = {{ .Values.global.osprofiler.hmac_keys | include "resolve_secret" }}
 {{- end }}
 {{- end }}
 
@@ -45,7 +56,7 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 
 {{- define "jaeger_agent_sidecar" }}
-{{- if .Values.osprofiler.enabled }}
+{{- if and .Values.osprofiler.enabled (hasPrefix "jaeger://" (.Values.osprofiler.connection_string | default "jaeger://localhost:6831")) }}
 - image: {{.Values.global.dockerHubMirrorAlternateRegion}}/jaegertracing/jaeger-agent:{{ .Values.global.osprofiler.jaeger.version }}
   name: jaeger-agent
   ports:
@@ -78,6 +89,7 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 
 {{- define "utils.sentry_config" -}}
+{{- if .Values.sentry.enabled }}
 - name: SENTRY_DSN
   valueFrom:
     secretKeyRef:
@@ -86,5 +98,6 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- if .Values.sentry.release }}
 - name: SENTRY_RELEASE
   value: {{ .Values.sentry.release }}
+{{- end -}}
 {{- end -}}
 {{- end -}}

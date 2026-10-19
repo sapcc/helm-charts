@@ -1,9 +1,3 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: disco-metrics-reader
-rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
+{{- if and .Values.rbac.create (not .Values.remote.enabled) }}
+{{ include "disco.clusterRole.metricsReader" . }}
+{{- end }}

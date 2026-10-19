@@ -1,0 +1,39 @@
+groups:
+- name: cc3test-netbox.alerts
+  rules:
+  - alert: CCloudNetboxApiDown
+    expr: |
+        cc3test_status{service="netbox", type="api", phase="call"} == 0
+    for: 5m
+    labels:
+      severity: critical
+      support_group: foundation
+      tier: os
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "CCloud Netbox API is down"
+      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/resources/limes/playbooks/cc3test-alert-api/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Netbox API is down"
+      summary: "CCloud Netbox API is down"
+
+  - alert: CCloudNetboxApiFlapping
+    expr: |
+        changes(cc3test_status{service="netbox", type="api", phase="call"}[30m]) > 8
+    labels:
+      severity: warning
+      support_group: foundation
+      tier: os
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "CCloud Netbox API is flapping"
+      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/resources/limes/playbooks/cc3test-alert-api/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "CCloud Netbox API is flapping"
+      summary: "CCloud Netbox API is flapping"

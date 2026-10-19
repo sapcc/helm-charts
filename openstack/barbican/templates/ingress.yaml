@@ -1,8 +1,9 @@
+{{- if include "barbican.tls.ingressActive" . }}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
 metadata:
-  name: barbican-api
+  name: {{ if (include "barbican.tls.serving" .) }}barbican-api-direct{{ else }}barbican-api{{ end }}
   namespace:  {{.Release.Namespace}}
   labels:
     app: {{ template "fullname" . }}
@@ -15,9 +16,17 @@ metadata:
   annotations:
   {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
+    {{- if not (include "barbican.tls.serving" .) }}
     disco: "true"
+    {{- end }}
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+  {{- if .Values.ingress.enableRequestSizeLimit }}
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.ingress.maxRequestBodySize | quote }}
+  {{- end }}
+  {{- if .Values.ingress.enableConnectionsLimit }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ .Values.ingress.limitConnections | quote }}
+  {{- end }}
 spec:
   tls:
      - secretName: tls-{{ include "barbican_api_endpoint_host_public" . | replace "." "-" }}
@@ -33,3 +42,4 @@ spec:
               name: barbican-api
               port:
                 number: {{.Values.api_port_internal}}
+{{- end }}

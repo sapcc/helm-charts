@@ -156,6 +156,7 @@ kube-state-metrics-exporter:
   prometheusName: kubernetes
 
 prometheus-node-exporter:
+  priorityClassName: critical-infrastructure
   image:
     registry: keppel.global.cloud.sap
     repository: ccloud-dockerhub-mirror/prom/node-exporter
@@ -171,6 +172,7 @@ prometheus-node-exporter:
     image:
       registry: keppel.global.cloud.sap
       repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
+      tag: v0.22.1
 
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
@@ -201,6 +203,7 @@ prometheus-scaleout-rules:
   prometheusName: kubernetes
 
 falco:
+  podPriorityClassName: critical-infrastructure
   enabled: false
   image:
     registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
@@ -242,14 +245,16 @@ falco:
           tag: pci
 
 x509-certificate-exporter:
-  enabled: false
+  migration:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
   secretsExporter:
     podAnnotations:
       prometheus.io/port: "9793"
       prometheus.io/scrape: "true"
       prometheus.io/targets: kubernetes
   hostPathsExporter:
-    daemonSets: null
+    daemonSets: {}
   service:
     create: false
   prometheusServiceMonitor:

@@ -30,16 +30,24 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export FILEPATH=/scripts
      export TMPPATH=/tmp
      export DS_TEMPLATE=ds.json
+     export DS_CUSTOM_TEMPLATE=ds-${e}.json
 
-     echo "creating file FILE=${TMPPATH}/${e}"
-     cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"
-     echo "Applying ${e}-${DS_TEMPLATE} to ${CLUSTER_HOST}"
-     sed -i "s/_DS_NAME_/${e}/g" "${TMPPATH}/${e}-${DS_TEMPLATE}"
-     if  grep -q "$e" "${TMPPATH}/${e}-${DS_TEMPLATE}" ; then
-         curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${e}-${DS_TEMPLATE}"
+     if [ -s "${FILEPATH}/${DS_CUSTOM_TEMPLATE}" ]; then
+         echo "creating custom file FILE=${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
+         cp "/${FILEPATH}/${DS_CUSTOM_TEMPLATE}" "${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
+         export DS_TEMPLATE_FINAL=${DS_CUSTOM_TEMPLATE}
+     else
+         echo "creating default file FILE=${TMPPATH}/${e}-${DS_TEMPLATE}"
+         cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"
+         export DS_TEMPLATE_FINAL=${e}-${DS_TEMPLATE}
+     fi
+     echo "Applying ${DS_TEMPLATE_FINAL} to ${CLUSTER_HOST}"
+     sed -i "s/_DS_NAME_/${e}/g" "${TMPPATH}/${DS_TEMPLATE_FINAL}"
+     if  grep -q "$e" "${TMPPATH}/${DS_TEMPLATE_FINAL}" ; then
+         curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${DS_TEMPLATE_FINAL}"
          echo -e "\nUpload of ds template for datastream ${e} done"
      else
-       echo "\n${TMPPATH}/${e}-${DS_TEMPLATE} is missing or the replacement was not successful."
+       echo "\n${TMPPATH}/${DS_TEMPLATE_FINAL} is missing or the replacement was not successful."
        exit 1
      fi
    done;
@@ -60,9 +68,21 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    echo "Datastream ism template creation"
    for e in ${DATA_STREAMS}; do
      export DS_ISM_TEMPLATE=ds-${e}-ism.json
+
+     if [ ! -f "${FILEPATH}/${DS_ISM_TEMPLATE}" ]; then
+        echo "${FILEPATH}/${DS_ISM_TEMPLATE} is missing."
+        exit 1
+     fi
      # we have to copy the template from the scripts secrets to a directory, where we can change the template.
      cp "/${FILEPATH}/${DS_ISM_TEMPLATE}" "${TMPPATH}/${DS_ISM_TEMPLATE}"
      echo "Applying ${TMPPATH}/${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
+
+     # we have to replace snapshot name here because we're using a template reference but for ism plugin, not for helm chart
+     sed -i "s/_SNAPSHOT_NAME_/{ctx.index}/g" "${TMPPATH}/${DS_ISM_TEMPLATE}"
+     if grep -q "_SNAPSHOT_NAME_" "${TMPPATH}/${DS_ISM_TEMPLATE}" ; then
+       echo "\n${TMPPATH}/${DS_ISM_TEMPLATE} replacement was not successful."
+       exit 1
+     fi
 
      # initial upload or test if ism policy exists
      export POLICY_RETURN_CODE=$( curl -s -o /dev/null -s -w "%{http_code}\n" --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism")
@@ -118,6 +138,80 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        else
          echo "No changes, ism template is not updated. Increase the version number to upload a new ism template"
        fi
-    fi
-  done
+     fi
+   done
+
+   ####
+   ### Datastream ism policy verification and update
+   ####
+   # Ensure correct ism policy is applied to every datastream backing index
+   # This section handles:
+   # 1. Indices with no policy attached (new datastreams)
+   # 2. Indices with an old version of the policy (policy updates)
+   echo "Datastream ism policy verification and update"
+   for e in ${DATA_STREAMS}; do
+      # Capture ism explain response because sometimes it's too big to process in memory
+      export ISM_EXPLAIN_RESPONSE=${TMPPATH}/ism-explain-ds-${e}.json
+      curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/.ds-${e}-datastream*" -o ${ISM_EXPLAIN_RESPONSE}
+      export TOTAL_MANAGED_INDICES=$(jq '.total_managed_indices' ${ISM_EXPLAIN_RESPONSE} )
+      export WRITE_INDEX=$(jq -r 'to_entries[] | select(.key != "total_managed_indices") | select(.value.rolled_over != true) | .key' ${ISM_EXPLAIN_RESPONSE})
+
+      # Get the current policy schema version from the cluster
+      export CLUSTER_POLICY_SCHEMA_VERSION=$(curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism" | jq -r '.policy.schema_version')
+
+      if [ "${TOTAL_MANAGED_INDICES}" -eq 0 ]; then
+         echo "There are no indices managed by ds-${e}-ism policy"
+         echo "Assigning ds-${e}-ism policy to ${WRITE_INDEX} index"
+         curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${WRITE_INDEX}" -d "{ \"policy_id\": \"ds-${e}-ism\" }"
+      else
+         echo "Datastream has ${TOTAL_MANAGED_INDICES} indices managed by ds-${e}-ism policy"
+
+         # Check for indices WITHOUT any policy attached
+         export INDICES_WITHOUT_POLICY=$(jq -r \
+           'to_entries[] | select(.key != "total_managed_indices") |
+            select(.value.policy_id == null or .value.policy_id == "") |
+            .key' ${ISM_EXPLAIN_RESPONSE})
+
+         if [ -n "${INDICES_WITHOUT_POLICY}" ]; then
+            echo "Found indices without policy, assigning ds-${e}-ism:"
+            echo "${INDICES_WITHOUT_POLICY}"
+
+            for index in ${INDICES_WITHOUT_POLICY}; do
+               echo "Assigning policy to index: ${index}"
+               curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" \
+                 -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${index}" \
+                 -d "{ \"policy_id\": \"ds-${e}-ism\" }"
+            done
+         fi
+
+         # Check if any indices have outdated policy version
+         export INDICES_NEEDING_UPDATE=$(jq -r \
+           'to_entries[] | select(.key != "total_managed_indices") |
+            select(.value.policy_id == "ds-'${e}'-ism") |
+            .key' ${ISM_EXPLAIN_RESPONSE})
+
+         if [ -n "${INDICES_NEEDING_UPDATE}" ]; then
+            echo "Found managed indices needed to be updated with ism policy:"
+            echo "${INDICES_NEEDING_UPDATE}"
+
+            # Use change_policy API to update indices to the new policy version
+            for index in ${INDICES_NEEDING_UPDATE}; do
+               echo "Updating policy for index: ${index}"
+
+               # Get current state of the index
+               export CURRENT_STATE=$(jq -r --arg idx "${index}" \
+                 'to_entries[] | select(.key == $idx) | .value.state.name // "initial"' \
+                 ${ISM_EXPLAIN_RESPONSE})
+
+               echo "  Current state: ${CURRENT_STATE}"
+
+               curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" \
+                 -XPOST "${CLUSTER_HOST}/_plugins/_ism/change_policy/${index}" \
+                 -d "{ \"policy_id\": \"ds-${e}-ism\", \"state\": \"${CURRENT_STATE}\" }"
+            done
+         else
+            echo "No index managed by ds-${e}-ism was found"
+         fi
+      fi
+   done
 fi

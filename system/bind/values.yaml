@@ -46,7 +46,7 @@ notify_rate: 20
 # to flood them on each pod/container restart
 startup_notify_rate: 10
 
-# should be set to different AZs; this is where PV will be claimed
+# should be set to different AZs; this is used to select the nodes for the bind pods
 failure_domain_zone: a
 
 # PVC size and whether AZ enforced
@@ -70,6 +70,21 @@ resources:
     requests:
       memory: "64Mi"
       cpu: "50m"
+
+# container specific pvc options
+pvc:
+  bind:
+    accessModes:
+      - ReadWriteMany
+  sshd:
+    accessModes:
+      - ReadWriteMany
+
+# if true, the load balancer will be created with the calico annotations
+# see templates/service.yaml
+# and
+# https://github.com/projectcalico/calico/issues/11815
+calicoLoadBalancer : false
 
 alerts:
   # Name of the Prometheus to which the alerts should be assigned to.

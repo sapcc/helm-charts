@@ -1,0 +1,23 @@
+package outdatedmirrors
+
+import data.lib.add_support_labels
+import data.lib.traversal
+
+iro := input.review.object
+containers := traversal.find_container_specs(iro)
+
+violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+    container := containers[_]
+    image := container.image
+
+    regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-mirror/sapcc/", image)
+    msg := sprintf("container %q uses image from obsolete mirror: %s", [container.name, image])
+}
+
+violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+    container := containers[_]
+    image := container.image
+
+    regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-archive/", image)
+    msg := sprintf("container %q uses image from obsolete mirror: %s (use regular mirror accounts for foreign images, or build via CI and push to ccloud account for own images)", [container.name, image])
+}

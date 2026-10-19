@@ -2,10 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
-  creationTimestamp: null
-  labels:
-    app.kubernetes.io/name: digicert-issuer
+    controller-gen.kubebuilder.io/version: v0.17.0
   name: digicertissuers.certmanager.cloud.sap
 spec:
   group: certmanager.cloud.sap
@@ -19,7 +16,7 @@ spec:
     - additionalPrinterColumns:
         - jsonPath: .status.conditions[?(@.type=="Ready")].status
           name: Ready
-          type: boolean
+          type: string
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -29,14 +26,19 @@ spec:
           description: DigicertIssuer is the Schema for the digicertissuers API
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -47,8 +49,7 @@ spec:
                   description: Provisioner contains the DigiCert provisioner configuration.
                   properties:
                     apiTokenReference:
-                      description: APITokenReference references a secret in the same
-                        namespace containing the DigiCert API token.
+                      description: APITokenReference references a secret in the same namespace containing the DigiCert API token.
                       properties:
                         key:
                           description: The key in the secret.
@@ -61,15 +62,13 @@ spec:
                         - name
                       type: object
                     caCertID:
-                      description: CACertID is the ID of the CA if multiple CA certificates
-                        are configured in the (sub-)account.
+                      description: CACertID is the ID of the CA if multiple CA certificates are configured in the (sub-)account.
                       type: string
                     containerID:
                       description: ContainerID is the ID of the division
                       type: integer
                     disableRenewalNotifications:
-                      description: DisableRenewalNotifications disables email renewal
-                        notifications for expiring certificates.
+                      description: DisableRenewalNotifications disables email renewal notifications for expiring certificates.
                       type: boolean
                     orderType:
                       description: OrderType is the certificate order type.
@@ -78,8 +77,9 @@ spec:
                       description: OrganizationID is the ID of the organization in Digicert.
                       type: integer
                     organizationName:
-                      description: OrganizationName is the name of the organization
-                        in Digicert. If specified takes precedence over OrganizationID.
+                      description: |-
+                        OrganizationName is the name of the organization in Digicert.
+                        If specified takes precedence over OrganizationID.
                       type: string
                     organizationUnits:
                       description: OrganizationUnits is the list of organizational units.
@@ -87,19 +87,25 @@ spec:
                         type: string
                       type: array
                     paymentMethod:
-                      description: PaymentMethod is the configured payment method in
-                        the Digicert account.
+                      description: PaymentMethod is the configured payment method in the Digicert account.
                       type: string
                     skipApproval:
                       description: SkipApproval skips the approval of the certificate.
                       type: boolean
+                    validityDays:
+                      description: ValidityDays is the validity of the order and certificate in days. Overrides ValidityYears if set.
+                      type: integer
                     validityYears:
-                      description: ValidityYears is the validity of the certificate
-                        in years.
+                      description: |-
+                        ValidityYears is the validity of the order and certificate in years. Defaults to 1 year if not set.
+                        Can be overridden by ValidityDays.
                       type: integer
                   required:
                     - apiTokenReference
                   type: object
+                  x-kubernetes-validations:
+                    - message: only one of validityDays and validityYears can be set.
+                      rule: has(self.validityDays) && !has(self.validityYears) || !has(self.validityDays) && has(self.validityYears)
                 url:
                   description: Optional URL is the DigiCert cert-central API.
                   type: string
@@ -110,23 +116,25 @@ spec:
               description: DigicertIssuerStatus defines the observed state of DigicertIssuer
               properties:
                 conditions:
-                  description: Conditions is a list of DigicertIssuerConditions describing
-                    the current status.
+                  description: Conditions is a list of DigicertIssuerConditions describing the current status.
                   items:
                     description: DigicertIssuerCondition  ...
                     properties:
                       lastTransitionTime:
-                        description: LastTransitionTime is the timestamp corresponding
-                          to the last status change of this condition.
+                        description: |-
+                          LastTransitionTime is the timestamp corresponding to the last status
+                          change of this condition.
                         format: date-time
                         type: string
                       message:
-                        description: Message is a human readable description of the
-                          details of the last transition, complementing reason.
+                        description: |-
+                          Message is a human readable description of the details of the last
+                          transition, complementing reason.
                         type: string
                       reason:
-                        description: Reason is a brief machine readable explanation
-                          for the condition's last transition.
+                        description: |-
+                          Reason is a brief machine readable explanation for the condition's last
+                          transition.
                         type: string
                       status:
                         allOf:
@@ -138,8 +146,7 @@ spec:
                               - "True"
                               - "False"
                               - Unknown
-                        description: Status of the condition, one of ('True', 'False',
-                          'Unknown').
+                        description: Status of the condition, one of ('True', 'False', 'Unknown').
                         type: string
                       type:
                         description: Type of the condition, currently ('Ready').
@@ -159,9 +166,3 @@ spec:
       storage: true
       subresources:
         status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

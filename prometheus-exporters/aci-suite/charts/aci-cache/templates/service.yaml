@@ -1,0 +1,46 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fullname }}-headless
+  labels:
+    {{- include "aci-cache.labels" . | nindent 4 }}
+    role: headless
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
+spec:
+  clusterIP: None
+  ports:
+    - name: valkey
+      port: {{ .Values.service.port }}
+      targetPort: valkey
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{ include "aci-cache.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fullname }}-primary
+  labels:
+    {{- include "aci-cache.labels" . | nindent 4 }}
+    role: primary
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: valkey
+      port: {{ .Values.service.port }}
+      targetPort: valkey
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{ include "aci-cache.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    statefulset.kubernetes.io/pod-name: {{ .Values.fullname }}-0
+{{- end }}

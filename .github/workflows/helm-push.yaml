@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - common/postgresql-ng/** # Only enable for PostgreSQL-NG chart, disabled for every other chart becuase it can not resolve internal dependencies
+      - common/linkerd-support/**
 
 permissions:
   contents: write
@@ -61,7 +62,7 @@ jobs:
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
         run: ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --target-branch ${{ github.event.repository.default_branch }}
-    
+
       - name: Check if Helm chart with same version already exists
         id: check-chart
         if: steps.list-changed.outputs.changed == 'true'

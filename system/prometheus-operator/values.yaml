@@ -8,7 +8,8 @@ kube-prometheus-stack:
   nameOverride: prometheus
   fullnameOverride: prometheus
   # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
-  manageCrds: false
+  crds:
+    enabled: false
 
   prometheusOperator:
     image:
@@ -17,10 +18,10 @@ kube-prometheus-stack:
 
     resources:
       limits:
-        cpu: 200m
+        cpu: 500m
         memory: 200Mi
       requests:
-        cpu: 100m
+        cpu: 300m
         memory: 100Mi
 
     prometheusConfigReloader:
@@ -38,11 +39,10 @@ kube-prometheus-stack:
       patch:
         image:
           registry: keppel.global.cloud.sap
-          repository: ccloud-registry-k8s-io-mirror/ingress-nginx/kube-webhook-certgen
+          repository: ccloud-ghcr-io-mirror/jkroepke/kube-webhook-certgen
         podAnnotations:
           linkerd.io/inject: disabled
 
-    createCustomResource: false
     serviceAccount:
       create: true
     tlsProxy:
@@ -79,6 +79,8 @@ kube-prometheus-stack:
   kubeEtcd:
     enabled: false
   kubeScheduler:
+    enabled: false
+  kubeProxy:
     enabled: false
   nodeExporter:
     enabled: false
