@@ -5,30 +5,12 @@ metadata:
   name: {{ include "chart.fullname" . }}-webhook-injector
   labels:
     {{- include "chart.labels" . | nindent 4 }}
-    prometheus: {{ required ".Values.webhookInjector.metrics.prometheus must be set when webhookInjector.metrics.enabled is true" .Values.webhookInjector.metrics.prometheus }}
+    plugin: kube-monitoring
     type: alerting-rules
 spec:
   groups:
     - name: metal-operator-remote.webhook-injector.alerts
       rules:
-        - alert: MetalOperatorRemoteWebhookInjectorCertExpiringSoon
-          expr: webhook_injector_certificate_expiry_time_seconds - time() < 7 * 24 * 3600
-          for: 1h
-          labels:
-            severity: warning
-            support_group: {{ .Values.webhookInjector.metrics.alertSupportGroup }}
-            service: metal-operator-remote
-          annotations:
-            summary: metal-operator-remote webhook-injector TLS certificate expires soon
-            description: >-
-              The TLS certificate managed by the metal-operator-remote webhook-injector sidecar expires
-              in {{ `{{ $value | humanizeDuration }}` }} (pod: {{ `{{ $labels.pod }}` }}).
-              A stuck cert rotation is the most likely cause — check the pod logs for errors or
-              inspect the cert Secret rotation-phase annotation.
-              To manually trigger rotation, annotate the cert Secret:
-              kubectl annotate secret metal-operator-remote-cert-secret
-              webhook-injector.sap.com/force-rotation=true
-
         - alert: MetalOperatorRemoteWebhookInjectorCertRotationStuck
           expr: |
             rate(controller_runtime_reconcile_total{controller="configmap", result="requeue_after", job="metal-operator-webhook-injector"}[5m]) > 0.05
@@ -48,22 +30,4 @@ spec:
               missing RBAC rule preventing the controller from reading CRDs on the shoot cluster,
               or by a transient shoot apiserver outage.
               Check pod logs and the rotation-phase annotation on the cert Secret.
-
-        - alert: MetalOperatorRemoteWebhookInjectorStampErrors
-          expr: |
-            rate(webhook_injector_target_stamps_total{result="error"}[5m]) > 0
-            or
-            rate(webhook_injector_target_crd_stamps_total{result="error"}[5m]) > 0
-          for: 15m
-          labels:
-            severity: warning
-            support_group: {{ .Values.webhookInjector.metrics.alertSupportGroup }}
-            service: metal-operator-remote
-          annotations:
-            summary: metal-operator-remote webhook-injector webhook stamp errors
-            description: >-
-              The metal-operator-remote webhook-injector has been failing to stamp the caBundle onto
-              webhook or CRD objects on the target cluster for >15 minutes (pod: {{ `{{ $labels.pod }}` }}).
-              Without a valid caBundle, admission webhook validation may fail.
-              Check pod logs for target cluster connectivity or RBAC errors.
 {{- end }}
