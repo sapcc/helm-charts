@@ -79,11 +79,7 @@ spec:
             value: {{ $.Values.controlplane.port | quote }}
           - name: authentication-config
             value: "/etc/kubernetes/authentication.yaml"
-          {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent }}
-          - name: encryption-provider-config
-            value: "/etc/kubernetes/enc/enc.yaml"
-          {{- end }}
-          {{- if and (not $cluster.etcdEncryption) $.Values.etcd.useEncryption }}
+          {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent $.Values.etcd.useEncryption }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
@@ -107,14 +103,7 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
-        {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent }}
-          - name: "encryption-config"
-            hostPath: "/etc/kubernetes/enc/enc.yaml"
-            mountPath: "/etc/kubernetes/enc/enc.yaml"
-            readOnly: true
-            pathType: File
-        {{- end }}
-        {{- if and (not $cluster.etcdEncryption) $.Values.etcd.useEncryption }}
+        {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent $.Values.etcd.useEncryption }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
@@ -383,9 +372,9 @@ spec:
   Secret at bootstrap-data generation time (and requeues until the seed lands).
   This means a single helm upgrade --install both seeds the Secret and activates
   encryption (no two-deploy), and the key content never enters the KCP spec so
-  there is no helm/mjolnir render-parity invariant on files[].
+  there is no helm/CronJob render-parity invariant on files[].
   The seeding template seeds config and config-previous (present-but-empty) so
-  both references resolve on the first deploy; the rotation CronJob (mjolnir)
+  both references resolve on the first deploy; the rotation CronJob
   owns both keys afterward and triggers rollouts via spec.rollout.after.
   Falls back to encryptionConfigContent inline value for CI testing (no Secret).
   Only activates when the cluster sets etcdEncryption: true explicitly.
