@@ -1,5 +1,6 @@
 {{- range $cluster := .Values.clusters }}
 {{ $apiserver := printf "apiserver.runtime.%s.cloud.sap" (default $.Values.global.region $cluster.region) }}
+{{- $encEnabled := or $cluster.etcdEncryption $cluster.encryptionConfigContent $.Values.etcd.useEncryption }}
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta2
@@ -79,7 +80,7 @@ spec:
             value: {{ $.Values.controlplane.port | quote }}
           - name: authentication-config
             value: "/etc/kubernetes/authentication.yaml"
-          {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent $.Values.etcd.useEncryption }}
+          {{- if $encEnabled }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
@@ -103,7 +104,7 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
-        {{- if or $cluster.etcdEncryption $cluster.encryptionConfigContent $.Values.etcd.useEncryption }}
+        {{- if $encEnabled }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
