@@ -18,21 +18,6 @@ groups:
       description: "{{`{{ $labels.kubernetes_name }}`}} is producing HTTP responses with 5xx status codes."
       summary: "Server errors on {{`{{ $labels.kubernetes_name }}`}}"
 
-  - alert: OpenstackHermesKeystoneAvail
-    expr: sum(rate(hermes_logon_errors_count[10m])) > 0
-    for: 15m
-    labels:
-      context: availability
-      dashboard: hermes-api
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-api"
-      service: hermes
-      severity: warning
-      tier: os
-      support_group: observability
-    annotations:
-      description: Hermes API is affected by errors when accessing Keystone
-      summary: Hermes availability affected by Keystone issues
-
   - alert: OpenstackHermesElasticAvail
     expr: sum(rate(hermes_storage_errors_count[10m])) > 0
     for: 15m
