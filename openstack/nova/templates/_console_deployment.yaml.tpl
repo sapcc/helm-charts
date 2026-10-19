@@ -62,6 +62,10 @@ spec:
                 path: nova.conf
               - key:  logging.ini
                 path: logging.ini
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
           - secret:
               name: nova-etc
               items:
@@ -69,10 +73,6 @@ spec:
                 path: nova.conf.d/api-db.conf
               - key: {{ $cellName }}.conf
                 path: nova.conf.d/{{ $cellName }}.conf
-              {{- if .Values.osprofiler.enabled }}
-              - key: osprofiler.conf
-                path: nova.conf.d/osprofiler.conf
-              {{- end }}
           - configMap:
               name: nova-console
               items:
