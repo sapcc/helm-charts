@@ -31,12 +31,23 @@ propagate=0
 {{- end }}
 
 {{- define "osprofiler" }}
+{{- include "utils.osprofiler_public" . }}
+{{- include "utils.osprofiler_secret" . | trim | trimPrefix "[profiler]" }}
+{{- end }}
+
+{{- define "utils.osprofiler_public" }}
 {{- if .Values.osprofiler.enabled }}
 [profiler]
 enabled = true
 connection_string = {{ .Values.osprofiler.connection_string | default "jaeger://localhost:6831" }}
-hmac_keys = {{ .Values.global.osprofiler.hmac_keys | include "resolve_secret" }}
 trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
+{{- end }}
+{{- end }}
+
+{{- define "utils.osprofiler_secret" }}
+{{- if .Values.osprofiler.enabled }}
+[profiler]
+hmac_keys = {{ .Values.global.osprofiler.hmac_keys | include "resolve_secret" }}
 {{- end }}
 {{- end }}
 
