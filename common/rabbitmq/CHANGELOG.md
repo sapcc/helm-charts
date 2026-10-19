@@ -2,6 +2,23 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.10 - 2026/10/05
+
+- add `podAntiAffinity` ("", "preferred" or "required") to spread statefulset pods over nodes, off by default
+- Chart version bumped
+
+## 0.25.9 - 2026/09/25
+
+- RabbitMQ [4.3.6 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.6)
+- `rabbitmq-user-credential-updater` updated to `20260925091552` version
+- Chart version bumped
+
+## 0.25.8 - 2026/08/21
+
+- RabbitMQ [4.3.5 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.5)
+- `rabbitmq-user-credential-updater` updated to `20260821090107` version
+- Chart version bumped
+
 ## 0.25.7 - 2026/07/17
 
 - Add linkerd skip-inbound-ports annotation for TLS listener port in RabbitMQ deployment, if enabled

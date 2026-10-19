@@ -65,6 +65,12 @@ memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Va
 {{- end }}
 config_prefix = cache.{{ .Chart.Name }}
 enabled = true
+{{- range $optName, $optValue := .Values.utils.oslo_cache.opts }}
+{{ $optName }} = {{ $optValue }}
+{{- end }}
+{{- range $argKey, $argValue := .Values.utils.oslo_cache.backend_arguments }}
+backend_argument = {{ $argKey }}:{{ $argValue }}
+{{- end }}
 {{- end }}
 
 {{- define "ini_sections.audit_middleware_notifications"}}

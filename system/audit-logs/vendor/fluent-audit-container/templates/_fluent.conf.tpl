@@ -145,13 +145,51 @@
     keep_time_key true
   </parse>
 </filter>
+# Never store admission patches or credentials, whatever the audit policy logs.
+# A mutating webhook's patch can contain the values it injected, so remove the patch
+# annotations from every event and keep the other annotations. That alone doesn't mark
+# the event: webhooks routinely patch ordinary objects.
+# Remove every body that can hold a credential and mark the event, so a policy that logs
+# them can be found without storing the data. Secrets, InternalSecrets and BMCSecrets:
+# the response, the request (except a delete's DeleteOptions) and admission patches.
+# TokenReviews: both bodies. The token, adminkubeconfig and viewerkubeconfig subresources:
+# the response, which holds the issued credential; their request is kept.
+# record_modifier changes the record itself; record_transformer would only change a copy.
+<filter kubeapi.**>
+  @type record_modifier
+  remove_keys _admission_patch,_admission_patch_removed,_credential_body
+  <record>
+    _admission_patch ${ annotations = record["annotations"]; if annotations.is_a?(Hash); count = annotations.length; annotations.delete_if { |key, _| key.start_with?("patch.webhook.admission.k8s.io/") }; record["_admission_patch_removed"] = true if annotations.length < count; end; nil }
+    _credential_body ${ ref = record["objectRef"]; if ref.is_a?(Hash); stored = ["secrets", "internalsecrets", "bmcsecrets"].include?(ref["resource"]); review = ref["resource"] == "tokenreviews"; keys = []; keys << "responseObject" if stored || review || ["token", "adminkubeconfig", "viewerkubeconfig"].include?(ref["subresource"]); keys << "requestObject" if review || (stored && !["delete", "deletecollection"].include?(record["verb"])); removed = keys.select { |key| record[key] }; removed.each { |key| record.delete(key) }; if !removed.empty? || ((stored || review) && record["_admission_patch_removed"]); record["sap.cc.audit.credential_body_removed"] = true; record["_credential_body_removed"] = 1; end; end; nil }
+  </record>
+</filter>
+# Count the events whose credential bodies were removed, for the
+# KubeAuditCredentialBodyRemoved alert. Records without the helper key are not counted.
+<filter kubeapi.**>
+  @type prometheus
+  <metric>
+    name fluentd_audit_kubeapi_credential_body_removed_total
+    type counter
+    desc Kube-apiserver audit events whose credential-bearing bodies were removed before shipping
+    key _credential_body_removed
+    <labels>
+      cluster $['sap.cc.cluster']
+    </labels>
+  </metric>
+</filter>
+<filter kubeapi.**>
+  @type record_modifier
+  remove_keys _credential_body_removed
+</filter>
 # remove fields which cause parsing errors in elastic and are not audit relevant
+# requestObject is a list for JSON patches, so check each level is a map: digging into a
+# list with a string fails the filter, which drops the event and logs it with its body.
 <filter kubeapi.**>
   @type record_transformer
   enable_ruby
   remove_keys temp,$.requestObject.metadata.labels.app,$.requestObject.metadata.managedFields
   <record>
-     temp ${ unless record.dig("requestObject","metadata","labels","app").nil?; t = record.dig("requestObject","metadata","labels","app"); record["requestObject"]["metadata"]["labels"]["app_"] = t; end; nil;}
+     temp ${ ro = record["requestObject"]; if ro.is_a?(Hash) && ro["metadata"].is_a?(Hash) && ro["metadata"]["labels"].is_a?(Hash) && !ro["metadata"]["labels"]["app"].nil?; ro["metadata"]["labels"]["app_"] = ro["metadata"]["labels"]["app"]; end; nil;}
   </record>
 </filter>
 {{- end }}

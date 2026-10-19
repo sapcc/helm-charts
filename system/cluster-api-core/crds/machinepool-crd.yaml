@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: capi/capi-serving-cert
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.21.0
   labels:
     cluster.x-k8s.io/provider: cluster-api
     clusterctl.cluster.x-k8s.io: ""
@@ -507,7 +507,7 @@ spec:
                   description: infrastructureReady is the state of the infrastructure provider.
                   type: boolean
                 nodeRefs:
-                  description: nodeRefs will point to the corresponding Nodes if it they exist.
+                  description: nodeRefs will point to the corresponding Nodes if they exist.
                   items:
                     description: ObjectReference contains enough information to let you inspect or modify the referred object.
                     properties:
@@ -669,6 +669,30 @@ spec:
                       format: int32
                       type: integer
                   type: object
+                versions:
+                  description: versions is the aggregated Kubernetes versions in this MachinePool.
+                  items:
+                    description: StatusVersion groups version-related status information.
+                    properties:
+                      replicas:
+                        description: replicas is the number of replicas at this version.
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      version:
+                        description: version is the Kubernetes version.
+                        maxLength: 256
+                        minLength: 1
+                        type: string
+                    required:
+                      - version
+                    type: object
+                  maxItems: 100
+                  minItems: 1
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - version
+                  x-kubernetes-list-type: map
               type: object
           type: object
       served: true
@@ -1284,7 +1308,7 @@ spec:
                       type: boolean
                   type: object
                 nodeRefs:
-                  description: nodeRefs will point to the corresponding Nodes if it they exist.
+                  description: nodeRefs will point to the corresponding Nodes if they exist.
                   items:
                     description: ObjectReference contains enough information to let you inspect or modify the referred object.
                     properties:
@@ -1362,6 +1386,30 @@ spec:
                   description: upToDateReplicas is the number of up-to-date replicas targeted by this MachinePool. A machine is considered up-to-date when Machine's UpToDate condition is true.
                   format: int32
                   type: integer
+                versions:
+                  description: versions is the aggregated Kubernetes versions in this MachinePool.
+                  items:
+                    description: StatusVersion groups version-related status information.
+                    properties:
+                      replicas:
+                        description: replicas is the number of replicas at this version.
+                        format: int32
+                        minimum: 1
+                        type: integer
+                      version:
+                        description: version is the Kubernetes version.
+                        maxLength: 256
+                        minLength: 1
+                        type: string
+                    required:
+                      - version
+                    type: object
+                  maxItems: 100
+                  minItems: 1
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - version
+                  x-kubernetes-list-type: map
               type: object
           required:
             - spec

@@ -1,7 +1,11 @@
 [DEFAULT]
-debug = {{ .Values.debug }}
+{{- if .Values.debug }}
+debug = true
+{{- end }}
 prometheus = true
 prometheus_listen = 0.0.0.0:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
+pprof = {{ .Values.pprof.enabled }}
+pprof_listen = 127.0.0.1:{{ .Values.pprof.port }}
 sentry = true
 endpoint_type = internal
 

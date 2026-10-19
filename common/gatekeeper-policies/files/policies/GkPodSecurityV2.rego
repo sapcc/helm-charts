@@ -246,12 +246,24 @@ isMatchingContainer(entry, container) if {
     entry.matchNamespace != "*"
     iro.metadata.namespace == entry.matchNamespace
     repo := extract_repository(container.image)
-    repo == entry.matchRepository
+    repo_matches(repo, entry.matchRepository)
 }
 
 isMatchingContainer(entry, container) if {
     # the special value `*` matches all namespaces (NOTE: this can be expanded into full glob matching later if required)
     entry.matchNamespace == "*"
     repo := extract_repository(container.image)
-    repo == entry.matchRepository
+    repo_matches(repo, entry.matchRepository)
+}
+
+# Exact match (default)
+repo_matches(repo, pattern) if {
+    not contains(pattern, "*")
+    repo == pattern
+}
+
+# Glob match when pattern contains a wildcard (e.g. "registry_k8s_io/kube-proxy-*")
+repo_matches(repo, pattern) if {
+    contains(pattern, "*")
+    glob.match(pattern, [], repo)
 }

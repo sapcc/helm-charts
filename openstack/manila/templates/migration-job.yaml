@@ -1,27 +1,13 @@
-{{/* As this runs as a pre-upgrade hook, we can only use the proxysql side-car if a previous
-     deployment has already deployed the corresponding configmap.
-     So if we want to switch to or from a proxysql.mode=unix_socket setting, we need
-     first to deploy with proxysql.mode=host_alias as an intermediate step,
-     so this script can still work with the previous setting.
-*/}}
-{{- $proxysql := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-migration
+  name: {{ tuple . "migration" | include "job_name" }}
   labels:
     system: openstack
     type: configuration
     component: manila
     alert-tier: os
     alert-service: manila
-    # hooks are not labeled as belonging to the Helm release, so we cannot rely on owner-info injection
-    ccloud/support-group: compute-storage-api
-    ccloud/service: manila
-  annotations:
-    "helm.sh/hook": "post-install,pre-upgrade"
-    "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     metadata:
@@ -32,13 +18,11 @@ spec:
       {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
       {{- end }}
-{{- if $proxysql }}
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
-{{- end }}
       priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
-      {{- if and $proxysql .Values.proxysql.native_sidecar }}
+      {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       containers:
@@ -77,12 +61,10 @@ spec:
             - mountPath: /container.init
               name: container-init
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-{{- if $proxysql }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
         {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}
-{{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
@@ -97,6 +79,4 @@ spec:
             name: {{ .Release.Name }}-bin
             defaultMode: 0755
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
-{{- if $proxysql }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
-{{- end }}

@@ -44,7 +44,7 @@ groups:
           support_group: observability
           tier: os
           service: hermes
-          severity: info
+          severity: warning
           context: memory
           dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
@@ -62,11 +62,12 @@ groups:
           support_group: observability
           tier: os
           service: hermes
-          severity: warning
+          severity: critical
           context: pod
           dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is {{`{{ $labels.reason }}`}}"
+          no_alert_on_absence: "true" # metric only exists when a pod is in a waiting state
         annotations:
           summary: Pod is not running
           description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is in {{`{{ $labels.reason }}`}} state for more than 15 minutes."

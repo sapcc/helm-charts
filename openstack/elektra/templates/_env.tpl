@@ -33,10 +33,8 @@
   valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_secret, optional: true } }
 - name: MONSOON_OPENSTACK_AUTH_API_DOMAIN
   value: {{ .Values.monsoon_openstack_auth_api_domain | quote }}
-- name: MONSOON_OPENSTACK_SSO_STRICT_MODE
-  value: {{ .Values.monsoon_openstack_sso_strict_mode | quote }}
-- name: MONSOON_OPENSTACK_PASSWORD_SYNC_ONLY
-  value: {{ .Values.monsoon_openstack_password_sync_only | quote }}
+- name: MONSOON_OPENSTACK_PASSWORD_AUTH_ALLOWED
+  value: {{ .Values.monsoon_openstack_password_auth_allowed | quote }}
 - name: TWO_FACTOR_AUTHENTICATION
   value: {{ .Values.two_factor_authentication | quote }}
 - name: TWO_FACTOR_RADIUS_SERVERS
@@ -72,3 +70,5 @@
   value: {{ .Values.feedback_recipient_email | quote }}
 - name: SSO_PRECHECK_ENABLED
   value: {{ .Values.sso_precheck_enabled | quote }}  
+- name: IS_KEPPEL_SWIFT_REGION
+  value: {{ .Values.is_keppel_swift_region | quote}}

@@ -9,16 +9,20 @@ metadata:
 
 data:
   # repo configs
+{{- $targets := include "content-repo.targets" . | fromYaml }}
 {{- range $repo, $config := .Values.repos }}
 {{- if not $config.disabled }}
-  {{$repo}}.yaml: |
+{{- range $targetName, $targetCfg := $targets }}
+{{- $suffix := include "content-repo.target_suffix" $targetName }}
+  {{$repo}}{{$suffix}}.yaml: |
     swift:
-      auth_url: {{$.Values.auth_url}}
-      user_name: repo
-      user_domain_name: Default
-      project_name: master
-      project_domain_name: ccadmin
-      password: { fromEnv: TARGET_AUTH_PASSWORD }
+      auth_url: {{ $targetCfg.auth_url | default $.Values.auth_url }}
+      user_name:           {{ $targetCfg.user_name }}
+      user_domain_name:    {{ $targetCfg.user_domain_name }}
+      project_name:        {{ $targetCfg.project_name }}
+      project_domain_name: {{ $targetCfg.project_domain_name }}
+      password: { fromEnv: {{ include "content-repo.target_env" $targetName }} }
+      service_type: {{ $targetCfg.service_type | quote }}
 
     gpg:
       cache_container_name: repo-gpg-cache
@@ -28,7 +32,7 @@ data:
     statsd:
       hostname: {{$.Values.statsd_hostname}}
       port:     9125
-      prefix:   repo.{{$repo}}
+      prefix:   repo.{{$repo}}{{$suffix}}
     {{ if $config.transfer_workers }}
     workers:
       transfer: {{$config.transfer_workers}}
@@ -101,5 +105,6 @@ data:
         immutable: {{ coalesce $job.immutable $config.immutable }}
         {{- end }}
       {{- end }}
+{{ end }}
 {{ end }}
 {{ end }}

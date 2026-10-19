@@ -16,7 +16,9 @@ adminrole:
   -  "admin"
   -  "admin2"
   backend_roles:
-  - CC_IAS_TEAM_SUPERVISION
+{{- range .Values.global.ldap.opensearch_admin_groups }}
+  - {{ . }}
+{{- end }}
 
 anonymous_health_role:
   backend_roles:
@@ -37,7 +39,9 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
+{{- end }}
 
 compute:
   reserved: false
@@ -78,7 +82,9 @@ kibana_server:
 kibana_user:
   reserved: false
   backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
+{{- end }}
 
 maillog:
   reserved: false
@@ -96,12 +102,13 @@ promrole:
   users:
   - "promuser"
   - "promuser2"
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
+{{- end }}
 {{- if .Values.qalogs.enabled }}
   - "ronly"
   - "ronly2"
 {{- end }}
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 readall:
   reserved: false

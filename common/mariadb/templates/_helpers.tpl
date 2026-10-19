@@ -12,6 +12,82 @@
 {{- end -}}
 {{- end -}}
 
+{{/* MariaDB data directory (datadir mount point). */}}
+{{- define "mariadb.dataDir" -}}
+/var/lib/mysql
+{{- end -}}
+
+{{/* Name of the data PVC; keeps the deployment claimName and the volume alert in sync. */}}
+{{- define "mariadb.dataPvcName" -}}
+{{- .Values.persistence_claim.name | default (include "fullName" .) -}}
+{{- end -}}
+
+{{/* Name of the dedicated slow-log PVC referenced by the deployment. */}}
+{{- define "mariadb.slowLogPvcName" -}}
+{{- .Values.slow_query_log.persistence.name | default (printf "%s-logs" (include "fullName" .)) -}}
+{{- end -}}
+
+{{/* Directory the slow query log lives in (dedicated volume mount point). */}}
+{{- define "mariadb.slowLogDir" -}}
+{{- .Values.slow_query_log.dir -}}
+{{- end -}}
+
+{{/* Directory scanned by the slow-log cleanup: the dedicated volume when enabled, else the datadir. */}}
+{{- define "mariadb.slowLogCleanupDir" -}}
+{{- if .Values.slow_query_log.persistence.enabled -}}
+{{- include "mariadb.slowLogDir" . -}}
+{{- else -}}
+{{- include "mariadb.dataDir" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Sidecar that truncates the active slow log once it grows past the configured size. */}}
+{{- define "mariadb.slowLogRotatorContainer" -}}
+- name: slow-log-rotator
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+  restartPolicy: Always
+{{- end }}
+  image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+  imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+  securityContext:
+    runAsUser: 999
+    allowPrivilegeEscalation: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+  command:
+    - /bin/bash
+    - /scripts/mariadb-slow-log-rotator.sh
+  env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: SLOW_LOG_DIR
+      value: {{ include "mariadb.slowLogCleanupDir" . | quote }}
+    - name: MAX_SIZE_MB
+      value: {{ .Values.slow_query_log.rotation.max_size_mb | int | quote }}
+    - name: INTERVAL_SECONDS
+      value: {{ .Values.slow_query_log.rotation.interval_seconds | int | quote }}
+    - name: KEEP_PREVIOUS
+      value: {{ .Values.slow_query_log.rotation.keep_previous | quote }}
+  volumeMounts:
+    - name: slow-log-rotator-script
+      mountPath: /scripts
+      readOnly: true
+{{- if .Values.slow_query_log.persistence.enabled }}
+    - name: mariadb-logs-storage
+      mountPath: {{ include "mariadb.slowLogDir" . }}
+{{- else if .Values.persistence_claim.enabled }}
+    - name: mariadb-persistent-storage
+      mountPath: {{ include "mariadb.dataDir" . }}
+{{- end }}
+{{- end -}}
+
 {{- define "mariadb.resolve_secret_squote" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}

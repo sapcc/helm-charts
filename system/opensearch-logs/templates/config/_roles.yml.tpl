@@ -210,6 +210,7 @@ complex-role:
   hidden: false
   cluster_permissions:
   - "read"
+  - "cluster_monitor"
   - "cluster:monitor/nodes/stats"
   - "cluster:admin/opensearch/ql/datasources/read"
   - "cluster:monitor/task/get"
@@ -226,14 +227,30 @@ complex-role:
   index_permissions:
   - index_patterns:
     - "logs-datastream"
+    - "logs-datastream-deadletter"
+    - "logs-ds"
     - "storage-datastream"
+    - "storage-datastream-deadletter"
+    - "storage-ds"
     - "logs-swift-datastream"
+    - "logs-swift-datastream-deadletter"
+    - "logs-swift-ds"
     - "jump-datastream"
+    - "jump-datastream-deadletter"
+    - "jump-ds"
     - "deployments-datastream"
+    - "deployments-datastream-deadletter"
+    - "deployments-ds"
     - "cronus-datastream"
+    - "cronus-datastream-deadletter"
+    - "cronus-ds"
     - "alerts-sem-datastream"
+    - "alerts-sem-datastream-deadletter"
+    - "alerts-sem-ds"
     - "awx-api"
     - "alerts-datastream"
+    - "alerts-datastream-deadletter"
+    - "alerts-ds"
     - "maillog-*"
     allowed_actions:
     - "search"
@@ -242,6 +259,7 @@ complex-role:
     - "indices:monitor/settings/get"
     - "indices:admin/create"
     - "indices:admin/mappings/get"
+    - "indices:data/read/search"
     - "indices:data/read/search*"
     - "indices:admin/get"
   tenant_permissions:
@@ -412,6 +430,7 @@ maillog:
     - "indices:monitor/stats"
   - index_patterns:
     - "logs-*"
+    - "cronus-*"
     allowed_actions:
     - "read"
     - "indices:data/read/search*"

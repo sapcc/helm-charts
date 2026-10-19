@@ -9,7 +9,7 @@ global:
       enabled: true
 
 name: null
-image: library/mariadb:10.11.18
+image: library/mariadb:10.11.19
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -19,11 +19,31 @@ log_warnings: "2"
 query_cache_size: "0"
 query_cache_type: "0"
 join_buffer_size: "4M"
-long_query_time: 5
 binlog_format: "MIXED"
 expire_logs_days: 10
 character_set_server: "utf8" # Should be utf8mb4, but we started with this
 collation_server: "utf8_general_ci"
+
+long_query_time: 5
+slow_query_log:
+  dir: /var/log/mysql-slow  # ignored when persistence.enabled=false
+  cleanup:
+    enabled: true  # removes old slowlogs on pod init
+    max_age_days: 14
+  rotation:
+    enabled: true
+    max_size_mb: 1024
+    interval_seconds: 300
+    keep_previous: true
+  persistence:
+    enabled: false
+    autoprovision: false
+    # name: defaults to <release>-mariadb-logs
+    size: "5Gi"
+    access_modes:
+      - ReadWriteOnce
+    # storage_class:
+
 
 db_performance_schema: # Enabling performance schema only (without enabling instruments for data collections).
   # Instrument can be enabled separately. Only Performance Schema Enablement does not cause any
@@ -205,18 +225,23 @@ resources:
 ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
 ##
 nodeAffinity: {}
+
+## Tolerations for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+##
+tolerations: []
 # set to true to use .Values.global.registryAlternateRegion instead of .Values.global.registry
 use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: "20260521132613"
+  image_version: "20260820145244"
   # set to true if backup_v2 is not enabled, but readiness sidecar is required
   useSidecar: false
 
 credentialUpdater:
   image: 'shared-app-images/alpine-mariadb'
-  imageTag: 'python3.13-alpine3.23-20260506191108'
+  imageTag: 'python3.13-alpine3.24-20260820144936'
   checkInterval: '10'
 
 backup_v2:
@@ -224,7 +249,7 @@ backup_v2:
   cohost_with_mariadb: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "10.11-20260706142324"
+  image_version: "10.11-20260825091346"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -281,8 +306,26 @@ backup_v2:
 metrics:
   enabled: true
   image: prom/mysqld-exporter
-  image_version: v0.19.0
+  image_version: v0.20.0
   port: "9104"
+  # Probes for the mysqld-exporter sidecar; empty by default (disabled), since
+  # MariaDB readiness depends on this sidecar's readiness. Previous values:
+  # livenessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: 9104
+  #     scheme: HTTP
+  #   periodSeconds: 20
+  #   timeoutSeconds: 10
+  # readinessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: 9104
+  #     scheme: HTTP
+  #   periodSeconds: 20
+  #   timeoutSeconds: 10
+  livenessProbe: {}
+  readinessProbe: {}
   flags:
     - collect.binlog_size
     - collect.info_schema.processlist
@@ -305,10 +348,10 @@ sync:
   init:
     enabled: false
     image: 'shared-app-images/alpine-mariadb'
-    imageTag: 'python3.13-alpine3.23-20260207085008'
+    imageTag: 'python3.13-alpine3.24-20260820144936'
   image:
     name: "go-maria-sync"
-    tag: "20260205163034"
+    tag: "20260813190947"
   backup:
     service: null
     swift:
@@ -347,6 +390,11 @@ alerts:
   buffer_pool_warning_threshold: 0.10
   # Ratio of free pages below which MariaDBBufferPoolExhausted (critical) fires.
   buffer_pool_critical_threshold: 0.025
+
+  # Warn when the data PVC free ratio drops below pvc_free_threshold.
+  pvc_free_enabled: false
+  pvc_free_threshold: 0.20
+  pvc_free_severity: warning
 
 vpa:
   # https://github.com/sapcc/vpa_butler

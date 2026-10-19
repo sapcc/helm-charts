@@ -349,8 +349,6 @@ Custom DB URL for the global services using percona_cluster
 
 {{define "swift_endpoint_host"}}objectstore-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "cfm_api_endpoint_host_public"}}cfm.{{ include "host_fqdn" . }}{{end}}
-
 {{define "sftp_api_endpoint_host"}}sftp-bridge.{{ .Values.global.region }}.{{ .Values.global.tld }}{{end}}
 
 {{ define "f5_url" }}

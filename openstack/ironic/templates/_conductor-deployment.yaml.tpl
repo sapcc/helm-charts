@@ -17,10 +17,17 @@ metadata:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
-  replicas: 1
+  replicas: {{ $conductor.replicas | default 1 }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
+  {{- if gt (int ($conductor.replicas | default 1)) 1 }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  {{- else }}
     type: Recreate
+  {{- end }}
   selector:
     matchLabels:
     {{- if $conductor.name }}
@@ -52,6 +59,18 @@ spec:
     spec:
       {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
+      {{- end }}
+      {{- if $conductor.site }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - {{ $conductor.site }}
       {{- end }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:

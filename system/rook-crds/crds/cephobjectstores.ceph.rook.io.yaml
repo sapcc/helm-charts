@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: cephobjectstores.ceph.rook.io
 spec:
   group: ceph.rook.io
@@ -130,6 +130,7 @@ spec:
                       type: string
                     enableCrushUpdates:
                       description: Allow rook operator to change the pool CRUSH tunables once the pool is created
+                      nullable: true
                       type: boolean
                     enableRBDStats:
                       description: EnableRBDStats is used to enable gathering of statistics for all RBD images in the pool
@@ -138,7 +139,12 @@ spec:
                       description: The erasure code settings
                       properties:
                         algorithm:
-                          description: The algorithm for erasure coding
+                          description: |-
+                            The algorithm for erasure coding.
+                            If absent, defaults to the plugin specified in osd_pool_default_erasure_code_profile.
+                          enum:
+                            - isa
+                            - jerasure
                           type: string
                         codingChunks:
                           description: |-
@@ -284,6 +290,13 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   type: object
+                defaultRealm:
+                  description: |-
+                    Set this realm as the default in Ceph. Only one realm should be default.
+                    Do not set this true on more than one CephObjectStore.
+                    This may not be set when zone is also specified; in this case, the realm
+                    referenced by the zone's zonegroup should configure defaulting behavior.
+                  type: boolean
                 gateway:
                   description: The rgw pod info
                   nullable: true
@@ -481,6 +494,29 @@ spec:
                                               type: array
                                               x-kubernetes-list-type: atomic
                                           type: object
+                                        podCertificate:
+                                          properties:
+                                            certificateChainPath:
+                                              type: string
+                                            credentialBundlePath:
+                                              type: string
+                                            keyPath:
+                                              type: string
+                                            keyType:
+                                              type: string
+                                            maxExpirationSeconds:
+                                              format: int32
+                                              type: integer
+                                            signerName:
+                                              type: string
+                                            userAnnotations:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          required:
+                                            - keyType
+                                            - signerName
+                                          type: object
                                         secret:
                                           properties:
                                             items:
@@ -627,7 +663,7 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-                                This is an alpha field and requires enabling the
+                                This field depends on the
                                 DynamicResourceAllocation feature gate.
 
                                 This field is immutable. It can only be set for containers.
@@ -1225,7 +1261,7 @@ spec:
                             Claims lists the names of resources, defined in spec.resourceClaims,
                             that are used by this container.
 
-                            This is an alpha field and requires enabling the
+                            This field depends on the
                             DynamicResourceAllocation feature gate.
 
                             This field is immutable. It can only be set for containers.
@@ -1345,6 +1381,11 @@ spec:
                             The annotations-related configuration to add/set on each rgw service.
                             nullable
                             optional
+                          type: object
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: The labels-related configuration to add/set on each rgw service.
                           type: object
                       type: object
                     sslCertificateRef:
@@ -1731,6 +1772,7 @@ spec:
                       type: string
                     enableCrushUpdates:
                       description: Allow rook operator to change the pool CRUSH tunables once the pool is created
+                      nullable: true
                       type: boolean
                     enableRBDStats:
                       description: EnableRBDStats is used to enable gathering of statistics for all RBD images in the pool
@@ -1739,7 +1781,12 @@ spec:
                       description: The erasure code settings
                       properties:
                         algorithm:
-                          description: The algorithm for erasure coding
+                          description: |-
+                            The algorithm for erasure coding.
+                            If absent, defaults to the plugin specified in osd_pool_default_erasure_code_profile.
+                          enum:
+                            - isa
+                            - jerasure
                           type: string
                         codingChunks:
                           description: |-
@@ -2023,9 +2070,12 @@ spec:
                             description: |-
                               The data pool used to store ObjectStore data that cannot use erasure coding (ex: multi-part uploads).
                               If dataPoolName is not erasure coded, then there is no need for dataNonECPoolName.
+                              WARNING: Do not change this field after creation. Pool names are used in RADOS namespaces and renaming leads to data loss.
                             type: string
                           dataPoolName:
-                            description: The data pool used to store ObjectStore objects data.
+                            description: |-
+                              The data pool used to store ObjectStore objects data.
+                              WARNING: Do not change this field after creation. Pool names are used in RADOS namespaces and renaming leads to data loss.
                             minLength: 1
                             type: string
                           default:
@@ -2034,7 +2084,9 @@ spec:
                               Default is false.
                             type: boolean
                           metadataPoolName:
-                            description: The metadata pool used to store ObjectStore bucket index.
+                            description: |-
+                              The metadata pool used to store ObjectStore bucket index.
+                              WARNING: Do not change this field after creation. Pool names are used in RADOS namespaces and renaming leads to data loss.
                             minLength: 1
                             type: string
                           name:
@@ -2050,7 +2102,9 @@ spec:
                             items:
                               properties:
                                 dataPoolName:
-                                  description: DataPoolName is the data pool used to store ObjectStore objects data.
+                                  description: |-
+                                    DataPoolName is the data pool used to store ObjectStore objects data.
+                                    WARNING: Do not change this field after creation. Pool names are used in RADOS namespaces and renaming leads to data loss.
                                   minLength: 1
                                   type: string
                                 name:
@@ -2067,6 +2121,7 @@ spec:
                                 - dataPoolName
                                 - name
                               type: object
+                            maxItems: 10
                             type: array
                         required:
                           - dataPoolName
@@ -2089,9 +2144,44 @@ spec:
                     - name
                   type: object
               type: object
+              x-kubernetes-validations:
+                - message: defaultRealm must not be true when zone.name is set (multisite configuration)
+                  rule: '!(has(self.defaultRealm) && self.defaultRealm == true && has(self.zone) && size(self.zone.name) > 0)'
             status:
               description: ObjectStoreStatus represents the status of a Ceph Object Store resource
               properties:
+                cephx:
+                  properties:
+                    daemon:
+                      description: Daemon shows the CephX key status for local Ceph daemons associated with this resources.
+                      properties:
+                        keyCephVersion:
+                          description: |-
+                            KeyCephVersion reports the Ceph version that created the current generation's keys. This is
+                            same string format as reported by `CephCluster.status.version.version` to allow them to be
+                            compared. E.g., `20.2.0-0`.
+                            For all newly-created resources, this field set to the version of Ceph that created the key.
+                            The special value "Uninitialized" indicates that keys are being created for the first time.
+                            An empty string indicates that the version is unknown, as expected in brownfield deployments.
+                          type: string
+                        keyGeneration:
+                          description: |-
+                            KeyGeneration represents the CephX key generation for the last successful reconcile.
+                            For all newly-created resources, this field is set to `1`.
+                            When keys are rotated due to any rotation policy, the generation is incremented or updated to
+                            the configured policy generation.
+                            Generation `0` indicates that keys existed prior to the implementation of key tracking.
+                          format: int32
+                          type: integer
+                        keyType:
+                          description: |-
+                            KeyType identifies the CephX key type for the current generation's keys, if known.
+                            If unknown, the value will be empty.
+                          maxLength: 7
+                          minLength: 3
+                          type: string
+                      type: object
+                  type: object
                 conditions:
                   items:
                     description: Condition represents a status condition on any Rook-Ceph Custom Resource.
@@ -2141,6 +2231,11 @@ spec:
                 phase:
                   description: ConditionType represent a resource's status
                   type: string
+                replicas:
+                  format: int32
+                  type: integer
+                selector:
+                  type: string
               type: object
               x-kubernetes-preserve-unknown-fields: true
           required:
@@ -2150,4 +2245,8 @@ spec:
       served: true
       storage: true
       subresources:
+        scale:
+          labelSelectorPath: .status.selector
+          specReplicasPath: .spec.gateway.instances
+          statusReplicasPath: .status.replicas
         status: {}

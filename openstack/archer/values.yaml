@@ -19,7 +19,9 @@ postgresql:
   alerts:
     support_group: containers
   databases:
-    archer: {}
+    archer:
+      sqlOnStartup: |
+        ALTER ROLE archer SET idle_in_transaction_session_timeout = '5min';
   extensions:
     pgcrypto: []
   persistence:
@@ -125,6 +127,11 @@ ingress:
 metrics:
   port: 9090
 
+# net/http/pprof profiling endpoints, bound to localhost (reach via `kubectl port-forward`).
+pprof:
+  enabled: true
+  port: 6060
+
 audit:
   enabled: true
   user: rabbitmq
@@ -139,7 +146,7 @@ multusSelector: bond1
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -166,11 +173,34 @@ service:
   port: 8000
 
 resources:
-  api: {}
-  f5-agent: {}
-  ni-agent: {}
-  linuxbridge_agent: {}
-  socat: {}
+  api:
+    requests:
+      memory: "64Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "1000m"
+  f5_agent:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+  ni_agent:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+  linuxbridge_agent:
+    requests:
+      memory: "512Mi"
+      cpu: "256m"
+    limits:
+      memory: "1Gi"
+      cpu: "2000m"
 
 linuxbridge_agent:
   secretName: ""
@@ -222,6 +252,7 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 agents:
+  f5_prometheus_url: http://prometheus-infra-collector.infra-monitoring.svc:9090
   f5: {}
 
 nodeSelector: {}

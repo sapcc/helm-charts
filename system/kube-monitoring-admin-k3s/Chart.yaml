@@ -2,42 +2,51 @@ apiVersion: v2
 appVersion: "1.0"
 description: Kubernetes admin k3s cluster monitoring.
 name: kube-monitoring-admin-k3s
-version: 4.8.4
+version: 4.8.12
 home: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-admin-k3s
 dependencies:
   - condition: absent-metrics-operator.enabled
     name: absent-metrics-operator
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: "^1"
-  - name: kube-state-metrics
+  - condition: kube-state-metrics.enabled
+    name: kube-state-metrics
     repository: https://prometheus-community.github.io/helm-charts
-    version: 8.0.0
-  - name: kube-state-metrics-exporter
+    version: 8.4.0
+  - condition: kube-state-metrics-exporter.enabled
+    name: kube-state-metrics-exporter
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.2.1
-  - name: ntp-exporter
+  - condition: ntp-exporter.enabled
+    name: ntp-exporter
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: "^2.5"
-  - name: oomkill-exporter
+  - condition: oomkill-exporter.enabled
+    name: oomkill-exporter
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: "^1.x"
-  - name: ping-exporter
+  - condition: ping-exporter.enabled
+    name: ping-exporter
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.1.1
+    version: 0.1.2
   - condition: prometheus-crds.enabled
     name: prometheus-crds
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 9.0.0
-  - name: prometheus-kubernetes-rules
+    version: 11.0.0
+  - condition: prometheus-kubernetes-rules.enabled
+    name: prometheus-kubernetes-rules
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: "^1.10"
-  - name: prometheus-node-exporter
+  - condition: prometheus-node-exporter.enabled
+    name: prometheus-node-exporter
     repository: https://prometheus-community.github.io/helm-charts
     version: 4.56.1
-  - name: kubernikus-monitoring
+  - condition: kubernikus-monitoring.enabled
+    name: kubernikus-monitoring
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 1.2.1
-  - name: blackbox-exporter
+  - condition: blackbox-exporter.enabled
+    name: blackbox-exporter
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: "^2.3"
   - name: owner-info
@@ -47,9 +56,11 @@ dependencies:
     repository: https://falcosecurity.github.io/charts
     version: 4.21.3
     condition: falco.enabled
-  - name: kubelet-stats-metrics
+  - condition: kubelet-stats-metrics.enabled
+    name: kubelet-stats-metrics
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.1.5
-  - name: x509-certificate-exporter
+  - condition: x509CertificateExporter.enabled
+    name: x509-certificate-exporter
     repository: https://charts.enix.io
-    version: 4.1.0
+    version: 4.2.0

@@ -1,0 +1,17 @@
+{{- /* Rendered wherever kube-apiserver audit logs are collected, on any cluster type. */}}
+{{- $alerts := .Values.alerts | default dict }}
+{{- if and .Values.kubeAPIServer $alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: fluent-audit-container-kube-audit
+  labels:
+    app: fluent-audit-container-prometheus
+    tier: kubernetes
+    type: alerting-rules
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+
+spec:
+{{ .Files.Get "alerts/kube-audit.alerts" | indent 2 }}
+{{- end }}

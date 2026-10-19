@@ -1,3 +1,4 @@
+{{- include "barbican.tls.validate" . }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -12,8 +13,9 @@ metadata:
     type: api
     component: barbican
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets{{- if (include "barbican.tls.serving" .) }},{{ .Values.tls.secretName | default "barbican-tls" }}{{- end }}"
     deployment.reloader.stakater.com/pause-period: "60s"
+    cloud.sap/tls-state: {{ .Values.tls.state | quote }}
 spec:
   replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -36,14 +38,38 @@ spec:
         alert-service: barbican
         {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
         {{- include "utils.topology.pod_label" . | nindent 8 }}
+        {{- if (include "barbican.tls.serving" .) }}
+        # Marks pods that actually listen on :443 so the public TLS Service
+        # (which selects on this) never routes to old non-TLS pods still
+        # running during a disabled->transition rollout.
+        cloud.sap/tls-serving: "true"
+        {{- end }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        {{- if (include "barbican.tls.serving" .) }}
+        config.linkerd.io/skip-inbound-ports: "443"
+        {{- end }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- if and .Values.apacheMetrics.enabled (not .Values.api.metrics.enabled) }}
+          {{- fail "apacheMetrics.enabled requires api.metrics.enabled" }}
+        {{- end }}
+        {{- if .Values.apacheMetrics.enabled }}
+        prometheus.io/port_1: {{ .Values.apacheMetrics.port | quote }}
+        {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if (include "barbican.tls.serving" .) }}
+      securityContext:
+        # distroless "nonroot" gid of the tls-lifecycle-manager image; lets the
+        # non-root tls-init container read the 0440 tls-input Secret while keeping
+        # the key group-restricted (not world-readable) per the BSI least-privilege
+        # requirement (Sicherheitsarchitektur 4.1: non-root, restriktive Berechtigungen).
+        fsGroup: 65532
+      {{- end }}
       {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
       {{- end }}
@@ -58,6 +84,22 @@ spec:
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
+      {{- if (include "barbican.tls.serving" .) }}
+      - name: tls-init
+        image: {{ .Values.tls.lifecycle.image }}:{{ .Values.tls.lifecycle.imageTag }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - --mode=unwrap
+          - --input-dir=/tls-input
+          - --output-dir=/mnt/secrets
+          - --key-wrapping={{ required "tls.keyWrapping is required" .Values.tls.keyWrapping }}
+        volumeMounts:
+          - name: tls-input
+            mountPath: /tls-input
+            readOnly: true
+          - name: tls-secrets
+            mountPath: /mnt/secrets
+      {{- end }}
       containers:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
@@ -66,8 +108,8 @@ spec:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
           command:
-          - dumb-init
-          - barbican-api
+            - /scripts/barbican-api.sh
+            - start
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
@@ -95,7 +137,10 @@ spec:
           {{- end }}
           lifecycle:
             preStop:
-              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+              exec:
+                command:
+                  - /scripts/barbican-api.sh
+                  - stop
           livenessProbe:
             httpGet:
               path: /
@@ -111,6 +156,10 @@ spec:
           ports:
             - name: barbican-api
               containerPort: {{.Values.api_port_internal}}
+            {{- if (include "barbican.tls.serving" .) }}
+            - name: barbican-tls
+              containerPort: 443
+            {{- end }}
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican
@@ -134,9 +183,46 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
+            {{- if (include "barbican.tls.serving" .) }}
+            - name: tls-secrets
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/00-ssl-load.conf
+              subPath: ssl-load.conf
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
+              subPath: tls-hardening.conf
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/apache-hardening.conf
+              subPath: apache-hardening.conf
+              readOnly: true
+            {{- end }}
             - mountPath: /etc/barbican/barbican.conf.d
               name: barbican-etc-confd
               readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/wsgi-barbican.conf
+              subPath: wsgi-barbican.conf
+              readOnly: true
+            {{- if .Values.apacheMetrics.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/status.conf
+              subPath: status.conf
+              readOnly: true
+            {{- end }}
+            - name: wsgi-barbican
+              mountPath: /var/www/cgi-bin/barbican
+            - name: barbican-apache-run
+              mountPath: /var/run/apache2
+            - name: barbican-apache-sites
+              mountPath: /etc/apache2/sites-enabled
+            - name: barbican-apache-log
+              mountPath: /var/log/apache2
+            - name: barbican-bin
+              mountPath: /scripts
             {{- if .Values.watcher.enabled }}
             - name: barbican-etc
               mountPath: /etc/barbican/watcher.yaml
@@ -256,6 +342,19 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
+        {{- if .Values.apacheMetrics.enabled }}
+        - name: apache-exporter
+          image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.apacheMetrics.image }}:{{ .Values.apacheMetrics.imageTag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --scrape_uri=http://127.0.0.1:{{ .Values.api_port_internal }}/server-status?auto
+          ports:
+            - name: apache-metrics
+              containerPort: {{ .Values.apacheMetrics.port }}
+          {{- if .Values.apacheMetrics.resources }}
+          resources: {{ toYaml .Values.apacheMetrics.resources | nindent 12 }}
+          {{- end }}
+        {{- end }}
       volumes:
         - name: barbican-etc
           configMap:
@@ -272,6 +371,18 @@ spec:
           emptyDir: {}
         - name: barbican-run
           emptyDir: {}
+        - name: wsgi-barbican
+          emptyDir: {}
+        - name: barbican-apache-run
+          emptyDir: {}
+        - name: barbican-apache-sites
+          emptyDir: {}
+        - name: barbican-apache-log
+          emptyDir: {}
+        - name: barbican-bin
+          configMap:
+            name: barbican-bin
+            defaultMode: 0555
         {{- if .Values.hsm.enabled }}
         - name: hsm
           secret:
@@ -304,3 +415,13 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+        {{- if (include "barbican.tls.serving" .) }}
+        - name: tls-input
+          secret:
+            secretName: {{ .Values.tls.secretName | default "barbican-tls" }}
+            defaultMode: 0440
+        - name: tls-secrets
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        {{- end }}

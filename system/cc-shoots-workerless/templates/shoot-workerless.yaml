@@ -3,6 +3,7 @@
 {{- $clusterType := include "cc-shoots-workerless.clusterType" $ }}
 {{- $supportGroup := include "cc-shoots-workerless.supportGroup" $ }}
 {{- $clusterKubernetes := get $cluster "kubernetes" | default dict }}
+{{- $controlPlaneZones := get $cluster "controlPlaneZones" | default list }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
@@ -13,6 +14,9 @@ metadata:
     greenhouse.sap/owned-by: {{ $supportGroup }}
     greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
     metadata.greenhouse.sap/region: {{ $regionName }}
+    {{- with merge (default dict $cluster.extraLabels) (default dict $.Values.shootExtraLabels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:
@@ -36,5 +40,12 @@ spec:
         - configmaps
         provider:
           type: aescbc
+  {{- if $controlPlaneZones }}
+  controlPlane:
+    zones:
+    {{- range $controlPlaneZones }}
+      - {{ . }}
+    {{- end }}
+  {{- end }}
   seedName: {{ include "cc-shoots-workerless.seedName" (dict "clusterName" $clusterName "cluster" $cluster "regionName" $regionName "seedType" $.Values.cluster.seedType) }}
 {{- end }}

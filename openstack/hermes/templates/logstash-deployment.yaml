@@ -130,6 +130,20 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: OPENSEARCH_PASSWORD
+            {{- if and .Values.logstash.kafka.enabled .Values.logstash.kafka.username .Values.logstash.kafka.password }}
+            # Kafka SASL/SCRAM credentials (FortLogs KafkaUser)
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: KAFKA_USERNAME
+
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: KAFKA_PASSWORD
+            {{- end }}
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
@@ -162,16 +176,19 @@ spec:
               cpu: {{required ".Values.resources_requests_cpu_ls is missing" .Values.resources_requests_cpu_ls}}
 
         - name: logstash-exporter
-          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/kuskoman/logstash-exporter:v1.9.1
           imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "-c"]
-          ## Delay start of logstash-exporter to give logstash more time to come online.
-          args:
-            - >-
-              sleep 120;
-              exec /logstash_exporter
-                --logstash.endpoint=http://localhost:9600
-                --web.listen-address=:9198
+          env:
+            - name: LOGSTASH_URL
+              value: "http://localhost:9600"
+            - name: PORT
+              value: "9198"
+          startupProbe:
+            httpGet:
+              path: /healthcheck
+              port: 9198
+            failureThreshold: 24
+            periodSeconds: 10
           ports:
             - name: ls-exporter
               containerPort: 9198

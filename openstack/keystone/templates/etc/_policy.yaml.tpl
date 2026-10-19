@@ -63,6 +63,15 @@
 
 "blocklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s"
 
+{{- if .Values.api.adminDomainIds }}
+# ccloud: blocklisted roles and grants on blocklisted projects may only be
+# assigned to recipients (users or groups) whose domain is an admin domain
+# (e.g. Default, ccadmin). Enabled per-region via api.adminDomainIds.
+"admin_domain_recipient": "{{ range $i, $d := .Values.api.adminDomainIds }}{{ if $i }} or {{ end }}'{{ $d }}':%(target.user.domain_id)s or '{{ $d }}':%(target.group.domain_id)s{{ end }}"
+"blocklisted_role_grant_ok": "not rule:blocklist_roles or rule:admin_domain_recipient"
+"restricted_project_grant_ok": "not rule:blocklist_projects or rule:admin_domain_recipient"
+{{- end }}
+
 # Show access rule details.
 # GET  /v3/users/{user_id}/access_rules/{access_rule_id}
 # HEAD  /v3/users/{user_id}/access_rules/{access_rule_id}
@@ -515,7 +524,7 @@
 # PUT  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:create_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:create_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants"
+"identity:create_grant": "{{- if .Values.api.adminDomainIds }}({{- end }}rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants{{- if .Values.api.adminDomainIds }}) and rule:blocklisted_role_grant_ok and rule:restricted_project_grant_ok{{- end }}"
 
 # Revoke a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a

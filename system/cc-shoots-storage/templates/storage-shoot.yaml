@@ -9,6 +9,9 @@ metadata:
     cluster-type: sci-k8s-storage
     greenhouse.sap/owned-by: storage
     greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    {{- with merge (default dict $cluster.extraLabels) (default dict $.Values.shootExtraLabels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:
@@ -118,10 +121,10 @@ spec:
               assignmentMode: {{ default "Automatic" .assignmentMode }}
             {{- end }}
           calicoBgpConfig:
-            asNumber: {{ $cluster.networking.asNumber }}
+            asNumber: {{ include "asNumber" $cluster.networking.asNumber }}
             bgpPeer:
             {{- range $cluster.networking.bgpPeers }}
-            - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
+            - asNumber: {{ include "asNumber" (default $cluster.networking.asNumber .asNumber) }}
               nodeSelector: {{ .nodeSelector }}
               peerIP: {{ .peerIP }}
               filters:
