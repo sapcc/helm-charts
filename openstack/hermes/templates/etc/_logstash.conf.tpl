@@ -460,12 +460,12 @@ filter {
 
   # secondary index
   # Only add the secondary index if it's different from the primary index
-  if [target][project_id] and [@metadata][index] != "%{[target][project_id]}" {
+  if [target][project_id] and [@metadata][index] != [target][project_id] {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][project_id]}" }
       id => "f23a_calculate_index_name_secondary_project_id"
     }
-  } else if [target][domain_id] and [@metadata][index] != "%{[target][domain_id]}" {
+  } else if [target][domain_id] and [@metadata][index] != [target][domain_id] {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" }
       id => "f23b_calculate_index_name_secondary_domain_id"
