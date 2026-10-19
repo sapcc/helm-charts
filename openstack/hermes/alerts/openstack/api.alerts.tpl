@@ -275,20 +275,37 @@ groups:
       description: "Log Router flush retries have been exhausted and partitions are being routed to the DLQ. Audit events are not being written to the primary S3/Ceph bucket. Check S3 connectivity, bucket Object Lock configuration, and credentials."
       summary: "Log Router falling back to DLQ — data not reaching S3"
 
-  - alert: OpenstackHermesLogRouterAdminWriteErrors
-    expr: sum(rate(log_router_admin_write_errors_total[5m])) > 0
+  - alert: OpenstackHermesLogRouterAllWritesDenied
+    expr: sum(increase(log_router_events_dropped_total{reason="access_denied"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
     for: 5m
     labels:
       context: log-router
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: critical
+      severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router admin-tier write errors — compliance audit copies may be missing from the admin bucket"
+      meta: "Log Router: every write is denied by the object store, events are being dropped"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "Log Router is failing to write to the admin-tier storage. The admin tier provides unconditional compliance copies of all audit events. Sustained errors mean audit records are missing from the admin bucket."
-      summary: "Log Router admin-tier write errors — compliance data at risk"
+      description: "Log Router is dropping events as access_denied and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration). A lost storage role does not show up here, see OpenstackHermesLogRouterFlushFailing."
+      summary: "Log Router writes denied for all tenants"
+
+  - alert: OpenstackHermesLogRouterFlushFailing
+    expr: sum(increase(log_router_flush_errors_total[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
+    for: 5m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      meta: "Log Router cannot write to object storage, events are kept in the WAL"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router has had flush errors and flushed nothing for 15m, so it cannot write anywhere. Likely causes are a lost storage role (RGW answers 401), RGW or Keystone being down, or bad credentials. Events are kept in the WAL and retried, nothing is dropped yet, but the WAL grows until this is fixed."
+      summary: "Log Router cannot flush to object storage"
 {{- end }}

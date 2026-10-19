@@ -30,6 +30,13 @@ hermes:
   logstash_enabled: true      # Deploy Logstash pipeline (deployment, service, configmap, secret)
   keystone_seed_enabled: true # Deploy Keystone OpenstackSeed
 
+  # Keystone id of hermes@Default in this region, as a quoted string (an unquoted
+  # all-digit or 1234e5-style id gets parsed as a number). Get it with:
+  #   openstack user show hermes --domain Default -f value -c id
+  # Required to enable dataplane for a project; the env is only rendered when set.
+  dataplane_writer_user_id: ""
+  dataplane_swift_service_type: "object-store-ceph"
+
   debug: 0
   insecure: 0
   name: hermes
@@ -343,6 +350,16 @@ logRouter:
     # ccadmin/cloud_admin for cross-account access, then switches to this account
     # for admin writes. Must be set when swift.enabled=true.
     adminProjectID: ""
+    # Project log-router's token is scoped to. The defaults keep the
+    # cloud_objectstore_admin scope. Switch to hermes-dataplane / Default
+    # (objectstore_admin only) only after the log-router and hermez images with
+    # customer-owned bucket support are deployed and `migrate-dataplane-acl --apply`
+    # has granted the writer read+write on every bucket in the region (the Ceph
+    # chown is NOT a prerequisite). Rollback: set back to cloud_admin / ccadmin.
+    # hermes@Default must keep cloud_objectstore_admin on ccadmin/cloud_admin,
+    # because migrate-dataplane-acl uses that scope.
+    writerProject: "cloud_admin"
+    writerProjectDomain: "ccadmin"
 
   wal:
     storage: 10Gi
@@ -369,7 +386,10 @@ hermes-postgresql:
     # SELECT on dataplane_config to this login user.
     log-router: {}
   config:
-    max_connections: 64
+    # hermez 16 + per log-router replica 10 config + 32 shard lock connections
+    # (LOG_ROUTER_SHARD_LOCK_MAX_CONNS), plus a hermez rolling update: 116 of
+    # the 122 left after reserved and superuser connections.
+    max_connections: 128
   persistence:
     enabled: true
     size: 10Gi
