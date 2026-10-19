@@ -147,6 +147,7 @@ groups:
       severity: warning
       context: availability
       meta: "Node {{`{{ $labels.node }}`}} has a read-only root filesystem."
+      playbook: docs/support/playbook/kubernetes/k8s_node_read_only_filesystem
     annotations:
       description: Node {{`{{ $labels.node }}`}} has a read-only root filesystem. This could lead to unforeseeable problems. A reboot of the node is advised to fix the issue.
       summary: Read-only root filesystem on node

@@ -84,6 +84,26 @@ groups:
       description: "cc3test {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}}/{{`{{ $labels.when }}`}} is not running for more than 1 day"
       summary: "cc3test {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}}/{{`{{ $labels.when }}`}} is down"
 
+  - alert: CC3testSAMLTestsNotRunning
+    expr: |
+        sum without (pod, instance) (
+          increase(cc3test_total{service="keystone", name=~"TestSAML.+", when="call"}[20m])
+        ) == 0
+    for: 30m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML cc3test tests for {{`{{ $labels.name }}`}} are not running for more than 30 minutes"
+      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML cc3test tests for {{`{{ $labels.name }}`}} have not run in more than 30 minutes. SAML federation security controls (BSI SF.Fas.1/2, #1181) may not be monitored."
+      summary: "SAML cc3test tests not running"
+
 #  - alert: CC3TestPurgerNotRunning
 #    expr: sum without (pod, instance) (increase(cc3test_total{type=~'(.+)purge$|purge',when='call'}[60m])) == 0
 #    for: 60m

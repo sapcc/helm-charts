@@ -10,7 +10,11 @@ metadata:
   annotations:
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
+  {{- if .Values.global.gardener_enabled }}
+  type: LoadBalancer
+  {{-  else }}
   type: NodePort
+  {{- end }}
   externalTrafficPolicy: Local
   selector:
     name: ironic-pxe
@@ -23,7 +27,7 @@ spec:
       protocol: TCP
       port: {{.Values.conductor.deploy.port}}
       targetPort: ironic-ipxe
-  {{- if .Values.global.ironic_tftp_ip}}
+  {{- if and .Values.global.ironic_tftp_ip ( not .Values.global.gardener_enabled ) }}
   externalIPs:
     - {{.Values.global.ironic_tftp_ip}}
   {{- end }}

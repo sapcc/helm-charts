@@ -1,0 +1,16 @@
+{{- if (index .Values "prometheus-node-exporter" "tlsSecret" "enabled") }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+
+metadata:
+  name: prometheus-node-exporter-tls
+
+spec:
+  secretName: {{ index .Values "prometheus-node-exporter" "tlsSecret" "secretName" | default "prometheus-node-exporter-tls" }}
+  dnsNames:
+    - "*.cc.{{ required ".Values.global.region missing" .Values.global.region }}.{{ required ".Values.global.domain missing" .Values.global.domain }}"
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: ClusterIssuer
+    name: digicert-issuer
+{{- end }}

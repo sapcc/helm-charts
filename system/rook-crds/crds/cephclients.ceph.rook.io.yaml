@@ -82,7 +82,7 @@ spec:
                             this new value (generation values are not necessarily incremental, though that is the
                             intended use case). If this is set to less than or equal to the current key generation, keys
                             are not rotated.
-                          format: int32
+                          format: int64
                           maximum: 4294967295
                           minimum: 0
                           type: integer
@@ -98,7 +98,24 @@ spec:
                             - Disabled
                             - KeyGeneration
                           type: string
+                        keyType:
+                          description: |-
+                            KeyType specifies the desired CephX key cipher type.
+                            If unspecified, Ceph's default will be used.
+                            If KeyRotationPolicy is Disabled or unspecified (default), modifying this value will never
+                            initiate key rotation.
+                            If KeyRotationPolicy is set to an enabled value (any other value), modifying this may
+                            initiate key rotation.
+                          enum:
+                            - aes
+                            - aes256k
+                          maxLength: 7
+                          minLength: 3
+                          type: string
                       type: object
+                      x-kubernetes-validations:
+                        - message: keyGeneration cannot be removed once set
+                          rule: '!has(oldSelf.keyGeneration) || has(self.keyGeneration)'
                   type: object
               required:
                 - caps
@@ -126,6 +143,13 @@ spec:
                         Generation `0` indicates that keys existed prior to the implementation of key tracking.
                       format: int32
                       type: integer
+                    keyType:
+                      description: |-
+                        KeyType identifies the CephX key type for the current generation's keys, if known.
+                        If unknown, the value will be empty.
+                      maxLength: 7
+                      minLength: 3
+                      type: string
                   type: object
                 info:
                   additionalProperties:

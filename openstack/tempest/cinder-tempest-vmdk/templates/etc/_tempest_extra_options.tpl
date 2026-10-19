@@ -89,7 +89,7 @@ attach_encrypted_volume = false
 build_timeout=600
 
 [validation]
-image_ssh_user = {{ required "Missing tempest_common.image_ssh_user!" .Values.tempest_common.image_ssh_user }}
+image_ssh_user = ccloud
 
 [volume]
 catalog_type = volumev3
@@ -101,7 +101,6 @@ storage_protocol = vmdk
 disk_format = vmdk
 volume_size = 3
 build_timeout=600
-volume_type = vmdk
 
 [volume-feature-enabled]
 backup = true

@@ -259,6 +259,10 @@ garden:
     # InPlaceNodeUpdates: true
   # externalIP: ""
   managedresources: true # disable on inital deployment
+  # Adopt gardener-operator PrometheusRules (garden-sap-*) into the operator-managed
+  # prometheus-garden. Off by default; enable per cluster via cluster values.
+  prometheusRules:
+    enabled: false
   enabled: true # disable on initial deployment
   backup:
     provider: aws # aws or openstack
@@ -308,6 +312,13 @@ garden:
       enabled: false
       clientIDPublic: ""
       issuerURL: ""
+    # frontendConfig is passed as-is to the dashboard frontend ConfigMap.
+    # See https://github.com/gardener/dashboard/blob/master/docs/operations/customization.md
+    # Example:
+    #   frontendConfig:
+    #     features:
+    #       oidcObservabilityUrlsEnabled: true
+    frontendConfig: {}
 secretsInjector:
   enabled: true
   replicaCount: 2

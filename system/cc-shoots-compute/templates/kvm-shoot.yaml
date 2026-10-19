@@ -8,13 +8,13 @@ metadata:
   labels:
     cluster-type: sci-k8s-compute
     greenhouse.sap/owned-by: compute
-    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    greenhouse.sap/shoot-grafter-transport: {{ $.Values.greenhouseShootGrafter }}
     metadata.greenhouse.sap/region: {{ coalesce $.Values.contextSuffix $cluster.region }}
     {{- with merge (default dict $cluster.extraLabels) (default dict $.Values.shootExtraLabels) }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  purpose: {{ default "production" $cluster.purpose }}
+  purpose: {{ default $.Values.purpose $cluster.purpose }}
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
@@ -63,7 +63,7 @@ spec:
       auditConfig:
         auditPolicy:
           configMapRef:
-            name: {{ $cluster.auditing.configMapName | default "audit-policy-cp-compute" }}
+            name: {{ $cluster.auditing.configMapName | default $.Values.auditing.configMapName }}
       {{- end }}
     verticalPodAutoscaler:
       enabled: false
@@ -90,7 +90,7 @@ spec:
     resourceRef:
       apiVersion: v1
       kind: Secret
-      name: {{ $cluster.auditing.secretName | default "auditing-mtls-compute" }}
+      name: {{ $cluster.auditing.secretName | default $.Values.auditing.secretName }}
   {{- end }}
   maintenance:
     autoUpdate:
@@ -126,7 +126,7 @@ spec:
           IPPools:
             {{- range $cluster.networking.externalServices }}
             - cidr: {{ .cidr }}
-              assignmentMode: {{ default "Automatic" .assignmentMode }}
+              assignmentMode: {{ default $.Values.networking.externalServiceAssignmentMode .assignmentMode }}
             {{- end }}
           calicoBgpConfig:
             asNumber: {{ include "asNumber" $cluster.networking.asNumber }}
@@ -165,7 +165,8 @@ spec:
             {{- end }}
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
-      {{- $workerChannel := coalesce $worker.channel $cluster.channel "release" }}
+      {{- $workerChannel := coalesce $worker.channel $cluster.channel $.Values.workerDefaults.channel }}
+      {{- $updateStrategy := coalesce $worker.updateStrategy $cluster.updateStrategy $.Values.defaultUpdateStrategy }}
       {{- $imageVersion:= "unset" }}
       {{- if eq $workerChannel "preRelease" }}
       {{- $imageVersion = coalesce $worker.preReleaseImageVersion $cluster.preReleaseImageVersion $.Values.preReleaseImageVersion }}
@@ -183,20 +184,20 @@ spec:
           type: baremetal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
+        {{- if not (has $updateStrategy (list "ManualInPlaceUpdate" "AutoInPlaceUpdate")) }}
         maxSurge: {{ $worker.maxSurge | default 0 }}
         maxUnavailable: {{ default 1 $worker.maxUnavailable }}
-        {{- if $worker.updateStrategy }}
-        updateStrategy: {{ $worker.updateStrategy }}
         {{- end }}
+        updateStrategy: {{ $updateStrategy }}
         zones:
         {{- toYaml $worker.zones | nindent 8 }}
         machineControllerManager:
-          machineCreationTimeout: {{ coalesce $worker.machineCreationTimeout $cluster.machineCreationTimeout "1h20m0s" }}
-          machineHealthTimeout: {{ coalesce $worker.machineHealthTimeout $cluster.machineHealthTimeout "1h0m0s" }}
-          machineDrainTimeout: {{ coalesce $worker.machineDrainTimeout $cluster.machineDrainTimeout "240h0m0s" }}
-          {{- if $worker.inPlaceUpdateTimeout }}
-          inPlaceUpdateTimeout: {{ $worker.inPlaceUpdateTimeout }}
-          {{- end }}
+          machineCreationTimeout: {{ coalesce $worker.machineCreationTimeout $cluster.machineCreationTimeout $.Values.workerDefaults.machineControllerManager.machineCreationTimeout }}
+          machineHealthTimeout: {{ coalesce $worker.machineHealthTimeout $cluster.machineHealthTimeout $.Values.workerDefaults.machineControllerManager.machineHealthTimeout }}
+          machineDrainTimeout: {{ coalesce $worker.machineDrainTimeout $cluster.machineDrainTimeout $.Values.workerDefaults.machineControllerManager.machineDrainTimeout }}
+        {{- if has $updateStrategy (list "ManualInPlaceUpdate" "AutoInPlaceUpdate") }}
+          inPlaceUpdateTimeout: {{coalesce $worker.inPlaceUpdateTimeout $cluster.inPlaceUpdateTimeout $.Values.workerDefaults.machineControllerManager.inPlaceUpdateTimeout }}
+        {{- end }}
         sysctls:
           vm.hugetlb_shm_group: "64055"
           vm.unprivileged_userfaultfd: "1"
@@ -322,7 +323,7 @@ spec:
                   mode: 0644
                   contents:
                     inline: |
-                      {{- if eq (default "stable" $worker.feature) "qemu" }}
+                      {{- if eq (default $.Values.workerDefaults.feature $worker.feature) "qemu" }}
                       uri_default = "qemu:///system"
                       {{- else }}
                       uri_default = "ch:///system"
@@ -386,7 +387,7 @@ spec:
                         [Unit]
                         ConditionPathExists=/etc/pki/libvirt/clientcert.pem
                         ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
-                        {{- if eq (default "stable" $worker.feature) "qemu" }}
+                        {{- if eq (default $.Values.workerDefaults.feature $worker.feature) "qemu" }}
                         ConditionPathExists=/etc/pki/qemu/client-cert.pem
                         ConditionPathExists=/etc/pki/qemu/client-key.pem
                         {{- end }}
@@ -402,7 +403,7 @@ spec:
                         [Unit]
                         ConditionPathExists=/etc/pki/libvirt/clientcert.pem
                         ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
-                        {{- if eq (default "stable" $worker.feature) "qemu" }}
+                        {{- if eq (default $.Values.workerDefaults.feature $worker.feature) "qemu" }}
                         ConditionPathExists=/etc/pki/qemu/client-cert.pem
                         ConditionPathExists=/etc/pki/qemu/client-key.pem
                         {{- end }}
@@ -414,7 +415,7 @@ spec:
                         [Unit]
                         ConditionPathExists=/etc/pki/libvirt/clientcert.pem
                         ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
-                        {{- if eq (default "stable" $worker.feature) "qemu" }}
+                        {{- if eq (default $.Values.workerDefaults.feature $worker.feature) "qemu" }}
                         ConditionPathExists=/etc/pki/qemu/client-cert.pem
                         ConditionPathExists=/etc/pki/qemu/client-key.pem
                         {{- end }}
@@ -433,7 +434,7 @@ spec:
                     ConditionVirtualization=!container
                     ConditionPathExists=/etc/pki/libvirt/clientcert.pem
                     ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
-                    {{- if eq (default "stable" $worker.feature) "qemu" }}
+                    {{- if eq (default $.Values.workerDefaults.feature $worker.feature) "qemu" }}
                     ConditionPathExists=/etc/pki/qemu/client-cert.pem
                     ConditionPathExists=/etc/pki/qemu/client-key.pem
                     {{- end }}

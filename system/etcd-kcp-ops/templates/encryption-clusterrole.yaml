@@ -1,0 +1,27 @@
+{{- if .Values.encryptionRotation.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: etcd-encryption-rotation
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: encryption-rotation
+rules:
+  # Check control plane nodes are ready
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["list"]
+  # Re-encrypt secrets and configmaps in all namespaces
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["list", "patch"]
+  # Re-encrypt bmcsecrets
+  - apiGroups: ["metal.ironcore.dev"]
+    resources: ["bmcsecrets"]
+    verbs: ["list", "patch"]
+  # Temporarily disable etcd-druid component protection during re-encryption
+  # to prevent druid from reverting annotation patches on its managed secrets
+  - apiGroups: ["druid.gardener.cloud"]
+    resources: ["etcds"]
+    verbs: ["list", "patch"]
+{{- end }}

@@ -202,27 +202,34 @@ build-metal-operator-remote:
 		grep -q 'path: /readyz' metal-operator-remote/templates/controller-manager.yaml || \
 		{ echo "ERROR: sed insertion anchors not found in controller-manager.yaml (dns-record-template/ignition-template volumes, webhook-injector-sidecar initContainers, or liveness/readiness probe paths) - upstream manager.yaml layout likely changed, update the sed anchors."; exit 1; }
 	@echo "NOTE: controller-manager.yaml sed pipeline is best-effort - verify with 'helm lint'/'helm template' after regenerating."
-	# Vendor the metaldata DaemonSet locally; it must run directly here too since the seed itself may be bare-metal.
-	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/extras/metaldata.yaml | \
-		$(SED) \
-			-e '/namespace: {{ .Release.Namespace }}/d' \
-			-e 's/include "metal-operator\./include "chart./g' \
-			-e 's/\.Values\.metaldata\.image\.tag | default \.Chart\.AppVersion/required "metaldata.image.tag is required" .Values.metaldata.image.tag/' \
-			-e '1i\# Vendored copy of metal-operator-core'"'"'s templates/extras/metaldata.yaml; must run directly here since the seed itself may be bare-metal.' \
-		> metal-operator-remote/templates/metaldata.yaml
-	@grep -q 'required "metaldata.image.tag is required" .Values.metaldata.image.tag' metal-operator-remote/templates/metaldata.yaml || \
-		{ echo "ERROR: metaldata.image.tag required-guard substitution not found in metaldata.yaml - upstream extras/metaldata.yaml layout likely changed, update the sed anchor."; exit 1; }
-	# templates/metaldata-rbac.yaml is hand-maintained (mirrors upstream's rbac/metaldata*.yaml, simplified) - update by hand if upstream changes.
+	# templates/metaldata.yaml and templates/metaldata-rbac.yaml are hand-maintained (mirroring upstream's
+	# templates/extras/metaldata.yaml and templates/rbac/metaldata*.yaml). Update them manually when bumping
+	# the metal-operator dependency version and upstream changes those files.
+	#
+	# TODO: once upstream metal-operator adds extraEnv/extraVolumeMounts/extraVolumes hooks to
+	# templates/extras/metaldata.yaml (same pattern as manager.yaml), restore the extraction block below
+	# so metaldata.yaml is generated again rather than hand-maintained:
+	#
+	# @tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/extras/metaldata.yaml | \
+	# 	$(SED) \
+	# 		-e '/namespace: {{ .Release.Namespace }}/d' \
+	# 		-e 's/include "metal-operator\./include "chart./g' \
+	# 		-e 's/\.Values\.metaldata\.image\.tag | default \.Chart\.AppVersion/required "metaldata.image.tag is required" .Values.metaldata.image.tag/' \
+	# 		-e '1i\# Hand-maintained mirror of metal-operator-core'"'"'s templates/extras/metaldata.yaml.' \
+	# 		> metal-operator-remote/templates/metaldata.yaml
+	# @grep -q 'required "metaldata.image.tag is required" .Values.metaldata.image.tag' metal-operator-remote/templates/metaldata.yaml || \
+	# 	{ echo "ERROR: metaldata.image.tag required-guard not found - upstream layout changed, update the sed anchor."; exit 1; }
 	# Render webhook configurations and rewrite service refs to URL-based
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 	  -n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml | \
 		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration") | (.webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-remote-webhook-service:443" + .service.path})' - \
 		> metal-operator-remote/webhooks.yaml
-	# Bump patch version; pass DEV=1 to append -dev pre-release suffix (only picked up by pipelines with --devel)
-	@yq -i '.version = (.version | split(".") | .[2] = (.[2] | split("-") | .[0] | tonumber + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	# Bump patch version; pass DEV=1 to publish a pre-release dev build (0.0.0-<sha>) only picked up by the dev cluster pipeline
 	@if [ "$(DEV)" = "1" ]; then \
-		yq -i '.version = .version + "-dev"' metal-operator-remote/Chart.yaml; \
+		SHA=$$(git rev-parse --short HEAD) yq -i '.version = "0.0.0-" + strenv(SHA)' metal-operator-remote/Chart.yaml; \
+	else \
+		yq -i '.version = (.version | split(".") | .[2] = (.[2] | split("-") | .[0] | tonumber + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml; \
 	fi
 
 
@@ -241,16 +248,25 @@ build-boot-operator-remote:
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
+build-metal-maintenance-operator:
+	@helm dep up metal-maintenance-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator/Chart.yaml
+
 build-metal-maintenance-operator-remote:
 	@helm dep up metal-maintenance-operator-remote
 	@helm template metal-maintenance-operator \
 		metal-maintenance-operator-remote/charts/metal-maintenance-operator*.tgz \
+		--include-crds \
 		-n kube-system \
 		-f metal-maintenance-operator-remote/values-managed-resources.yaml | \
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - | \
 		yq eval 'select(.kind != "Service" and .kind != "Deployment" and .metadata.name != "metal-maintenance-operator-leader-election-role" and .metadata.name != "metal-maintenance-operator-leader-election-rolebinding")' - \
 		> metal-maintenance-operator-remote/managedresources/crds-and-rbac.yaml
-	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml
+	@if [ "$(DEV)" = "1" ]; then \
+		SHA=$$(git rev-parse --short HEAD) yq -i '.version = "0.0.0-" + strenv(SHA)' metal-maintenance-operator-remote/Chart.yaml; \
+	else \
+		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml; \
+	fi
 
 build-argora-operator:
 	@helm dep up argora-operator

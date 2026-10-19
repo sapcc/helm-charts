@@ -24,16 +24,81 @@ image_refs:
 image_version: DEFINED_IN_VALUES_FILE
 debug: false
 
-image_version_auxiliary_statsd_exporter: 'v0.28.0'
+image_version_s3_proxy: '5.2.0'
 
 auth_url: DEFINED_IN_VALUES_FILE
 
-# Map with auth passwords for Swift targets and sources. Only the
-# `target_auth_password` key is required.
-passwords:
-  target_auth_password: DEFINED_IN_VALUES_FILE
+# Legacy single-target config. Still honored: when .Values.targets is unset
+# this block is synthesized into a single-entry targets map under the key
+# "default", keeping the legacy unsuffixed resource names and TARGET_AUTH_PASSWORD
+# env var. Prefer .Values.targets below when running multiple backends.
+target:
+  user_name: repo
+  user_domain_name: Default
+  project_name: master
+  project_domain_name: ccadmin
+  service_type: object-store
+
+# Multi-target config for running swift-http-import against multiple backends
+# simultaneously (e.g. during a swift->ceph transition period).
+#
+# The entry named "default" is rendered without a suffix, preserving back-compat
+# resource names: config file <repo>.yaml, CronJob content-repo-<repo>, statsd
+# prefix repo.<repo>, and env var TARGET_AUTH_PASSWORD.
+#
+# Any additional entry named <target> produces:
+#   - config file  <repo>-<target>.yaml
+#   - CronJob      content-repo-<repo>-<target>
+#   - statsd prefix repo.<repo>-<target>
+#   - env var      <TARGET>_AUTH_PASSWORD   (upper-cased, hyphens→underscores)
+#
+# Each entry references a key from .Values.passwords via `password_key`.
+#
+# targets:
+#   default:
+#     user_name:           repo
+#     user_domain_name:    Default
+#     project_name:        master
+#     project_domain_name: ccadmin
+#     service_type:        object-store
+#     password_key:        target_auth_password
+#   ceph:
+#     user_name:           repo
+#     user_domain_name:    Default
+#     project_name:        master
+#     project_domain_name: ccadmin
+#     service_type:        object-store-ceph
+#     password_key:        ceph_auth_password
+
+# Map with auth passwords for Swift/Ceph targets and sources.
+# `target_auth_password` is required for the default (swift) target.
+# Add `ceph_auth_password` when using a `ceph` entry in .Values.targets.
+passwords: { }
+  # target_auth_password: DEFINED_IN_VALUES_FILE
+  # ceph_auth_password: DEFINED_IN_VALUES_FILE
 
 statsd_hostname: DEFINED_IN_VALUES_FILE
+
+# S3 proxy serving the new Ceph-backed `repo-new.$REGION.cloud.sap` endpoint.
+# Set enabled: true to deploy the s3-proxy and enable the ceph sync targets.
+# Regions that only have Swift should leave this false (the default).
+s3_proxy:
+  enabled: false
+  # If true, the s3-proxy Ingress also claims repo.$REGION.$TLD, making it the primary endpoint for that region.
+  serve_repo_hostname: false
+  replicas: 2
+  signed_url_expiration: 15m
+  # If set, a dedicated Service with externalIPs=[public_ip] serves plain HTTP
+  # on port 8080 for baremetal netboot firmware. Leave null to disable.
+  public_ip: null
+  log:
+    level: info
+    format: text
+  bucket:
+    name: DEFINED_IN_VALUES_FILE
+    s3Endpoint: DEFINED_IN_VALUES_FILE
+    access_key: DEFINED_IN_VALUES_FILE
+    secret_key: DEFINED_IN_VALUES_FILE
 
 alerts:
   enabled: true
@@ -43,6 +108,7 @@ alerts:
 # repos:
 #   ubuntu:
 #     #schedule: "15 8,20 * * *"
+#     # only_target: default   # if set, only render a CronJob for this target name (e.g. "default" or "ceph")
 #     jobs:
 #       - from:
 #           url: DEFINED_IN_VALUES_FILE
