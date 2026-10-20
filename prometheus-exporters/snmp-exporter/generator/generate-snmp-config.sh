@@ -79,6 +79,7 @@ content = re.sub(r'\n( +)enum_values:\n(\1  [^\n]+\n)+', '\n', content)
 open(sys.argv[1], 'w').write(content)
 " ../_snmp-exporter-${i}.yaml
 
+
         if test -f "${i}-additional-metrics.yaml"; then
                 #cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
                 sed -i "/max_repetitions: 25/e cat ${i}-additional-metrics.yaml" ../_snmp-exporter-${i}.yaml
