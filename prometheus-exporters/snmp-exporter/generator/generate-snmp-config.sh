@@ -72,7 +72,7 @@ for i in $modules;
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
         fi
 
-        yq -i 'del(.. | .enum_values?)' ../_snmp-exporter-${i}.yaml
+        yq -y -i 'del(.. | .enum_values?)' ../_snmp-exporter-${i}.yaml
 
         if test -f "${i}-additional-metrics.yaml"; then
                 #cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml
