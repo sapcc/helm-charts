@@ -22,13 +22,9 @@ spec:
       labels:
         name: pricelist-data-metrics
       annotations:
-        checksum/configmap: {{ include "orbitus/templates/pricelist/configmap.yaml" . | sha256sum }}
         kubectl.kubernetes.io/default-container: metrics
     spec:
       volumes:
-        - name: config
-          configMap:
-            name: pricelist
         - name: pricelist-data
           emptyDir: {}
       initContainers:
@@ -45,8 +41,6 @@ spec:
           securityContext:
             runAsNonRoot: true
           volumeMounts:
-            - mountPath: /etc/pricelist
-              name: config
             - mountPath: /pricelist-data
               name: pricelist-data
           livenessProbe:
