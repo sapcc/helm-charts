@@ -366,21 +366,11 @@ spec:
       permissions: "0644"
 
 {{/*
-  Etcd encryption config file delivery (K8s Secret-based path).
-  enc.yaml and enc_previous.yaml are delivered as CAPI
-  files[].contentFrom.secret references — a static {name, key} ref, not inline
-  content. helm renders the reference without lookup; CAPI dereferences the
-  Secret at bootstrap-data generation time (and requeues until the seed lands).
-  This means a single helm upgrade --install both seeds the Secret and activates
-  encryption (no two-deploy), and the key content never enters the KCP spec so
-  there is no helm/CronJob render-parity invariant on files[].
-  The seeding template seeds config and config-previous (present-but-empty) so
-  both references resolve on the first deploy; the rotation CronJob
-  owns both keys afterward and triggers rollouts via spec.rollout.after.
-  Falls back to encryptionConfigContent inline value for CI testing (no Secret).
-  Only activates when the cluster sets etcdEncryption: true explicitly.
-  Clusters using the legacy additionalConfig.secrets path (etcd.useEncryption)
-  are not affected.
+  Etcd encryption: enc.yaml + enc_previous.yaml delivered via
+  files[].contentFrom.secret (static ref, no lookup). CAPI resolves the
+  Secret at bootstrap-data generation time. Falls back to inline content
+  for CI (encryptionConfigContent). Only activates for etcdEncryption: true;
+  legacy additionalConfig.secrets path (etcd.useEncryption) is unaffected.
 */}}
 {{- if $cluster.etcdEncryption }}
 {{- $secretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
@@ -398,10 +388,7 @@ spec:
       owner: root:root
       path: /etc/kubernetes/enc/enc.yaml
       permissions: "0600"
-{{/* enc_previous.yaml (retired keys backup) — never loaded by the API server,
-     exists only for manual recovery. The seeding template seeds config-previous
-     present-but-empty; the rotation CronJob writes the retired key during the
-     cleanup phase. Delivered as a static ref so it resolves on the first deploy. */}}
+{{/* enc_previous.yaml: retired keys backup for manual recovery. */}}
     - contentFrom:
         secret:
           name: {{ $secretName }}
