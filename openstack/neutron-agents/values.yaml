@@ -1,0 +1,65 @@
+# Consumer contract for the neutron-agents library chart.
+#
+# The library ships no top-level values — it exposes named templates that a
+# consumer chart splices into its own Pod spec. This file documents the subtree
+# a consumer feeds into the linuxbridge agent's templates via:
+#   include "neutron-agents.linuxbridge.container" (dict "root" . "values" .Values.linuxbridge_agent)
+#
+# The linuxbridge agent is the only agent implemented today. A metadata or dhcp
+# agent would get its own subtree (e.g. .Values.metadata_agent) with the same
+# shared keys below (secretName, imageVersion, configMap, host, debug, privsep,
+# logging, extra*) plus its own agent-specific sections, and its own
+# neutron-agents.metadata.* / neutron-agents.dhcp.* templates. The shared keys
+# are consumed by the common helpers in templates/_helpers.tpl and
+# templates/etc/_neutron-conf.tpl; only the agent-specific keys below
+# (agent/vxlan/securitygroup) are linuxbridge-only.
+
+# ---- shared keys (used by every agent's templates) ----
+
+# Required. Secret with OS_<SECTION>__<KEY> keys (e.g. OS_DEFAULT__TRANSPORT_URL).
+secretName: ""
+
+# Optional. Image version override; otherwise cascades through
+# imageVersionNetworkAgentLinuxBridge → imageVersionNetworkAgent → imageVersion
+# from the consumer's top-level Values. Image is always {global.registry}/loci-neutron.
+imageVersion: ""
+
+# Mode A: bring your own ConfigMap (set name).
+# Mode B: let the library render one (leave name empty, call configmap-etc).
+configMap:
+  name: ""
+  key: neutron.conf         # subPath inside the ConfigMap for neutron.conf
+  loggingKey: logging.conf  # subPath inside the ConfigMap for logging.conf
+
+# Mode B inputs. Ignored in Mode A.
+host: ""                  # [DEFAULT] host; empty → node hostname
+debug: false              # [DEFAULT] debug — sets oslo log level to DEBUG
+privsep:
+  thread_pool_size: 3
+
+# Python logging.config schema for the agent. Rendered via the loggerIni
+# helper (utils chart), same shape the umbrella neutron chart uses for
+# .Values.logging. Default: stdout handler with oslo_log ContextFormatter,
+# root level INFO. Override to add Sentry, raise log levels, etc.
+logging: {}
+
+# ---- linuxbridge-agent-specific keys ----
+
+agent:
+  polling_interval: 2
+vxlan:
+  enable: false
+securitygroup:
+  firewall_driver: iptables
+
+# ---- shared container pass-throughs ----
+
+# Optional --config-file / --config-dir flags appended to the command.
+extraConfigs: []          # e.g. ["/etc/neutron/plugins/ml2/ml2_conf.ini"]
+extraConfigDirs: []       # e.g. ["/etc/neutron/secrets"]
+
+# Optional pass-through into the container spec.
+extraEnv: []
+extraVolumeMounts: []
+extraVolumes: []          # spliced into spec.volumes by the volumes template
+resources: {}
