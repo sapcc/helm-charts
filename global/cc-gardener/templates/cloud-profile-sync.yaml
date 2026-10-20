@@ -22,8 +22,6 @@ spec:
         networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
       annotations:
         kubectl.kubernetes.io/default-container: cloud-profile-sync
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: kubernetes
     spec:
       containers:
       - image: "{{ required ".Values.cloudProfileSync.image.repository is missing" .Values.cloudProfileSync.image.repository }}:{{ required ".Values.cloudProfileSync.image.tag is missing" .Values.cloudProfileSync.image.tag }}"
@@ -65,6 +63,82 @@ spec:
             - key: bundle.crt
               path: ca.crt
             secretName: cloud-profile-sync-kubeconfig
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-to-cloud-profile-sync-tcp-8080-from-kube-monitoring
+  namespace: garden
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-monitoring
+    ports:
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: cloud-profile-sync
+  policyTypes:
+  - Ingress
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cloud-profile-sync
+  namespace: kube-monitoring
+  labels:
+    plugin: kube-monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+    - garden
+  selector:
+    matchLabels:
+      app: cloud-profile-sync
+  podMetricsEndpoints:
+  - port: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloud-profile-sync
+  namespace: garden
+  labels:
+    plugin: kube-monitoring
+spec:
+  groups:
+  - name: cloud-profile-sync.alerts
+    rules:
+    - alert: CloudProfileSyncReconcileErrors
+      expr: rate(controller_runtime_reconcile_errors_total{namespace="garden", pod=~"cloud-profile-sync.*"}[5m]) > 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: cloud-profile-sync
+        severity: warning
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/cloud-profile-sync-reconcile-errors"
+      annotations:
+        summary: cloud-profile-sync reconciliation errors
+        description: >-
+          Controller {{ "{{ $labels.controller }}" }} in cloud-profile-sync has been returning
+          reconcile errors for 15 minutes. Check pod logs: kubectl -n garden logs -l app=cloud-profile-sync
+    - alert: CloudProfileSyncReconcilePanics
+      expr: increase(controller_runtime_reconcile_panics_total{namespace="garden", pod=~"cloud-profile-sync.*"}[5m]) > 0
+      labels:
+        tier: k8s
+        service: cloud-profile-sync
+        severity: critical
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/cloud-profile-sync-reconcile-errors"
+      annotations:
+        summary: cloud-profile-sync reconciliation panic
+        description: >-
+          Controller {{ "{{ $labels.controller }}" }} in cloud-profile-sync panicked.
+          Check pod logs: kubectl -n garden logs -l app=cloud-profile-sync
 ---
 apiVersion: v1
 kind: Secret
