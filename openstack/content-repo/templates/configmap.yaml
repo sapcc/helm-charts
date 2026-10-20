@@ -71,13 +71,13 @@ data:
           object_prefix:       {{ $job.from.object_prefix | default "''" }}
           {{- end }}
         to:
-          container: {{$targetCfg.container}}
+          container: {{ $targetCfg.container | default $job.to.container }}
           object_prefix: {{$job.to.object_prefix}}
         {{- if $job.segmenting }}
         segmenting:
           min_bytes:     {{ $job.segmenting.min_bytes | printf "%0.f" }}
           segment_bytes: {{ $job.segmenting.segment_bytes | printf "%0.f" }}
-          container:     {{ $targetCfg.container_segments }}
+          container:     {{ $targetCfg.container_segments | default $job.segmenting.container }}
         {{- end }}
         {{- if $job.expiration }}
         expiration:
