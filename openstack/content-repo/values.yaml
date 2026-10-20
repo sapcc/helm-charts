@@ -53,6 +53,9 @@ target:
 #   - env var      <TARGET>_AUTH_PASSWORD   (upper-cased, hyphens→underscores)
 #
 # Each entry references a key from .Values.passwords via `password_key`.
+# Jobs receive only their own target password, plus any source passwords.
+# Destination containers are configured per target, allowing Swift and Ceph
+# to use different names for the same mirrored repository content.
 #
 # targets:
 #   default:
@@ -62,6 +65,8 @@ target:
 #     project_domain_name: ccadmin
 #     service_type:        object-store
 #     password_key:        target_auth_password
+#     container:           repo
+#     container_segments:  repo_segments
 #   ceph:
 #     user_name:           repo
 #     user_domain_name:    Default
@@ -69,6 +74,8 @@ target:
 #     project_domain_name: ccadmin
 #     service_type:        object-store-ceph
 #     password_key:        ceph_auth_password
+#     container:           content-repo
+#     container_segments:  content-repo_segments
 
 # Map with auth passwords for Swift/Ceph targets and sources.
 # `target_auth_password` is required for the default (swift) target.
