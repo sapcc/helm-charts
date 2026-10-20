@@ -1,0 +1,48 @@
+{{/*
+DualDeploymentOperator CR for metal-operator-remote.
+
+Disabled by default (metalOperatorRemote.enabled: false).
+Enable per-cluster via the kube-secrets values overlay.
+
+applyOrder: SeedFirst — seed objects (macdb Secret, controller-manager Deployment) must
+exist before the shoot-applier writes shoot objects. The shootAccess Secret
+(dual-deployment-operator-shoot-access) is provisioned by this chart's shootRbac bootstrap,
+independently of either render.
+*/}}
+{{- if .Values.metalOperatorRemote.enabled }}
+apiVersion: dual-deployment-operator.cc.sap/v1alpha1
+kind: DualDeploymentOperator
+metadata:
+  name: metal-operator-remote
+  namespace: {{ .Release.Namespace }}
+spec:
+  applyOrder: SeedFirst
+
+  shootNamespace: {{ required "metalOperatorRemote.shootNamespace is required" .Values.metalOperatorRemote.shootNamespace | quote }}
+
+  shootAccess:
+    secretName: {{ .Values.metalOperatorRemote.shootAccess.secretName | default "dual-deployment-operator-shoot-access" | quote }}
+    server: {{ required "metalOperatorRemote.shootAccess.server is required" .Values.metalOperatorRemote.shootAccess.server | quote }}
+
+  source:
+    helm:
+      repo: {{ required "metalOperatorRemote.source.repo is required" .Values.metalOperatorRemote.source.repo | quote }}
+      name: {{ required "metalOperatorRemote.source.name is required" .Values.metalOperatorRemote.source.name | quote }}
+      version: {{ required "metalOperatorRemote.source.version is required" .Values.metalOperatorRemote.source.version | quote }}
+      {{- if .Values.metalOperatorRemote.values }}
+      values:
+        {{- toYaml .Values.metalOperatorRemote.values | nindent 8 }}
+      {{- end }}
+      {{- if .Values.metalOperatorRemote.seedValues }}
+      seedValues:
+        {{- toYaml .Values.metalOperatorRemote.seedValues | nindent 8 }}
+      {{- end }}
+      {{- if .Values.metalOperatorRemote.shootValues }}
+      shootValues:
+        {{- toYaml .Values.metalOperatorRemote.shootValues | nindent 8 }}
+      {{- end }}
+  {{- if .Values.metalOperatorRemote.transformations }}
+  transformations:
+    {{- toYaml .Values.metalOperatorRemote.transformations | nindent 4 }}
+  {{- end }}
+{{- end }}

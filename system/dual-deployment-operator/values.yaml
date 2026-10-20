@@ -34,3 +34,25 @@ controller:
     # values file. NEVER flip the owner to false (resource-policy: keep orphans the CRD).
     enabled: true
     keep: true
+
+# ---------------------------------------------------------------------------
+# DualDeploymentOperator CR instances — one block per managed remote operator.
+# Each is disabled by default; enable + configure per-cluster via kube-secrets
+# values overlays (values/helm/<type>/<region>/<cluster>/dual-deployment-operator.yaml).
+# ---------------------------------------------------------------------------
+
+# metal-operator-remote: manages metal-operator seed+shoot deployment via DDO.
+metalOperatorRemote:
+  enabled: false
+  shootNamespace: ""         # required when enabled — kube-system for metal-operator
+  source:
+    repo: ""                 # required — oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    name: ""                 # required — metal-operator-remote-ddo
+    version: ""              # required — must match the published chart version
+  values: {}
+  seedValues: {}
+  shootValues: {}
+  shootAccess:
+    secretName: dual-deployment-operator-shoot-access
+    server: ""               # required — https://<shoot-apiserver>
+  transformations: []
