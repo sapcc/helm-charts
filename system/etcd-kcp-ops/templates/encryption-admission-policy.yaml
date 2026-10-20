@@ -1,0 +1,44 @@
+{{- if .Values.encryptionRotation.enabled }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: protect-etcd-encryption-secret
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: encryption-rotation
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["secrets"]
+        operations: ["DELETE"]
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - {{ .Values.encryptionRotation.capiNamespace | quote }}
+  matchConditions:
+    - name: is-encryption-secret
+      expression: |
+        object.metadata.name == {{ .Values.encryptionRotation.secretName | quote }}
+  validations:
+    - expression: |
+        object.metadata.?labels['etcd.encryption/allow-delete'].orValue('') == 'true'
+      messageExpression: |
+        'Deletion of ' + object.metadata.name + ' blocked. This Secret holds the only copy of the active etcd encryption key. Label with etcd.encryption/allow-delete=true to delete deliberately.'
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: protect-etcd-encryption-secret
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: encryption-rotation
+spec:
+  policyName: protect-etcd-encryption-secret
+  validationActions:
+    - Deny
+{{- end }}
