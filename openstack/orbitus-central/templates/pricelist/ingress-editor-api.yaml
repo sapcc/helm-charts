@@ -1,0 +1,31 @@
+{{- $deployment_name := .Values.orbitus.deployment_name | required "missing value for .Values.orbitus.deployment_name" -}}
+{{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: pricelist-editor-api
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+
+spec:
+  tls:
+    - secretName: pricelist-editor-api
+      hosts: [ orbitus-pricelist-editor-{{ $deployment_name }}.global.{{ $tld }} ]
+  rules:
+    - host: orbitus-pricelist-editor-{{ $deployment_name }}.global.{{ $tld }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pricelist-editor-api
+                port:
+                  number: 80
