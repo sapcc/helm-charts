@@ -24,6 +24,14 @@ metrics:
 webhookInjector:
   repository: "keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector"
   tag: latest
+  metrics:
+    # Enable Prometheus scraping of the webhook-injector sidecar (port 8082).
+    # Requires the monitoring.coreos.com/v1 API to be present in the cluster.
+    enabled: true
+    # Enable the PrometheusRule resource with the rotation-stuck alert.
+    alertsEnabled: true
+    # support_group label attached to all alerts.
+    alertSupportGroup: containers
 # Reuses the webhook-injector ServiceAccount (see webhook-injector-rbac.yaml) so the manager pod needs no dedicated RBAC of its own.
 serviceAccount:
   name: metal-operator-webhook-injector
