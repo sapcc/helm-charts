@@ -1,0 +1,33 @@
+{{- if and .Values.webhookInjector.metrics.enabled .Values.webhookInjector.metrics.alertsEnabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "chart.fullname" . }}-webhook-injector
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    plugin: kube-monitoring
+    type: alerting-rules
+spec:
+  groups:
+    - name: metal-operator-remote.webhook-injector.alerts
+      rules:
+        - alert: MetalOperatorRemoteWebhookInjectorCertRotationStuck
+          expr: |
+            rate(controller_runtime_reconcile_total{controller="configmap", result="requeue_after", job="metal-operator-webhook-injector"}[5m]) > 0.05
+            or
+            rate(controller_runtime_reconcile_total{controller="configmap", result="error", job="metal-operator-webhook-injector"}[5m]) > 0
+          for: 15m
+          labels:
+            severity: warning
+            support_group: {{ .Values.webhookInjector.metrics.alertSupportGroup }}
+            service: metal-operator-remote
+          annotations:
+            summary: metal-operator-remote webhook-injector cert rotation is stuck
+            description: >-
+              The metal-operator-remote webhook-injector has been reconciling at an abnormally high rate
+              or returning errors for >15 minutes without a clean pass (pod: {{ `{{ $labels.pod }}` }}).
+              This may indicate the cert rotation state machine is stuck — commonly caused by a
+              missing RBAC rule preventing the controller from reading CRDs on the shoot cluster,
+              or by a transient shoot apiserver outage.
+              Check pod logs and the rotation-phase annotation on the cert Secret.
+{{- end }}

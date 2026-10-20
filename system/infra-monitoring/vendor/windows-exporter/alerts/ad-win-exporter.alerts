@@ -32,20 +32,6 @@ groups:
       description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
       summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
 
-  - alert: ADWinServiceDownInfo
-    expr: count(windows_service_state{state!="running", job="win-exporter-ad", name!~"aatpsensor|rscdsvc"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
-    for: 1h
-    labels:
-      severity: info
-      tier: ad
-      service: windows-exporter
-      context: "{{ $labels.server_name }}"
-      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
-      no_alert_on_absence: "true"
-    annotations:
-      description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
-      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
-
   - alert: ADWinAATPServiceDownInfo
     expr: count(windows_service_state{state!="running", job="win-exporter-ad", name="aatpsensor"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
     for: 2h
@@ -74,7 +60,7 @@ groups:
       summary: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}"
 
   - alert: ADTooManyProcesses
-    expr: count(windows_os_processes{job="win-exporter-ad"} > 200) by (server_name) 
+    expr: sum(windows_system_processes{job="win-exporter-ad"}) by (server_name) > 200
     for: 30m
     labels:
       severity: warning
@@ -101,7 +87,7 @@ groups:
       summary: "High CPU Load on node {{ $labels.server_name }}"
 
   - alert: ADHighMemUsage
-    expr: count((100 - (100 * windows_os_physical_memory_free_bytes{job="win-exporter-ad"} / windows_cs_physical_memory_bytes{job="win-exporter-ad"})) > 80) by (server_name)
+    expr: count((100 - (100 * windows_memory_physical_free_bytes{job="win-exporter-ad"} / windows_memory_physical_total_bytes{job="win-exporter-ad"})) > 80) by (server_name)
     for: 30m
     labels:
       severity: info

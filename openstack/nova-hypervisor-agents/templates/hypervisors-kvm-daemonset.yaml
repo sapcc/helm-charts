@@ -365,6 +365,10 @@ spec:
                 path: rootwrap.conf
               - key: compute.filters
                 path: rootwrap.conf.d/compute.filters
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
           - configMap:
               name: {{ .Release.Name }}-compute
               items:
@@ -386,10 +390,6 @@ spec:
                 path: nova.conf.d/cell.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
-              {{- if .Values.osprofiler.enabled }}
-              - key: osprofiler.conf
-                path: nova.conf.d/osprofiler.conf
-              {{- end }}
       - name: bin
         configMap:
           name: {{ .Release.Name }}-bin
