@@ -1,5 +1,5 @@
 {{- define "pricelist_image" -}}
-  {{- if contains "DEFINED" $.Values.pricelist.image_tag -}}
+  {{- if not $.Values.pricelist.image_tag -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
     {{ $.Values.global.registry }}/orbitus:{{ $.Values.pricelist.image_tag }}
@@ -7,7 +7,7 @@
 {{- end -}}
 
 {{- define "pricelist_data_image" -}}
-  {{- if contains "DEFINED" $.Values.pricelist.pricelist_data_image_tag -}}
+  {{- if not $.Values.pricelist.pricelist_data_image_tag -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
     {{ $.Values.global.registry }}/orbitus-pricelist-data:{{ $.Values.pricelist.pricelist_data_image_tag }}
@@ -48,12 +48,10 @@
 - name: pricelist-loader
   image: {{ include "pricelist_data_image" . }}
   imagePullPolicy: IfNotPresent
-  command: [ /bin/sh ]
+  command: [ /bin/cp ]
   args:
-    - '-c'
-    - |
-      set -euo pipefail
-      cp /pricelist/{{ .Values.global.region }}/pricelist.json.gz /pricelist-out/pricelist.json.gz
+    - /pricelist/{{ .Values.global.region }}/pricelist.json.gz
+    - /pricelist-out/pricelist.json.gz
   volumeMounts:
     - mountPath: /pricelist-out
       name: pricelist-data
