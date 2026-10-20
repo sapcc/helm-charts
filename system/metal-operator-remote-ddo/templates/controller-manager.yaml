@@ -1,0 +1,107 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-operator-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: controller-manager
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+    kubectl.kubernetes.io/default-container: manager
+spec:
+  replicas: {{ .Values.controllerManager.replicas }}
+  strategy:
+    type: {{ .Values.controllerManager.strategy.type | quote }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        {{- include "chart.labels" . | nindent 8 }}
+        {{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}
+        {{- range $key, $value := .Values.controllerManager.pod.labels }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      initContainers:
+      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}
+      containers:
+      - name: manager
+        command:
+        - /manager
+        args:
+        {{- range .Values.controllerManager.manager.args }}
+        - {{ . | quote }}
+        {{- end }}
+        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag }}
+        {{- if .Values.controllerManager.manager.env }}
+        env:
+        {{- range $key, $value := .Values.controllerManager.manager.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        livenessProbe:
+          {{- toYaml .Values.controllerManager.manager.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.controllerManager.manager.readinessProbe | nindent 10 }}
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        resources:
+          {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
+        securityContext:
+          {{- toYaml .Values.controllerManager.manager.securityContext | nindent 10 }}
+        volumeMounts:
+        - mountPath: /etc/macdb/
+          name: macdb
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        - name: remote-serviceaccount
+          mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+          readOnly: true
+        - name: remote-kubeconfig
+          mountPath: /var/run/remote-kubeconfig
+          readOnly: true
+        {{- if .Values.dnsRecordTemplate.enabled }}
+        - mountPath: /etc/metal-operator/dns
+          name: dns-record-template
+        {{- end }}
+      securityContext:
+        {{- toYaml .Values.controllerManager.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
+      hostNetwork: {{ .Values.controllerManager.hostNetwork }}
+      terminationGracePeriodSeconds: {{ .Values.controllerManager.terminationGracePeriodSeconds }}
+      volumes:
+      - name: macdb
+        secret:
+          secretName: macdb
+      - name: webhook-certs
+        emptyDir: {}
+      - name: remote-serviceaccount
+        secret:
+          secretName: metal-operator-remote-kubeconfig
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
+      - name: remote-kubeconfig
+        configMap:
+          name: remote-kubeconfig
+      {{- if .Values.dnsRecordTemplate.enabled }}
+      - name: dns-record-template
+        configMap:
+          name: dns-record-template
+      {{- end }}
+{{- end }}
