@@ -1,0 +1,62 @@
+{{/*
+DualDeploymentOperator CR instances — one CR per enabled entry in .Values.dualDeploymentOperatorCRs.
+
+Each key becomes the CR's metadata.name. Disabled by default; enable and configure
+per-cluster via kube-secrets values overlays.
+
+Example values structure:
+  dualDeploymentOperatorCRs:
+    metal-operator-remote:
+      enabled: true
+      shootNamespace: kube-system
+      shootAccess:
+        server: https://api.<shoot>...
+      source:
+        repo: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+        name: metal-operator-remote-ddo
+        version: "0.1.1"
+      values: {}
+      seedValues: {}
+      shootValues: {}
+      transformations: []
+*/}}
+{{- range $name, $cr := .Values.dualDeploymentOperatorCRs }}
+{{- if $cr.enabled }}
+---
+apiVersion: dual-deployment-operator.cc.sap/v1alpha1
+kind: DualDeploymentOperator
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  applyOrder: {{ $cr.applyOrder | default "SeedFirst" }}
+
+  shootNamespace: {{ required (printf "dualDeploymentOperatorCRs.%s.shootNamespace is required" $name) $cr.shootNamespace | quote }}
+
+  shootAccess:
+    secretName: {{ $cr.shootAccess.secretName | default "dual-deployment-operator-shoot-access" | quote }}
+    server: {{ required (printf "dualDeploymentOperatorCRs.%s.shootAccess.server is required" $name) $cr.shootAccess.server | quote }}
+
+  source:
+    helm:
+      repo: {{ required (printf "dualDeploymentOperatorCRs.%s.source.repo is required" $name) $cr.source.repo | quote }}
+      name: {{ required (printf "dualDeploymentOperatorCRs.%s.source.name is required" $name) $cr.source.name | quote }}
+      version: {{ required (printf "dualDeploymentOperatorCRs.%s.source.version is required" $name) $cr.source.version | quote }}
+      {{- if $cr.values }}
+      values:
+        {{- toYaml $cr.values | nindent 8 }}
+      {{- end }}
+      {{- if $cr.seedValues }}
+      seedValues:
+        {{- toYaml $cr.seedValues | nindent 8 }}
+      {{- end }}
+      {{- if $cr.shootValues }}
+      shootValues:
+        {{- toYaml $cr.shootValues | nindent 8 }}
+      {{- end }}
+  {{- if $cr.transformations }}
+  transformations:
+    {{- toYaml $cr.transformations | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

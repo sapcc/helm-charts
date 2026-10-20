@@ -36,23 +36,26 @@ controller:
     keep: true
 
 # ---------------------------------------------------------------------------
-# DualDeploymentOperator CR instances — one block per managed remote operator.
-# Each is disabled by default; enable + configure per-cluster via kube-secrets
-# values overlays (values/helm/<type>/<region>/<cluster>/dual-deployment-operator.yaml).
+# DualDeploymentOperator CR instances.
+# Each key becomes the CR's metadata.name. Disabled by default; enable and
+# configure per-cluster via kube-secrets values overlays.
+#
+# Example entry:
+#   dualDeploymentOperatorCRs:
+#     metal-operator-remote:
+#       enabled: true
+#       shootNamespace: kube-system
+#       applyOrder: SeedFirst          # optional, default SeedFirst
+#       shootAccess:
+#         secretName: dual-deployment-operator-shoot-access   # optional, this is the default
+#         server: https://api.<shoot-apiserver>
+#       source:
+#         repo: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+#         name: metal-operator-remote-ddo
+#         version: "0.1.1"
+#       values: {}
+#       seedValues: {}
+#       shootValues: {}
+#       transformations: []
 # ---------------------------------------------------------------------------
-
-# metal-operator-remote: manages metal-operator seed+shoot deployment via DDO.
-metalOperatorRemote:
-  enabled: false
-  shootNamespace: ""         # required when enabled — kube-system for metal-operator
-  source:
-    repo: ""                 # required — oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    name: ""                 # required — metal-operator-remote-ddo
-    version: ""              # required — must match the published chart version
-  values: {}
-  seedValues: {}
-  shootValues: {}
-  shootAccess:
-    secretName: dual-deployment-operator-shoot-access
-    server: ""               # required — https://<shoot-apiserver>
-  transformations: []
+dualDeploymentOperatorCRs: {}
