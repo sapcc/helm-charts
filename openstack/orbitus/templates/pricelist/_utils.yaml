@@ -25,21 +25,6 @@
   value: /etc/pricelist/policy.json
 {{- end -}}
 
-
-{{- define "pricelist_db_envvars" }}
-- name: ORBITUS_DB_USERNAME
-  value: 'pricelist'
-- name: ORBITUS_DB_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: '{{ $.Release.Name }}-pguser-pricelist'
-      key: 'postgres-password'
-- name: ORBITUS_DB_HOSTNAME
-  value: "orbitus-postgresql.{{ .Release.Namespace }}.svc"
-- name: ORBITUS_DB_CONNECTION_OPTIONS
-  value: "sslmode=disable"
-{{- end -}}
-
 {{/*
   The pricelist init container copies the region-specific pricelist out of the data image into the shared
   emptyDir. The main container reads from: /pricelist-data/pricelist.json.gz
