@@ -109,6 +109,10 @@ promrole:
   - "ronly"
   - "ronly2"
 {{- end }}
+  backend_roles:
+{{- range .Values.global.ldap.opensearch_dashboard_groups }}
+  - {{ . }}
+{{- end }}
 
 readall:
   reserved: false
