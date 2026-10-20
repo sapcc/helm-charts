@@ -18,7 +18,7 @@
 - name: PRICELIST_DRYRUN
   value: {{ quote $.Values.pricelist.dryrun }}
 - name: PRICELIST_REGIONS
-  value: {{ quote $.Values.global.regions }}
+  value: {{ quote $.Values.orbitus.regions }}
 - name: PRICELIST_CONFIG_PATH
   value: /pricelist-data
 - name: ORBITUS_OSLO_POLICY_PATH
@@ -38,7 +38,7 @@
     - '-c'
     - |
       set -euo pipefail
-      cp /pricelist/{{ .Values.global.region_name }}/pricelist.json.gz /pricelist-out/pricelist.json.gz
+      cp /pricelist/{{ .Values.orbitus.deployment_name }}/pricelist.json.gz /pricelist-out/pricelist.json.gz
   volumeMounts:
     - mountPath: /pricelist-out
       name: pricelist-data
