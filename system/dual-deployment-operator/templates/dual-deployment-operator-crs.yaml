@@ -67,15 +67,22 @@ spec:
       version: {{ required (printf "dualDeploymentOperatorCRs.%s.source.version is required" $name) (($cr.source).version) | quote }}
       {{- if $cr.values }}
       {{- /*
-           Region substitution: macdb vault paths are secrets/<region>/ironic/... — region
-           varies per shoot. The shared defaults carry the path with a ${REGION} token;
-           here we replace it with the merged instance's global.region so the per-cluster
-           overlay only needs to set global.region (not repeat the macdb list).
+           Token substitution in the rendered values block. Shared defaults carry
+           ${REGION} and ${CLUSTERTYPE} tokens so per-cluster overlays don't repeat
+           region/clusterType-derived strings (macdb vault paths, DNS zone, registry-url):
+             ${REGION}      -> values.global.region
+             ${CLUSTERTYPE} -> values.global.clusterType
+           Lists still replace wholesale on merge — but with these tokens the args list
+           and macdb list can live entirely in the shared defaults.
       */}}
       {{- $region := (($cr.values).global).region | default "" }}
+      {{- $clusterType := (($cr.values).global).clusterType | default "" }}
       {{- $renderedValues := toYaml $cr.values }}
       {{- if $region }}
       {{- $renderedValues = $renderedValues | replace "${REGION}" $region }}
+      {{- end }}
+      {{- if $clusterType }}
+      {{- $renderedValues = $renderedValues | replace "${CLUSTERTYPE}" $clusterType }}
       {{- end }}
       values:
         {{- $renderedValues | nindent 8 }}
