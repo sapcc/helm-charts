@@ -1,7 +1,7 @@
 {{/*
-Render the EncryptionConfiguration YAML.
-Expects a dict with keys: keyName, keySecret, resources (list of strings),
-and provider (string).
+Render the EncryptionConfiguration YAML for a single encryption key.
+Expects a dict with keys: keyName, keySecret, resources (list of strings).
+The aescbc provider is intentionally fixed (not configurable).
 */}}
 {{- define "cc-runtime-cluster.encryptionConfig" -}}
 apiVersion: apiserver.config.k8s.io/v1
@@ -12,7 +12,7 @@ resources:
       - {{ . }}
 {{- end }}
     providers:
-      - {{ .provider }}:
+      - aescbc:
           keys:
             - name: {{ .keyName }}
               secret: {{ .keySecret }}
