@@ -1,27 +1,48 @@
 {{/*
 DualDeploymentOperator CR instances — one CR per enabled entry in .Values.dualDeploymentOperatorCRs.
 
-Each key becomes the CR's metadata.name. Disabled by default; enable and configure
-per-cluster via kube-secrets values overlays.
+Each key becomes the CR's metadata.name.
 
-Example values structure:
-  dualDeploymentOperatorCRs:
+DEFAULTS MERGE: for each instance <name>, the chart deep-merges
+.Values.dualDeploymentOperatorCRDefaults.<name> (shared, operator-wide defaults —
+repo/name, shootNamespace, macdb prefixes, seed/shootValues, transformations, common
+args/images) UNDER the per-instance .Values.dualDeploymentOperatorCRs.<name> (per-cluster
+overrides — server, version, apiserver host, registry-url, LB IP, region). The instance
+values win on conflict (mergeOverwrite right-hand precedence).
+
+This lets per-cluster kube-secrets overlays specify ONLY what differs per shoot, with the
+bulk of the (identical) config living once in the shared defaults.
+
+NOTE on lists: deep-merge replaces lists wholesale (it does not merge element-by-element).
+So macdb.macPrefixes / args / transformations defined in defaults are used as-is UNLESS an
+instance supplies its own full list, which then replaces the default list.
+
+Example:
+  dualDeploymentOperatorCRDefaults:
     metal-operator-remote:
-      enabled: true
       shootNamespace: kube-system
-      shootAccess:
-        server: https://api.<shoot>...
+      applyOrder: SeedFirst
       source:
         repo: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
         name: metal-operator-remote-ddo
-        version: "0.1.1"
-      values: {}
-      seedValues: {}
-      shootValues: {}
-      transformations: []
+      values: {...}          # macdb, probe images, most args, dnsRecordTemplate
+      seedValues: {...}
+      shootValues: {...}
+      transformations: [...]
+  dualDeploymentOperatorCRs:
+    metal-operator-remote:
+      enabled: true
+      source: {version: "0.1.1"}
+      shootAccess: {server: https://api.m-qa-de-200...}
+      values:
+        global: {region: qa-de-1, clusterType: garden2}
+        virtualGardenLBIP: 10.246.83.235
+        controllerManager: {manager: {env: {KUBERNETES_SERVICE_HOST: ...}}}
 */}}
-{{- range $name, $cr := .Values.dualDeploymentOperatorCRs }}
-{{- if $cr.enabled }}
+{{- range $name, $instance := .Values.dualDeploymentOperatorCRs }}
+{{- if $instance.enabled }}
+{{- $defaults := get $.Values.dualDeploymentOperatorCRDefaults $name | default dict }}
+{{- $cr := mergeOverwrite (deepCopy $defaults) (deepCopy $instance) }}
 ---
 apiVersion: dual-deployment-operator.cc.sap/v1alpha1
 kind: DualDeploymentOperator
@@ -31,17 +52,17 @@ metadata:
 spec:
   applyOrder: {{ $cr.applyOrder | default "SeedFirst" }}
 
-  shootNamespace: {{ required (printf "dualDeploymentOperatorCRs.%s.shootNamespace is required" $name) $cr.shootNamespace | quote }}
+  shootNamespace: {{ required (printf "dualDeploymentOperatorCRs.%s.shootNamespace is required (set in defaults or instance)" $name) $cr.shootNamespace | quote }}
 
   shootAccess:
-    secretName: {{ $cr.shootAccess.secretName | default "dual-deployment-operator-shoot-access" | quote }}
-    server: {{ required (printf "dualDeploymentOperatorCRs.%s.shootAccess.server is required" $name) $cr.shootAccess.server | quote }}
+    secretName: {{ (($cr.shootAccess).secretName) | default "dual-deployment-operator-shoot-access" | quote }}
+    server: {{ required (printf "dualDeploymentOperatorCRs.%s.shootAccess.server is required" $name) (($cr.shootAccess).server) | quote }}
 
   source:
     helm:
-      repo: {{ required (printf "dualDeploymentOperatorCRs.%s.source.repo is required" $name) $cr.source.repo | quote }}
-      name: {{ required (printf "dualDeploymentOperatorCRs.%s.source.name is required" $name) $cr.source.name | quote }}
-      version: {{ required (printf "dualDeploymentOperatorCRs.%s.source.version is required" $name) $cr.source.version | quote }}
+      repo: {{ required (printf "dualDeploymentOperatorCRs.%s.source.repo is required (set in defaults or instance)" $name) (($cr.source).repo) | quote }}
+      name: {{ required (printf "dualDeploymentOperatorCRs.%s.source.name is required (set in defaults or instance)" $name) (($cr.source).name) | quote }}
+      version: {{ required (printf "dualDeploymentOperatorCRs.%s.source.version is required" $name) (($cr.source).version) | quote }}
       {{- if $cr.values }}
       values:
         {{- toYaml $cr.values | nindent 8 }}
