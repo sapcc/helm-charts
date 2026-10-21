@@ -64,8 +64,19 @@ spec:
       name: {{ required (printf "dualDeploymentOperatorCRs.%s.source.name is required (set in defaults or instance)" $name) (($cr.source).name) | quote }}
       version: {{ required (printf "dualDeploymentOperatorCRs.%s.source.version is required" $name) (($cr.source).version) | quote }}
       {{- if $cr.values }}
+      {{- /*
+           Region substitution: macdb vault paths are secrets/<region>/ironic/... — region
+           varies per shoot. The shared defaults carry the path with a ${REGION} token;
+           here we replace it with the merged instance's global.region so the per-cluster
+           overlay only needs to set global.region (not repeat the macdb list).
+      */}}
+      {{- $region := (($cr.values).global).region | default "" }}
+      {{- $renderedValues := toYaml $cr.values }}
+      {{- if $region }}
+      {{- $renderedValues = $renderedValues | replace "${REGION}" $region }}
+      {{- end }}
       values:
-        {{- toYaml $cr.values | nindent 8 }}
+        {{- $renderedValues | nindent 8 }}
       {{- end }}
       {{- if $cr.seedValues }}
       seedValues:
