@@ -7,6 +7,10 @@ imageVersion: "1931.0.0-test"
 
 cpShoots:
   test:
+    tier: gold
+    backup:
+      provider: aws
+      region: eu-central-1
     networking:
       nodes: "12.34.56.78/16"
       pods: "12.34.56.78/16"
@@ -26,3 +30,26 @@ cpShoots:
     auditing:
       enabled: true
       url: "https://auditing.test.svc.cluster.local"
+  override:
+    name: custom-override
+    tier: bronze
+    altRegion: test
+    backup:
+      provider: openstack
+    networking:
+      nodes: "12.34.56.78/16"
+      pods: "12.34.56.78/16"
+      services: "12.34.56.78/16"
+      externalServices:
+        - cidr: 12.34.56.78/16
+      asNumber: 12345
+      nodeNetworks:
+      - 12.34.56.78/16
+      bgpPeers:
+      - peerIP: 12.34.56.78
+        nodeSelector: foo == "bar"
+    workers:
+      override-a:
+        poolSize: 1
+    auditing:
+      enabled: false
