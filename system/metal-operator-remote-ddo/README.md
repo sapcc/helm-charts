@@ -3,6 +3,15 @@
 > **Status: IMPLEMENTED.** Chart files are present. The design notes below are retained
 > for context. See `examples/` for an annotated `DualDeploymentOperator` CR.
 
+> **Role: OPERAND chart.** This chart is what the `dual-deployment-operator` pulls from
+> keppel and renders **twice** (`mode=seed` / `mode=shoot`). It contains only
+> metal-operator workload templates — it does **not** contain a `DualDeploymentOperator`
+> CR. The CR that instructs the operator to render this chart is owned by the
+> `system/dual-deployment-operator` controller chart (`dualDeploymentOperatorCRs` values)
+> and delivered via the `dual-deployment-operator` release in `cc/kube-secrets`. Keeping
+> the CR out of this chart avoids a circular reference (the operator would otherwise render
+> a chart that contains a CR pointing back at itself).
+
 ---
 
 ## Subchart vendoring model
