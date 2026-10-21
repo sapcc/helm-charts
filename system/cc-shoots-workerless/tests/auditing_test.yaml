@@ -1,0 +1,119 @@
+suite: auditing
+templates:
+  - shoot-workerless.yaml
+values:
+  - ../ci/test-values.yaml
+
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior
+  #############################################################################
+
+  - it: should render one Shoot per cluster entry
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Shoot
+
+  #############################################################################
+  # AUDITING DISABLED (default)
+  #############################################################################
+
+  - it: should not render auditConfig when auditing is disabled
+    set:
+      auditing.enabled: false
+    asserts:
+      - notExists:
+          path: spec.kubernetes.kubeAPIServer.auditConfig
+
+  - it: should not render extensions when auditing is disabled
+    set:
+      auditing.enabled: false
+    asserts:
+      - notExists:
+          path: spec.extensions
+
+  - it: should not render resources when auditing is disabled
+    set:
+      auditing.enabled: false
+    asserts:
+      - notExists:
+          path: spec.resources
+
+  #############################################################################
+  # AUDITING ENABLED
+  #############################################################################
+
+  - it: should wire auditConfig.auditPolicy.configMapRef when auditing is enabled
+    asserts:
+      - equal:
+          path: spec.kubernetes.kubeAPIServer.auditConfig.auditPolicy.configMapRef.name
+          value: audit-policy-cp-test
+
+  - it: should wire auditing extension when auditing is enabled
+    asserts:
+      - equal:
+          path: spec.extensions[0].type
+          value: auditing
+
+  - it: should set auditing extension url
+    asserts:
+      - equal:
+          path: spec.extensions[0].providerConfig.backends[0].http.url
+          value: "https://auditing.test.svc.cluster.local"
+
+  - it: should set auditing extension mTLS secret reference
+    asserts:
+      - equal:
+          path: spec.extensions[0].providerConfig.backends[0].http.tls.secretReferenceName
+          value: auditing-mtls-test
+
+  - it: should wire mTLS secret resource reference
+    asserts:
+      - equal:
+          path: spec.resources[0].name
+          value: auditing-mtls-test
+      - equal:
+          path: spec.resources[0].resourceRef.apiVersion
+          value: v1
+      - equal:
+          path: spec.resources[0].resourceRef.kind
+          value: Secret
+      - equal:
+          path: spec.resources[0].resourceRef.name
+          value: auditing-mtls-test
+
+  - it: should set extension providerConfig apiVersion and kind
+    asserts:
+      - equal:
+          path: spec.extensions[0].providerConfig.apiVersion
+          value: auditing.extensions.gardener.cloud/v1alpha1
+      - equal:
+          path: spec.extensions[0].providerConfig.kind
+          value: AuditConfiguration
+
+  #############################################################################
+  # REQUIRED GUARD FAILURES
+  #############################################################################
+
+  - it: should fail when auditPolicyConfigMapName is missing
+    set:
+      auditing.auditPolicyConfigMapName: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "auditing.auditPolicyConfigMapName is required"
+
+  - it: should fail when url is missing
+    set:
+      auditing.url: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "auditing.url is required"
+
+  - it: should fail when mtlsSecretName is missing
+    set:
+      auditing.mtlsSecretName: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "auditing.mtlsSecretName is required"
