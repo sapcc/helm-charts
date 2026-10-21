@@ -11,7 +11,8 @@
 {{- range $target := .targets }}
 {{- $_ := set $targetPasswordKeys $target.password_key true }}
 {{- end }}
-{{- range $key, $val := .root.Values.passwords }}
+{{- range $key, $val := .root.Values.passwords -}}
+{{/* This loop includes the specific target-side password for this job, and also all passwords that are relevant on the source side (because we don't have a good way yet to filter for just the ones that this job needs). */}}
 {{- if or (eq $key $.targetCfg.password_key) (not (hasKey $targetPasswordKeys $key)) }}
 {{- if contains "DEFINED" $val }}
   {{ required "This release should be installed by the deployment pipeline!" "" }}
