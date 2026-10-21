@@ -143,6 +143,15 @@ spec:
         mayWriteHostPathVolumes: [ /dev/net/tun ]
       {{- end }}
 
+      - matchNamespace: garden
+        matchRepository: gardener-releases/gardener-project/releases/gardener/tune2fs
+        justification: |
+          The vali StatefulSet (seed logging) runs an "init-large-dir" init
+          container that uses tune2fs to enable the large_dir ext4 feature on
+          its persistent volume, which requires privileged access to the block
+          device.
+        mayBePrivileged: true
+
       ##########################################################################
       # Rules for kube-monitoring
 
