@@ -35,135 +35,32 @@ controller:
     enabled: true
     keep: true
 
+
 # ---------------------------------------------------------------------------
-# DualDeploymentOperator CR instances.
+# DualDeploymentOperator CR instances (operator-agnostic machinery).
 #
-# Two maps, both keyed by CR name (= CR metadata.name):
-#   dualDeploymentOperatorCRDefaults.<name>  — shared, operator-wide defaults (this file).
-#   dualDeploymentOperatorCRs.<name>         — per-cluster enable + overrides (kube-secrets).
+# This chart is operator-agnostic: it only knows HOW to render a DualDeploymentOperator
+# CR from two maps, both keyed by CR name (= CR metadata.name):
+#   dualDeploymentOperatorCRDefaults.<name>  — shared defaults for that CR (operator-specific
+#                                              content lives in kube-secrets base overlays,
+#                                              NOT in this chart).
+#   dualDeploymentOperatorCRs.<name>         — per-cluster enable + overrides.
 #
-# For each enabled instance the template deep-merges defaults UNDER the instance
-# (instance wins). Per-cluster overlays therefore specify ONLY what differs per shoot:
-# typically source.version, shootAccess.server, the apiserver host, --registry-url,
-# virtualGardenLBIP, and global.region/clusterType.
+# For each instance with `enabled: true`, the template deep-merges defaults UNDER the
+# instance (instance wins). A CR renders ONLY when its instance sets `enabled: true`.
 #
-# Lists (macdb.macPrefixes, args, transformations) are replaced wholesale on merge,
-# not merged element-by-element — override the whole list in the instance if needed.
+# Region templating: any `${REGION}` token in a CR's `values` is replaced with that
+# instance's `values.global.region` at render time (lists replace wholesale on merge).
+#
+# Both maps are EMPTY here on purpose — this chart ships no operator-specific defaults.
+# kube-secrets supplies them via layered base files, e.g.:
+#   values/helm/admin-k3s/dual-deployment-operator.yaml  (dualDeploymentOperatorCRDefaults.<op>)
+#   values/helm/<type>/<region>/<cluster>/dual-deployment-operator.yaml  (dualDeploymentOperatorCRs.<op>)
 # ---------------------------------------------------------------------------
 
-# Shared defaults per operator. These are the fields identical across all shoots of a
-# given operator. Having them here means a per-cluster overlay only sets the diff.
-dualDeploymentOperatorCRDefaults:
-  metal-operator-remote:
-    shootNamespace: kube-system          # load-bearing — metal-operator SA lives in kube-system
-    applyOrder: SeedFirst
-    shootAccess:
-      secretName: dual-deployment-operator-shoot-access
-    source:
-      repo: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-      name: metal-operator-remote-ddo
-      # version is per-cluster (pinned in the instance overlay)
-    values:
-      global:
-        tld: cloud.sap
-        linkerd_enabled: false
-        linkerd_requested: false
-      controllerManager:
-        manager:
-          image:
-            repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-operator-controller-manager
-            tag: sha-23966a7
-          env:
-            KUBERNETES_CLUSTER_DOMAIN: cluster.local
-            KUBECONFIG: /var/run/remote-kubeconfig/kubeconfig
-          args:
-            - --mac-prefixes-file=/etc/macdb/macdb.yaml
-            - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.6.0
-            - --probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux-sci:2150.6.0-baremetal-capi-amd64-2150-6-0-297ce257
-            - --manager-namespace=metal-servers
-            - --dns-record-template-path=/etc/metal-operator/dns/bmc_dns.yaml
-            - --insecure=false
-            - --enforce-first-boot
-            - --enforce-power-off
-            # NOTE: --registry-url is per-cluster — set it in the instance overlay args.
-      dnsRecordTemplate:
-        enabled: true
-        zone: cc.${REGION}.cloud.sap
-      macdb:
-        macPrefixes:
-          - macPrefix: c4cbe1b1
-            manufacturer: Dell
-            protocol: Redfish
-            port: 443
-            type: bmc
-            defaultCredentials:
-              - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
-                password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
-          - macPrefix: d08e79
-            manufacturer: Dell
-            protocol: Redfish
-            port: 443
-            type: bmc
-            defaultCredentials:
-              - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
-                password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
-          - macPrefix: 0894ef
-            manufacturer: Lenovo
-            protocol: Redfish
-            port: 443
-            type: bmc
-            defaultCredentials:
-              - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
-                password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
-          - macPrefix: 5ced8c
-            manufacturer: HPE
-            protocol: Redfish
-            port: 443
-            type: bmc
-            defaultCredentials:
-              - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
-                password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
-    seedValues:
-      metal-operator-core:
-        controllerManager: {enable: false}
-        crd:               {enable: false}
-        rbac:              {enable: false}
-        webhook:           {enable: false}
-        certmanager:       {enable: false}
-        networkPolicy:     {enable: false}
-        metrics:           {enable: false}
-        prometheus:        {enable: false}
-    shootValues:
-      metal-operator-core:
-        controllerManager: {enable: false}
-        crd:               {enable: true}
-        rbac:              {enable: true}
-        webhook:           {enable: true}
-        certmanager:       {enable: false}
-        networkPolicy:     {enable: false}
-        metrics:           {enable: false}
-        prometheus:        {enable: false}
-    transformations:
-      - rewriteWebhookURL:
-          urlPrefix: https://metal-operator-remote-webhook-service:443
-      - patch:
-          target:
-            kind: ValidatingWebhookConfiguration
-          strategicMerge:
-            metadata:
-              labels:
-                dual-deployment-operator.cc.sap/webhook-injector: metal-operator
+# Shared defaults per CR. Empty here — populated by kube-secrets base overlays.
+dualDeploymentOperatorCRDefaults: {}
 
-# Per-cluster enable + overrides. Empty by default — populated by kube-secrets overlays.
-# A CR renders ONLY when its instance sets `enabled: true` (default false). Keeping this
-# empty here guarantees a bare chart install deploys the controller but NO CR instances.
-#
-#   dualDeploymentOperatorCRs:
-#     metal-operator-remote:
-#       enabled: true                # required to opt in — default false
-#       source: { version: "0.1.3" }
-#       shootAccess: { server: https://api.<shoot>... }
-#       values:
-#         global: { region: <region>, clusterType: <type> }
-#         ...per-cluster overrides...
+# Per-cluster enable + overrides. Empty here — populated by kube-secrets overlays.
+# A CR renders ONLY when its instance sets `enabled: true` (default false).
 dualDeploymentOperatorCRs: {}
