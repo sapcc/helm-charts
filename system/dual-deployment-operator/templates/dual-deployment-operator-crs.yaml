@@ -40,7 +40,9 @@ Example:
         controllerManager: {manager: {env: {KUBERNETES_SERVICE_HOST: ...}}}
 */}}
 {{- range $name, $instance := .Values.dualDeploymentOperatorCRs }}
-{{- if $instance.enabled }}
+{{- /* Fail-safe: a CR renders ONLY when its instance explicitly sets enabled: true.
+       Missing/nil enabled defaults to false — no CR is emitted. */}}
+{{- if $instance.enabled | default false }}
 {{- $defaults := get $.Values.dualDeploymentOperatorCRDefaults $name | default dict }}
 {{- $cr := mergeOverwrite (deepCopy $defaults) (deepCopy $instance) }}
 ---
