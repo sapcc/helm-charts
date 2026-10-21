@@ -211,4 +211,7 @@ trusted_dashboard = https://localhost:4001/verify-auth-token
 trusted_dashboard = http://127.0.0.1:4001/verify-auth-token
 trusted_dashboard = https://127.0.0.1:4001/verify-auth-token
 {{- end }}
+{{- range .Values.federation.additional_trusted_dashboards }}
+trusted_dashboard = {{ . }}
+{{- end }}
 {{- end }}
