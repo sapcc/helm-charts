@@ -1,0 +1,15 @@
+{{- if .Values.labelMap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metal-onboarding-operator-label-map
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metal-onboarding-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  label-map.yaml: |
+    {{- range $k, $v := .Values.labelMap }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+{{- end }}

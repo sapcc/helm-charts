@@ -6,16 +6,6 @@ image:
   repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sap-cloud-infrastructure/metal-onboarding-operator
   tag: "latest"
 
-# remoteAPIServer is the m-cluster kube-apiserver address (host:port).
-# Gardener injects the token/CA into the metal-onboarding-operator-remote-kubeconfig Secret via token-requestor.
-remoteAPIServer: ""
-
-# managedResourceNamespace is the namespace where ManagedResource and Secret objects for
-# Gardener-managed CRDs are created. Must be a shoot control plane namespace (e.g.
-# shoot--cp--m-qa-de-100) so Gardener's ResourceManager reconciles them to the m-cluster.
-# Leave empty to fall back to the Helm release namespace.
-managedResourceNamespace: ""
-
 # config values are rendered into a ConfigMap; string flags passed as --flag=val args to the manager
 config:
   netboxURL: ""
@@ -23,7 +13,9 @@ config:
   clusterName: ""
   leaderElect: "true"
 
-# Name/key of the Kubernetes Secret containing the NetBox API token
+# Name/key of the Kubernetes Secret containing the NetBox API token.
+# Optional: NetBox read access is unauthenticated, so leave name empty unless
+# your instance requires auth.
 netbox:
   tokenSecret:
     name: ""
