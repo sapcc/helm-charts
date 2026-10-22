@@ -14,7 +14,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud AlertManager {{`{{ $labels.name }}`}} is down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/prometheus/alertmanager_alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"

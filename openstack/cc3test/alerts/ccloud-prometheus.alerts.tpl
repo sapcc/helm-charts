@@ -14,7 +14,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -39,7 +38,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -61,7 +59,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is down on k-master"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -81,7 +78,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Prometheus {{`{{ $labels.name }}`}} is flapping"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/prometheus/alerts/cc3test-alert-datapath"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -99,7 +95,6 @@ groups:
       service: prometheus
       context: prometheus-sso
       meta: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 15 days"
-      dashboard: cc3test-certificate-status?var-service=prometheus
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service=prometheus"
     annotations:
       description: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 15 days"
@@ -115,7 +110,6 @@ groups:
       service: prometheus
       context: prometheus-sso
       meta: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 30 days"
-      dashboard: cc3test-certificate-status?var-service=prometheus
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service=prometheus"
     annotations:
       description: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 30 days"
