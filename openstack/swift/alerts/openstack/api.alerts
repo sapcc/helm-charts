@@ -410,22 +410,23 @@ groups:
         and check `swift-account-info quarantined-account`."
       summary: "{{ $value }} quarantined accounts on node {{ $labels.storage_ip }}"
 
-    - alert: OpenstackSwiftMemcachedCurrentConnections
-      expr: |
-            (
-              memcached_current_connections{ccloud_service="swift", namespace="swift"}
-              / on(ccloud_service, region, pod)
-              memcached_max_connections{ccloud_service="swift", namespace="swift"}
-            ) * 100 >= 70
-      for: 5m
-      labels:
-        context: memcachedconnections
-        service: swift
-        severity: warning
-        support_group: storage
-        tier: os
-      annotations:
-        description: "description: "Using {{ $value | humanize }}% of max 
-        {{ with query (printf "memcached_max_connections{ccloud_service=\"%s\", region=\"%s\, pod=\"%s\"}" 
-        $labels.ccloud_service $labels.region $labels.pod) }}{{ . | first | value | humanize }}{{ end }} connections"
-        summary: "Swift memcached current connection utilization above 70% on {{ $labels.pod }}"
+  - alert: OpenstackSwiftMemcachedCurrentConnections
+    expr: |
+      (
+        memcached_current_connections{ccloud_service="swift", namespace="swift"}
+        / on(ccloud_service, region, pod)
+        memcached_max_connections{ccloud_service="swift", namespace="swift"}
+      ) * 100 >= 70
+    for: 5m
+    labels:
+      context: memcachedconnections
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+    annotations:
+      description: >-
+        Using {{ $value | humanize }}% of max
+        {{ with query (printf "memcached_max_connections{ccloud_service=\"%s\", region=\"%s\", pod=\"%s\"}"
+        $labels.ccloud_service $labels.region $labels.pod) }}{{ . | first | value | humanize }}{{ end }} connections
+      summary: "Swift memcached current connection utilization above 70% on {{ $labels.pod }}"
