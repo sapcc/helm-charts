@@ -34,3 +34,33 @@ controller:
     # values file. NEVER flip the owner to false (resource-policy: keep orphans the CRD).
     enabled: true
     keep: true
+
+
+# ---------------------------------------------------------------------------
+# DualDeploymentOperator CR instances (operator-agnostic machinery).
+#
+# This chart is operator-agnostic: it only knows HOW to render a DualDeploymentOperator
+# CR from two maps, both keyed by CR name (= CR metadata.name):
+#   dualDeploymentOperatorCRDefaults.<name>  — shared defaults for that CR (operator-specific
+#                                              content lives in kube-secrets base overlays,
+#                                              NOT in this chart).
+#   dualDeploymentOperatorCRs.<name>         — per-cluster enable + overrides.
+#
+# For each instance with `enabled: true`, the template deep-merges defaults UNDER the
+# instance (instance wins). A CR renders ONLY when its instance sets `enabled: true`.
+#
+# Region templating: any `${REGION}` token in a CR's `values` is replaced with that
+# instance's `values.global.region` at render time (lists replace wholesale on merge).
+#
+# Both maps are EMPTY here on purpose — this chart ships no operator-specific defaults.
+# kube-secrets supplies them via layered base files, e.g.:
+#   values/helm/admin-k3s/dual-deployment-operator.yaml  (dualDeploymentOperatorCRDefaults.<op>)
+#   values/helm/<type>/<region>/<cluster>/dual-deployment-operator.yaml  (dualDeploymentOperatorCRs.<op>)
+# ---------------------------------------------------------------------------
+
+# Shared defaults per CR. Empty here — populated by kube-secrets base overlays.
+dualDeploymentOperatorCRDefaults: {}
+
+# Per-cluster enable + overrides. Empty here — populated by kube-secrets overlays.
+# A CR renders ONLY when its instance sets `enabled: true` (default false).
+dualDeploymentOperatorCRs: {}
