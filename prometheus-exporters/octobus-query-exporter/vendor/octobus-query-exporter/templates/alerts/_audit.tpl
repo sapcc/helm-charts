@@ -21,7 +21,6 @@ spec:
             service: "logs"
             support_group: "observability"
             meta: "Audit events have no source set"
-            dashboard: audit-log-shipping
             persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-source-for-event-missing'
           annotations:
@@ -35,7 +34,6 @@ spec:
             service: "logs"
             support_group: "observability"
             meta: "Audit events send to deadletter index"
-            dashboard: audit-log-shipping
             persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-in-deadletter-index'
           annotations:
@@ -56,7 +54,6 @@ spec:
             service: "logs"
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
-            dashboard: audit-log-shipping
             persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-missing'
           annotations:
@@ -79,7 +76,6 @@ spec:
             service: "logs"
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
-            dashboard: audit-log-shipping
             persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-missing'
           annotations:
