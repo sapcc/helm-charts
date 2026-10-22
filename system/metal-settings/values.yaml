@@ -128,7 +128,7 @@ labelKeys:
   serverName: "kubernetes.metal.cloud.sap/name"
 
 # apiVersion used for the generated BIOSSettingsSet/BMCSettingsSet/
-# BIOSVersionSet/BMCVersionSet resources.
+# BIOSVersionSet/BMCVersionSet resources, plus feature flags gated by those apiVersions.
 #
 # metal-operator (single-group project) serves these kinds under
 # "metal.ironcore.dev/v1alpha1". metal-maintenance-operator (multigroup
@@ -137,11 +137,36 @@ labelKeys:
 # "baseboard.metal.ironcore.dev/v1alpha1" for BMCSettingsSet/BMCVersionSet.
 # Override per-cluster to test migrating from metal-operator to
 # metal-maintenance-operator.
-apiVersions:
-  biosSettingsSet: "metal.ironcore.dev/v1alpha1"
-  bmcSettingsSet: "metal.ironcore.dev/v1alpha1"
-  biosVersionSet: "metal.ironcore.dev/v1alpha1"
-  bmcVersionSet: "metal.ironcore.dev/v1alpha1"
+#
+# Every model under `machines:` is configured via its `chain:` map (see the `machines:` section
+# below) — there is no separate bios:/bmc: block anymore. CRDVersionControl.features.
+# readinessGates.enabled (opt-in, disabled by default) only changes HOW a model's chain steps are
+# rendered, not where their data comes from:
+# - When false (default): each chain step is rendered as an independent resource (today's
+#   behavior/names), with no readinessGates/completionConditionType fields — safe to use with the
+#   plain metal-operator apiVersions.
+# - When true: each model's chain steps are rendered as an ORDERED sequence of
+#   BMCSettingsSet/BMCVersionSet/BIOSVersionSet/BIOSSettingsSet resources. Each step only starts
+#   once the previous step's completionConditionType has been patched (status: True) onto the
+#   related Server(s) — mirroring the readiness-gate pattern used by metal-maintenance-operator's
+#   e2e chain test.
+#
+# PRECONDITION: CRDVersionControl.features.readinessGates.enabled requires
+# CRDVersionControl.apiVersions.* above to point at metal-maintenance-operator's groups
+# ("baseboard.metal.ironcore.dev/v1alpha1" for BMCSettingsSet/BMCVersionSet,
+# "system.metal.ironcore.dev/v1alpha1" for BIOSSettingsSet/BIOSVersionSet) — the plain
+# metal-operator group ("metal.ironcore.dev/v1alpha1") has no readinessGates/
+# completionConditionType fields at all. The chart fails fast (via `fail`) if this precondition
+# isn't met.
+CRDVersionControl:
+  apiVersions:
+    biosSettingsSet: "metal.ironcore.dev/v1alpha1"
+    bmcSettingsSet: "metal.ironcore.dev/v1alpha1"
+    biosVersionSet: "metal.ironcore.dev/v1alpha1"
+    bmcVersionSet: "metal.ironcore.dev/v1alpha1"
+  features:
+    readinessGates:
+      enabled: false
 
 # Cluster-specific values injected into the metal-bmc-settings ConfigMap.
 # These are region/cluster-level overrides consumed by BMCSettings variables at reconcile time.
@@ -157,48 +182,53 @@ clusterConfig:
 
   managedNamespace: "metal-servers" # Namespace where BMCSettingsSets related resources are deployed
 
-# Machine inventory: Hardware configurations for all supported servers
+# Machine inventory: Hardware configurations for all supported servers.
 #
-# SETTINGS FILE ORGANIZATION:
-# BIOS Settings Files (bios_settings/):
-#   - Dell: Most models use "dell-default.yaml" (shared by 10+ models)
-#     Exception: poweredge-r7615 uses "dell-r7615.yaml" (special PXE settings)
-#   - HPE: Most use "hpe-dl380-gen11.yaml"
-#     Exception: proliant-dl560-gen11 has TWO files:
-#       * hpe-dl560-gen11-kvm.yaml (for cc-kvm-compute with AdvancedEcc)
-#       * hpe-dl560-gen11-sci.yaml (for sci-k8s-* with FastFaultTolerantADDDC)
-#   - Lenovo: Each model series has its own file (sr650.yaml, sr850-v3.yaml, etc.)
+# Settings files live in bios_settings/ and bmc_settings/ (bundled with the chart); many models
+# share a vendor-default file, while some use a model-specific file for special settings — see
+# each model's settingsFileName below for the file actually in use.
 #
-# BMC Settings Files (bmc_settings/):
-#   - Dell: "dell-idrac.yaml" (shared by all Dell models)
-#   - HPE: "hpe-ilo.yaml" (shared by all HPE models)
-#   - Lenovo: "lenovo-xcc.yaml" (shared by all Lenovo models)
+# settingsFileName vs settingsContent: settingsFileName references a bundled file (shared, stable
+# settings); settingsContent is an inline YAML string (region/node-specific overrides, e.g. via
+# kube-secrets). If both are set, settingsContent wins. Use YAML anchors (&name/*name) to avoid
+# duplicating inline content across values files.
 #
-# SETTINGS CONTENT SOURCES (settingsFileName vs settingsContent):
-#   - settingsFileName: References a file in bios_settings/ or bmc_settings/ bundled with the chart.
-#                      Used for shared, stable settings across all regions.
-#   - settingsContent: Inline YAML string provided via values (e.g., in kube-secrets overrides).
-#                      Used for region-specific or node-specific settings overrides.
-#                      When both are present, settingsContent takes precedence.
-#                      Use YAML anchors (&name) to define content once and reference (*name) multiple times
-#                      to avoid duplication in region-specific values files.
+# Map keys: use the hardware model name as the key (e.g., poweredge-r640). For models needing
+# multiple entries (different clusterTypes/settings), use a descriptive suffix as the key (e.g.,
+# proliant-dl560-gen11-kvm) and set model: explicitly so the hardware label in selectors stays
+# correct.
 #
-# Map keys: use the hardware model name as the key (e.g., poweredge-r640).
-# For models that need multiple entries (different clusterTypes/settings), use a descriptive
-# suffix as the key (e.g., proliant-dl560-gen11-kvm) and set model: explicitly inside the
-# entry so the hardware label in selectors stays correct.
+# Each model is configured entirely through `chain:` — a map of stepName -> {kind, order, params}.
+# "order" (integer) is required: map iteration in Go templates is key-sorted, not
+# insertion-ordered, so it's the only way to guarantee steps render/chain in the right sequence.
+# Standard steps (use these 4 names/orders; omit a step if the model has no data for it, e.g. a
+# model with no BIOS settings file just omits bios-settings):
+#   bmc-settings  (order 1, kind: BMCSettingsSet)  - rendered once per clusterType
+#   bmc-version   (order 2, kind: BMCVersionSet)   - rendered once per model
+#   bios-version  (order 3, kind: BIOSVersionSet)  - rendered once per model
+#   bios-settings (order 4, kind: BIOSSettingsSet) - rendered once per clusterType
+# Each step's params:
+#   - version (required): firmware/settings version string
+#   - settingsFileName (Settings kinds): references a file in bios_settings/ or bmc_settings/
+#   - settingsContent (Settings kinds, optional): inline YAML string, wins over settingsFileName
+#   - imageURI (Version kinds, required): firmware image URL
+#   - serverFilter: { included: [], excluded: [] }   # empty included = all servers; excluded wins
+#   - setMetadataName: <string>                       # optional explicit CRD metadata.name
+#     For Settings kinds (bmc-settings/bios-settings, rendered once per clusterType), the final
+#     name is "<setMetadataName>-<clusterType>"; for Version kinds (bmc-version/bios-version,
+#     rendered once per model), setMetadataName is used verbatim. It may contain {{ }} template
+#     expressions, resolved via Helm's tpl against the root context - e.g.:
+#       setMetadataName: "abc-123"                                 -> abc-123(-<clusterType>)
+#       setMetadataName: "abc-{{ .Values.clusterConfig.region }}"  -> abc-<region>(-<clusterType>)
+#     Dot notation breaks on hyphenated map keys (model/step names), use "index" instead, e.g. to
+#     embed this model's bmc-settings step order number:
+#       setMetadataName: >-
+#         abc-{{ index .Values.machines.dell.models "poweredge-r640" "chain" "bmc-settings" "order" }}
+#   - readinessGates / completionConditionType: only used when
+#     CRDVersionControl.features.readinessGates.enabled=true (overrides the auto-chained
+#     readinessGates from the previous step / the auto-generated condition name)
 #
-# OPTIONAL PER-ENTRY PARAMS (SEPARATE PER PURPOSE):
-# - BIOS settings: machines.<vendor>.models.<name>.bios.settingsParams
-# - BIOS versions: machines.<vendor>.models.<name>.bios.versionParams
-# - BMC settings:  machines.<vendor>.models.<name>.bmc.settingsParams
-# - BMC versions:  machines.<vendor>.models.<name>.bmc.versionParams
-#
-# Params object supports:
-# - serverFilter:
-#     included: []                   # empty = all servers
-#     excluded: []                   # excluded wins
-# - setMetadataName: <string>        # optional explicit CRD metadata.name
+# See machines.dell.models.poweredge-r640.chain below for a worked example.
 
 machines:
   dell:
@@ -206,176 +236,510 @@ machines:
       poweredge-r640:
         model: poweredge-r640
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.22.2"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r640/BIOS_F8GPH_WN64_2.22.2.EXE"
-          # For BIOS settings, choose ONE of:
-          # 1) settingsFileName: reference a file in bios_settings/ (recommended for shared settings)
-          # 2) settingsContent: inline YAML string (recommended for specific overrides)
-          # Optional params for BIOSSettingsSet of this entry:
-          # settingsParams:
-          #   serverFilter:
-          #     included: [node001-bb001, node002-bb001]
-          #     excluded: []
-          #   setMetadataName: dell-poweredge-r640-cc-kvm-compute
-          # Optional params for BIOSVersionSet of this entry:
-          # versionParams:
-          #   serverFilter:
-          #     included: [node001-bb001, node002-bb001]
-          #     excluded: []
-          #   setMetadataName: dell-poweredge-r640
-        bmc:
-          version: "7.00.00.183"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r640/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
-          # For BMC settings, choose ONE of:
-          # 1) settingsFileName: reference a file in bmc_settings/ (recommended for shared settings)
-          # 2) settingsContent: inline YAML string (recommended for specific overrides)
-          # Optional params for BMCSettingsSet of this entry:
-          # settingsParams:
-          #   serverFilter:
-          #     included: [node001-bb001]
-          #     excluded: []
-          #   setMetadataName: dell-poweredge-r640-custom-settings
-          # Optional params for BMCVersionSet of this entry:
-          # versionParams:
-          #   serverFilter:
-          #     included: []
-          #     excluded: [node003-bb086]
-          #   setMetadataName: dell-poweredge-r640-custom-version
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.00.00.183"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.00.00.183"
+              imagePath: "/hw-firmware/dell/poweredge-r640/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.22.2"
+              imagePath: "/hw-firmware/dell/poweredge-r640/BIOS_F8GPH_WN64_2.22.2.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.22.2"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
+              # Other params available on any step:
+              # settingsContent: <inline YAML string>     # Settings-kind steps only; overrides settingsFileName
+              # serverFilter: { included: [], excluded: [] }
+              # setMetadataName: <string>                 # overrides the auto-generated resource name
 
       poweredge-r660:
         model: poweredge-r660
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.4.4"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r660/BIOS_PJYMD_WN64_2.4.4_02.EXE"
-        bmc:
-          version: "7.20.60.50"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r660/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.20.60.50"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.20.60.50"
+              imagePath: "/hw-firmware/dell/poweredge-r660/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.4.4"
+              imagePath: "/hw-firmware/dell/poweredge-r660/BIOS_PJYMD_WN64_2.4.4_02.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.4.4"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r6715:
         model: poweredge-r6715
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "1.5.3"
-          settingsFileName: dell-r6715.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r6715/BIOS_X09CV_WN64_1.5.3_01.EXE"
-        bmc:
-          version: "1.30.10.50"
-          settingsFileName: dell-r6715.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r6715/iDRAC-with-Lifecycle-Controller_Firmware_YP95X_WN64_1.30.10.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "1.30.10.50"
+              settingsFileName: dell-r6715.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "1.30.10.50"
+              imagePath: "/hw-firmware/dell/poweredge-r6715/iDRAC-with-Lifecycle-Controller_Firmware_YP95X_WN64_1.30.10.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "1.5.3"
+              imagePath: "/hw-firmware/dell/poweredge-r6715/BIOS_X09CV_WN64_1.5.3_01.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "1.5.3"
+              settingsFileName: dell-r6715.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r740:
         model: poweredge-r740
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.22.2"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r740/BIOS_F8GPH_WN64_2.22.2.EXE"
-        bmc:
-          version: "7.00.00.183"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r740/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.00.00.183"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.00.00.183"
+              imagePath: "/hw-firmware/dell/poweredge-r740/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.22.2"
+              imagePath: "/hw-firmware/dell/poweredge-r740/BIOS_F8GPH_WN64_2.22.2.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.22.2"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r740xd:
         model: poweredge-r740xd
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.22.2"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r740xd/BIOS_F8GPH_WN64_2.22.2.EXE"
-        bmc:
-          version: "7.00.00.183"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r740xd/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.00.00.183"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.00.00.183"
+              imagePath: "/hw-firmware/dell/poweredge-r740xd/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.22.2"
+              imagePath: "/hw-firmware/dell/poweredge-r740xd/BIOS_F8GPH_WN64_2.22.2.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.22.2"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r760:
         model: poweredge-r760
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.4.4"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r760/BIOS_PJYMD_WN64_2.4.4_02.EXE"
-        bmc:
-          version: "7.20.60.50"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r760/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.20.60.50"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.20.60.50"
+              imagePath: "/hw-firmware/dell/poweredge-r760/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.4.4"
+              imagePath: "/hw-firmware/dell/poweredge-r760/BIOS_PJYMD_WN64_2.4.4_02.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.4.4"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r7615:
         model: poweredge-r7615
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "1.11.2"
-          settingsFileName: dell-r7615.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r7615/BIOS_5MVJG_WN64_1.11.2.EXE"
-        bmc:
-          version: "7.20.60.50"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r7615/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.20.60.50"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.20.60.50"
+              imagePath: "/hw-firmware/dell/poweredge-r7615/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "1.11.2"
+              imagePath: "/hw-firmware/dell/poweredge-r7615/BIOS_5MVJG_WN64_1.11.2.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "1.11.2"
+              settingsFileName: dell-r7615.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r770:
         model: poweredge-r770
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "1.8.5"
-          settingsFileName: dell-r770.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r770/BIOS_VTF4T_WN64_1.8.5.EXE"
-        bmc:
-          version: "1.30.30.50"
-          settingsFileName: dell-r770.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r770/iDRAC-with-Lifecycle-Controller_Firmware_11F63_WN64_1.30.30.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "1.30.30.50"
+              settingsFileName: dell-r770.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "1.30.30.50"
+              imagePath: "/hw-firmware/dell/poweredge-r770/iDRAC-with-Lifecycle-Controller_Firmware_11F63_WN64_1.30.30.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "1.8.5"
+              imagePath: "/hw-firmware/dell/poweredge-r770/BIOS_VTF4T_WN64_1.8.5.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "1.8.5"
+              settingsFileName: dell-r770.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r7715:
         model: poweredge-r7715
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "1.3.3"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r7715/BIOS_N2K66_WN64_1.3.3_01.EXE"
-        bmc:
-          version: "1.20.60.50"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r7715/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "1.20.60.50"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "1.20.60.50"
+              imagePath: "/hw-firmware/dell/poweredge-r7715/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "1.3.3"
+              imagePath: "/hw-firmware/dell/poweredge-r7715/BIOS_N2K66_WN64_1.3.3_01.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "1.3.3"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r840:
         model: poweredge-r840
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.22.1"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r840/BIOS_5T6CY_WN64_2.22.1.EXE"
-        bmc:
-          version: "7.00.00.183"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r840/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.00.00.183"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.00.00.183"
+              imagePath: "/hw-firmware/dell/poweredge-r840/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.22.1"
+              imagePath: "/hw-firmware/dell/poweredge-r840/BIOS_5T6CY_WN64_2.22.1.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.22.1"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-r860:
         model: poweredge-r860
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.9.4"
-          settingsFileName: dell-r860-kvm.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r860/BIOS_457WM_WN64_2.9.4.EXE"
-        bmc:
-          version: "7.30.10.50"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-r860/iDRAC-with-Lifecycle-Controller_Firmware_924YT_WN64_7.30.10.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.30.10.50"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.30.10.50"
+              imagePath: "/hw-firmware/dell/poweredge-r860/iDRAC-with-Lifecycle-Controller_Firmware_924YT_WN64_7.30.10.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.9.4"
+              imagePath: "/hw-firmware/dell/poweredge-r860/BIOS_457WM_WN64_2.9.4.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.9.4"
+              settingsFileName: dell-r860-kvm.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       poweredge-xe9680:
         model: poweredge-xe9680
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "2.4.4"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-xe9680/BIOS_PJYMD_WN64_2.4.4_02.EXE"
-        bmc:
-          version: "7.20.60.50"
-          settingsFileName: dell-default.yaml
-          imagePath: "/hw-firmware/dell/poweredge-xe9680/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.20.60.50"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "7.20.60.50"
+              imagePath: "/hw-firmware/dell/poweredge-xe9680/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "2.4.4"
+              imagePath: "/hw-firmware/dell/poweredge-xe9680/BIOS_PJYMD_WN64_2.4.4_02.EXE"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.4.4"
+              settingsFileName: dell-default.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
   hpe:
     models:
@@ -383,28 +747,88 @@ machines:
       proliant-dl380-gen11:
         model: proliant-dl380-gen11
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "U54 v2.84 (04/02/2026)"
-          settingsFileName: hpe-dl380-gen11-latest-kvm.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl380-gen11/U54_2.84_04_02_2026.fwpkg"
-        bmc:
-          version: "iLO 6 v1.76"
-          settingsFileName: hpe-default.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl380-gen11/ilo6_176.fwpkg"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "iLO 6 v1.76"
+              settingsFileName: hpe-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "iLO 6 v1.76"
+              imagePath: "/hw-firmware/hpe/proliant-dl380-gen11/ilo6_176.fwpkg"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "U54 v2.84 (04/02/2026)"
+              imagePath: "/hw-firmware/hpe/proliant-dl380-gen11/U54_2.84_04_02_2026.fwpkg"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "U54 v2.84 (04/02/2026)"
+              settingsFileName: hpe-dl380-gen11-latest-kvm.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       # dl560-gen11: cc-kvm-compute uses AdvancedEcc; sci-k8s-* uses FastFaultTolerantADDDC
       # This model has different biosSettings per cluster type
       proliant-dl560-gen11-kvm:
         model: proliant-dl560-gen11 # explicit: map key differs from hardware model label
         clusterTypes: [cc-kvm-compute]
-        bios:
-          version: "U59 v2.84 (04/02/2026)"
-          settingsFileName: hpe-dl560-gen11-latest-kvm.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl560-gen11/U59_2.84_04_02_2026.fwpkg"
-        bmc:
-          version: "iLO 6 v1.76"
-          settingsFileName: hpe-default.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl560-gen11/ilo6_176.fwpkg"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "iLO 6 v1.76"
+              settingsFileName: hpe-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "iLO 6 v1.76"
+              imagePath: "/hw-firmware/hpe/proliant-dl560-gen11/ilo6_176.fwpkg"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "U59 v2.84 (04/02/2026)"
+              imagePath: "/hw-firmware/hpe/proliant-dl560-gen11/U59_2.84_04_02_2026.fwpkg"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "U59 v2.84 (04/02/2026)"
+              settingsFileName: hpe-dl560-gen11-latest-kvm.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       proliant-dl560-gen11-sci:
         model: proliant-dl560-gen11 # explicit: map key differs from hardware model label
@@ -416,159 +840,454 @@ machines:
             sci-k8s-storage,
             cc-ironcore,
           ]
-        bios:
-          # version is kept (required by BIOSSettingsTemplate.version to describe
-          # the BIOS version these settings apply to), but imagePath is intentionally
-          # omitted here: BIOSVersionSet is generated per model (clusterTypes are
-          # ignored for it), so exactly ONE entry per model may define imagePath -
-          # see proliant-dl560-gen11-kvm above, which is the canonical firmware
-          # upgrade target for this model. Defining imagePath here too would render
-          # a second BIOSVersionSet with the same metadata.name
-          # ("hpe-proliant-dl560-gen11"), which the template now rejects with a
-          # hard failure.
-          version: "U59 v2.50 (04/22/2025)"
-          settingsFileName: hpe-dl560-gen11-sci.yaml
-        bmc:
-          # Same reasoning as bios above: version kept for BMCSettingsTemplate,
-          # imagePath omitted to avoid a duplicate BMCVersionSet.
-          version: "iLO 6 v1.68"
-          settingsFileName: hpe-default.yaml
+        # bmc-version/bios-version are intentionally omitted here: those kinds are generated
+        # per model (clusterTypes are ignored for them), so exactly ONE entry per model may
+        # define one - see proliant-dl560-gen11-kvm above, which is the canonical firmware
+        # upgrade target for this model. Defining them here too would render a duplicate
+        # BMCVersionSet/BIOSVersionSet with the same metadata.name, which the template rejects
+        # with a hard failure.
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "iLO 6 v1.68"
+              settingsFileName: hpe-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "U59 v2.50 (04/22/2025)"
+              settingsFileName: hpe-dl560-gen11-sci.yaml
+              # Gates on the -kvm entry's bios-version completion (shared model's canonical
+              # firmware upgrade target), since this entry defines no bios-version step itself.
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
-      # Models with firmware only (no biosSettings)
+      # Models with firmware only (no biosSettings/bmcSettings - no clusterTypes, so
+      # bmc-settings/bios-settings steps are omitted entirely)
       proliant-dl320-gen11:
         model: proliant-dl320-gen11
-        bios:
-          version: "U63 v2.50 (04/22/2025)"
-          imagePath: "/hw-firmware/hpe/proliant-dl320-gen11/U63_2.50_04_22_2025.fwpkg"
-        bmc:
-          version: "iLO 6 v1.68"
-          settingsFileName: hpe-default.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl320-gen11/ilo6_168.fwpkg"
+        chain:
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "iLO 6 v1.68"
+              imagePath: "/hw-firmware/hpe/proliant-dl320-gen11/ilo6_168.fwpkg"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "U63 v2.50 (04/22/2025)"
+              imagePath: "/hw-firmware/hpe/proliant-dl320-gen11/U63_2.50_04_22_2025.fwpkg"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
 
       proliant-dl345-gen11:
         model: proliant-dl345-gen11
-        bios:
-          version: "A56 v2.50 (05/16/2025)"
-          imagePath: "/hw-firmware/hpe/proliant-dl345-gen11/A56_2.50_05_16_2025.fwpkg"
-        bmc:
-          version: "iLO 6 v1.68"
-          settingsFileName: hpe-default.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl345-gen11/ilo6_168.fwpkg"
+        chain:
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "iLO 6 v1.68"
+              imagePath: "/hw-firmware/hpe/proliant-dl345-gen11/ilo6_168.fwpkg"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "A56 v2.50 (05/16/2025)"
+              imagePath: "/hw-firmware/hpe/proliant-dl345-gen11/A56_2.50_05_16_2025.fwpkg"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
 
       proliant-dl360-gen10:
         model: proliant-dl360-gen10
-        bios:
-          version: "U32 v3.50 (04/17/2025)"
-          imagePath: "/hw-firmware/hpe/proliant-dl360-gen10/U32_3.50_04_17_2025.fwpkg"
-        bmc:
-          version: "iLO 5 v3.13"
-          settingsFileName: hpe-default.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl360-gen10/ilo5_313.fwpkg"
+        chain:
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "iLO 5 v3.13"
+              imagePath: "/hw-firmware/hpe/proliant-dl360-gen10/ilo5_313.fwpkg"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "U32 v3.50 (04/17/2025)"
+              imagePath: "/hw-firmware/hpe/proliant-dl360-gen10/U32_3.50_04_17_2025.fwpkg"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
 
       proliant-dl380-gen12:
         model: proliant-dl380-gen12
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "U68 v1.92 (17/09/2026)"
-          settingsFileName: hpe-dl380-gen12.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl380-gen12/U68_1.92_09_17_2026.fwpkg"
-        bmc:
-          version: "1.25.02 Oct 16 2026"
-          settingsFileName: hpe-default.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl380-gen12/ilo7_1.25.02.fwpkg"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "1.25.02 Oct 16 2026"
+              settingsFileName: hpe-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "1.25.02 Oct 16 2026"
+              imagePath: "/hw-firmware/hpe/proliant-dl380-gen12/ilo7_1.25.02.fwpkg"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "U68 v1.92 (17/09/2026)"
+              imagePath: "/hw-firmware/hpe/proliant-dl380-gen12/U68_1.92_09_17_2026.fwpkg"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "U68 v1.92 (17/09/2026)"
+              settingsFileName: hpe-dl380-gen12.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       proliant-dl560-gen10:
         model: proliant-dl560-gen10
-        bios:
-          version: "U34 v3.50 (04/17/2025)"
-          imagePath: "/hw-firmware/hpe/proliant-dl560-gen10/U34_3.50_04_17_2025.fwpkg"
-        bmc:
-          version: "iLO 5 v3.13"
-          settingsFileName: hpe-default.yaml
-          imagePath: "/hw-firmware/hpe/proliant-dl560-gen10/ilo5_313.fwpkg"
+        chain:
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "iLO 5 v3.13"
+              imagePath: "/hw-firmware/hpe/proliant-dl560-gen10/ilo5_313.fwpkg"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "U34 v3.50 (04/17/2025)"
+              imagePath: "/hw-firmware/hpe/proliant-dl560-gen10/U34_3.50_04_17_2025.fwpkg"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
 
   lenovo:
     models:
       thinksystem-sr650:
         model: thinksystem-sr650
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "IVE184H"
-          settingsFileName: lenovo-sr650.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr650/lnvgy_fw_uefi_ive184h-4.13_anyos_32-64.uxz"
-        bmc:
-          version: "CDI3B4E 9.98 2024-07-31"
-          settingsFileName: lenovo-default.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr650/lnvgy_fw_xcc_cdi3b4e-9.98_anyos_noarch.uxz"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "CDI3B4E 9.98 2024-07-31"
+              settingsFileName: lenovo-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "CDI3B4E 9.98 2024-07-31"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr650/lnvgy_fw_xcc_cdi3b4e-9.98_anyos_noarch.uxz"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "IVE184H"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr650/lnvgy_fw_uefi_ive184h-4.13_anyos_32-64.uxz"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "IVE184H"
+              settingsFileName: lenovo-sr650.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       thinksystem-sr650-v3:
         model: thinksystem-sr650-v3
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "ESE130E"
-          settingsFileName: lenovo-sr650-v3.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr650-v3/lnvgy_fw_uefi_ese130e-3.40_anyos_comp.uxz"
-        bmc:
-          version: "ESX338T 6.00 2024-11-15"
-          settingsFileName: lenovo-default.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr650-v3/lnvgy_fw_xcc_esx338t-6.00_anyos_comp.uxz"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "ESX338T 6.00 2024-11-15"
+              settingsFileName: lenovo-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "ESX338T 6.00 2024-11-15"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr650-v3/lnvgy_fw_xcc_esx338t-6.00_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "ESE130E"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr650-v3/lnvgy_fw_uefi_ese130e-3.40_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "ESE130E"
+              settingsFileName: lenovo-sr650-v3.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       thinksystem-sr655-v3:
         model: thinksystem-sr655-v3
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "KAE140F"
-          settingsFileName: lenovo-sr655-v3.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr655-v3/lnvgy_fw_uefi_kae140f-5.70_anyos_comp.uxz"
-        bmc:
-          version: "KAX364U 5.80 2025-09-12"
-          settingsFileName: lenovo-default.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr655-v3/lnvgy_fw_xcc_kax364u-5.80_anyos_comp.uxz"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "KAX364U 5.80 2025-09-12"
+              settingsFileName: lenovo-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "KAX364U 5.80 2025-09-12"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr655-v3/lnvgy_fw_xcc_kax364u-5.80_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "KAE140F"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr655-v3/lnvgy_fw_uefi_kae140f-5.70_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "KAE140F"
+              settingsFileName: lenovo-sr655-v3.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       thinksystem-sr850p:
         model: thinksystem-sr850p
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "TEE186P"
-          settingsFileName: lenovo-sr850p-kvm.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr850p/lnvgy_fw_uefi_tee186p-4.30_anyos_32-64.uxz"
-        bmc:
-          version: "TEI3G4D 6.10 2025-08-08"
-          settingsFileName: lenovo-default.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr850p/lnvgy_fw_xcc_tei3g4d-6.10_anyos_noarch.uxz"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "TEI3G4D 6.10 2025-08-08"
+              settingsFileName: lenovo-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "TEI3G4D 6.10 2025-08-08"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr850p/lnvgy_fw_xcc_tei3g4d-6.10_anyos_noarch.uxz"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "TEE186P"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr850p/lnvgy_fw_uefi_tee186p-4.30_anyos_32-64.uxz"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "TEE186P"
+              settingsFileName: lenovo-sr850p-kvm.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       thinksystem-sr850-v3:
         model: thinksystem-sr850-v3
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "RSE126E"
-          settingsFileName: lenovo-sr850-v3-new.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr850-v3/lnvgy_fw_uefi_rse126e-8.40_anyos_comp.uxz"
-        bmc:
-          version: "RSX330M 7.90 2025-12-22"
-          settingsFileName: lenovo-default.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr850-v3/lnvgy_fw_xcc_rsx330m-7.90_anyos_comp.uxz"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "RSX330M 7.90 2025-12-22"
+              settingsFileName: lenovo-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "RSX330M 7.90 2025-12-22"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr850-v3/lnvgy_fw_xcc_rsx330m-7.90_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "RSE126E"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr850-v3/lnvgy_fw_uefi_rse126e-8.40_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "RSE126E"
+              settingsFileName: lenovo-sr850-v3-new.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       thinksystem-sr950:
         model: thinksystem-sr950
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "PSE150G"
-          settingsFileName: lenovo-sr950.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr950/lnvgy_fw_uefi_pse150g-2.90_anyos_32-64.uxz"
-        bmc:
-          version: "PSI356B 3.20 2024-07-30"
-          settingsFileName: lenovo-default.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr950/lnvgy_fw_xcc_psi356b-3.20_anyos_noarch.uxz"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "PSI356B 3.20 2024-07-30"
+              settingsFileName: lenovo-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "PSI356B 3.20 2024-07-30"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr950/lnvgy_fw_xcc_psi356b-3.20_anyos_noarch.uxz"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "PSE150G"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr950/lnvgy_fw_uefi_pse150g-2.90_anyos_32-64.uxz"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "PSE150G"
+              settingsFileName: lenovo-sr950.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
 
       thinksystem-sr950-v3:
         model: thinksystem-sr950-v3
         clusterTypes: *defaultClusterTypes
-        bios:
-          version: "EBE122G"
-          settingsFileName: lenovo-sr950-v3.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr950-v3/lnvgy_fw_uefi_ebe122g-7.40_anyos_comp.uxz"
-        bmc:
-          version: "EBX326M 6.90 2025-12-22"
-          settingsFileName: lenovo-default.yaml
-          imagePath: "/hw-firmware/lenovo/thinksystem-sr950-v3/lnvgy_fw_xcc_ebx326m-6.90_anyos_comp.uxz"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "EBX326M 6.90 2025-12-22"
+              settingsFileName: lenovo-default.yaml
+              completionConditionType: metal.cloud.sap/step1-bmc-settings-done
+          bmc-version:
+            kind: BMCVersionSet
+            order: 2
+            params:
+              version: "EBX326M 6.90 2025-12-22"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr950-v3/lnvgy_fw_xcc_ebx326m-6.90_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step2-bmc-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step1-bmc-settings-done
+                  requiredStatus: "True"
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "EBE122G"
+              imagePath: "/hw-firmware/lenovo/thinksystem-sr950-v3/lnvgy_fw_uefi_ebe122g-7.40_anyos_comp.uxz"
+              completionConditionType: metal.cloud.sap/step3-bios-version-done
+              readinessGates:
+                - type: metal.cloud.sap/step2-bmc-version-done
+                  requiredStatus: "True"
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "EBE122G"
+              settingsFileName: lenovo-sr950-v3.yaml
+              completionConditionType: metal.cloud.sap/step4-bios-settings-done
+              readinessGates:
+                - type: metal.cloud.sap/step3-bios-version-done
+                  requiredStatus: "True"
+

@@ -1,4 +1,8 @@
 {{- if .Values.bmcVersions.enabled }}
+{{- $gatesEnabled := .Values.CRDVersionControl.features.readinessGates.enabled }}
+{{- if $gatesEnabled }}
+{{- include "metal-settings.requireChainCapableAPI" . }}
+{{- end }}
 {{- $usedNames := dict }}
 {{- $firmwareHost := $.Values.firmwareRepo.hostOverride | default (printf "%s.%s.%s" $.Values.firmwareRepo.host $.Values.global.region $.Values.global.tld) }}
 {{- range $vendor, $vendorConfig := .Values.machines }}
@@ -6,30 +10,72 @@
 
 {{/* Vendor filtering */}}
 {{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcVersions.filters.vendors) }}
-{{- $processedModels := dict }}
 {{- range $entryName, $entry := $vendorConfig.models }}
-{{- if and $entry.bmc (or $entry.bmc.imagePath $entry.bmc.imageURI) }}
+{{- include "metal-settings.rejectLegacyBiosBmcKeys" (dict "vendor" $vendor "entryName" $entryName "entry" $entry) }}
+{{- if $entry.chain }}
 {{- $model := $entry.model }}
-{{- $version := $entry.bmc.version }}
-{{- $modelKey := printf "%s-%s" $model $version }}
-{{- $versionParams := (get $entry.bmc "versionParams") | default dict }}
-{{- $serverFilters := (get $versionParams "serverFilter") | default (dict "included" (list) "excluded" (list)) }}
 
-{{/* Skip if we've already processed this model-version combination */}}
-{{- if not (hasKey $processedModels $modelKey) }}
-{{- $_ := set $processedModels $modelKey true }}
+{{/*
+machines.<vendor>.models.<name>.chain is a map of stepName -> {kind, order, params}. Map
+iteration in Go templates is key-sorted (not insertion order), so steps are re-sorted here by
+their explicit "order" field to guarantee correct sequencing.
+*/}}
+{{- $orderedSteps := dict }}
+{{- range $stepName, $step := $entry.chain }}
+{{- if not $step.kind }}
+{{- fail (printf "metal-settings: chain step %q for machines.%s.models.%s has no kind" $stepName $vendor $entryName) }}
+{{- end }}
+{{- if not $step.order }}
+{{- fail (printf "metal-settings: chain step %q for machines.%s.models.%s has no order" $stepName $vendor $entryName) }}
+{{- end }}
+{{- $orderKey := printf "%04d" (int $step.order) }}
+{{- if hasKey $orderedSteps $orderKey }}
+{{- fail (printf "metal-settings: machines.%s.models.%s has two chain steps with order %d" $vendor $entryName (int $step.order)) }}
+{{- end }}
+{{- $_ := set $orderedSteps $orderKey (dict "stepName" $stepName "kind" $step.kind "params" ($step.params | default dict)) }}
+{{- end }}
 
-{{/* Model and Version filtering */}}
+{{- $stepIndex := 0 }}
+{{- range $orderKey, $s := $orderedSteps }}
+{{- $stepIndex = add $stepIndex 1 }}
+{{- $stepName := $s.stepName }}
+{{- $params := $s.params }}
+{{- if eq $s.kind "BMCVersionSet" }}
+{{- $imageURI := $params.imageURI }}
+{{- $imagePath := $params.imagePath }}
+{{- if not (or $imageURI $imagePath) }}
+{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) is a BMCVersionSet step but defines no params.imageURI or params.imagePath" $stepName $vendor $entryName) }}
+{{- end }}
+{{- $version := $params.version }}
+{{- if not $version }}
+{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) is a BMCVersionSet step but defines no params.version" $stepName $vendor $entryName) }}
+{{- end }}
 {{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcVersions.filters.versions)) }}
-apiVersion: {{ $.Values.apiVersions.bmcVersionSet }}
+{{- if $gatesEnabled }}
+{{- if not $params.completionConditionType }}
+{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $entryName) }}
+{{- end }}
+{{- if and (gt $stepIndex 1) (not $params.readinessGates) }}
+{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $entryName) }}
+{{- end }}
+{{- end }}
+{{- $serverFilters := $params.serverFilter | default (dict "included" (list) "excluded" (list)) }}
+{{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
+{{- if $gatesEnabled }}
+{{- $defaultName = printf "%s-%s-%s" (lower $vendor) (lower $model) $stepName }}
+{{- end }}
+{{/* params.setMetadataName: see values.yaml machines inventory comment block for naming/tpl rules. */}}
+{{- $resourceName := $defaultName }}
+{{- if $params.setMetadataName }}
+{{- $resourceName = tpl $params.setMetadataName $ }}
+{{- end }}
+{{- if hasKey $usedNames $resourceName }}
+{{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (entry %q, model %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $entryName $model) }}
+{{- end }}
+{{- $_ := set $usedNames $resourceName true }}
+apiVersion: {{ $.Values.CRDVersionControl.apiVersions.bmcVersionSet }}
 kind: BMCVersionSet
 metadata:
-  {{- $defaultName := printf "%s-%s" (lower $vendor) (lower $model) }}
-  {{- $resourceName := (get $versionParams "setMetadataName") | default $defaultName }}
-  {{- if hasKey $usedNames $resourceName }}
-  {{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (entry %q, model %q). Two machines.<vendor>.models entries produced the same name with differing bmc.version/imagePath. Only one entry per model should define bmc.version/imagePath, or set a unique bmc.versionParams.setMetadataName on the others." $resourceName $entryName $model) }}
-  {{- end }}
-  {{- $_ := set $usedNames $resourceName true }}
   name: {{ $resourceName }}
 spec:
   bmcSelector:
@@ -43,13 +89,23 @@ spec:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
     image:
-      URI: {{ if $entry.bmc.imageURI }}{{ $entry.bmc.imageURI | quote }}{{ else }}{{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $entry.bmc.imagePath | quote }}{{ end }}
+      URI: {{ if $imageURI }}{{ $imageURI | quote }}{{ else }}{{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $imagePath | quote }}{{ end }}
       transferProtocol: "HTTPS"
 {{- with $.Values.bmcVersions.retryPolicy }}
     retryPolicy:
 {{ toYaml . | indent 6 }}
 {{- end }}
+{{- if $gatesEnabled }}
+{{- if $params.readinessGates }}
+    readinessGates:
+{{ toYaml $params.readinessGates | indent 6 }}
+{{- end }}
+    completionConditionType: {{ $params.completionConditionType }}
+{{- end }}
 ---
+{{- end }}
+{{- else if not (has $s.kind (list "BMCSettingsSet" "BIOSVersionSet" "BIOSSettingsSet")) }}
+{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has unknown kind %q (expected BMCSettingsSet, BMCVersionSet, BIOSVersionSet, or BIOSSettingsSet)" $stepName $vendor $entryName $s.kind) }}
 {{- end }}
 {{- end }}
 {{- end }}
