@@ -11,6 +11,7 @@ groups:
       service:  {{ include "alerts.service" . }}
       context: '{{`{{ $labels.app_kubernetes_io_instance }}`}}'
       dashboard: rabbitmq
+      persesDashboard: 'https://perses.{{`{{ $externalLabels.region }}`}}.cloud.sap/projects/observability/dashboards/rabbitmq'
       meta: '{{`{{ $labels.app_kubernetes_io_instance }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} unacknowledged messages.'
       playbook: 'docs/devops/alert/rabbitmq/'
     annotations:
@@ -27,6 +28,7 @@ groups:
       service: {{ include "alerts.service" . }}
       context: '{{`{{ $labels.app_kubernetes_io_instance }}`}}'
       dashboard: rabbitmq
+      persesDashboard: 'https://perses.{{`{{ $externalLabels.region }}`}}.cloud.sap/projects/observability/dashboards/rabbitmq'
       meta: 'RPC Messages are not being collected. {{`{{ $labels.app_kubernetes_io_instance }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} rpc messages waiting.'
       playbook: 'docs/devops/alert/rabbitmq/'
     annotations:

@@ -12,6 +12,7 @@
       context: availability
       service: {{ include "alerts.service" . }}
       dashboard: rabbitmq
+      persesDashboard: 'https://perses.{{`{{ $externalLabels.region }}`}}.cloud.sap/projects/observability/dashboards/rabbitmq'
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: 'docs/devops/alert/rabbitmq/'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
