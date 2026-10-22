@@ -4,6 +4,7 @@
 {{- include "metal-settings.requireChainCapableAPI" . }}
 {{- end }}
 {{- $usedNames := dict }}
+{{- $firmwareHost := $.Values.firmwareRepo.hostOverride | default (printf "%s.%s.%s" $.Values.firmwareRepo.host $.Values.global.region $.Values.global.tld) }}
 {{- range $vendor, $vendorConfig := .Values.machines }}
 {{- if $vendorConfig }}
 
@@ -41,8 +42,9 @@ their explicit "order" field to guarantee correct sequencing.
 {{- $params := $s.params }}
 {{- if eq $s.kind "BIOSVersionSet" }}
 {{- $imageURI := $params.imageURI }}
-{{- if not $imageURI }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) is a BIOSVersionSet step but defines no params.imageURI" $stepName $vendor $entryName) }}
+{{- $imagePath := $params.imagePath }}
+{{- if not (or $imageURI $imagePath) }}
+{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) is a BIOSVersionSet step but defines no params.imageURI or params.imagePath" $stepName $vendor $entryName) }}
 {{- end }}
 {{- $version := $params.version }}
 {{- if not $version }}
@@ -87,7 +89,7 @@ spec:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
     image:
-      URI: {{ $imageURI | quote }}
+      URI: {{ if $imageURI }}{{ $imageURI | quote }}{{ else }}{{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $imagePath | quote }}{{ end }}
       transferProtocol: "HTTPS"
 {{- with $.Values.biosVersions.retryPolicy }}
     retryPolicy:

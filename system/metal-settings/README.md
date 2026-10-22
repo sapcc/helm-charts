@@ -167,6 +167,9 @@ All vendor/model data lives under `machines:` in `values.yaml`. This single sour
 machines:
   <vendor>:                        # dell | hpe | lenovo
     models:
+machines:
+  <vendor>:                        # dell | hpe | lenovo
+    models:
       <entryName>:                 # usually the model name; use a descriptive suffix (e.g.
                                     # proliant-dl560-gen11-kvm) when one hardware model needs
                                     # multiple entries — see "Multiple entries per model" below.
@@ -200,7 +203,8 @@ machines:
 | `version` | all | yes | Firmware/settings version string |
 | `settingsFileName` | Settings | one of settingsFileName/settingsContent | File under `bios_settings/` or `bmc_settings/` |
 | `settingsContent` | Settings | — | Inline YAML string; wins over `settingsFileName` |
-| `imageURI` | Version | yes | Firmware image download URL |
+| `imagePath` | Version | one of imagePath/imageURI | Path appended to the composed `firmwareRepo` URL — see [Firmware Repository](#firmware-repository-firmwarerepo) below |
+| `imageURI` | Version | one of imagePath/imageURI | Full firmware image download URL; takes precedence over `imagePath` when both are set (legacy escape hatch) |
 | `serverFilter` | all | no | `{ included: [], excluded: [] }` — narrows the generated resource's selector; empty `included` = all servers, `excluded` wins |
 | `setMetadataName` | all | no | Explicit CRD `metadata.name` override, supports `tpl` — see [setMetadataName](#setmetadataname-custom--dynamic-resource-names) below |
 | `readinessGates` / `completionConditionType` | all | only when `CRDVersionControl.features.readinessGates.enabled=true` | see [CRDVersionControl](#crdversioncontrol--readiness-gate-chaining) below |
@@ -256,6 +260,66 @@ setMetadataName: >-
 ```
 
 Resource names must be unique across the whole chart — a duplicate name (after any `-<clusterType>` suffix) fails the render with an error naming the conflicting entry/model/clusterType.
+
+### Firmware Repository (`firmwareRepo`)
+
+The `firmwareRepo` configuration controls how firmware image URLs are composed for `BIOSVersionSet` and `BMCVersionSet` resources.
+
+**Default behavior:**
+```yaml
+firmwareRepo:
+  scheme: https          # Protocol (https or http)
+  host: repo            # Hostname prefix
+  hostOverride: ""      # Optional: override composed hostname
+```
+
+**URL composition:**
+
+The firmware image URL is built from:
+```
+<scheme>://<host>.<global.region>.<global.tld><imagePath>
+```
+
+**Example:**
+- `firmwareRepo.scheme`: `https`
+- `firmwareRepo.host`: `repo`
+- `global.region`: `eu-de-1`
+- `global.tld`: `cloud.sap`
+- `imagePath`: `/hw-firmware/dell/poweredge-r7615/BIOS_123.EXE`
+
+**Result:** `https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/BIOS_123.EXE`
+
+**Override for special cases:**
+
+If a cluster needs a completely different firmware repository (not just a different region), use `hostOverride`:
+
+```yaml
+firmwareRepo:
+  scheme: http
+  hostOverride: custom-repo.example.com
+```
+
+This bypasses the automatic `host.region.tld` composition.
+
+**Legacy compatibility:**
+
+For backward compatibility, individual chain steps of kind `BIOSVersionSet`/`BMCVersionSet` can still set `params.imageURI` (full URL) instead of `params.imagePath`:
+
+```yaml
+machines:
+  dell:
+    models:
+      poweredge-r7615:
+        chain:
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "1.11.2"
+              imageURI: "https://legacy-repo.example.com/firmware/bios.exe"  # Takes precedence over imagePath
+```
+
+When `imageURI` is set, it is used directly and `firmwareRepo` configuration is ignored for that specific step.
 
 ### Region-Specific Settings Overrides (`settingsContent`)
 
