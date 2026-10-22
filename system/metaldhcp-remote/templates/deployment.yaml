@@ -30,8 +30,24 @@ spec:
     spec:
       serviceAccountName: metaldhcp
       hostNetwork: true
-      {{- if and .Values.tftp.enabled .Values.tftp.ipxeURL }}
       initContainers:
+        - name: network-init
+          image: "{{ .Values.networkInit.image.repository }}:{{ .Values.networkInit.image.tag | default .Chart.AppVersion }}"
+          command: ["/bin/sh", "/scripts/dhcp-init.sh"]
+          env:
+            - name: EXTERNALIP
+              value: {{ .Values.externalIP }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: shared
+              mountPath: /shared
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+        {{- if and .Values.tftp.enabled .Values.tftp.ipxeURL }}
         - name: fetch-ipxe
           image: busybox:1.37
           command:
@@ -42,7 +58,7 @@ spec:
           volumeMounts:
             - name: ipxe-override
               mountPath: /ipxe
-      {{- end }}
+        {{- end }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -149,6 +165,25 @@ spec:
           mountPath: /ipxe
         {{- end }}
       {{- end }}
+      - name: network-lifecycle
+        image: "{{ .Values.networkInit.image.repository }}:{{ .Values.networkInit.image.tag | default .Chart.AppVersion }}"
+        command: ["sleep", "infinity"]
+        env:
+          - name: EXTERNALIP
+            value: {{ .Values.externalIP }}
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+            drop: ["ALL"]
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "/scripts/dhcp-stop.sh"]
+        volumeMounts:
+          - name: scripts
+            mountPath: /scripts
+          - name: shared
+            mountPath: /shared
       {{- if .Values.debug.enabled }}
       - name: debug
         image: {{ .Values.debug.image }}
@@ -180,3 +215,13 @@ spec:
       - name: ipxe-override
         emptyDir: {}
       {{- end }}
+      - configMap:
+          name: metaldhcp-scripts
+          defaultMode: 0755
+        name: scripts
+      - name: shared
+        emptyDir: {}
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+          type: Directory
