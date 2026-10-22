@@ -184,19 +184,19 @@ tests:
     set:
       # Synthesize a generic collision unrelated to proliant-dl560-gen11: alias
       # an arbitrary second entry (poweredge-r660) onto an existing model
-      # (poweredge-r640) with a different bmc.version/imageURI. This proves
+      # (poweredge-r640) with a different bmc-version version/imageURI. This proves
       # the guard is generic and not hardcoded to one known duplicate.
       machines.dell.models.poweredge-r660.model: poweredge-r640
-      machines.dell.models.poweredge-r660.bmc.version: "9.9.9-test"
-      machines.dell.models.poweredge-r660.bmc.imageURI: "https://example.invalid/test.EXE"
+      machines.dell.models.poweredge-r660.chain.bmc-version.params.version: "9.9.9-test"
+      machines.dell.models.poweredge-r660.chain.bmc-version.params.imageURI: "https://example.invalid/test.EXE"
     asserts:
       - failedTemplate:
           errorPattern: "duplicate BMCVersionSet name"
 
-  - it: should not fail when a colliding entry's bmc.imageURI is removed (duplication resolved)
+  - it: should not fail when a colliding entry's bmc-version step is removed (duplication resolved)
     set:
       machines.dell.models.poweredge-r660.model: poweredge-r640
-      machines.dell.models.poweredge-r660.bmc.imageURI: null
+      machines.dell.models.poweredge-r660.chain.bmc-version: null
     asserts:
       - hasDocuments:
           count: 25
