@@ -22,6 +22,7 @@ spec:
             support_group: "observability"
             meta: "Audit events have no source set"
             dashboard: audit-log-shipping
+            persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-source-for-event-missing'
           annotations:
             description: "Audit Logs should have field `sap.cc.audit.source`"
@@ -35,6 +36,7 @@ spec:
             support_group: "observability"
             meta: "Audit events send to deadletter index"
             dashboard: audit-log-shipping
+            persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-in-deadletter-index'
           annotations:
             description: "Audit Logs are not indexed correctly"
@@ -55,6 +57,7 @@ spec:
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
             dashboard: audit-log-shipping
+            persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-missing'
           annotations:
             description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
@@ -77,6 +80,7 @@ spec:
             support_group: "observability"
             meta: "Audit events for {{ .name }} missing"
             dashboard: audit-log-shipping
+            persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-logs-shipping"
             playbook: 'docs/support/playbook/opensearch/octobus/audit-source-missing/#audit-events-missing'
           annotations:
             description: "There have been no logs for {{ .name }} in the last {{ .interval }}"
