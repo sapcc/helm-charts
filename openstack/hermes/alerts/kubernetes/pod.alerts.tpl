@@ -13,7 +13,6 @@ groups:
           service: hermes
           severity: info
           context: cpu
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
         annotations:
@@ -29,7 +28,6 @@ groups:
           tier: os
           service: hermes
           context: memory
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
@@ -46,7 +44,6 @@ groups:
           service: hermes
           severity: warning
           context: memory
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
@@ -64,7 +61,6 @@ groups:
           service: hermes
           severity: critical
           context: pod
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is {{`{{ $labels.reason }}`}}"
           no_alert_on_absence: "true" # metric only exists when a pod is in a waiting state
@@ -82,7 +78,6 @@ groups:
           service: hermes
           severity: info
           context: memory
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
         annotations:
