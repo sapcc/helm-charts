@@ -5,6 +5,7 @@ This file is used to list changes made in each version of the common chart rabbi
 ## 0.26.0 - 2026/10/22
 
 - add `persesDashboard` label to alerts pointing to the Perses `rabbitmq` dashboard (Plutono is being shut down)
+- remove Plutono `dashboard` label from alerts (Plutono `rabbitmq` dashboard was removed)
 - Chart version bumped
 
 ## 0.25.10 - 2026/10/05
