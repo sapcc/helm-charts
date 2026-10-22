@@ -7,11 +7,9 @@ metadata:
   name: {{ printf "%s" $path | replace "/" "-" }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: cc-gardener-backup
-    tier: k8s
-    type: alerting-rules
-    prometheus: {{ $.Values.prometheusRule.prometheus }}
-
+    {{- if $.Values.prometheusRule.labels }}
+    {{ toYaml $.Values.prometheusRule.labels | indent 4 }}
+    {{- end }}
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
