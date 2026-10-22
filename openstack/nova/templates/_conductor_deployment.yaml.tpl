@@ -133,6 +133,10 @@ spec:
                 path: nova-conductor.conf
               - key:  logging.ini
                 path: logging.ini
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
           - secret:
               name: nova-etc
               items:
@@ -144,10 +148,6 @@ spec:
               {{- end }}
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
-              {{- if .Values.osprofiler.enabled }}
-              - key: osprofiler.conf
-                path: nova.conf.d/osprofiler.conf
-              {{- end }}
       {{- if $statsdEnabled }}
       - name: statsd-etc
         projected:

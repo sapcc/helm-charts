@@ -132,6 +132,10 @@ template: |
                   path: policy.yaml
                 - key: logging.ini
                   path: logging.ini
+                {{- if .Values.osprofiler.enabled }}
+                - key: osprofiler.conf
+                  path: nova.conf.d/osprofiler.conf
+                {{- end }}
             - configMap:
                 name: nova-compute-vmware-{= name =}
                 items:
@@ -153,10 +157,6 @@ template: |
                   path: nova.conf.d/{= cell_name =}-secrets.conf
                 - key: keystoneauth-secrets.conf
                   path: nova.conf.d/keystoneauth-secrets.conf
-                {{- if .Values.osprofiler.enabled }}
-                - key: osprofiler.conf
-                  path: nova.conf.d/osprofiler.conf
-                {{- end }}
             - secret:
                 name: nova-compute-vmware-{= name =}
                 items:

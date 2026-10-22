@@ -7,9 +7,15 @@ metadata:
     system: openstack
     type: api
     component: nova
-  {{- if .Values.vpa.set_main_container }}
+  {{- if or .Values.osprofiler.enabled .Values.vpa.set_main_container }}
   annotations:
+    {{- if .Values.osprofiler.enabled }}
+    secret.reloader.stakater.com/reload: "nova-api"
+    deployment.reloader.stakater.com/pause-period: "60s"
+    {{- end }}
+    {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: nova-api
+    {{- end }}
   {{- end }}
 spec:
   replicas: {{ if not .Values.pod.debug.api }}{{ .Values.pod.replicas.api }}{{ else }} 1 {{ end }}
@@ -35,6 +41,7 @@ spec:
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secret-api-hash: {{ include (print .Template.BasePath "/api-secret.yaml") . | sha256sum }}
         secret-etc-hash: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
         {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -155,6 +162,10 @@ spec:
                 path: policy.yaml
               - key:  logging.ini
                 path: logging.ini
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
               - key:  release
                 path: release
               {{- if .Values.api.use_uwsgi }}
@@ -169,6 +180,13 @@ spec:
               - key:  watcher.yaml
                 path: watcher.yaml
               {{- end }}
+          {{- if .Values.osprofiler.enabled }}
+          - secret:
+              name: nova-api
+              items:
+              - key: osprofiler-secrets.conf
+                path: nova.conf.d/osprofiler-secrets.conf
+          {{- end }}
           - secret:
               name: nova-etc
               items:
@@ -183,10 +201,6 @@ spec:
               {{- if .Values.audit.enabled }}
               - key: audit-middleware.conf
                 path: nova.conf.d/audit-middleware.conf
-              {{- end }}
-              {{- if .Values.osprofiler.enabled }}
-              - key: osprofiler.conf
-                path: nova.conf.d/osprofiler.conf
               {{- end }}
       - name: statsd-etc
         projected:

@@ -106,6 +106,10 @@ spec:
                 path: policy.yaml
               - key: logging.ini
                 path: logging.ini
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
           - configMap:
               name: nova-compute-{{$hypervisor.name}}
               items:
@@ -125,10 +129,6 @@ spec:
                 path: nova.conf.d/{{ $cellName }}-secrets.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
-              {{- if .Values.osprofiler.enabled }}
-              - key: osprofiler.conf
-                path: nova.conf.d/osprofiler.conf
-              {{- end }}
       - name: nova-patches
         projected:
           sources:
