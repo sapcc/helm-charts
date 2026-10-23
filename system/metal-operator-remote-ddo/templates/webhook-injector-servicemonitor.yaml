@@ -1,4 +1,4 @@
-{{- if and .Values.webhookInjector.metrics.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+{{- if and .Values.webhookInjector.metrics.enabled (eq .Values.mode "seed") (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -17,7 +17,4 @@ spec:
   endpoints:
     - port: metrics
       interval: 60s
-      relabelings:
-        - targetLabel: job
-          replacement: metal-operator-ddo-webhook-injector
 {{- end }}
