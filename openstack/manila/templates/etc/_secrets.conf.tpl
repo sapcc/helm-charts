@@ -16,6 +16,12 @@ username = {{ printf "%s/%s/manila/keystone-user/dns/username" $vbase $region | 
 password = {{ printf "%s/%s/manila/keystone-user/dns/password" $vbase $region | include "resolve_secret" | replace "$" "$$"}}
 {{- end }}
 
+{{- if .Values.barbican.enabled }}
+[barbican]
+username = {{ printf "%s/%s/manila/keystone-user/barbican/username" $vbase $region | include "resolve_secret" | replace "$" "$$"}}
+password = {{ printf "%s/%s/manila/keystone-user/barbican/password" $vbase $region | include "resolve_secret" | replace "$" "$$"}}
+{{- end }}
+
 [keystone_authtoken]
 username = {{ printf "%s/%s/manila/keystone-user/service/username" $vbase $region | include "resolve_secret" | replace "$" "$$"}}
 password = {{ printf "%s/%s/manila/keystone-user/service/password" $vbase $region | include "resolve_secret" | replace "$" "$$"}}

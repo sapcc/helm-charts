@@ -119,6 +119,21 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 insecure = True
 {{- end }}
 
+{{- if .Values.barbican.enabled }}
+[barbican]
+endpoint_type = {{ .Values.barbican.endpoint_type | default "internalURL" }}
+auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+auth_type = v3password
+auth_version = v3
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+region_name = {{.Values.global.region}}
+
+[key_manager]
+backend = barbican
+{{- end }}
 
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
