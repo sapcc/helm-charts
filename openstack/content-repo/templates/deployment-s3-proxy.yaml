@@ -8,6 +8,9 @@ metadata:
   labels:
     system: openstack
     component: content-repo
+  annotations:
+    # This secret is updated at `helm upgrade` time by Job "issue-ec2-credentials".
+    secret.reloader.stakater.com/reload: s3-proxy-ec2-credentials
 
 spec:
   revisionHistoryLimit: 5
@@ -44,46 +47,9 @@ spec:
           configMap:
             name: s3-proxy
         - name: ec2-creds
-          emptyDir: {}
-      initContainers:
-        - name: issue-ec2-creds
-          {{- if .Values.image_refs.swift_http_import }}
-          image: {{ quote .Values.image_refs.swift_http_import }}
-          {{- else }}
-          image: {{ .Values.global.registry }}/swift-http-import:{{ include "image_version" .Values }}
-          {{- end }}
-          imagePullPolicy: IfNotPresent
-          args: [ '--replace-and-issue-ec2-credentials' ]
-          env:
-            - name: OS_AUTH_URL
-              value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}:5000/v3"
-            - name: OS_INTERFACE
-              value: internal
-            - name: OS_USER_DOMAIN_NAME
-              value: Default
-            - name: OS_USERNAME
-              value: content-repo
-            - name: OS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: swift-http-import
-                  key: s3_auth_password
-            - name: OS_PROJECT_DOMAIN_NAME
-              value: Default
-            - name: OS_PROJECT_NAME
-              value: content-repo-payloads
-            - name: OS_REGION_NAME
-              value: {{ quote .Values.global.region }}
-          securityContext:
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop: [ "ALL" ]
-          volumeMounts:
-            - mountPath: /ec2-creds
-              name: ec2-creds
-          workingDir: /ec2-creds
+          secret:
+            secretName: s3-proxy-ec2-credentials
+            defaultMode: 0444 # read-only
       containers:
         - name: s3-proxy
           image: {{ .Values.global.ghcrIoMirror }}/oxyno-zeta/s3-proxy:{{ .Values.image_version_s3_proxy }}
