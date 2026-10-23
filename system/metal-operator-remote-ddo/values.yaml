@@ -125,18 +125,56 @@ controllerManager:
       networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
 
 # ---------------------------------------------------------------------------
-# macdb — BMC credential placeholders.
-# Values MUST stay as vault+kvv2:// references; secrets-injector resolves them
-# in-cluster on the seed. Do NOT inline real credentials.
-# Set via CR values per cluster, e.g.:
-#   macdb:
-#     macPrefixes:
-#       - macPrefix: "aa:bb:cc"
-#         defaultCredentials:
-#           username: '{{ resolve "vault+kvv2:///secrets/..." }}'
-#           password: '{{ resolve "vault+kvv2:///secrets/..." }}'
+# macdb — BMC credentials (shared, region-generic).
+#
+# These MUST stay as vault+kvv2:// references; the seed secrets-injector resolves
+# them in-cluster when it processes the Secret/macdb this chart emits (mode=seed).
+# NEVER inline real credentials here.
+#
+# Region templating: the ${REGION} token is substituted with .Values.global.region
+# by templates/macdb.yaml (a surgical `replace`, NOT `tpl` — `tpl` would choke on the
+# nested {{ resolve ... }} directive, which is a secrets-injector directive, not a
+# Helm function). The DualDeploymentOperator passes global.region through
+# spec.source.helm.values, so per-cluster CRs only set global.region.
+#
+# The MAC prefixes (BMC vendor OUIs) are identical across all admin-k3s clusters, so
+# the whole block lives here as a chart default. A cluster that genuinely needs a
+# different prefix list can still override macdb wholesale via CR values.
 # ---------------------------------------------------------------------------
-macdb: {}
+macdb:
+  macPrefixes:
+    - macPrefix: c4cbe1b1
+      manufacturer: Dell
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
+    - macPrefix: d08e79
+      manufacturer: Dell
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
+    - macPrefix: 0894ef
+      manufacturer: Lenovo
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
+    - macPrefix: 5ced8c
+      manufacturer: HPE
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
 
 # ---------------------------------------------------------------------------
 # metal-registry Service (seed)

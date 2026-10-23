@@ -11,7 +11,6 @@ groups:
       tier: os
       support_group: observability
       playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
-      dashboard: health-opensearch?var-cluster=opensearch-logs
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-logs"
     annotations:
       description: 'Opensearch-logs cluster 60 % of all data nodes are more than 80 % full.
@@ -28,7 +27,6 @@ groups:
       severity: critical
       tier: os
       playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
-      dashboard: health-opensearch?var-cluster=opensearch-logs
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-logs"
     annotations:
       description: 'opensearch-logs cluster 80 % of all data nodes are more than 80 % full.
@@ -45,7 +43,6 @@ groups:
       support_group: observability
       tier: os
       playbook: 'docs/support/playbook/opensearch/generic/cluster-yellow'
-      dashboard: health-opensearch?var-cluster=opensearch-logs
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-logs"
     annotations:
       description: 'Opensearch cluster *opensearch-logs* is *YELLOW*. Please check all nodes.'
@@ -61,7 +58,6 @@ groups:
       support_group: observability
       tier: os
       playbook: 'docs/support/playbook/opensearch/generic/cluster-red'
-      dashboard: health-opensearch?var-cluster=opensearch-logs
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-logs"
     annotations:
       description: 'Opensearch cluster *opensearch-logs* is *RED*. Please check all nodes.'
@@ -77,7 +73,6 @@ groups:
       support_group: observability
       tier: os
       playbook: 'docs/support/playbook/opensearch/generic/index-too-large'
-      dashboard: health-opensearch?var-cluster=opensearch-logs
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-logs"
     annotations:
       description: "The index {{`{{ $labels.index }}`}} in {{`{{ $labels.namespace }}`}} has exceeded {{ .Values.global.alerts.storage_high_watermark }} GB in size. Please check the rollover status."

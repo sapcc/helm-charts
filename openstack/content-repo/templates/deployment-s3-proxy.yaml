@@ -11,7 +11,7 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
-  replicas: {{ .Values.s3_proxy.replicas | default 2 }}
+  replicas: {{ .Values.s3_proxy.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -26,7 +26,6 @@ spec:
         component: s3-proxy
       annotations:
         checksum/configmap: {{ include "content-repo/templates/configmap-s3-proxy.yaml" . | sha256sum }}
-        checksum/secret: {{ include "content-repo/templates/secret-s3-proxy.yaml" . | sha256sum }}
     spec:
       affinity:
         podAntiAffinity:
@@ -44,22 +43,52 @@ spec:
         - name: config
           configMap:
             name: s3-proxy
+        - name: ec2-creds
+          emptyDir: {}
+      initContainers:
+        - name: issue-ec2-creds
+          {{- if .Values.image_refs.swift_http_import }}
+          image: {{ quote .Values.image_refs.swift_http_import }}
+          {{- else }}
+          image: {{ .Values.global.registry }}/swift-http-import:{{ include "image_version" .Values }}
+          {{- end }}
+          imagePullPolicy: IfNotPresent
+          args: [ '--replace-and-issue-ec2-credentials' ]
+          env:
+            - name: OS_AUTH_URL
+              value: "http://keystone.{{ .Values.global.keystoneNamespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}:5000/v3"
+            - name: OS_INTERFACE
+              value: internal
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_USERNAME
+              value: content-repo
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-http-import
+                  key: s3_auth_password
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: Default
+            - name: OS_PROJECT_NAME
+              value: content-repo-payloads
+            - name: OS_REGION_NAME
+              value: {{ quote .Values.global.region }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ "ALL" ]
+          volumeMounts:
+            - mountPath: /ec2-creds
+              name: ec2-creds
+          workingDir: /ec2-creds
       containers:
         - name: s3-proxy
           image: {{ .Values.global.ghcrIoMirror }}/oxyno-zeta/s3-proxy:{{ .Values.image_version_s3_proxy }}
           imagePullPolicy: IfNotPresent
           args: [ "--config", "/etc/s3-proxy" ]
-          env:
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: s3-proxy
-                  key: access_key
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: s3-proxy
-                  key: secret_key
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -75,6 +104,9 @@ spec:
               containerPort: 9090
               protocol: TCP
           volumeMounts:
+            - mountPath: /etc/ec2-creds
+              name: ec2-creds
+              readOnly: true
             - mountPath: /etc/s3-proxy
               name: config
               readOnly: true

@@ -133,8 +133,8 @@
 "security_service:detail": "rule:context_is_sharedfilesystem_admin"
 "security_service:get_all_security_services": "rule:context_is_cloud_viewer"
 
-"share_server:index": "rule:context_is_cloud_viewer"
-"share_server:show": "rule:context_is_cloud_viewer"
+"share_server:index": "rule:context_is_viewer"
+"share_server:show": "rule:context_is_viewer"
 "share_server:details": "rule:context_is_cloud_viewer"
 "share_server:delete": "rule:context_is_admin"
 "share_server:reset_status": "rule:context_is_admin"

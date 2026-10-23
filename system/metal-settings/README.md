@@ -1,23 +1,23 @@
 # Metal Settings Helm Chart
 
-This Helm chart deploys BIOS settings, BIOS versions, BMC versions, and BMC settings for bare-metal servers managed by the metal-operator.
+This Helm chart deploys BIOS/BMC firmware versions and settings for bare-metal servers managed by metal-operator / metal-maintenance-operator.
 
 ## Overview
 
-The chart generates four types of Kubernetes custom resources:
+Every vendor/model in `values.yaml` is configured through a single `chain:` map — an ordered sequence of steps, each producing one of four Kubernetes custom resources:
 
-| Resource Type | Description | Count |
-|---------------|-------------|-------|
-| `BIOSSettingsSet` | BIOS configuration settings per vendor/model/clusterType/server | 162 |
-| `BIOSVersionSet` | Target BIOS firmware versions per vendor/model/server | 27 |
-| `BMCVersionSet` | Target BMC firmware versions per vendor/model/server | 27 |
-| `BMCSettingsSet` | BMC manager settings per vendor/model/server (disabled by default) | 162 |
+| Kind | Rendered | Purpose |
+|------|----------|---------|
+| `BMCSettingsSet`  | once per `clusterType` | BMC manager settings (disabled by default) |
+| `BMCVersionSet`   | once per model | Target BMC firmware version |
+| `BIOSVersionSet`  | once per model | Target BIOS firmware version |
+| `BIOSSettingsSet` | once per `clusterType` | BIOS configuration settings |
 
-Additionally, when `bmcSettings.enabled` is true, the chart creates:
+Additionally, when `bmcSettings.enabled` is true and the corresponding name is set, the chart creates:
 - A `ConfigMap` (`clusterConfig.configMapName`) holding cluster-level values (e.g. syslog server).
-- A `Secret` (`clusterConfig.hpeLicenseSecretName`) holding the HPE iLO license key (if configured).
+- A `Secret` (`clusterConfig.hpeLicenseSecretName`) holding the HPE iLO license key.
 
-All data (firmware versions, image URIs, model lists) is defined in `values.yaml`. Settings content is stored as flat YAML files under `bios_settings/` and `bmc_settings/`, referenced by filename via `settingsFileName`.
+All data (firmware versions, image URIs, model lists) is defined in `values.yaml`. Settings content is stored as flat YAML files under `bios_settings/` and `bmc_settings/`, referenced by filename via `params.settingsFileName` (or inlined via `params.settingsContent`). See [Machine Inventory](#machine-inventory-machines--the-chain-model) below for the full schema, [CRDVersionControl](#crdversioncontrol--readiness-gate-chaining) for ordered/gated rollouts, and [setMetadataName](#setmetadataname-custom--dynamic-resource-names) for custom/dynamic resource naming.
 
 ## Regional Filtering
 
@@ -43,6 +43,7 @@ clusterConfig:
                                 # Required when bmcSettings.enabled=true and HPE models are used.
   hpeLicenseKey: ""             # HPE iLO license key value stored in the Secret above.
                                 # In production, inject via Vault / SealedSecrets instead of plain values.
+  managedNamespace: "metal-servers"   # Namespace where the ConfigMap/Secret above are deployed
 ```
 
 ### BIOSSettingsSet Configuration
@@ -132,7 +133,7 @@ bmcSettings:
       excluded: []
 ```
 
-When enabled, one `BMCSettingsSet` is generated per vendor/model entry in `machines[].bmc`. Settings content is loaded from `bmc_settings/<settingsFileName>` and rendered via `tpl`, allowing `{{ .Values.clusterConfig.* }}` references inside the files.
+When enabled, one `BMCSettingsSet` is generated per `bmc-settings` chain step (once per `clusterType`). Settings content is loaded from `bmc_settings/<settingsFileName>` and rendered via `tpl`, allowing `{{ .Values.clusterConfig.* }}` references inside the files.
 
 Dynamic per-BMC values (hostname, region, building-block) are resolved at reconcile time via `objectFieldRef` — they are **not** Helm values and require no chart configuration.
 
@@ -158,40 +159,107 @@ clusterConfig:
   hpeLicenseKey: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"  # or inject via Vault
 ```
 
-### Machine Inventory (`machines`)
+### Machine Inventory (`machines`) — the Chain Model
 
-All vendor/model data is defined under `machines:` in `values.yaml`. This single source drives all four resource types — BIOS settings, BIOS versions, BMC versions, and BMC settings. Each entry defines what to deploy for that model.
+All vendor/model data lives under `machines:` in `values.yaml`. This single source drives all four resource kinds. Each model entry is configured entirely through `chain:` — a map of `stepName -> {kind, order, params}`:
 
 ```yaml
 machines:
   <vendor>:                        # dell | hpe | lenovo
     models:
-      - model: <model-name>        # Used as the label selector value and resource name suffix.
-        clusterTypes:              # List of cluster types this model applies to (BIOS only).
-          - cc-kvm-compute         # Use *defaultClusterTypes anchor for the standard set.
-          - sci-k8s-controlplane
-        bios:
-          version: "2.22.2"        # Target BIOS firmware version gate.
-          settingsFileName: dell-default.yaml  # File under bios_settings/ to use for BIOSSettingsSet.
-          imagePath: "/hw-firmware/..."  # Path appended to the composed firmwareRepo URL for BIOSVersionSet.
-        bmc:
-          version: "7.00.00.183"   # Target BMC firmware version gate.
-          settingsFileName: dell-default.yaml  # File under bmc_settings/ to use for BMCSettingsSet.
-          imagePath: "/hw-firmware/..."  # Path appended to the composed firmwareRepo URL for BMCVersionSet.
+machines:
+  <vendor>:                        # dell | hpe | lenovo
+    models:
+      <entryName>:                 # usually the model name; use a descriptive suffix (e.g.
+                                    # proliant-dl560-gen11-kvm) when one hardware model needs
+                                    # multiple entries — see "Multiple entries per model" below.
+        model: <model-name>        # Hardware label value + resource name component. Required
+                                    # even when entryName == model (keeps selectors correct).
+        clusterTypes:               # Only read by Settings kinds (bmc-settings/bios-settings).
+          - cc-kvm-compute          # One resource is generated per clusterType listed here.
+          - sci-k8s-controlplane    # Use *defaultClusterTypes anchor for the standard 6 types.
+        chain:
+          <stepName>:
+            kind: <Kind>            # BMCSettingsSet | BMCVersionSet | BIOSVersionSet | BIOSSettingsSet
+            order: <int>            # Required. Steps are re-sorted by this field (map iteration
+                                     # in Go templates is key-sorted, not insertion-ordered).
+            params:
+              # ... see "Chain step params" table below
 ```
 
-The full image URL is composed at render time from `firmwareRepo.scheme`,
-`firmwareRepo.host` + `global.region` + `global.tld` (or `firmwareRepo.hostOverride`
-if set), and this `imagePath`. See [`firmwareRepo`](#firmware-repository-firmwarerepo) below.
+**Standard step names / orders / kinds** — use these names; omit a step entirely if the model has no data for it (e.g. a model with no BIOS settings file just omits `bios-settings`):
 
-**Key rules:**
-- A model entry with both `bios:` and `bmc:` blocks generates resources for all four types (subject to `enabled` flags and filters).
-- `clusterTypes` only affects `BIOSSettingsSet` — one resource is generated per cluster type. BIOS/BMC version and BMC settings resources are model-scoped (no cluster type dimension).
-- `settingsFileName` references a file in `bios_settings/` or `bmc_settings/` respectively. Multiple models can share the same file.
-- The `*defaultClusterTypes` YAML anchor expands to the standard six cluster types defined at the top of `values.yaml`.
-- `servers` filters are rendered as selector `matchExpressions` on `kubernetes.metal.cloud.sap/name`.
-- `included` uses `operator: In`, `excluded` uses `operator: NotIn`.
-- Unlike vendor/model/version/clusterType filters, `servers` narrows the generated resource selector rather than deciding whether Helm renders the resource at all.
+| stepName | order | kind | Rendered |
+|----------|------:|------|----------|
+| `bmc-settings`  | 1 | `BMCSettingsSet`  | once per `clusterType` |
+| `bmc-version`   | 2 | `BMCVersionSet`   | once per model |
+| `bios-version`  | 3 | `BIOSVersionSet`  | once per model |
+| `bios-settings` | 4 | `BIOSSettingsSet` | once per `clusterType` |
+
+**Chain step `params`:**
+
+| Field | Kinds | Required | Description |
+|-------|-------|----------|--------------|
+| `version` | all | yes | Firmware/settings version string |
+| `settingsFileName` | Settings | one of settingsFileName/settingsContent | File under `bios_settings/` or `bmc_settings/` |
+| `settingsContent` | Settings | — | Inline YAML string; wins over `settingsFileName` |
+| `imagePath` | Version | one of imagePath/imageURI | Path appended to the composed `firmwareRepo` URL — see [Firmware Repository](#firmware-repository-firmwarerepo) below |
+| `imageURI` | Version | one of imagePath/imageURI | Full firmware image download URL; takes precedence over `imagePath` when both are set (legacy escape hatch) |
+| `serverFilter` | all | no | `{ included: [], excluded: [] }` — narrows the generated resource's selector; empty `included` = all servers, `excluded` wins |
+| `setMetadataName` | all | no | Explicit CRD `metadata.name` override, supports `tpl` — see [setMetadataName](#setmetadataname-custom--dynamic-resource-names) below |
+| `readinessGates` / `completionConditionType` | all | only when `CRDVersionControl.features.readinessGates.enabled=true` | see [CRDVersionControl](#crdversioncontrol--readiness-gate-chaining) below |
+
+See `machines.dell.models.poweredge-r640.chain` in `values.yaml` for a fully worked example.
+
+**Legacy `bios:`/`bmc:` keys**: models still using the old (pre-chain) `bios:`/`bmc:` blocks are rejected with a hard `fail` at render time — migrate them to `chain:`.
+
+**Multiple entries per model**: when one hardware model needs different settings per `clusterType` split (e.g. different BIOS tuning for KVM vs. Kubernetes clusterTypes), define multiple map keys with distinct `clusterTypes` lists, set `model:` explicitly on each to the shared hardware model name, and put `bmc-version`/`bios-version` (the two *model-scoped*, not clusterType-scoped, kinds) on only ONE of the entries — defining them on more than one entry renders a duplicate resource and fails the build. See `machines.hpe.models.proliant-dl560-gen11-kvm` / `proliant-dl560-gen11-sci` in `values.yaml` for a real example.
+
+### CRDVersionControl — readiness-gate chaining
+
+```yaml
+CRDVersionControl:
+  apiVersions:
+    biosSettingsSet: "metal.ironcore.dev/v1alpha1"
+    bmcSettingsSet: "metal.ironcore.dev/v1alpha1"
+    biosVersionSet: "metal.ironcore.dev/v1alpha1"
+    bmcVersionSet: "metal.ironcore.dev/v1alpha1"
+  features:
+    readinessGates:
+      enabled: false
+```
+
+- `apiVersions.*`: which CRD group/version to render the generated resources against. metal-operator (single-group) serves all four kinds under `metal.ironcore.dev/v1alpha1`. metal-maintenance-operator (multigroup) serves them under group-qualified versions: `system.metal.ironcore.dev/v1alpha1` for BIOS kinds, `baseboard.metal.ironcore.dev/v1alpha1` for BMC kinds.
+- `features.readinessGates.enabled` (default `false`) changes **how** a model's chain steps are rendered, not where their data comes from:
+  - `false` (default): each chain step renders as an independent resource with no `readinessGates`/`completionConditionType` fields — compatible with plain metal-operator.
+  - `true`: each model's chain steps render as an ORDERED sequence of resources. A step only starts once the previous step's `completionConditionType` has been patched (`status: True`) onto the related Server(s) — mirroring metal-maintenance-operator's e2e chain test. Every rendered step must then set `params.completionConditionType`, and every non-first step must set `params.readinessGates` (the chart fails fast if either is missing).
+
+**Precondition**: enabling `readinessGates` requires `CRDVersionControl.apiVersions.*` to already point at metal-maintenance-operator's groups — the plain metal-operator group has no `readinessGates`/`completionConditionType` fields at all. The chart fails fast if this precondition isn't met.
+
+Naming convention used throughout `values.yaml` for condition types: `metal.cloud.sap/step<order>-<stepName>-done`, e.g. `metal.cloud.sap/step1-bmc-settings-done`.
+
+### setMetadataName (custom / dynamic resource names)
+
+By default every chain step's resource gets a generated name (`<vendor>-<model>(-<clusterType>)(-<stepName>)`). `params.setMetadataName` overrides this:
+
+- **Settings kinds** (`bmc-settings`/`bios-settings`, rendered once per `clusterType`): the final name is `"<setMetadataName>-<clusterType>"`.
+- **Version kinds** (`bmc-version`/`bios-version`, rendered once per model): `setMetadataName` is used verbatim.
+
+It may contain `{{ }}` Go template expressions, resolved via Helm's `tpl` against the chart's root context before use:
+
+```yaml
+setMetadataName: "abc-123"                                 # -> abc-123(-<clusterType>)
+setMetadataName: "abc-{{ .Values.clusterConfig.region }}"  # -> abc-<region>(-<clusterType>)
+```
+
+Dot notation breaks on hyphenated map keys (model/step names) — use `index` instead, e.g. to embed another chain step's `order` number:
+
+```yaml
+setMetadataName: >-
+  abc-{{ index .Values.machines.dell.models "poweredge-r640" "chain" "bmc-settings" "order" }}
+```
+
+Resource names must be unique across the whole chart — a duplicate name (after any `-<clusterType>` suffix) fails the render with an error naming the conflicting entry/model/clusterType.
 
 ### Firmware Repository (`firmwareRepo`)
 
@@ -235,18 +303,23 @@ This bypasses the automatic `host.region.tld` composition.
 
 **Legacy compatibility:**
 
-For backward compatibility, individual machine entries can still use `imageURI` (full URL) instead of `imagePath`:
+For backward compatibility, individual chain steps of kind `BIOSVersionSet`/`BMCVersionSet` can still set `params.imageURI` (full URL) instead of `params.imagePath`:
 
 ```yaml
 machines:
   dell:
     models:
       poweredge-r7615:
-        bios:
-          imageURI: "https://legacy-repo.example.com/firmware/bios.exe"  # Takes precedence over imagePath
+        chain:
+          bios-version:
+            kind: BIOSVersionSet
+            order: 3
+            params:
+              version: "1.11.2"
+              imageURI: "https://legacy-repo.example.com/firmware/bios.exe"  # Takes precedence over imagePath
 ```
 
-When `imageURI` is set, it is used directly and `firmwareRepo` configuration is ignored for that specific entry.
+When `imageURI` is set, it is used directly and `firmwareRepo` configuration is ignored for that specific step.
 
 ### Region-Specific Settings Overrides (`settingsContent`)
 
@@ -255,7 +328,7 @@ For specific BIOS or BMC settings overrides (stored in other values files), use 
 **In region-specific values file** :
 
 ```yaml
-# Define BIOS settings content once via YAML anchors, reference multiple times to avoid duplication
+# Define settings content once via YAML anchors, reference multiple times to avoid duplication
 _biosSettingsContent:
   myCustomSettings: &myCustomSettings |
     settingsFlow:
@@ -271,14 +344,16 @@ machines:
       poweredge-r860-custom:
         model: poweredge-r860
         clusterTypes: [cc-kvm-compute]
-        bios:
-          version: "2.9.4"
-          settingsContent: *myCustomSettings      # Use inline content instead of settingsFileName
-          imagePath: "/hw-firmware/..."
-          settingsParams:
-            serverFilter:
-              included: [node003-bb086, node009-bb086]
-              excluded: []
+        chain:
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "2.9.4"
+              settingsContent: *myCustomSettings   # Use inline content instead of settingsFileName
+              serverFilter:
+                included: [node003-bb086, node009-bb086]
+                excluded: []
 ```
 
 **Behavior:**
@@ -286,6 +361,7 @@ machines:
 - If `settingsContent` is absent, the chart falls back to `settingsFileName` (loads from bundled `bios_settings/` or `bmc_settings/`)
 - Use YAML anchors (`&name`) and aliases (`*name`) to define settings once and reference them multiple times — this prevents duplication across region-specific overrides
 - Helm deep-merges region-specific values on top of base values, so only override entries that differ
+
 ## Filter Logic
 
 - **Empty `included` list** = include all (default behavior)
@@ -501,14 +577,16 @@ machines:
       poweredge-r860:
         model: poweredge-r860
         clusterTypes: *defaultClusterTypes
-        bmc:
-          version: "7.20.60.50"
-          settingsContent: *customDellIdrac    # Use region-specific BMC settings override
-          settingsParams:
-            serverFilter:
-              included: [node001-bb001, node002-bb001]
-              excluded: []
-          imagePath: "/poweredge-r860/iDRAC-7.20.60.50.EXE"
+        chain:
+          bmc-settings:
+            kind: BMCSettingsSet
+            order: 1
+            params:
+              version: "7.20.60.50"
+              settingsContent: *customDellIdrac    # Use region-specific BMC settings override
+              serverFilter:
+                included: [node001-bb001, node002-bb001]
+                excluded: []
 ```
 
 This example:
@@ -518,23 +596,44 @@ This example:
 - Applies the custom BMC settings only to specific nodes via `serverFilter`
 - Reuses the same settings across multiple models via YAML anchors
 
-## Available Vendors and Models
+### UC13: Enable Readiness-Gate Chaining
 
-### BIOSSettings / BIOSVersions
+Chain each model's steps so they run strictly in order, gated on the previous step's completion. Requires `CRDVersionControl.apiVersions.*` to already point at metal-maintenance-operator's groups:
 
-| Vendor | Models |
-|--------|--------|
-| `dell` | poweredge-r640, poweredge-r660, poweredge-r6715, poweredge-r740, poweredge-r740xd, poweredge-r760, poweredge-r7615, poweredge-r770, poweredge-r7715, poweredge-r840, poweredge-r860, poweredge-xe9680 |
-| `hpe` | proliant-dl380-gen11, proliant-dl560-gen11 *(settings)*; proliant-dl320-gen11, proliant-dl345-gen11, proliant-dl360-gen10, proliant-dl380-gen11, proliant-dl380-gen12, proliant-dl560-gen10, proliant-dl560-gen11 *(versions)* |
-| `lenovo` | thinksystem-sr650, thinksystem-sr650-v3, thinksystem-sr655-v3, thinksystem-sr850p, thinksystem-sr850-v3, thinksystem-sr950, thinksystem-sr950-v3 |
+```yaml
+CRDVersionControl:
+  apiVersions:
+    biosSettingsSet: "system.metal.ironcore.dev/v1alpha1"
+    bmcSettingsSet: "baseboard.metal.ironcore.dev/v1alpha1"
+    biosVersionSet: "system.metal.ironcore.dev/v1alpha1"
+    bmcVersionSet: "baseboard.metal.ironcore.dev/v1alpha1"
+  features:
+    readinessGates:
+      enabled: true
+```
 
-### BMCVersions
+See [CRDVersionControl](#crdversioncontrol--readiness-gate-chaining) above for the full behavior.
 
-| Vendor | Models |
-|--------|--------|
-| `dell` | poweredge-r640, poweredge-r660, poweredge-r6715, poweredge-r740, poweredge-r740xd, poweredge-r760, poweredge-r7615, poweredge-r770, poweredge-r7715, poweredge-r840, poweredge-r860, poweredge-xe9680 |
-| `hpe` | proliant-dl320-gen11, proliant-dl345-gen11, proliant-dl360-gen10, proliant-dl380-gen11, proliant-dl380-gen12, proliant-dl560-gen10, proliant-dl560-gen11 |
-| `lenovo` | thinksystem-sr650, thinksystem-sr650-v3, thinksystem-sr655-v3, thinksystem-sr850p, thinksystem-sr850-v3, thinksystem-sr950, thinksystem-sr950-v3 |
+### UC14: Give a Resource a Custom / Dynamic Name
+
+```yaml
+machines:
+  dell:
+    models:
+      poweredge-r770-nic-slot10:
+        model: poweredge-r770
+        clusterTypes: [cc-kvm-compute]
+        chain:
+          bios-settings:
+            kind: BIOSSettingsSet
+            order: 4
+            params:
+              version: "1.8.5"
+              settingsFileName: dell-r770-nic-slot10.yaml
+              setMetadataName: dell-poweredge-r770-nic-slot10
+```
+
+See [setMetadataName](#setmetadataname-custom--dynamic-resource-names) above for `tpl`-based dynamic naming.
 
 ## Available Cluster Types
 
@@ -543,37 +642,35 @@ This example:
 - `sci-k8s-management`
 - `sci-k8s-runtime`
 - `sci-k8s-storage`
+- `cc-ironcore`
+
+See `machines:` in `values.yaml` for the full, current vendor/model inventory — static copies here tend to drift out of date as models are added/retired.
 
 ## Settings Files
 
 ### BIOS Settings (`bios_settings/`)
 
-BIOS settings flow content is stored as flat YAML files under `bios_settings/` and referenced via `settingsFileName` in `values.yaml`:
+BIOS settings flow content is stored as flat YAML files under `bios_settings/`, referenced via `params.settingsFileName` in `values.yaml`:
 
-| File | Used by |
-|------|---------|
-| `dell-default.yaml` | All Dell models except R7615 |
-| `dell-r7615.yaml` | Dell PowerEdge R7615 (different NIC config) |
-| `hpe-dl380-gen11.yaml` | HPE ProLiant DL380 Gen11 (all cluster types) |
-| `hpe-dl560-gen11-kvm.yaml` | HPE ProLiant DL560 Gen11 — `cc-kvm-compute` (AdvancedEcc) |
-| `hpe-dl560-gen11-sci.yaml` | HPE ProLiant DL560 Gen11 — `sci-k8s-*` (FastFaultTolerantADDDC) |
-| `lenovo-sr650.yaml` | Lenovo ThinkSystem SR650 |
-| `lenovo-sr650-v3.yaml` | Lenovo ThinkSystem SR650 V3 |
-| `lenovo-sr655-v3.yaml` | Lenovo ThinkSystem SR655 V3 |
-| `lenovo-sr850p.yaml` | Lenovo ThinkSystem SR850p |
-| `lenovo-sr850-v3.yaml` | Lenovo ThinkSystem SR850 V3 |
-| `lenovo-sr950.yaml` | Lenovo ThinkSystem SR950 |
-| `lenovo-sr950-v3.yaml` | Lenovo ThinkSystem SR950 V3 |
+```
+dell-default.yaml             dell-r660-mgmt.yaml            dell-r6715.yaml
+dell-r7615.yaml                dell-r770.yaml                 dell-r860-kvm.yaml
+hpe-dl380-gen11.yaml           hpe-dl380-gen11-latest-kvm.yaml  hpe-dl380-gen12.yaml
+hpe-dl560-gen11-kvm.yaml       hpe-dl560-gen11-latest-kvm.yaml  hpe-dl560-gen11-sci.yaml
+lenovo-sr650.yaml              lenovo-sr650-v3.yaml           lenovo-sr655-v3.yaml
+lenovo-sr850p.yaml             lenovo-sr850p-kvm.yaml         lenovo-sr850-v3.yaml
+lenovo-sr850-v3-new.yaml       lenovo-sr950.yaml              lenovo-sr950-v3.yaml
+```
 
 ### BMC Settings (`bmc_settings/`)
 
-BMC settings are stored under `bmc_settings/` and also rendered via `tpl`. They may contain `{{ .Values.clusterConfig.* }}` references for the ConfigMap/Secret names. Per-BMC dynamic values (hostname, region, labels) are resolved at reconcile time via `objectFieldRef` variables — not Helm templating.
+BMC settings are stored under `bmc_settings/` and also rendered via `tpl`. They may contain `{{ .Values.clusterConfig.* }}` references for the ConfigMap/Secret values. Per-BMC dynamic values (hostname, region, building-block) are resolved at reconcile time via `objectFieldRef` — not Helm templating.
 
-| File | Used by | Dynamic values resolved at reconcile |
-|------|---------|---------------------------------------|
-| `dell-default.yaml` | All Dell models | `NodeName`, `BB`, `Region` (BMC labels); `SyslogServer` (ConfigMap) |
-| `hpe-default.yaml` | All HPE models | `NodeName`, `BB` (BMC labels); `LicenseKey` (Secret) |
-| `lenovo-default.yaml` | All Lenovo models | `BmcName` (BMCSettings spec); `Region` (BMC label) |
+```
+dell-default.yaml   dell-r6715.yaml   dell-r770.yaml   hpe-default.yaml   lenovo-default.yaml
+```
+
+See each model's `settingsFileName` under `machines:` in `values.yaml` for which file it actually uses.
 
 ## CI Integration
 
@@ -603,6 +700,7 @@ Unit test files are located in `tests/`:
 |------|-------------|
 | `bios_settings_test.yaml` | Tests BIOSSettingsSet rendering and filtering |
 | `bios_versions_test.yaml` | Tests BIOSVersionSet rendering and filtering |
+| `bmc_settings_test.yaml` | Tests BMCSettingsSet rendering and filtering |
 | `bmc_versions_test.yaml` | Tests BMCVersionSet rendering and filtering |
 
 ## Verifying Rendered Resources

@@ -11,7 +11,6 @@ groups:
       tier: os
       service: hermes
       meta: "CCloud Hermes canary probe is failing"
-      dashboard: "cc3test-api-status?var-service=hermes"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service=hermes"
       playbook: "docs/support/playbook/hermes/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -28,7 +27,6 @@ groups:
       tier: os
       service: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Hermes canary probe is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/hermes/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -45,7 +43,6 @@ groups:
       tier: os
       service: "{{`{{ $labels.service }}`}}"
       meta: "Hermes: {{`{{ $labels.name }}`}} missing audit events, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/hermes/alerts/cc3test-alert-missing-event/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -61,7 +58,6 @@ groups:
       tier: os
       service: "{{`{{ $labels.service }}`}}"
       meta: "Hermes: {{`{{ $labels.name }}`}} flapping audit events for 2 hours, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/hermes/alerts/cc3test-alert-missing-event/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
