@@ -72,7 +72,13 @@ for i in $modules;
             sed -i "s/- name: /- name: snmp_${i}_/g" ../_snmp-exporter-${i}.yaml
         fi
 
-        sed -i '/^        enum_values:/{:a;N;/\n          /ba;d}' ../_snmp-exporter-${i}.yaml
+        python3 -c "
+import sys, re
+content = open(sys.argv[1]).read()
+content = re.sub(r'\n( +)enum_values:\n(\1  [^\n]+\n)+', '\n', content)
+open(sys.argv[1], 'w').write(content)
+" ../_snmp-exporter-${i}.yaml
+
 
         if test -f "${i}-additional-metrics.yaml"; then
                 #cat ${i}-additional-metrics.yaml >> ../_snmp-exporter-${i}.yaml

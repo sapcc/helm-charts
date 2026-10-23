@@ -22,7 +22,7 @@ groups:
     for: 10m
     labels:
       severity: warning
-      service: capacity-ops
+      service: ceph
       support_group: storage
     annotations:
       summary: "Blocked capacity above 75% on an autogrowing resource"
@@ -36,7 +36,7 @@ groups:
     for: 10m
     labels:
       severity: critical
-      service: capacity-ops
+      service: ceph
       support_group: storage
     annotations:
       summary: "Blocked capacity above 80% on an autogrowing resource"
@@ -81,9 +81,10 @@ groups:
     for: 10m
     labels:
       # TODO: make this alert `severity: critical` across the board (requires clarifying who does 24/7 support for the non-storage services)
-      severity: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" -}} critical {{- else -}} warning {{- end }}'
+      # TODO: remove legacy service names after migration to v2 metrics
+      severity: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" "volumev2" "sharev2" "object-store" -}} critical {{- else -}} warning {{- end }}'
       # NOTE: alerts for storage services are routed to `support_group: storage` directly per their request
-      support_group: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" -}} storage {{- else -}} capacity-ops {{- end }}'
+      support_group: '{{ if eq $labels.service "ceph" "cinder" "manila" "swift" "volumev2" "sharev2" "object-store" -}} storage {{- else -}} capacity-ops {{- end }}'
       service: capacity-ops
       playbook: 'https://operations.global.cloud.sap/docs/resources/limes/playbooks/quota_overcommit_disabled/'
     annotations:

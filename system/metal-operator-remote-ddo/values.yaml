@@ -1,0 +1,216 @@
+# =============================================================================
+# metal-operator-remote-ddo values
+# =============================================================================
+#
+# MODE CONTRACT (DO NOT SET mode HERE):
+#   The dual-deployment-operator injects .Values.mode = "seed" | "shoot" at
+#   render time. The chart MUST NOT declare a default for `mode` — the operator
+#   rejects any render whose user values contain `mode`.
+#
+#   Per-mode subchart flags are supplied via the DualDeploymentOperator CR:
+#     spec.source.helm.seedValues:
+#       metal-operator-core:
+#         controllerManager: { enable: false }   # chart owns the Deployment
+#         crd:               { enable: false }
+#         rbac:              { enable: false }
+#         webhook:           { enable: false }
+#         certmanager:       { enable: false }
+#         networkPolicy:     { enable: false }
+#     spec.source.helm.shootValues:
+#       metal-operator-core:
+#         controllerManager: { enable: false }   # chart owns the Deployment
+#         crd:               { enable: true }
+#         rbac:              { enable: true }
+#         webhook:           { enable: true }
+#         certmanager:       { enable: false }
+#         networkPolicy:     { enable: false }
+#
+# =============================================================================
+
+# load-bearing: helm fullname template yields "metal-operator" for all objects
+fullnameOverride: metal-operator
+
+# ---------------------------------------------------------------------------
+# Upstream subchart — ALL flags OFF by default.
+# The CR's seedValues/shootValues drive these per mode (see MODE CONTRACT above).
+# NEVER set controllerManager.enable=true here — this chart owns the Deployment.
+# ---------------------------------------------------------------------------
+metal-operator-core:
+  controllerManager:
+    enable: false
+  crd:
+    enable: false
+  rbac:
+    enable: false
+  webhook:
+    enable: false
+  certmanager:
+    enable: false
+  networkPolicy:
+    enable: false
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+
+# ---------------------------------------------------------------------------
+# webhook-injector sidecar (r7 target-patch mode)
+# Image pinned to the r7 target-patch build; move to a released tag at cutover.
+# ---------------------------------------------------------------------------
+webhookInjector:
+  repository: keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/webhook-injector
+  tag: "20c495f"
+  metrics:
+    # Enable Prometheus scraping of the webhook-injector sidecar (port 8082).
+    # Requires the monitoring.coreos.com/v1 API to be present in the cluster.
+    enabled: true
+
+# ---------------------------------------------------------------------------
+# controller-manager (seed render only; guarded by mode=seed in the template)
+# ---------------------------------------------------------------------------
+controllerManager:
+  replicas: 1
+  strategy:
+    type: Recreate
+  manager:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-operator-controller-manager
+      tag: sha-23966a7
+    args:
+      - --mac-prefixes-file=/etc/macdb/macdb.yaml
+    env:
+      KUBERNETES_SERVICE_HOST: "apiserver-url"   # placeholder — override in CR values per cluster
+      KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      KUBECONFIG: "/var/run/remote-kubeconfig/kubeconfig"
+    resources:
+      limits:
+        cpu: "5000m"
+        memory: "5120Mi"
+      requests:
+        cpu: 300m
+        memory: 50Mi
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      httpGet:
+        path: /healthz
+        port: 8081
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      httpGet:
+        path: /readyz
+        port: 8081
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - "ALL"
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    runAsUser: 65532
+    runAsGroup: 65532
+  terminationGracePeriodSeconds: 10
+  serviceAccountName: metal-operator-webhook-injector
+  hostNetwork: false
+  pod:
+    labels:
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-runtime-apiserver: allowed
+      networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+      networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+
+# ---------------------------------------------------------------------------
+# macdb — BMC credentials (shared, region-generic).
+#
+# These MUST stay as vault+kvv2:// references; the seed secrets-injector resolves
+# them in-cluster when it processes the Secret/macdb this chart emits (mode=seed).
+# NEVER inline real credentials here.
+#
+# Region templating: the ${REGION} token is substituted with .Values.global.region
+# by templates/macdb.yaml (a surgical `replace`, NOT `tpl` — `tpl` would choke on the
+# nested {{ resolve ... }} directive, which is a secrets-injector directive, not a
+# Helm function). The DualDeploymentOperator passes global.region through
+# spec.source.helm.values, so per-cluster CRs only set global.region.
+#
+# The MAC prefixes (BMC vendor OUIs) are identical across all admin-k3s clusters, so
+# the whole block lives here as a chart default. A cluster that genuinely needs a
+# different prefix list can still override macdb wholesale via CR values.
+# ---------------------------------------------------------------------------
+macdb:
+  macPrefixes:
+    - macPrefix: c4cbe1b1
+      manufacturer: Dell
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
+    - macPrefix: d08e79
+      manufacturer: Dell
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
+    - macPrefix: 0894ef
+      manufacturer: Lenovo
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
+    - macPrefix: 5ced8c
+      manufacturer: HPE
+      protocol: Redfish
+      port: 443
+      type: bmc
+      defaultCredentials:
+        - username: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/username" }}'
+          password: '{{ resolve "vault+kvv2:///secrets/${REGION}/ironic/ipmi-user/ironic/password" }}'
+
+# ---------------------------------------------------------------------------
+# metal-registry Service (seed)
+# ---------------------------------------------------------------------------
+metalRegistryService:
+  ports:
+    - port: 10000
+      protocol: TCP
+      targetPort: 10000
+  type: ClusterIP
+
+# ---------------------------------------------------------------------------
+# Global values — per-cluster, supplied via CR values
+# ---------------------------------------------------------------------------
+global:
+  region: ""
+  clusterType: ""
+  tld: ""
+  linkerd_enabled: false
+  linkerd_requested: false
+
+# ---------------------------------------------------------------------------
+# Ingress / networking
+# ---------------------------------------------------------------------------
+hostNetwork: false
+virtualGardenLBIP: ""
+
+# ---------------------------------------------------------------------------
+# DNS record template ConfigMap (seed, when enabled)
+# ---------------------------------------------------------------------------
+dnsRecordTemplate:
+  enabled: false
+  zone: ""
+
+# ---------------------------------------------------------------------------
+# LDAP admin users (shoot, optional)
+# ---------------------------------------------------------------------------
+adminLDAPUsers: []
+

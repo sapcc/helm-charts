@@ -1,0 +1,32 @@
+owner-info:
+  support-group: containers
+  service: kubelet-csr-approver
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kubelet-csr-approver
+
+kubelet-csr-approver:
+  # Required. DNS SANs of a CSR must match this regex, e.g. ^minion-[0-9a-f]{12}\.cc\.qa-de-1\.cloud\.sap$
+  providerRegex: ""
+  # IP SANs of a CSR must be inside one of these CIDRs. Empty means IP SANs are not allowed.
+  providerIpPrefixes: []
+  # Node FQDNs are not guaranteed to resolve from inside the cluster.
+  bypassDnsResolution: true
+  # Upper bound for the requested certificate lifetime (365 days), passed as a string.
+  maxExpirationSeconds: "31536000"
+
+  replicas: 2
+  namespace: kube-system
+  image:
+    repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/postfinance/kubelet-csr-approver
+
+  # Kubernikus klusters have no control-plane nodes, drop the upstream control-plane toleration.
+  tolerations: []
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: kubelet-csr-approver

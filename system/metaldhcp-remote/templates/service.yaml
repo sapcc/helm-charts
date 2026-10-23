@@ -14,6 +14,10 @@ spec:
     port: 67
     protocol: UDP
     targetPort: 67
+  # TFTP (port 69) is intentionally NOT exposed via the Service.
+  # kube-proxy DNAT rewrites the destination IP which breaks TFTP because
+  # tftpd must respond from externalIP. Instead, TFTP works via hostNetwork
+  # + ip addr add of externalIP on the node (handled by init container).
   type: LoadBalancer
   loadBalancerIP: {{ .Values.externalIP }}
   externalTrafficPolicy: Local

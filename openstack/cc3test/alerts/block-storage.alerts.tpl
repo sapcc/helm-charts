@@ -15,7 +15,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.type }}`}}"
       meta: "Openstack Cinder API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -36,7 +35,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.type }}`}}"
       meta: "Openstack Cinder API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -56,7 +54,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.type }}`}}"
       meta: "Cinder create volume test fails"
-      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-create-volume/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -76,7 +73,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.type }}`}}"
       meta: "Cinder create volume test fails"
-      dashboard: "cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-create-volume-shard/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -96,7 +92,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.type }}`}}"
       meta: "Cinder create snapshot test fails"
-      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-create-snapshot/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -117,7 +112,6 @@ groups:
       service: cinder
       context: cinder
       meta: "Openstack Cinder KVM Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-kvm-attach-volume/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -136,7 +130,6 @@ groups:
       service: cinder
       context: cinder
       meta: "Openstack Cinder KVM Canary is flapping for 2 hours, see last three reports for more details"
-      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-kvm-attach-volume/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
