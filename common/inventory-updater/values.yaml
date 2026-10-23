@@ -36,9 +36,15 @@ updater:
     skhynix: SK Hynix
 
   # NIC manufacturers that map to L-type Netbox interfaces (L1, L2, ...) instead of NIC1, NIC2.
-  # Typically onboard/management NICs. Override to add site-specific manufacturers.
+  # Only applies when no StructuredName is present and port speed <= lom_max_speed_mbps.
   lom_manufacturers:
     - Intel
+    - Broadcom
+
+  # Maximum port speed (Mbps) for a NIC to be treated as a LOM/onboard interface (L-type naming).
+  # NICs from lom_manufacturers above this threshold are treated as standard NICs.
+  # Default 10000 (10G): catches 1G/10G onboard NICs, excludes 25G/100G OCP adapters.
+  lom_max_speed_mbps: 10000
 
   # Set to true to automatically create interfaces missing in Netbox when a MAC and speed are known.
   create_missing_interfaces: false
