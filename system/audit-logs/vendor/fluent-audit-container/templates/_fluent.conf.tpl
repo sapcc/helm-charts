@@ -133,6 +133,62 @@
 </filter>
 
 {{- end }}
+
+{{- if eq .Values.global.clusterType "admin" }}
+<source>
+  @type tail
+  @id k3s-audit
+  path /var/log/kubernetes/audit/audit.log
+  pos_file /var/log/k3s-audit-octobus.log.pos
+  tag k3saudit.{{ $.Values.global.region }}
+  <parse>
+    @type json
+    time_format %Y-%m-%dT%T.%L%Z
+    keep_time_key true
+  </parse>
+</source>
+<filter k3saudit.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "kube-api"
+    sap.cc.cluster "a-{{ $.Values.global.region }}"
+    sap.cc.region "{{ $.Values.global.region }}"
+  </record>
+</filter>
+<filter k3saudit.**>
+  @type record_modifier
+  remove_keys _admission_patch,_admission_patch_removed,_credential_body
+  <record>
+    _admission_patch ${ annotations = record["annotations"]; if annotations.is_a?(Hash); count = annotations.length; annotations.delete_if { |key, _| key.start_with?("patch.webhook.admission.k8s.io/") }; record["_admission_patch_removed"] = true if annotations.length < count; end; nil }
+    _credential_body ${ ref = record["objectRef"]; if ref.is_a?(Hash); stored = ["secrets", "internalsecrets", "bmcsecrets"].include?(ref["resource"]); review = ref["resource"] == "tokenreviews"; keys = []; keys << "responseObject" if stored || review || ["token", "adminkubeconfig", "viewerkubeconfig"].include?(ref["subresource"]); keys << "requestObject" if review || (stored && !["delete", "deletecollection"].include?(record["verb"])); removed = keys.select { |key| record[key] }; removed.each { |key| record.delete(key) }; if !removed.empty? || ((stored || review) && record["_admission_patch_removed"]); record["sap.cc.audit.credential_body_removed"] = true; record["_credential_body_removed"] = 1; end; end; nil }
+  </record>
+</filter>
+<filter k3saudit.**>
+  @type prometheus
+  <metric>
+    name fluentd_audit_kubeapi_credential_body_removed_total
+    type counter
+    desc Kube-apiserver audit events whose credential-bearing bodies were removed before shipping
+    key _credential_body_removed
+    <labels>
+      cluster $['sap.cc.cluster']
+    </labels>
+  </metric>
+</filter>
+<filter k3saudit.**>
+  @type record_modifier
+  remove_keys _credential_body_removed
+</filter>
+<filter k3saudit.**>
+  @type record_transformer
+  enable_ruby
+  remove_keys temp,$.requestObject.metadata.labels.app,$.requestObject.metadata.managedFields
+  <record>
+     temp ${ ro = record["requestObject"]; if ro.is_a?(Hash) && ro["metadata"].is_a?(Hash) && ro["metadata"]["labels"].is_a?(Hash) && !ro["metadata"]["labels"]["app"].nil?; ro["metadata"]["labels"]["app_"] = ro["metadata"]["labels"]["app"]; end; nil;}
+  </record>
+</filter>
+{{- end }}
+
 <filter kubeapi.**>
   @type parser
   @id json_parser
