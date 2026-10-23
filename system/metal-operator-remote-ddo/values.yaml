@@ -54,15 +54,17 @@ metal-operator-core:
     enable: false
 
 # ---------------------------------------------------------------------------
-# webhook-injector sidecar
-# Released image used by the live metal-operator-remote / ipam-capi-remote
-# releases, verified pullable. (Previously a dead pre-cutover placeholder
-# keppel.eu-de-1.../webhook-injector:20c495f — that tag did not exist in either
-# the eu-de-1 or global registry and caused Init:ImagePullBackOff.)
+# webhook-injector sidecar (r7 target-patch mode)
+# This chart passes --target-label / --target-kubeconfig to the injector; those
+# flags were added by SAP-cloud-infrastructure/webhook-injector PR #14 (merged
+# 2026-08-13 as commit f85df8e3). Earlier builds reject them and crash, so pin
+# the #14 merge-commit image. Verified: carries the target-patch code and pulls.
+# (Previous default keppel.eu-de-1.../webhook-injector:20c495f was a dead
+# pre-cutover placeholder tag present in no reachable registry.)
 # ---------------------------------------------------------------------------
 webhookInjector:
-  repository: keppel.global.cloud.sap/cloud-infrastructure-dev/webhook-injector
-  tag: sha-c7697ff04c1e13f63d72fcf93a058b013012d41b
+  repository: keppel.eu-de-2.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector
+  tag: sha-f85df8e3d55165e3b6e1117f6b120624268d0976
 
 # ---------------------------------------------------------------------------
 # controller-manager (seed render only; guarded by mode=seed in the template)
