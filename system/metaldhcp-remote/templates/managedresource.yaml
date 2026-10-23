@@ -11,6 +11,7 @@ mr-{{ $kind }}-{{ $name }}
 {{- if not $obj }}
 {{- continue }}
 {{- end }}
+{{- if $.Values.remoteAPIServer }}
 ---
 apiVersion: resources.gardener.cloud/v1alpha1
 kind: ManagedResource
@@ -36,5 +37,9 @@ metadata:
 type: Opaque
 data:
   objects.yaml: {{ $doc | b64enc }}
+{{- else }}
+---
+{{ $doc }}
+{{- end }}
 {{- end }}
 {{- end }}
