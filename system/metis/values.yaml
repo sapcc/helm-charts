@@ -215,6 +215,25 @@ mysql_metrics:
         FROM instance_actions_events
         WHERE event = 'conductor_live_migrate_instance';
 
+    - name: "openstack_vm_actions_total"
+      help: "Nova instance action events finished in the last hour (all cells)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT COUNT(*) AS value
+        FROM instance_actions_events
+        WHERE finish_time >= NOW() - INTERVAL 1 HOUR;
+
+    - name: "openstack_vm_actions_failed_total"
+      help: "Nova instance action events failed (result = 'Error') in the last hour (all cells)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT COUNT(*) AS value
+        FROM instance_actions_events
+        WHERE finish_time >= NOW() - INTERVAL 1 HOUR
+          AND result = 'Error';
+
 metisSync:
   enabled: true
   image: go-maria-sync
