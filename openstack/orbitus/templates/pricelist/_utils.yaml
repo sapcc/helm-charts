@@ -1,0 +1,41 @@
+{{- define "pricelist_image" -}}
+  {{- if not $.Values.pricelist.image_tag -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- else -}}
+    {{ $.Values.global.registry }}/orbitus:{{ $.Values.pricelist.image_tag }}
+  {{- end -}}
+{{- end -}}
+
+{{- define "pricelist_data_image" -}}
+  {{- if not $.Values.pricelist.pricelist_data_image_tag -}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- else -}}
+    {{ $.Values.global.registry }}/orbitus-pricelist-data:{{ $.Values.pricelist.pricelist_data_image_tag }}
+  {{- end -}}
+{{- end -}}
+
+{{- define "pricelist_common_envvars" }}
+- name: PRICELIST_DRYRUN
+  value: {{ quote $.Values.pricelist.dryrun }}
+- name: PRICELIST_REGIONS
+  value: {{ quote $.Values.global.region }}
+- name: PRICELIST_CONFIG_PATH
+  value: /pricelist-data
+{{- end -}}
+
+{{/*
+  The pricelist init container copies the region-specific pricelist out of the data image into the shared
+  emptyDir. The main container reads from: /pricelist-data/pricelist.json.gz
+*/}}
+{{- define "pricelist_init_container" }}
+- name: pricelist-loader
+  image: {{ include "pricelist_data_image" . }}
+  imagePullPolicy: IfNotPresent
+  command: [ /bin/cp ]
+  args:
+    - /pricelist/{{ .Values.global.region }}/pricelist.json.gz
+    - /pricelist-out/pricelist.json.gz
+  volumeMounts:
+    - mountPath: /pricelist-out
+      name: pricelist-data
+{{- end -}}

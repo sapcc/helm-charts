@@ -162,4 +162,8 @@ nebula:
     allowedHeaders:
 {{- .Values.nebula.cors.allowedHeaders | toYaml | nindent 6 }}
 {{- end }}
+{{- if .Values.nebula.configServer }}
+  configServer:
+    endpoint: {{ .Values.nebula.configServer.endpoint }}
+{{- end }}
 {{- end -}}

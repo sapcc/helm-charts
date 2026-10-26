@@ -1,0 +1,48 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/metal-onboarding-operator
+
+image:
+  repository: keppel.eu-de-2.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/metal-onboarding-operator
+  tag: "latest"
+
+# config values are rendered into a ConfigMap; string flags passed as --flag=val args to the manager
+config:
+  netboxURL: ""
+  dhcpLeaseNamespace: ""
+  clusterName: ""
+  leaderElect: "true"
+
+# Name/key of the Kubernetes Secret containing the NetBox API token.
+# Optional: NetBox read access is unauthenticated, so leave name empty unless
+# your instance requires auth.
+netbox:
+  tokenSecret:
+    name: ""
+    key: token
+
+rbac:
+  create: true
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# labelMap maps Kubernetes label keys to dot-separated NetBox device JSON paths.
+# The entries below mirror the hardcoded defaults already applied by the operator.
+# Add extra entries here for any additional NetBox fields you want as labels.
+# Note: kubernetes.metal.cloud.sap/nodename and /bb are derived by splitting the
+# device name on "-" and cannot be expressed as JSON paths.
+labelMap:
+  topology.kubernetes.io/region: site.region.slug
+  topology.kubernetes.io/zone: site.slug
+  kubernetes.metal.cloud.sap/cluster: cluster.name
+  kubernetes.metal.cloud.sap/cluster-type: cluster.type.slug
+  kubernetes.metal.cloud.sap/name: name
+  kubernetes.metal.cloud.sap/type: device_type.slug
+  kubernetes.metal.cloud.sap/role: device_role.slug
+  kubernetes.metal.cloud.sap/platform: platform.slug

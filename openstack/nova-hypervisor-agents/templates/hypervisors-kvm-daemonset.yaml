@@ -1,31 +1,48 @@
-{{- $hypervisor := merge .Values.defaults.hypervisor.kvm .Values.defaults.hypervisor.common }}
+{{- $hypervisors := .Values.hypervisors }}
+{{- $first := true }}
+{{- range $name, $hv := $hypervisors }}
+{{- if dig "enabled" true $hv }}
+{{- if not $first }}
+---
+{{- end }}
+{{- $first = false }}
+{{- $hypervisor := merge (deepCopy $hv) (deepCopy $.Values.defaults.hypervisor.kvm) (deepCopy $.Values.defaults.hypervisor.common) }}
+{{- $selectorName := printf "%s-compute-%s" $.Release.Name $name }}
+{{- $configMapName := printf "%s-%s" $.Release.Name $name }}
+{{- if eq $name "compute-kvm" }}
+{{- $selectorName = $.Release.Name }}
+{{- end }}
+{{- with $ }}
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: {{ .Release.Name }}-compute-kvm
+  name: {{ .Release.Name }}-{{ $name }}
   labels:
     system: openstack
     type: backend
-    component: nova
+{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.daemonsets.revisionHistory }}
   selector:
     matchLabels:
-      name: {{ .Release.Name }}
+      name: {{ $selectorName }}
   updateStrategy:
     {{- .Values.pod.lifecycle.upgrades.daemonsets.updateStrategy | toYaml | nindent 4 }}
   template:
     metadata:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
-        name: {{ .Release.Name }}
+        name: {{ $selectorName }}
         alert-tier: os
         alert-service: nova
         hypervisor: "kvm"
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        configmap-kvm-etc-hash: {{ include "kvm_configmap" . | sha256sum }}
         secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
+        configmap-compute-hash: {{ include (print .Template.BasePath "/etc/_nova-compute.conf.tpl") . | sha256sum }}
+        configmap-hypervisor-common-hash: {{ include "nova.hypervisor.common.conf" . | sha256sum }}
+        configmap-hypervisor-kvm-hash: {{ include "nova.hypervisor.kvm.conf" . | sha256sum }}
+        configmap-hypervisor-instance-hash: {{ tuple . $name $hv | include "nova.hypervisor.instance.conf" | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
@@ -49,12 +66,13 @@ spec:
         {{- $hypervisor.pod.affinity | toYaml| nindent 8 }}
       {{- end }}
       hostAliases:
-      {{- $activeCell := include "nova.helpers.get_active_cell" $ }}
-      {{- $rabbitmq := include "nova.helpers.get_rabbitmq_by_cell" (tuple $ $activeCell) | fromJson }}
+      {{- $activeCell := include "nova.helpers.get_active_cell" . }}
+      {{- $rabbitmq := include "nova.helpers.get_rabbitmq_by_cell" (tuple . $activeCell) | fromJson }}
+      {{- $envAll := . }}
       {{- range $ip := $rabbitmq.externalIPs }}
       - ip: {{ $ip }}
         hostnames:
-          - {{ include "nova.helpers.cell_rabbitmq_host" (tuple $ $activeCell) }}
+          - {{ include "nova.helpers.cell_rabbitmq_host" (tuple $envAll $activeCell) }}
       {{- end }}
       initContainers:
       - name: kubernetes-entrypoint
@@ -80,7 +98,7 @@ spec:
             name: bin
           - mountPath: /var/lib/nova
             name: var-lib-nova
-      {{- if and .Values.hypervisor_on_host .Values.defaults.hypervisor.kvm.instance_nfs_share }}
+      {{- if and .Values.hypervisor_on_host $hypervisor.instance_nfs_share }}
       - name: setup-nfs
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         imagePullPolicy: IfNotPresent
@@ -93,7 +111,7 @@ spec:
         - |
           set -euxo pipefail
           DIR=/var/lib/nova/instances
-          grep "{{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} $DIR" /proc/self/mounts || mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
+          grep "{{ $hypervisor.instance_nfs_share }} $DIR" /proc/self/mounts || mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ $hypervisor.instance_nfs_share }} "$DIR"
           chgrp 64055 "$DIR"
           chown 42436 "$DIR"
         volumeMounts:
@@ -132,21 +150,21 @@ spec:
           command:
           - "nova-compute"
           env:
-            - name: OS_DEFAULT__MY_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
+          - name: OS_DEFAULT__MY_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
             valueFrom:
               secretKeyRef:
                 name: sentry
                 key: nova.DSN.python
-            {{- end }}
-{{- if or $hypervisor.python_warnings .Values.python_warnings }}
+          {{- end }}
+          {{- if or $hypervisor.python_warnings .Values.python_warnings }}
           - name: PYTHONWARNINGS
             value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
-{{- end }}
+          {{- end }}
           volumeMounts:
           - mountPath: /var/lib/nova
             name: var-lib-nova
@@ -193,7 +211,7 @@ spec:
             subPath: nova
             readOnly: true
           {{- end }}
-         {{- if not .Values.hypervisor_on_host }}
+      {{- if not .Values.hypervisor_on_host }}
         - name: nova-libvirt
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
           imagePullPolicy: IfNotPresent
@@ -247,7 +265,7 @@ spec:
       volumes:
       - name: var-lib-nova
         emptyDir: {}
-{{- if not .Values.hypervisor_on_host }}
+      {{- if not .Values.hypervisor_on_host }}
       - name: instances
         persistentVolumeClaim:
           claimName: nova-kvm-shared
@@ -270,7 +288,7 @@ spec:
           items:
           - key: libvirtd.conf
             path: libvirtd.conf
-{{- else }}
+      {{- else }}
       - name: instances
         hostPath:
           path: /var/lib/nova/instances
@@ -297,10 +315,10 @@ spec:
           type: Directory
 {{- end }}
       - name: mnt
-{{- if not .Values.hypervisor_on_host }}
+      {{- if not .Values.hypervisor_on_host }}
         emptyDir:
           medium: Memory
-{{- else }}
+      {{- else }}
         hostPath:
           path: /var/lib/nova/mnt
           type: DirectoryOrCreate
@@ -347,11 +365,24 @@ spec:
                 path: rootwrap.conf
               - key: compute.filters
                 path: rootwrap.conf.d/compute.filters
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
           - configMap:
               name: {{ .Release.Name }}-compute
               items:
-              - key: nova-compute.conf
-                path: nova-compute.conf
+              - key: 010-nova-compute.conf
+                path: nova.conf.d/010-nova-compute.conf
+              - key: 020-hypervisor-common.conf
+                path: nova.conf.d/020-hypervisor-common.conf
+              - key: 030-hypervisor-kvm.conf
+                path: nova.conf.d/030-hypervisor-kvm.conf
+          - configMap:
+              name: {{ $configMapName }}
+              items:
+              - key: 040-hypervisor-{{ $name }}.conf
+                path: nova.conf.d/040-hypervisor-{{ $name }}.conf
           - secret:
               name: {{ .Release.Name }}-etc
               items:
@@ -363,3 +394,6 @@ spec:
         configMap:
           name: {{ .Release.Name }}-bin
           defaultMode: 0755
+{{- end }}
+{{- end }}
+{{- end }}

@@ -283,7 +283,7 @@ scheduler:
   rpc_statsd_port: 9125
   # enables collecting metrics for RPC calls
   rpc_statsd_enabled: true
-  default_filters: "ShardFilter, VolumeSizeSameShardResizeFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  default_filters: "VolumeSizeSameShardResizeFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
   vm_size_threshold_vm_size_mb: "32769"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
@@ -1241,33 +1241,37 @@ logging:
       args: "()"
       formatter: default
     sentry:
-      class: raven.handlers.logging.SentryHandler
+      class: sapcc_sentrylogger.handler.EventHandler
+      level: ERROR
+      args: "()"
+    bread:
+      class: sapcc_sentrylogger.handler.BreadcrumbHandler
       level: ERROR
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: WARNING
     migrate:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova.scheduler:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: DEBUG
     nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova.virt.vmwareapi:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     oslo.privsep:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     suds:
       handlers: "null"

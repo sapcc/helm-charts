@@ -1,9 +1,10 @@
 {{- range $key, $cluster := .Values.cpShoots }}
+{{- $name := default (printf "cp-%s" $key) $cluster.name }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: {{ $key }}
+  name: {{ $name }}
   labels:
     cluster-type: sci-k8s-controlplane
     greenhouse.sap/owned-by: containers
@@ -31,7 +32,9 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
-      {{- if $.Values.networking.overlay }}
+      {{- if $cluster.networking.vethMTU }}
+      vethMTU: {{ $cluster.networking.vethMTU | quote }}
+      {{- else if $.Values.networking.overlay }}
       vethMTU: "8930"
       {{- else }}
       vethMTU: "8950"
@@ -67,7 +70,7 @@ spec:
             name: audit-policy-cp
       {{- end }}
     verticalPodAutoscaler:
-      enabled: true
+      enabled: true # VPA needs to be enabled for ManagedSeed
       targetCPUPercentile: 0.75
       targetMemoryPercentile: 0.85
       recommendationMarginFraction: 0.05
@@ -78,6 +81,10 @@ spec:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
+  {{- if $cluster.tier }}
+    confineSpecUpdateRollout: true
+    {{- include "maintenanceWindow" $cluster.tier | nindent 4 }}
+  {{- end }}
   {{- if $cluster.auditing.enabled }}
   extensions:
   - type: auditing
@@ -191,7 +198,7 @@ spec:
           kind: WorkerConfig
           extraServerLabels:
             topology.kubernetes.io/zone: {{ $workerkey }}
-            kubernetes.metal.cloud.sap/cluster: {{ $key }}
+            kubernetes.metal.cloud.sap/cluster: {{ $name }}
           metadata:
             interfaces: {{ default $.Values.networking.interfaces $cluster.networking.interfaces }}
             vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}

@@ -34,6 +34,8 @@ pod:
             maxUnavailable: "10%"
   tolerations: {}
 
+hypervisors:
+  compute-kvm: {}
 
 defaults:
   default:
@@ -136,33 +138,37 @@ logging:
       args: "()"
       formatter: default
     sentry:
-      class: raven.handlers.logging.SentryHandler
+      class: sapcc_sentrylogger.handler.EventHandler
+      level: ERROR
+      args: "()"
+    bread:
+      class: sapcc_sentrylogger.handler.BreadcrumbHandler
       level: ERROR
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: WARNING
     migrate:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova.scheduler:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: DEBUG
     nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova.virt.vmwareapi:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     oslo.privsep:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     suds:
       handlers: "null"

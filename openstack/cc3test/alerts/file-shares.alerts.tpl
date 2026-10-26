@@ -12,7 +12,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Manila API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -30,7 +29,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Manila API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -52,7 +50,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Datapath to mounted file share is down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/alerts/cc3test-alert-datapath/#filesharedatapathdown"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -74,7 +71,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Datapath to mounted file share is down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/alerts/cc3test-alert-datapath/#filesharedatapathdebugnfs"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -92,7 +88,6 @@ groups:
       service: manila
       context: filer
       meta: "Certificate on {{`{{ $labels.host }}`}} expires in less than 8 days"
-      dashboard: cc3test-certificate-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/filer_cert_expired"
       support_component: manila_netapp
@@ -110,7 +105,6 @@ groups:
       service: manila
       context: filer
       meta: "Certificate on {{`{{ $labels.host }}`}} expires in less than 15 days"
-      dashboard: cc3test-certificate-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/filer_cert_expired"
       support_component: manila_netapp
@@ -128,7 +122,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/alerts/cc3test-alert-attach-share/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -146,7 +139,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack File Share Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/manila/alerts/cc3test-alert-create-share/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"

@@ -202,17 +202,23 @@ build-metal-operator-remote:
 		grep -q 'path: /readyz' metal-operator-remote/templates/controller-manager.yaml || \
 		{ echo "ERROR: sed insertion anchors not found in controller-manager.yaml (dns-record-template/ignition-template volumes, webhook-injector-sidecar initContainers, or liveness/readiness probe paths) - upstream manager.yaml layout likely changed, update the sed anchors."; exit 1; }
 	@echo "NOTE: controller-manager.yaml sed pipeline is best-effort - verify with 'helm lint'/'helm template' after regenerating."
-	# Vendor the metaldata DaemonSet locally; it must run directly here too since the seed itself may be bare-metal.
-	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/extras/metaldata.yaml | \
-		$(SED) \
-			-e '/namespace: {{ .Release.Namespace }}/d' \
-			-e 's/include "metal-operator\./include "chart./g' \
-			-e 's/\.Values\.metaldata\.image\.tag | default \.Chart\.AppVersion/required "metaldata.image.tag is required" .Values.metaldata.image.tag/' \
-			-e '1i\# Vendored copy of metal-operator-core'"'"'s templates/extras/metaldata.yaml; must run directly here since the seed itself may be bare-metal.' \
-		> metal-operator-remote/templates/metaldata.yaml
-	@grep -q 'required "metaldata.image.tag is required" .Values.metaldata.image.tag' metal-operator-remote/templates/metaldata.yaml || \
-		{ echo "ERROR: metaldata.image.tag required-guard substitution not found in metaldata.yaml - upstream extras/metaldata.yaml layout likely changed, update the sed anchor."; exit 1; }
-	# templates/metaldata-rbac.yaml is hand-maintained (mirrors upstream's rbac/metaldata*.yaml, simplified) - update by hand if upstream changes.
+	# templates/metaldata.yaml and templates/metaldata-rbac.yaml are hand-maintained (mirroring upstream's
+	# templates/extras/metaldata.yaml and templates/rbac/metaldata*.yaml). Update them manually when bumping
+	# the metal-operator dependency version and upstream changes those files.
+	#
+	# TODO: once upstream metal-operator adds extraEnv/extraVolumeMounts/extraVolumes hooks to
+	# templates/extras/metaldata.yaml (same pattern as manager.yaml), restore the extraction block below
+	# so metaldata.yaml is generated again rather than hand-maintained:
+	#
+	# @tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/extras/metaldata.yaml | \
+	# 	$(SED) \
+	# 		-e '/namespace: {{ .Release.Namespace }}/d' \
+	# 		-e 's/include "metal-operator\./include "chart./g' \
+	# 		-e 's/\.Values\.metaldata\.image\.tag | default \.Chart\.AppVersion/required "metaldata.image.tag is required" .Values.metaldata.image.tag/' \
+	# 		-e '1i\# Hand-maintained mirror of metal-operator-core'"'"'s templates/extras/metaldata.yaml.' \
+	# 		> metal-operator-remote/templates/metaldata.yaml
+	# @grep -q 'required "metaldata.image.tag is required" .Values.metaldata.image.tag' metal-operator-remote/templates/metaldata.yaml || \
+	# 	{ echo "ERROR: metaldata.image.tag required-guard not found - upstream layout changed, update the sed anchor."; exit 1; }
 	# Render webhook configurations and rewrite service refs to URL-based
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 	  -n kube-system \
