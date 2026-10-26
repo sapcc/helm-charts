@@ -45,6 +45,34 @@ groups:
         capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
         Please inform Product Owner, Service Owner, Delivery Owner for respective service via email.
 
+  - alert: SwiftAllocatedCapacityAbove75Percent
+    expr: (stabilized:limes_capacity_blocked_percent_per_az{service="object-store"} > 75) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    for: 10m
+    labels:
+      severity: warning
+      service: object-store
+      support_group: storage
+    annotations:
+      summary: "Blocked capacity above 75% on an autogrowing resource"
+      description: |
+        In AZ {{ $labels.availability_zone }}, more than 75% of all {{ $labels.service }}/{{ $labels.resource }}
+        capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
+        Please inform Product Owner, Service Owner, Delivery Owner for respective service via email.
+
+  - alert: SwiftAllocatedCapacityAbove80Percent
+    expr: (stabilized:limes_capacity_blocked_percent_per_az{service="object-store"} > 80) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
+    for: 10m
+    labels:
+      severity: critical
+      service: object-store
+      support_group: storage
+    annotations:
+      summary: "Blocked capacity above 80% on an autogrowing resource"
+      description: |
+        In AZ {{ $labels.availability_zone }}, more than 80% of all {{ $labels.service }}/{{ $labels.resource }}
+        capacity is blocked by commitments or provisioned usage. Please check if hardware needs to be ordered.
+        Please inform Product Owner, Service Owner, Delivery Owner for respective service via email.
+
   - alert: LimesBlockedCapacityDangerouslyHigh
     expr: (stabilized:limes_capacity_blocked_percent_per_az > on (service, resource) group_left () stabilized:limes_autogrow_quota_overcommit_threshold_percent) and on (service, resource) (stabilized:limes_autogrow_growth_multiplier > 1)
     for: 10m
