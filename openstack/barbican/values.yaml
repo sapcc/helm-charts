@@ -147,31 +147,22 @@ mysql_metrics:
   customMetrics:
     - help: Barbican container count by type
       labels:
-      - "id"
       - "status"
-      - "container_name"
       - "project_id"
       - "type"
       name: openstack_barbican_containers_count_gauge
       query: |
         SELECT
-          containers.name  AS container_name,
           containers.type,
-          containers.id,
           containers.status,
-          projects.external_id  AS project_id,
+          projects.external_id AS project_id,
           COUNT(*) AS count_gauge
-        from containers
-        INNER JOIN
-          projects
-        on
-          containers.project_id=projects.id
-        where
-          containers.deleted='false'
+        FROM containers
+        INNER JOIN projects
+          ON containers.project_id = projects.id
+        WHERE containers.deleted = 'false'
         GROUP BY
-          containers.name,
           containers.type,
-          containers.id,
           containers.status,
           projects.external_id;
       values:
@@ -179,24 +170,13 @@ mysql_metrics:
 
     - help: Barbican secret count by type
       labels:
-      - "id"
       - "status"
-      - "secret_name"
-      - "expiration"
-      - "created_at"
       - "project_id"
       - "secret_type"
       name: openstack_barbican_secrets_count_gauge
       query: |
         SELECT
-          secrets.id,
           secrets.status,
-          COALESCE(secrets.name, 'No Secret Name') AS secret_name,
-          secrets.created_at,
-          COALESCE(
-            DATE_FORMAT(secrets.expiration, '%Y-%m-%d %H:%i:%s'),
-            '1970-01-01 00:00:00'
-          ) AS expiration,
           projects.external_id AS project_id,
           secrets.secret_type,
           COUNT(*) AS count_gauge
@@ -205,39 +185,21 @@ mysql_metrics:
           ON secrets.project_id = projects.id
         WHERE secrets.deleted = 'false'
         GROUP BY
-          secrets.id,
           secrets.status,
-          secret_name,
-          secrets.created_at,
-          project_id,
-          secrets.secret_type,
-          expiration;
+          projects.external_id,
+          secrets.secret_type;
       values:
       - "count_gauge"
 
     - help: Barbican secret count in HSM Backend
       labels:
-      - "id"
       - "status"
-      - "secret_name"
-      - "expiration"
-      - "created_at"
       - "project_id"
       - "secret_type"
       name: openstack_barbican_hsm_secrets_count_gauge
       query: |
         SELECT
-          secrets.id,
           secrets.status,
-          COALESCE(secrets.name, 'No Secret Name') AS secret_name,
-          secrets.created_at,
-          COALESCE(
-            NULLIF(
-              DATE_FORMAT(secrets.expiration, '%Y-%m-%d %H:%i:%s'),
-              '0000-00-00 00:00:00'
-            ),
-            '1970-01-01 00:00:00'
-          ) AS expiration,
           projects.external_id AS project_id,
           secrets.secret_type,
           COUNT(*) AS count_gauge
@@ -251,11 +213,7 @@ mysql_metrics:
         WHERE kek_data.plugin_name = 'barbican.plugin.crypto.p11_crypto.P11CryptoPlugin'
           AND secrets.deleted = 'false'
         GROUP BY
-          secrets.id,
           secrets.status,
-          secret_name,
-          secrets.created_at,
-          expiration,
           projects.external_id,
           secrets.secret_type;
       values:
@@ -263,14 +221,12 @@ mysql_metrics:
 
     - help: Barbican certificate count by expiration bucket
       labels:
-      - "secret_id"
       - "status"
       - "project_id"
       - "expiration_bucket"
       name: openstack_barbican_certificate_count_gauge
       query: |
         SELECT
-          secrets.id AS secret_id,
           secrets.status AS status,
           projects.external_id AS project_id,
           CASE
@@ -285,25 +241,27 @@ mysql_metrics:
               THEN 'expires_30d'
             ELSE 'expires_later'
           END AS expiration_bucket,
-          1 AS count_gauge
+          COUNT(*) AS count_gauge
         FROM secrets
         INNER JOIN projects
           ON secrets.project_id = projects.id
         WHERE secrets.secret_type = 'certificate'
-          AND secrets.deleted = 0;
+          AND secrets.deleted = 0
+        GROUP BY
+          secrets.status,
+          projects.external_id,
+          expiration_bucket;
       values:
       - "count_gauge"
 
     - help: Barbican opaque certificate count by expiration bucket
       labels:
-      - "secret_id"
       - "status"
       - "project_id"
       - "expiration_bucket"
       name: openstack_barbican_opaque_certificate_count_gauge
       query: |
         SELECT
-          secrets.id AS secret_id,
           secrets.status AS status,
           projects.external_id AS project_id,
           CASE
@@ -318,12 +276,16 @@ mysql_metrics:
               THEN 'expires_30d'
             ELSE 'expires_later'
           END AS expiration_bucket,
-          1 AS count_gauge
+          COUNT(*) AS count_gauge
         FROM secrets
         INNER JOIN projects
           ON secrets.project_id = projects.id
         WHERE secrets.secret_type = 'opaque'
-          AND secrets.deleted = 0;
+          AND secrets.deleted = 0
+        GROUP BY
+          secrets.status,
+          projects.external_id,
+          expiration_bucket;
       values:
       - "count_gauge"
 
