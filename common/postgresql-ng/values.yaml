@@ -78,7 +78,13 @@ crontab: ""
 persistence:
   enabled: true
   createBackupUser: true
-  accessMode: ReadWriteMany # compatibility to allow easy upgrades
+
+  # If your deployment targets the controlplane cluster when deployed to classic regions, leave this at the default value.
+  # Otherwise, e.g. when targeting the scaleout clusters, set this to "ReadWriteOnce".
+  #
+  # The "ReadWriteMany" setting is always technically incorrect, but kept for backwards compatibility with existing deployments.
+  # When deploying to a Gardener-based region where "ReadWriteMany" does not work, the chart will automatically switch to "ReadWriteOnce".
+  accessMode: ReadWriteMany
   size: 10Gi
   # Re-use existing (unmanaged) PVC
   # existingClaim: claimName
