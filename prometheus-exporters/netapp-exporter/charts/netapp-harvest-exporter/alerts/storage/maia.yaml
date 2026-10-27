@@ -1,8 +1,10 @@
 groups:
   - name: manila-maia
     rules:
-      - alert: AbsentNetAppVolumeTotalOpsMaia
-        expr: absent(netapp_volume_total_ops:maia)
+      - alert: ManilaMaiaMetricsAbsent
+        expr: |
+          absent({__name__=~".+:maia"})
+          and count(netapp_volume_labels:manila) > 0
         for: 30m
         labels:
           severity: info
@@ -12,19 +14,8 @@ groups:
           support_group: compute-storage-api
           support_component: manila_netapp
         annotations:
-          description: Metrics `netapp_volume_total_ops:maia` missing
-          summary: Metrics `netapp_volume_total_ops:maia` missing
+          description: >
+            No Maia recording-rule metrics (metric names ending in :maia) are
+            present, while Manila volume inventory still exists.
+          summary: Maia metrics are absent while Manila volumes exist
 
-      - alert: AbsentNetAppVolumeConnectionCountMaia
-        expr: absent(netapp_volume_connection_count:maia)
-        for: 30m
-        labels:
-          severity: info
-          context: maia
-          service: manila
-          tier: os
-          support_group: compute-storage-api
-          support_component: manila_netapp
-        annotations:
-          description: Metrics `netapp_volume_connection_count:maia` missing
-          summary: Metrics `netapp_volume_connection_count:maia` missing
