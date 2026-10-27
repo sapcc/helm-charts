@@ -1,0 +1,33 @@
+{{- if and (eq .Values.mode "seed") (not (index .Values "boot-operator-core").controllerManager.hostNetwork) }}
+{{- $domain := printf "boot-operator-remote.%s.%s.%s" $.Values.global.clusterType $.Values.global.region $.Values.global.tld }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "chart.fullname" . }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+spec:
+  tls:
+    - secretName: tls-boot-operator
+      hosts: [ {{ $domain }} ]
+  rules:
+    - host: {{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "chart.fullname" . }}-boot-service
+                port:
+                  number: 8082
+{{- end }}

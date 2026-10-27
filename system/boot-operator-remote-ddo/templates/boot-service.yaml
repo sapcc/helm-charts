@@ -1,0 +1,19 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart.fullname" . }}-boot-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  type: {{ .Values.bootService.type }}
+  selector:
+    app.kubernetes.io/name: boot-operator-core
+    app.kubernetes.io/instance: boot-operator-remote
+    control-plane: controller-manager
+  ports:
+    {{- .Values.bootService.ports | toYaml | nindent 4 }}
+{{- end }}

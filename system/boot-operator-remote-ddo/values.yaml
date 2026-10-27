@@ -1,0 +1,62 @@
+# =============================================================================
+# boot-operator-remote-ddo values
+# =============================================================================
+#
+# MODE CONTRACT (DO NOT SET mode HERE):
+#   The dual-deployment-operator injects .Values.mode = "seed" | "shoot" at
+#   render time. The chart MUST NOT declare a default for `mode` — the operator
+#   rejects any render whose user values contain `mode`.
+#
+#   Per-mode subchart flags are supplied via the DualDeploymentOperator CR:
+#     spec.source.helm.seedValues
+#     spec.source.helm.shootValues
+#
+# =============================================================================
+
+# load-bearing: helm fullname template yields "boot-operator" for all objects
+fullnameOverride: boot-operator
+
+# ---------------------------------------------------------------------------
+# Upstream subchart — ALL flags OFF by default.
+# The CR's seedValues/shootValues drive these per mode (see MODE CONTRACT above).
+# NEVER set controllerManager.enable=true here — this chart owns the Deployment.
+# ---------------------------------------------------------------------------
+boot-operator-core:
+  controllerManager:
+    enable: false
+    # Shoot RBAC binds this upstream SA in kube-system (the shoot release namespace).
+    serviceAccountName: boot-operator-controller-manager
+  crd:
+    enable: false
+  rbac:
+    enable: false
+  webhook:
+    enable: false
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+  certmanager:
+    enable: false
+  networkPolicy:
+    enable: false
+
+# ---------------------------------------------------------------------------
+# boot Service (seed)
+# ---------------------------------------------------------------------------
+bootService:
+  ports:
+    - port: 8082
+      protocol: TCP
+      targetPort: 8082
+  type: ClusterIP
+
+# ---------------------------------------------------------------------------
+# Global values — per-cluster, supplied via CR values
+# ---------------------------------------------------------------------------
+global:
+  region: ""
+  clusterType: ""
+  tld: ""
+  linkerd_enabled: false
+  linkerd_requested: false
