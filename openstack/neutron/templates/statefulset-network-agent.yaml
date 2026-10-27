@@ -151,6 +151,12 @@ spec:
               mountPath: /etc/neutron/dnsmasq.conf
               subPath: dnsmasq.conf
               readOnly: true
+{{- if $.Values.unbound.enabled }}
+            - name: neutron-etc
+              mountPath: /etc/neutron/unbound.common.conf
+              subPath: unbound.common.conf
+              readOnly: true
+{{- end }}
             - name: neutron-etc
               mountPath: /etc/neutron/logging.conf
               subPath: logging.conf
@@ -177,6 +183,10 @@ spec:
           env:
             - name: METRIC_PREFIX
               value: openstack_neutron_agent_check
+{{- if $.Values.unbound.enabled }}
+            - name: UNBOUND_METRICS_ENABLED
+              value: "True"
+{{- end }}
           ports:
             - name: metrics-export
               containerPort: 9116

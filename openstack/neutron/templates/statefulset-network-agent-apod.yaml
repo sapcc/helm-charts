@@ -191,6 +191,10 @@ spec:
           env:
             - name: METRIC_PREFIX
               value: openstack_neutron_agent_check
+{{- if $.Values.unbound.enabled }}
+            - name: UNBOUND_METRICS_ENABLED
+              value: "True"
+{{- end }}
           ports:
             - name: metrics-export
               containerPort: 9116
@@ -258,6 +262,10 @@ spec:
                   path: rootwrap.conf
                 - key: dnsmasq.conf
                   path: dnsmasq.conf
+{{- if $.Values.unbound.enabled }}
+                - key: unbound.common.conf
+                  path: unbound.common.conf
+{{- end }}
                 - key: dhcp.filters
                   path: rootwrap.d/dhcp.filters
                 - key: linux-bridge.ini
