@@ -14,7 +14,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Keystone API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -34,7 +33,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Keystone API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -55,7 +53,6 @@ groups:
       service: "active_dir"
       context: "active_dir"
       meta: "An ActiveDirectory node {{`{{ $labels.name }}`}} is down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -76,7 +73,6 @@ groups:
       service: "active_dir"
       context: "active_dir"
       meta: "ldap.global.cloud.sap is down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -97,7 +93,6 @@ groups:
       service: "active_dir"
       context: "active_dir"
       meta: "LDAP user searches fail"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -118,7 +113,6 @@ groups:
       service: "active_dir"
       context: "active_dir"
       meta: "LDAP group searches fail"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -139,7 +133,6 @@ groups:
       service: "active_dir"
       context: "active_dir"
       meta: "SAP https://autodiscover.sap.com/ews/healthcheck.htm reports down"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -158,7 +151,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "OIDC discovery endpoint down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -177,7 +169,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "OpenStack OIDC token validation failed"
-      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -196,7 +187,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Keystone federated authentication failed"
-      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -215,7 +205,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "OIDC Authentication failed with caching"
-      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -234,7 +223,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "OIDC authentication using OpenStack api failed"
-      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/cc3test-alert-oidc/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -253,10 +241,65 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "SAML signature validation failing"
-      dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "SAML signature validation test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Either mod_shib is accepting invalid/unsigned SAML assertions (SF.Fas.1/2 not enforced), or the valid SSO flow is broken."
       summary: "SAML signature validation failing"
+
+  - alert: SAMLAuthFlowFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAuthFlow_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML authentication flow failing"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML auth flow test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. Either unauthenticated access is no longer redirecting to the IdP, or password authentication is not being blocked for federated domain users."
+      summary: "SAML authentication flow failing"
+
+  - alert: SAMLAudienceRestrictionFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLAudienceRestriction_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML audience restriction and context binding failing"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML audience restriction test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. mod_shib may be accepting assertions intended for a different service provider or tenant (SF.Fas.5 context binding not enforced)."
+      summary: "SAML audience restriction and context binding failing"
+
+
+  - alert: SAMLTimingValidationFailed
+    expr: |
+        cc3test_status{service="keystone",
+        name=~"TestSAMLTimingValidation_.+", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: identity
+      service: "{{`{{ $labels.service }}`}}"
+      context: "{{`{{ $labels.service }}`}}"
+      meta: "SAML timing and replay validation failing"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
+      report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
+    annotations:
+      description: "SAML timing validation test {{`{{ $labels.name }}`}} for {{`{{ $labels.service }}`}} is failing. mod_shib may be accepting expired, future-dated, or replayed SAML assertions (SF.Fas.3 timing controls not enforced)."
+      summary: "SAML timing and replay validation failing"
+

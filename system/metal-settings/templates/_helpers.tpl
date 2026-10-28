@@ -83,6 +83,37 @@ true
 {{- end -}}
 
 {{/*
+Fail fast if CRDVersionControl.features.readinessGates.enabled=true but CRDVersionControl.apiVersions
+still point at the plain metal-operator group ("metal.ironcore.dev/v1alpha1"), which has no
+readinessGates/completionConditionType fields. The readiness-gate chain requires
+metal-maintenance-operator's group-qualified apiVersions ("baseboard.metal.ironcore.dev/v1alpha1"
+for BMCSettingsSet/BMCVersionSet, "system.metal.ironcore.dev/v1alpha1" for
+BIOSSettingsSet/BIOSVersionSet).
+
+Usage:
+  {{- include "metal-settings.requireChainCapableAPI" . }}
+*/}}
+{{- define "metal-settings.requireChainCapableAPI" -}}
+{{- $av := .Values.CRDVersionControl.apiVersions -}}
+{{- if or (eq $av.bmcSettingsSet "metal.ironcore.dev/v1alpha1") (eq $av.bmcVersionSet "metal.ironcore.dev/v1alpha1") (eq $av.biosSettingsSet "metal.ironcore.dev/v1alpha1") (eq $av.biosVersionSet "metal.ironcore.dev/v1alpha1") -}}
+{{- fail "metal-settings: CRDVersionControl.features.readinessGates.enabled=true requires CRDVersionControl.apiVersions.* to point at metal-maintenance-operator's groups (baseboard.metal.ironcore.dev/v1alpha1, system.metal.ironcore.dev/v1alpha1) — the metal-operator group (metal.ironcore.dev/v1alpha1) has no readinessGates/completionConditionType fields." -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Fail fast if a machines.<vendor>.models.<name> entry still defines the legacy "bios:"/"bmc:"
+keys, which were replaced by the "chain:" schema (see values.yaml for the chain schema).
+
+Usage:
+  {{- include "metal-settings.rejectLegacyBiosBmcKeys" (dict "vendor" $vendor "entryName" $entryName "entry" $entry) }}
+*/}}
+{{- define "metal-settings.rejectLegacyBiosBmcKeys" -}}
+{{- if or .entry.bios .entry.bmc -}}
+{{- fail (printf "metal-settings: machines.%s.models.%s still defines the legacy bios:/bmc: keys. These were replaced by chain: — see values.yaml for the chain schema." .vendor .entryName) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Render server selector matchExpressions from a serverFilters object.
 Expected input:
   dict "serverFilters" (dict "included" (list ...) "excluded" (list ...)) "labelKey" $.Values.labelKeys.serverName

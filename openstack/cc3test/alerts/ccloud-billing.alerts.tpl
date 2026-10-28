@@ -12,7 +12,6 @@ groups:
       support_group: containers
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Billing API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/resources/billing/playbooks/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -30,7 +29,6 @@ groups:
       support_group: containers
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Billing API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/resources/billing/playbooks/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"

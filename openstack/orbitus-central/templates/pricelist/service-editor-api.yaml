@@ -1,0 +1,16 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: pricelist-editor-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack | quote }}
+
+spec:
+  selector:
+    name: pricelist-editor-api
+  ports:
+    - name: metrics
+      port: 80
+      protocol: TCP

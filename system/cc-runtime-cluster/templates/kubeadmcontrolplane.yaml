@@ -1,5 +1,6 @@
 {{- range $cluster := .Values.clusters }}
 {{ $apiserver := printf "apiserver.runtime.%s.cloud.sap" (default $.Values.global.region $cluster.region) }}
+{{- $encEnabled := or $cluster.etcdEncryption $cluster.encryptionConfigContent $.Values.etcd.useEncryption }}
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta2
@@ -79,12 +80,7 @@ spec:
             value: {{ $.Values.controlplane.port | quote }}
           - name: authentication-config
             value: "/etc/kubernetes/authentication.yaml"
-          {{- if hasKey $cluster "etcdEncryption" }}
-          {{- if $cluster.etcdEncryption }}
-          - name: encryption-provider-config
-            value: "/etc/kubernetes/enc/enc.yaml"
-          {{- end }}
-          {{- else if $.Values.etcd.useEncryption }}
+          {{- if $encEnabled }}
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
@@ -108,15 +104,7 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
-        {{- if hasKey $cluster "etcdEncryption" }}
-        {{- if $cluster.etcdEncryption }}
-          - name: "encryption-config"
-            hostPath: "/etc/kubernetes/enc/enc.yaml"
-            mountPath: "/etc/kubernetes/enc/enc.yaml"
-            readOnly: true
-            pathType: File
-        {{- end }}
-        {{- else if $.Values.etcd.useEncryption }}
+        {{- if $encEnabled }}
           - name: "encryption-config"
             hostPath: "/etc/kubernetes/enc/enc.yaml"
             mountPath: "/etc/kubernetes/enc/enc.yaml"
@@ -376,6 +364,40 @@ spec:
       owner: root:root
       path: /etc/kubernetes/audit-policy.yaml
       permissions: "0644"
+
+{{/*
+  Etcd encryption: enc.yaml + enc_previous.yaml delivered via
+  files[].contentFrom.secret (static ref, no lookup). CAPI resolves the
+  Secret at bootstrap-data generation time. Falls back to inline content
+  for CI (encryptionConfigContent). Only activates for etcdEncryption: true;
+  legacy additionalConfig.secrets path (etcd.useEncryption) is unaffected.
+*/}}
+{{- if $cluster.etcdEncryption }}
+{{- $secretName := default "etcd-encryption-config" $cluster.encryptionSecretName }}
+{{- if $cluster.encryptionConfigContent }}
+    - content: |
+{{ $cluster.encryptionConfigContent | trim | indent 8 }}
+      owner: root:root
+      path: /etc/kubernetes/enc/enc.yaml
+      permissions: "0600"
+{{- else }}
+    - contentFrom:
+        secret:
+          name: {{ $secretName }}
+          key: config
+      owner: root:root
+      path: /etc/kubernetes/enc/enc.yaml
+      permissions: "0600"
+{{/* enc_previous.yaml: retired keys backup for manual recovery. */}}
+    - contentFrom:
+        secret:
+          name: {{ $secretName }}
+          key: config-previous
+      owner: root:root
+      path: /etc/kubernetes/enc/enc_previous.yaml
+      permissions: "0600"
+{{- end }}
+{{- end }}
 
     format: ignition
     ignition:

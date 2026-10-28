@@ -1,0 +1,18 @@
+{{- if and .Values.webhookInjector.metrics.enabled (eq .Values.mode "seed") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart.fullname" . }}-webhook-injector-metrics
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook-injector-metrics
+spec:
+  ports:
+    - name: metrics
+      port: 8082
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "chart.selectorLabels" . | nindent 4 }}
+    control-plane: controller-manager
+{{- end }}

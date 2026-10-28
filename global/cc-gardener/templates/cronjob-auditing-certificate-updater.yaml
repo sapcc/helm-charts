@@ -36,6 +36,10 @@ spec:
               secret_garden_storage=$(kubectl -n garden-storage create secret generic auditing-mtls-storage --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
               kubectl -n garden patch secret mr-s-auditing-mtls-storage --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden_storage'}]";
               {{- end }}
+              {{- if has "garden-wire-api" .Values.extensions.auditing.additionalNamespaces }}
+              secret_garden_wire_api=$(kubectl -n garden-wire-api create secret generic auditing-mtls-wire-api --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+              kubectl -n garden patch secret mr-s-auditing-mtls-wire-api --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden_wire_api'}]";
+              {{- end }}
               kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | kubectl -n garden apply -f -;
             volumeMounts:
             - name: certificate

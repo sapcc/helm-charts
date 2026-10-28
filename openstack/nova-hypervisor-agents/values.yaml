@@ -34,6 +34,8 @@ pod:
             maxUnavailable: "10%"
   tolerations: {}
 
+hypervisors:
+  compute-kvm: {}
 
 defaults:
   default:
@@ -84,7 +86,7 @@ defaults:
           live_migration_scheme: "tls"
           live_migration_timeout_action: 'force_complete'
           live_migration_with_native_tls: 'true'
-          nfs_mount_options: "rw,bg,nfsvers=4.2,hard,proto=tcp,timeo=600,nconnect=8,retrans=2,rsize=262144,wsize=262144,noatime,actimeo=0,lookupcache=pos"
+          nfs_mount_options: "rw,nfsvers=4.2,hard,proto=tcp,timeo=600,nconnect=8,retrans=2,rsize=262144,wsize=262144,noatime,actimeo=0,lookupcache=pos"
           num_umount_retries: "30"
           rng_dev_path: /dev/random
           smbios_asset_tag: "SAP CCloud VM"
@@ -136,33 +138,37 @@ logging:
       args: "()"
       formatter: default
     sentry:
-      class: raven.handlers.logging.SentryHandler
+      class: sapcc_sentrylogger.handler.EventHandler
+      level: ERROR
+      args: "()"
+    bread:
+      class: sapcc_sentrylogger.handler.BreadcrumbHandler
       level: ERROR
       args: "()"
   loggers:
     root:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: WARNING
     migrate:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova.scheduler:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: DEBUG
     nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     nova.virt.vmwareapi:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: DEBUG
     eventlet.wsgi.server:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     oslo.privsep:
-      handlers: stdout, sentry
+      handlers: stdout, sentry, bread
       level: INFO
     suds:
       handlers: "null"

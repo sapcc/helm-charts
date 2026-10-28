@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.44.1 - 2026/10/15
+* move the `metrics` (mysqld-exporter) sidecar probes to `metrics.livenessProbe` / `metrics.readinessProbe`; leave them empty by default
+  * MariaDB readiness depends on the metrics sidecar readiness
+  * a failed probe might restart the exporter and make the database unavailable
+* chart version bumped
+
 ## v0.44.0 - 2026/10/01
 * truncate the active slow-query log during the run once it exceeds `slow_query_log.rotation.max_size_mb` (default 1024), checked every `interval_seconds` (default 300) by a `slow-log-rotator` sidecar; `keep_previous` (default true) retains one `*.1` copy
 * the rotator runs as a native sidecar when `global.mariadb.native_sidecar.enabled`, otherwise as a regular sidecar container

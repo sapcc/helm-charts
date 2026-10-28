@@ -1,10 +1,6 @@
-{{- $hypervisor := merge .Values.defaults.hypervisor.kvm .Values.defaults.hypervisor.common -}}
 [DEFAULT]
 # Needs to be same on hypervisor and scheduler
 scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}
-{{- range $k, $v := $hypervisor.default }}
-{{ $k }} = {{ $v }}
-{{- end }}
 
 [filter_scheduler]
 # Needs to be same on hypervisor and scheduler
@@ -30,13 +26,3 @@ valid_interfaces = public
 
 [glance]
 valid_interfaces = public
-
-{{- if $hypervisor.config_file }}
-{{"\n"}}
-{{- include "util.helpers.valuesToIni" $hypervisor.config_file }}
-{{- end }}
-
-{{- $cell := include "nova.helpers.cell_name" (tuple . (include "nova.helpers.get_active_cell" .)) }}
-{{- tuple . $cell $hypervisor.vnc | include "console-novnc.conf" }}
-
-{{- tuple . $cell $hypervisor.serial | include "console-serial.conf" }}
