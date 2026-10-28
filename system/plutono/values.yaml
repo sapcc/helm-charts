@@ -77,6 +77,18 @@ ingress:
   enabled: false
   global: false
 
+# Plutono sunset: redirect the user-facing Ingresses (plutono, plutono-global, plutono-kiosk)
+# to Perses. tls-acme and disco stay, so certificate and DNS record remain valid.
+# The /api/health Ingresses are not changed.
+redirect:
+  enabled: false
+  # 302 -> nginx.ingress.kubernetes.io/temporal-redirect, 301 -> nginx.ingress.kubernetes.io/permanent-redirect
+  code: 302
+  # e.g. https://perses.<region>.cloud.sap
+  target: null
+  # e.g. https://perses.global.cloud.sap
+  globalTarget: null
+
 # For kiosk mode
 nginx:
   enabled: false

@@ -7,6 +7,9 @@ metadata:
   annotations:
     kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
     disco: {{ default false .Values.plutono.disco | quote }}
+  {{- if .Values.redirect.enabled }}
+    {{- include "plutono.redirect.annotation" (dict "redirect" .Values.redirect "target" .Values.redirect.target) | nindent 4 }}
+  {{- else }}
   {{- if .Values.plutono.oauth.enabled }}
     ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
     nginx.ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
@@ -17,6 +20,7 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ default "" .Values.plutono.auth.tls_client_auth.secret }}
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{- end }}
   {{- end }}
 
 spec:
@@ -89,6 +93,9 @@ metadata:
     kubernetes.io/tls-acme: {{ default false .Values.plutono.tls | quote }}
     disco: {{ default false .Values.plutono.disco | quote }}
     disco/zone-name: "global.cloud.sap"
+  {{- if .Values.redirect.enabled }}
+    {{- include "plutono.redirect.annotation" (dict "redirect" .Values.redirect "target" .Values.redirect.globalTarget) | nindent 4 }}
+  {{- else }}
   {{- if .Values.plutono.oauth.enabled }}
     ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
     nginx.ingress.kubernetes.io/auth-url: {{ required ".Values.plutono.oauth.authURL missing" .Values.plutono.oauth.authURL }}
@@ -102,6 +109,7 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     ingress.kubernetes.io/auth-tls-verify-client: "optional"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+  {{- end }}
   {{- end }}
 
 spec:

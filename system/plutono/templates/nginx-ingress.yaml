@@ -10,6 +10,9 @@ metadata:
 {{- if .Values.ingress.global }}
     disco/zone-name: "global.cloud.sap"
 {{- end }}
+{{- if .Values.redirect.enabled }}
+    {{- include "plutono.redirect.annotation" (dict "redirect" .Values.redirect "target" (ternary .Values.redirect.globalTarget .Values.redirect.target .Values.ingress.global)) | nindent 4 }}
+{{- end }}
 spec:
   tls:
     - secretName: tls-plutono-kiosk
