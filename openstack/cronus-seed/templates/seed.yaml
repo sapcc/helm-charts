@@ -114,6 +114,38 @@ spec:
           role: email_admin # for external access from hyperscaler
         - user: cronus@Default
           role: objectstore_admin # for external access from hyperscaler
+      - name: PostfixEmailBackend
+        role_assignments:
+        - group: HCP03_DOMAIN_ADMINS
+          role: admin
+        - user: cronus@Default
+          role: admin
+        - user: cronus@Default
+          role: compute_admin
+        - user: cronus@Default
+          role: objectstore_admin
+        - user: THCP_I349241_ab@hcp03
+          role: admin
+        - user: THCP_I349241_ab@hcp03
+          role: compute_admin
+        - user: THCP_I349241_ab@hcp03
+          role: objectstore_admin
+        network_quota:
+          network: 1
+          subnet: 1
+          router: 1
+        networks:
+        - name: PostfixEmailBackend_private
+          subnets:
+          - name: PostfixEmailBackend_private_sub
+            cidr: 10.180.10.0/24
+            ip_version: 4
+        routers:
+        - name: PostfixSmtpOutRouter
+          external_gateway_info:
+            network: FloatingIP-external-hcp03-SmtpMailBackend-01
+          interfaces:
+          - subnet: PostfixEmailBackend_private_sub
     - name: ccadmin
       projects:
       - name: master
