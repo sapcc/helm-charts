@@ -5,6 +5,11 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROFILE_DIR="${PROFILE_DIR:-$SCRIPT_DIR/profiles}"
 
+# Shared, side-effect-free helpers (probe_ns, discover_seed).
+# shellcheck source=lib/ddo-common.sh
+source "$SCRIPT_DIR/lib/ddo-common.sh" ||
+  { echo "error: cannot source $SCRIPT_DIR/lib/ddo-common.sh" >&2; return 2 2>/dev/null || exit 2; }
+
 # Maximum read attempts (including the first): 3; delay: 2s; timeout: 8s.
 # Override with SCAN_RETRIES, SCAN_RETRY_DELAY (seconds), and PROBE_TIMEOUT.
 SCAN_RETRIES="${SCAN_RETRIES:-3}"
@@ -175,15 +180,26 @@ main() {
     esac
   done
 
-  # Explicit environment values let operators supply discovered seed coordinates.
-  # For the common case, u8s context and the seed control-plane namespace match
-  # the requested cluster name.
+  # `--cluster` names the SHOOT (e.g. m-qa-de-200). The DDO CR and the legacy
+  # Helm release both live on the SEED cluster, in the shoot control-plane
+  # namespace shoot--cp--<shoot>. The shoot name therefore drives the namespace,
+  # while the seed context is auto-discovered (overridable via SEED_CTX or env).
   if [[ -n "$cluster" ]]; then
-    SEED_CTX="${SEED_CTX:-$cluster}"
     NAMESPACE="${NAMESPACE:-shoot--cp--$cluster}"
   fi
-  : "${SEED_CTX:?set SEED_CTX or pass --cluster}"
   : "${NAMESPACE:?set NAMESPACE or pass --cluster}"
+
+  # Resolve the seed context. If SEED_CTX is preset (env / explicit), keep it;
+  # otherwise discover the seed hosting $NAMESPACE. Discovery assigns SEED_CTX
+  # and must NOT run in a subshell, so it is called directly here.
+  if [[ -z "${SEED_CTX:-}" ]]; then
+    if [[ -z "$cluster" ]]; then
+      echo "error: set SEED_CTX or pass --cluster" >&2
+      return 2
+    fi
+    discover_seed "$cluster" "$NAMESPACE" || return 2
+  fi
+  : "${SEED_CTX:?seed context unresolved}"
 
   if [[ ! -d "$PROFILE_DIR" ]]; then
     echo "error: profile directory not found: $PROFILE_DIR" >&2

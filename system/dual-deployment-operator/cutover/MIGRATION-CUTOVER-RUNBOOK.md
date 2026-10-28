@@ -45,15 +45,18 @@ runs — provided nobody deletes a finalized CR during the window (**the freeze*
 
 ```bash
 # Phase 1 — preflight gates + confirmed uninstall + teardown barrier, then pause (exit 20).
-./cutover-ddo.sh --operator <name> --phase uninstall \
-  --cluster <cluster> --target-context <cluster> --namespace shoot--cp--<cluster>
+./cutover-ddo.sh --operator <name> --phase uninstall --cluster <shoot>
 
 # ... merge the kube-secrets DDO-CR PR for this cluster, wait for reconcile ...
 
 # Phase 2 — automated presence/CRD UID checks, then manual acceptance (see §6).
-./cutover-ddo.sh --operator <name> --phase verify \
-  --cluster <cluster> --target-context <cluster> --namespace shoot--cp--<cluster>
+./cutover-ddo.sh --operator <name> --phase verify --cluster <shoot>
 ```
+
+> `--cluster <shoot>` is the only cluster coordinate you need: the target/shoot
+> context defaults to `<shoot>`, the seed namespace to `shoot--cp--<shoot>`, and
+> the seed context is auto-discovered. Override with `--target-context`,
+> `--namespace`, or `--seed-context` when a name diverges.
 
 | Exit | Meaning | What to do |
 | --- | --- | --- |
