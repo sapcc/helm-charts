@@ -26,9 +26,13 @@ classifies each chart's migration state **cluster-authoritatively**, prints a
 ./scan-ddo-migration.sh --cluster m-qa-de-200
 ```
 
-`--cluster <name>` derives `SEED_CTX=<name>` and `NAMESPACE=shoot--cp--<name>`
-for the common case. Override either by exporting `SEED_CTX` / `NAMESPACE`
-before invoking (for regions whose seed context name differs from the cluster).
+`--cluster <shoot>` names the **shoot** (e.g. `m-qa-de-200`) and derives
+`NAMESPACE=shoot--cp--<shoot>`. The DDO CR and the legacy Helm release both
+live on the **seed** cluster, so the scanner **auto-discovers the seed context**
+that hosts `shoot--cp--<shoot>` (region-ranked probe; e.g. `m-qa-de-200` →
+`a-qa-de-200`). Override discovery by exporting `SEED_CTX` (or `NAMESPACE`)
+before invoking; narrow the ranking with `SEED_PREFIXES` (default `a g rt`).
+Seed discovery is shared with `cutover-ddo.sh` via `lib/ddo-common.sh`.
 
 ### States
 
@@ -59,20 +63,21 @@ for the full procedure):
 
 ```bash
 # Phase 1: preflight gates + confirmed uninstall + teardown barrier, then pause.
-./cutover-ddo.sh --operator boot --phase uninstall \
-  --cluster m-qa-de-200 --target-context m-qa-de-200 --namespace shoot--cp--m-qa-de-200
+./cutover-ddo.sh --operator boot --phase uninstall --cluster m-qa-de-200
 
 # ... merge the kube-secrets DDO-CR PR, wait for reconcile ...
 
 # Phase 2: automated presence/CRD UID checks, then manual acceptance per runbook.
-./cutover-ddo.sh --operator boot --phase verify \
-  --cluster m-qa-de-200 --target-context m-qa-de-200 --namespace shoot--cp--m-qa-de-200
+./cutover-ddo.sh --operator boot --phase verify --cluster m-qa-de-200
 
 # Preview (no cluster mutations; still writes local state files):
-./cutover-ddo.sh --operator boot --phase uninstall \
-  --cluster m-qa-de-200 --target-context m-qa-de-200 \
-  --namespace shoot--cp--m-qa-de-200 --dry-run
+./cutover-ddo.sh --operator boot --phase uninstall --cluster m-qa-de-200 --dry-run
 ```
+
+`--cluster` names the **shoot**. The target/shoot context and the seed
+control-plane namespace are derived from it (`--target-context=<shoot>`,
+`--namespace=shoot--cp--<shoot>`) and the seed context is auto-discovered;
+override any of them with the optional flags below.
 
 ### Flags
 
@@ -80,9 +85,9 @@ for the full procedure):
 | --- | --- | --- |
 | `--operator <name>` | yes | Profile to use (`metal`, `boot`) — selects `profiles/<name>-operator-remote.env` |
 | `--phase <uninstall\|verify>` | yes | Which phase to run |
-| `--cluster <name>` | yes | Target cluster name |
-| `--target-context <ctx>` | yes | kubectl context for the target/shoot cluster |
-| `--namespace <ns>` | yes | Seed CP namespace (`shoot--cp--<cluster>`) |
+| `--cluster <shoot>` | yes | Shoot cluster name (e.g. `m-qa-de-200`) |
+| `--target-context <ctx>` | no | kubectl context for the target/shoot cluster (default: `--cluster`) |
+| `--namespace <ns>` | no | Seed CP namespace (default: `shoot--cp--<shoot>`) |
 | `--seed-context <ctx>` | no | Seed kubectl context (auto-discovered if omitted) |
 | `--release <name>` | no | Override the profile's `RELEASE` |
 | `--ddo-cr <name>` | no | Override the profile's `DDO_CR` |

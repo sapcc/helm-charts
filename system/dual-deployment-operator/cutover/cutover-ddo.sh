@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # cutover-ddo.sh — Generalized DDO cutover engine (Layer 2)
 #
-# Usage: cutover-ddo.sh --operator <metal|boot> --phase <uninstall|verify> [options]
+# Usage: cutover-ddo.sh --operator <metal|boot> --phase <uninstall|verify> \
+#          --cluster <shoot> [options]
 #
 # This script implements the full cutover lifecycle for migrating a Gardener
 # extension operator to DualDeploymentOperator management. It is parameterized
@@ -18,7 +19,10 @@
 #   20 - Uninstall complete, proceed to merge CR PR (not an error)
 #   30 - Outage budget blown, rollback required
 set -Eeuo pipefail
-trap 'printf "\nERROR: line %s: command failed: %s\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
+# Named ERR handler, reused so obj_state can restore the exact same trap after
+# temporarily clearing it for its guarded (expected-to-fail) read.
+err_trap() { printf "\nERROR: line %s: command failed: %s\n" "$1" "$2" >&2; }
+trap 'err_trap "$LINENO" "$BASH_COMMAND"' ERR
 
 # ============================================================================
 # CLI argument defaults
@@ -49,17 +53,21 @@ step() { printf '\n\033[1;36m=== %s ===\033[0m\n' "$*"; }
 # ============================================================================
 usage() {
   cat <<EOF
-Usage: $(basename "$0") --operator <name> --phase <uninstall|verify> [options]
+Usage: $(basename "$0") --operator <name> --phase <uninstall|verify> \\
+         --cluster <shoot> [options]
 
 Required:
   --operator <name>       Operator profile (metal, boot)
   --phase <phase>         Phase to execute (uninstall, verify)
-  --cluster <name>        Target cluster name
-  --target-context <ctx>  kubectl context for the target/shoot cluster
-  --namespace <ns>        Namespace on the seed cluster
+  --cluster <shoot>       Shoot cluster name (e.g. m-qa-de-200)
 
 Optional:
-  --seed-context <ctx>    kubectl context for the seed cluster (auto-discovered if omitted)
+  --target-context <ctx>  kubectl context for the target/shoot cluster
+                          (default: --cluster)
+  --namespace <ns>        Seed control-plane namespace
+                          (default: shoot--cp--<shoot>)
+  --seed-context <ctx>    kubectl context for the seed cluster
+                          (auto-discovered from --cluster/--namespace if omitted)
   --release <name>        Helm release name (default: from profile)
   --ddo-cr <name>         DualDeploymentOperator CR name (default: from profile)
   --deploy <name>         Controller Deployment name (default: from profile)
@@ -108,6 +116,11 @@ parse_args() {
 # ============================================================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROFILES_DIR="$SCRIPT_DIR/profiles"
+
+# Shared, side-effect-free helpers (probe_ns, discover_seed).
+# shellcheck source=lib/ddo-common.sh
+source "$SCRIPT_DIR/lib/ddo-common.sh" ||
+  { echo "error: cannot source $SCRIPT_DIR/lib/ddo-common.sh" >&2; exit 2; }
 
 load_profile() {
   local profile_file="$PROFILES_DIR/${OPERATOR}-operator-remote.env"
@@ -170,7 +183,16 @@ hs() { u8s helm --kube-context "$SEED_CTX" -n "$NAMESPACE" "$@"; }
 obj_state() {
   local ctxfn="$1"; shift
   local err
-  if err=$("$ctxfn" "$@" 2>&1 >/dev/null); then
+  # This read is EXPECTED to fail for genuinely-absent objects; a non-zero exit
+  # here is normal and handled below. Under `set -E` the inherited ERR trap
+  # would otherwise fire on the failing command inside the substitution and emit
+  # a spurious "command failed" line. Clear the trap for this guarded read only,
+  # then restore it — fail-closed handling is preserved by the branches below.
+  trap - ERR
+  local rc=0
+  err=$("$ctxfn" "$@" 2>&1 >/dev/null) || rc=$?
+  trap 'err_trap "$LINENO" "$BASH_COMMAND"' ERR
+  if [[ "$rc" -eq 0 ]]; then
     echo found
     return 0
   fi
@@ -200,33 +222,10 @@ confirm_token() {
 }
 
 # ============================================================================
-# Seed discovery
+# Seed discovery — probe_ns / discover_seed provided by lib/ddo-common.sh
+# (sourced above). discover_seed assigns SEED_CTX and returns non-zero on
+# failure; we translate that into the cutover tool's fail-closed abort.
 # ============================================================================
-probe_ns() {
-  u8s kubectl --context "$1" get ns "$NAMESPACE" --no-headers --request-timeout="$PROBE_TIMEOUT" >/dev/null 2>&1
-}
-
-discover_seed() {
-  if [[ -n "$SEED_CTX" ]]; then
-    info "Using provided --seed-context: $SEED_CTX"
-    return
-  fi
-  
-  # Auto-discovery: probe candidate contexts
-  # Priority: same-region seeds, then any context with the namespace
-  local candidates
-  candidates=$(u8s kubectl config get-contexts -o name 2>/dev/null || true)
-  
-  for ctx in $candidates; do
-    if probe_ns "$ctx"; then
-      SEED_CTX="$ctx"
-      info "Auto-discovered seed context: $SEED_CTX"
-      return
-    fi
-  done
-  
-  die "Could not auto-discover seed context for namespace $NAMESPACE"
-}
 
 # ============================================================================
 # Preflight checks
@@ -1080,16 +1079,19 @@ EOF
 main() {
   parse_args "$@"
   
-  # Validate cluster/target/namespace for non-help invocations
+  # Validate/derive cluster-scoped coordinates for non-help invocations.
+  # --cluster names the SHOOT. The shoot's kubectl context is the shoot name,
+  # and the seed control-plane namespace is shoot--cp--<shoot>, so both are
+  # derived from --cluster unless explicitly overridden.
   if [[ "$PHASE" != "" ]]; then
-    [[ -n "$CLUSTER" ]]    || die "Missing required argument: --cluster"
-    [[ -n "$TARGET_CTX" ]] || die "Missing required argument: --target-context"
-    [[ -n "$NAMESPACE" ]]  || die "Missing required argument: --namespace"
+    [[ -n "$CLUSTER" ]] || die "Missing required argument: --cluster"
+    : "${TARGET_CTX:=$CLUSTER}"
+    : "${NAMESPACE:=shoot--cp--$CLUSTER}"
   fi
   
   load_profile
   init_state_dir
-  discover_seed
+  discover_seed "$CLUSTER" "$NAMESPACE" || die "Could not auto-discover seed context for namespace $NAMESPACE (pass --seed-context)"
   
   case "$PHASE" in
     uninstall) phase_uninstall ;;
