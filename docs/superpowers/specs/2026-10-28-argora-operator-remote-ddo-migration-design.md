@@ -90,21 +90,31 @@ remaining remote charts are mechanical.
   `managedresources/{cluster-import,ippool-import,updates}.yaml` (which place them in
   kube-system — NOT the subchart's `resources/*.yaml` which use `argora-system`). The
   per-cluster data is small and non-secret → fine in the CR.
-- **⚠ Cluster topology (u8s-VERIFIED 2026-10-28) — this cluster's CR data is QA
-  scaffolding, but NOT inert.** a-qa-de-200 is a **single-node k3s** (one node
-  `admin1.garden2.cc.qa-de-1.cloud.sap`, `control-plane,master`), so there is **no
-  real `mgmt-qa-de-200` managed cluster**: `get clusters.cluster.x-k8s.io -A` on
-  m-qa-de-200 returns **No resources found**, i.e. the `Ready` ClusterImport/Update
-  (`mgmt-qa-de-200`) reconcile against a cluster that does not exist — QA scaffolding
-  on this cluster. **However** the IPPoolImport (`sci-k8s-management`) HAS produced a
-  real `GlobalInClusterIPPool` `globalinclusterippool-mgmt-qa-de-200`
-  (`10.219.139.128/26`, **USED 1**), so it is live state, not scaffolding — preserve
-  it carefully. On **prod admin clusters** (qa-de-1 and other prod regions) the
-  `mgmt-<region>` ClusterImport/Update target REAL management clusters; the operand
-  chart + CR-values structure (`clusterImport`/`ipPoolImport`/`update` maps driven by
-  CR values) MUST stay general enough to carry that real prod data — do NOT hard-code
-  the qa-de-200 scaffolding shape. This a-qa-de-200 migration is like-for-like:
-  preserve the 3 CRs exactly as live, same UID, via protect-then-teardown (§5).
+- **⚠ Cluster topology (u8s-VERIFIED 2026-10-28, qa-de-200 + qa-de-1 cross-checked).**
+  a-qa-de-200 is a **single-node k3s** (one node `admin1.garden2.cc.qa-de-1.cloud.sap`,
+  `control-plane,master`), so there is **no real `mgmt-qa-de-200` managed cluster**
+  behind the `mgmt-qa-de-200` ClusterImport/Update — they are QA scaffolding here.
+  The **confirmed real downstream of the CRs is the `GlobalInClusterIPPool`** (via
+  IPPoolImport): on a-qa-de-200, `globalinclusterippool-mgmt-qa-de-200`
+  (`10.219.139.128/26`, **USED 1**); on prod m-qa-de-1, **8 live pools** with active
+  allocations (`compute-cc-b0-qa-de-1` USED 33, `mgmt-qa-de-1a/b` USED 3, …). So the
+  IPPoolImport CR is **production-critical live state**, not scaffolding — preserve it.
+  **Correction:** argora's ClusterImport does **NOT** create `cluster.x-k8s.io/Cluster`
+  objects — `get clusters.cluster.x-k8s.io -A` returns **No resources found** on BOTH
+  m-qa-de-200 and m-qa-de-1. (It reconciles NetBox/ironcore sync; the exact downstream
+  is out of scope for this migration — only the CR data + IPPool matter here.)
+- **⚠ CR-template shape-agnosticism (from the qa-de-1 cross-check).** Prod CR data is
+  richer and uses a different style than qa-de-200: ClusterImport mixes selectors
+  (`{clusters:[{name:mgmt-qa-de-1},{region:qa-de-1,type:cc-kvm-compute}]}`),
+  IPPoolImport uses NetBox discovery by `namePrefix`+`role`+`region` with **no explicit
+  prefix** (`{namePrefix:mgmt,role:sci-k8s-management-nodes,region:qa-de-1,…}`), whereas
+  a-qa-de-200 pins an explicit `prefix: 10.219.139.128/26`. → the operand chart's
+  data-CR templates MUST pass **arbitrary nested `.spec` through verbatim** (range over
+  the `clusterImport`/`ipPoolImport`/`update` map, `toYaml` the value), exactly as the
+  legacy wrapper templates do — do NOT model the qa-de-200 shape. This keeps the chart
+  correct for the real prod regions when they migrate later. This a-qa-de-200 migration
+  itself is like-for-like: preserve the 3 CRs exactly as live, same UID, via
+  protect-then-teardown (§5).
 - **Chart version must be clean semver** (metal lesson: `_sha` suffix → "improper
   constraint" → SeedRenderFailed). Start `0.1.0`, bump patch per change.
 - **Images: GHCR default in the public chart, keppel mirror override in kube-secrets.**
@@ -325,12 +335,18 @@ argora specifics:
   before deciding whether the operand chart needs `networkpolicy.yaml` / `ingress.yaml`
   additions. If absent, omit them (argora is a netbox/ironcore reconciler, not an
   iPXE/registry server).
-- **Data-CR template fidelity**: reproduce the legacy wrapper's
-  `managedresources/{cluster-import,ippool-import,updates}.yaml` exactly (ns
-  kube-system, same `.spec` shape: ClusterImport `spec.clusters`, IPPoolImport
-  `spec.ippools`, Update `spec.clusters`). Confirm the rendered `.spec` matches the
-  live CR specs (ClusterImport `{clusters:[{name:mgmt-qa-de-200}]}`, IPPoolImport the
-  `sci-k8s-management` ippool block, Update `{clusters:[{name:mgmt-qa-de-200}]}`).
+- **Data-CR template fidelity (shape-agnostic)**: reproduce the legacy wrapper's
+  `managedresources/{cluster-import,ippool-import,updates}.yaml` templating approach
+  exactly — `range` over the `clusterImport`/`ipPoolImport`/`update` map and `toYaml`
+  the value into `.spec` **verbatim** (ns kube-system). Do NOT hard-code a fixed
+  `.spec` shape: the maps' value is `spec.clusters` for ClusterImport/Update and
+  `spec.ippools` for IPPoolImport, but the element contents differ per cluster (u8s
+  cross-check: a-qa-de-200 ClusterImport `{clusters:[{name:mgmt-qa-de-200}]}` and
+  IPPoolImport with explicit `prefix: 10.219.139.128/26`; prod qa-de-1 ClusterImport
+  `{clusters:[{name:mgmt-qa-de-1},{region:qa-de-1,type:cc-kvm-compute}]}` and
+  IPPoolImport using `namePrefix`+`role`+`region` NetBox discovery with no explicit
+  prefix). For a-qa-de-200 confirm the rendered `.spec` matches the 3 live CR specs
+  byte-for-byte.
 - **`owner-info` dependency**: legacy chart has it; metal/boot operand charts dropped
   it. Decide by render parity, not cargo-cult (likely drop).
 - **Exact chart version** (start 0.1.0) and keppel publish/CI mechanics.
