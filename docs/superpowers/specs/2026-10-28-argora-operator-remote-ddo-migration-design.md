@@ -42,7 +42,10 @@ remaining remote charts are mechanical.
   (`system/dual-deployment-operator/cutover/`).
 - Preserve argora's 3 live management CRs (ClusterImport `mgmt-qa-de-200`,
   IPPoolImport `sci-k8s-management`, Update `mgmt-qa-de-200`) — data + UID preserved
-  across re-ownership, all stay `Ready`.
+  across re-ownership, all stay `Ready`. **One of them has real downstream state**:
+  the IPPoolImport has produced a live `GlobalInClusterIPPool`
+  `globalinclusterippool-mgmt-qa-de-200` (`10.219.139.128/26`, 29 total, **1 address
+  already allocated**) — so preservation is not merely cosmetic (see §3 topology note).
 
 **Non-goals**
 - Migrating any other remote chart, or argora on any cluster other than m-qa-de-200.
@@ -87,6 +90,21 @@ remaining remote charts are mechanical.
   `managedresources/{cluster-import,ippool-import,updates}.yaml` (which place them in
   kube-system — NOT the subchart's `resources/*.yaml` which use `argora-system`). The
   per-cluster data is small and non-secret → fine in the CR.
+- **⚠ Cluster topology (u8s-VERIFIED 2026-10-28) — this cluster's CR data is QA
+  scaffolding, but NOT inert.** a-qa-de-200 is a **single-node k3s** (one node
+  `admin1.garden2.cc.qa-de-1.cloud.sap`, `control-plane,master`), so there is **no
+  real `mgmt-qa-de-200` managed cluster**: `get clusters.cluster.x-k8s.io -A` on
+  m-qa-de-200 returns **No resources found**, i.e. the `Ready` ClusterImport/Update
+  (`mgmt-qa-de-200`) reconcile against a cluster that does not exist — QA scaffolding
+  on this cluster. **However** the IPPoolImport (`sci-k8s-management`) HAS produced a
+  real `GlobalInClusterIPPool` `globalinclusterippool-mgmt-qa-de-200`
+  (`10.219.139.128/26`, **USED 1**), so it is live state, not scaffolding — preserve
+  it carefully. On **prod admin clusters** (qa-de-1 and other prod regions) the
+  `mgmt-<region>` ClusterImport/Update target REAL management clusters; the operand
+  chart + CR-values structure (`clusterImport`/`ipPoolImport`/`update` maps driven by
+  CR values) MUST stay general enough to carry that real prod data — do NOT hard-code
+  the qa-de-200 scaffolding shape. This a-qa-de-200 migration is like-for-like:
+  preserve the 3 CRs exactly as live, same UID, via protect-then-teardown (§5).
 - **Chart version must be clean semver** (metal lesson: `_sha` suffix → "improper
   constraint" → SeedRenderFailed). Start `0.1.0`, bump patch per change.
 - **Images: GHCR default in the public chart, keppel mirror override in kube-secrets.**
