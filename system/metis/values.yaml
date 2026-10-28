@@ -142,7 +142,7 @@ mysql_metrics:
             ) AS value
         FROM instance_actions_events
         WHERE event = 'conductor_live_migrate_instance'
-          AND created_at >= NOW() - INTERVAL 30 MINUTE;
+          AND finish_time >= NOW() - INTERVAL 30 MINUTE;
 
     - name: "openstack_vm_migrate_success_ratio_5m"
       help: "Nova VM migrate success ratio (5 minutes)"
@@ -160,7 +160,7 @@ mysql_metrics:
             ) AS value
         FROM instance_actions_events
         WHERE event = 'conductor_live_migrate_instance'
-          AND created_at >= NOW() - INTERVAL 5 MINUTE;
+          AND finish_time >= NOW() - INTERVAL 5 MINUTE;
 
     - name: "openstack_vm_migrate_success_ratio_1h"
       help: "Nova VM migrate success ratio (1 hour)"
@@ -178,7 +178,7 @@ mysql_metrics:
             ) AS value
         FROM instance_actions_events
         WHERE event = 'conductor_live_migrate_instance'
-          AND created_at >= NOW() - INTERVAL 1 HOUR;
+          AND finish_time >= NOW() - INTERVAL 1 HOUR;
 
     - name: "openstack_vm_migrate_success_ratio_1d"
       help: "Nova VM migrate success ratio (1 day)"
@@ -196,7 +196,7 @@ mysql_metrics:
             ) AS value
         FROM instance_actions_events
         WHERE event = 'conductor_live_migrate_instance'
-          AND created_at >= NOW() - INTERVAL 1 DAY;
+          AND finish_time >= NOW() - INTERVAL 1 DAY;
 
     - name: "openstack_vm_migrate_success_ratio_total"
       help: "Nova VM migrate success ratio (all time)"
@@ -214,6 +214,25 @@ mysql_metrics:
             ) AS value
         FROM instance_actions_events
         WHERE event = 'conductor_live_migrate_instance';
+
+    - name: "openstack_vm_actions_total"
+      help: "Nova instance action events finished in the last hour (all cells)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT COUNT(*) AS value
+        FROM instance_actions_events
+        WHERE finish_time >= NOW() - INTERVAL 1 HOUR;
+
+    - name: "openstack_vm_actions_failed_total"
+      help: "Nova instance action events failed (result = 'Error') in the last hour (all cells)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT COUNT(*) AS value
+        FROM instance_actions_events
+        WHERE finish_time >= NOW() - INTERVAL 1 HOUR
+          AND result = 'Error';
 
 metisSync:
   enabled: true
