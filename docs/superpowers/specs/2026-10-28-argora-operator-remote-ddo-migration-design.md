@@ -16,11 +16,24 @@
 
 ## 1. Intent & why
 
-Migrate the `argora-operator-remote` deployment on cluster **m-qa-de-200** (seed
-**a-qa-de-200**, namespace **shoot--cp--m-qa-de-200**) from the legacy Gardener
-ManagedResource + Helm-release model to **DDO**-managed deployment, rendered from a
-new operator-native operand chart `system/argora-operator-remote-ddo`
+Migrate the `argora-operator-remote` deployment for cluster **m-qa-de-200** from the
+legacy Gardener ManagedResource + Helm-release model to **DDO**-managed deployment,
+rendered from a new operator-native operand chart `system/argora-operator-remote-ddo`
 (mode=seed / mode=shoot).
+
+> **Topology / terminology (authoritative — SCI Gardener architecture doc).**
+> `m-qa-de-200` is the **Metal-API cluster**: a *workerless* shoot that only **stores**
+> Metal-API/argora custom resources — it has no nodes and runs no workload. The argora
+> **controller runs in the seed** (`a-qa-de-200`, the single-node k3s that bundles the
+> full Gardener + Metal-API setup) in namespace `shoot--cp--m-qa-de-200`, and reaches
+> the Metal-API cluster via a token-requestor kubeconfig. This maps cleanly onto DDO's
+> two renders: the **seed render → `a-qa-de-200`** (controller Deployment, credentials
+> Secret, remote-kubeconfig), the **shoot render → `m-qa-de-200`** (CRDs, RBAC, the 3
+> data CRs). NOTE: the Metal-API cluster `m-$REGION` is **NOT** the **Management
+> cluster** `mgmt-$REGION` (a separate regional Gardener Seed); argora's CRs are merely
+> *named* after management clusters (`mgmt-qa-de-200`, `mgmt-qa-de-1`) but *stored in*
+> the Metal-API cluster. This is why no live `cluster.x-k8s.io/Cluster` objects exist
+> on `m-qa-de-200`/`m-qa-de-1` (§3).
 
 **Why:** continue the fleet rollout replacing the pre-render-and-commit / GRM model
 with DDO's two-render SSA model, moving per-cluster config into a
@@ -83,19 +96,26 @@ remaining remote charts are mechanical.
   metal's `macdb.yaml` does — NOT `tpl` (the `{{ resolve }}` directive is for
   secrets-injector, not Helm).
 - **Data CRs** (ClusterImport/IPPoolImport/Update, group `argora.cloud.sap`) are
-  live & `Ready` in **kube-system on the mgmt cluster = the shoot**. Unique to
-  argora. → authored as **mode=shoot addition templates** in the operand chart,
-  data driven by CR `values` (`clusterImport`/`ipPoolImport`/`update` maps),
-  namespace `kube-system`, mirroring the legacy wrapper's own
-  `managedresources/{cluster-import,ippool-import,updates}.yaml` (which place them in
-  kube-system — NOT the subchart's `resources/*.yaml` which use `argora-system`). The
+  live & `Ready` in **kube-system on the Metal-API cluster `m-qa-de-200` = the DDO
+  "shoot" render target**. Unique to argora. → authored as **mode=shoot addition
+  templates** in the operand chart, data driven by CR `values`
+  (`clusterImport`/`ipPoolImport`/`update` maps), namespace `kube-system`, mirroring
+  the legacy wrapper's own `managedresources/{cluster-import,ippool-import,updates}.yaml`
+  (which place them in kube-system — NOT the subchart's `resources/*.yaml` which use
+  `argora-system`). The
   per-cluster data is small and non-secret → fine in the CR.
-- **⚠ Cluster topology (u8s-VERIFIED 2026-10-28, qa-de-200 + qa-de-1 cross-checked).**
-  a-qa-de-200 is a **single-node k3s** (one node `admin1.garden2.cc.qa-de-1.cloud.sap`,
-  `control-plane,master`), so there is **no real `mgmt-qa-de-200` managed cluster**
-  behind the `mgmt-qa-de-200` ClusterImport/Update — they are QA scaffolding here.
-  The **confirmed real downstream of the CRs is the `GlobalInClusterIPPool`** (via
-  IPPoolImport): on a-qa-de-200, `globalinclusterippool-mgmt-qa-de-200`
+- **⚠ Cluster topology (u8s-VERIFIED 2026-10-28, qa-de-200 + qa-de-1 cross-checked;
+  consistent with the SCI Gardener architecture doc).** The DDO shoot-render target
+  `m-qa-de-200` is a **Metal-API cluster** — a workerless storage shoot that only holds
+  Metal-API/argora CRs (no nodes, no workload; the controller runs in the seed
+  `a-qa-de-200`, a single-node k3s bundling the full Gardener+Metal-API setup). So the
+  argora CRs being `Ready` with **no live `cluster.x-k8s.io/Cluster` downstream** is
+  *expected by design*, not a defect: `get clusters.cluster.x-k8s.io -A` returns **No
+  resources found** on BOTH m-qa-de-200 and prod m-qa-de-1. The CRs here are named
+  after management clusters (`mgmt-qa-de-200`) but are QA-scaffolding targets on this
+  single-node setup. The **confirmed real downstream of the CRs is the
+  `GlobalInClusterIPPool`** (via IPPoolImport): on a-qa-de-200,
+  `globalinclusterippool-mgmt-qa-de-200`
   (`10.219.139.128/26`, **USED 1**); on prod m-qa-de-1, **8 live pools** with active
   allocations (`compute-cc-b0-qa-de-1` USED 33, `mgmt-qa-de-1a/b` USED 3, …). So the
   IPPoolImport CR is **production-critical live state**, not scaffolding — preserve it.
