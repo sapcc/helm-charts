@@ -10,6 +10,7 @@ metadata:
 data:
   # repo configs
 {{- $targets := include "content-repo.targets" . | fromYaml }}
+{{- include "content-repo.validate-destination-prefixes" (dict "root" . "targets" $targets) }}
 {{- range $repo, $config := .Values.repos }}
 {{- if not $config.disabled }}
 {{- range $targetName, $targetCfg := $targets }}
@@ -74,13 +75,13 @@ data:
           {{- end }}
           {{- end }}
         to:
-          container: {{ $targetCfg.container | default $job.to.container }}
-          object_prefix: {{$job.to.object_prefix}}
+          container: {{ $targetCfg.container | default $job.to.container | default "" | quote }}
+          object_prefix: {{ $job.to.object_prefix | default "" | quote }}
         {{- if $job.segmenting }}
         segmenting:
           min_bytes:     {{ $job.segmenting.min_bytes | printf "%0.f" }}
           segment_bytes: {{ $job.segmenting.segment_bytes | printf "%0.f" }}
-          container:     {{ $targetCfg.container_segments | default $job.segmenting.container }}
+          container:     {{ $targetCfg.container_segments | default $job.segmenting.container | default "" | quote }}
         {{- end }}
         {{- if $job.expiration }}
         expiration:
