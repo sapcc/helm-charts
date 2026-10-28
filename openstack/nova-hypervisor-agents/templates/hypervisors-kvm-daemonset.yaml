@@ -93,6 +93,11 @@ spec:
       - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/nova-compute-init"]
+        {{- if $hypervisor.storage_network_interface }}
+        env:
+        - name: STORAGE_NETWORK_INTERFACE
+          value: {{ $hypervisor.storage_network_interface | quote }}
+        {{- end }}
         volumeMounts:
           - mountPath: /container.init
             name: bin

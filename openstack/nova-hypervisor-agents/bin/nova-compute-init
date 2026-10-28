@@ -1,7 +1,12 @@
 #!/var/lib/openstack/bin/python3
+import os
 import pathlib
 import platform
+import socket
+import sys
 import uuid
+
+import psutil
 
 compute_id = pathlib.Path("/var/lib/nova/compute_id")
 
@@ -11,3 +16,19 @@ if not compute_id.exists():
         uuid.UUID("408adaa7-5ff0-4740-b8c8-c46f79f09080"), node
     )
     compute_id.write_text(str(compute_uuid))
+
+interface = os.environ.get("STORAGE_NETWORK_INTERFACE")
+if interface:
+    addresses = [
+        addr.address
+        for addr in psutil.net_if_addrs().get(interface, [])
+        if addr.family == socket.AF_INET
+    ]
+    if not addresses:
+        sys.exit(f"storage network interface {interface!r} has no IPv4 address")
+    # Loaded after /etc/nova/nova.conf.d by oslo.config.
+    conf_dir = pathlib.Path("/var/lib/nova/.nova/nova-compute.conf.d")
+    conf_dir.mkdir(parents=True, exist_ok=True)
+    (conf_dir / "050-storage-network.conf").write_text(
+        f"[libvirt]\nlive_migration_inbound_addr = {addresses[0]}\n"
+    )
