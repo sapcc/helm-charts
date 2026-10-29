@@ -20,7 +20,7 @@ groups:
   - alert: CloudHSMCreationFailed
     expr: |
         cc3test_status{service="portunus", name=~"TestPortunusCloudHSM_create_cloudhsm.+", phase="call"} == 0
-    for: 12h
+    for: 6h
     labels:
       severity: info
       support_group: trust
