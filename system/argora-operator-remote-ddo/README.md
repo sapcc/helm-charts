@@ -36,8 +36,16 @@ bundle's shoot ServiceAccount/RBAC identity and the `token-requestor` identity.
 
 ## Shoot RBAC parity
 
-<!-- Task 8: render-parity task fills the RBAC inventory below. -->
+The shoot render has the same ServiceAccount, three CRDs, manager ClusterRole,
+and manager ClusterRoleBinding (including all ClusterRole rules) as the legacy
+`managedresources/crds-and-rbac.yaml` bundle. Its ClusterRoleBinding subject is
+`argora-operator-controller-manager` in `kube-system`.
 
-Completed in the render-parity task. See
-[`examples/rbac-parity.md`](examples/rbac-parity.md) for the render command and
-the pending inventory placeholder.
+`argora-operator-core.metrics.enable=true` is retained in `shootValues` for
+legacy render parity. It adds only the upstream metrics Service; it adds no RBAC
+or ServiceMonitor. The DDO CR filters `Service` and `Secret` kinds from the live
+shoot path, so that Service and the upstream credentials Secret are intentionally
+not applied there.
+
+See [`examples/rbac-parity.md`](examples/rbac-parity.md) for the exact render
+commands, complete inventories, and the rules comparison.
