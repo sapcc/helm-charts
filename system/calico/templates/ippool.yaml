@@ -59,15 +59,13 @@ spec:
 apiVersion: crd.projectcalico.org/v1
 kind: IPPool
 metadata:
-  name: lb-{{ .cidr | replace "." "-" | replace "/" "-" }}
+  name: ippool-{{ .cidr | replace "." "-" | replace "/" "-" }}
 spec:
   allowedUses:
     - LoadBalancer
-  cidr: {{ .cidr }}
   assignmentMode: Manual
-  disableBGPExport: false
-  ipipMode: Never
-  vxlanMode: Never
-  natOutgoing: false
-  nodeSelector: all()
+  blockSize: {{ .cidr | splitList "/" | last }}
+  cidr: {{ .cidr }}
+  disabled: false
+  natOutgoing: true
 {{- end }}
