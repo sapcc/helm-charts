@@ -25,6 +25,36 @@ argora-operator-core:
     enable: false
     # The live seed controller uses the default ServiceAccount.
     serviceAccountName: default
+    # Gardener seed NetworkPolicy is default-deny egress. These pod labels open
+    # the egress paths the seed-resident controller needs (DNS, private/public
+    # networks, runtime + kube apiserver, istio ingress). Static + region-generic,
+    # identical on every cluster — so they live here in the chart (as the legacy
+    # chart carried them), NOT in the per-cluster CR. Without them the controller
+    # cannot resolve names or reach the shoot.
+    podLabels:
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-runtime-apiserver: allowed
+      networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+      networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    # Mount the Gardener token-requestor kubeconfig Secret (emitted seed-side by
+    # templates/remote-kubeconfig.yaml) at the in-cluster SA path, so the
+    # seed-resident controller authenticates to the shoot as
+    # argora-operator-controller-manager. Paired with manager.env.KUBERNETES_SERVICE_HOST
+    # (per-cluster, set in the CR). Static mount — lives here, not the CR.
+    volumes:
+      - name: remote-kubeconfig
+        mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        readOnly: true
+        source:
+          secret:
+            secretName: argora-operator-remote-kubeconfig
+            items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
   rbac:
     enable: false
   crd:
