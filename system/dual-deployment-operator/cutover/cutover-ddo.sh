@@ -369,7 +369,34 @@ preflight_protect_mrs() {
   local -a _protect_mrs
   read -r -a _protect_mrs <<< "$PROTECT_MRS"
   for mr in "${_protect_mrs[@]}"; do
-    protect_namespace_mr "$mr" ""
+    local state keep
+    state=$(obj_state ks get managedresource "$mr")
+    case "$state" in
+      found)
+        if $DRY_RUN; then
+          warn "DRY-RUN: would back up $mr"
+        else
+          info "Backing up ManagedResource $mr"
+          ks get managedresource "$mr" -o yaml > "$STATE_DIR/protect-mr-$mr.yaml" 2>/dev/null || true
+        fi
+        keep=$(ks get managedresource "$mr" -o jsonpath='{.spec.keepObjects}' 2>/dev/null || echo "")
+        if [[ "$keep" == "true" ]]; then
+          ok "ManagedResource $mr already has keepObjects:true"
+        elif $DRY_RUN; then
+          warn "DRY-RUN: would patch $mr"
+        else
+          info "Patching ManagedResource $mr to keepObjects:true"
+          if ! ks patch managedresource "$mr" --type=merge -p '{"spec":{"keepObjects":true}}'; then
+            die "Failed to patch ManagedResource $mr"
+          fi
+          keep=$(ks get managedresource "$mr" -o jsonpath='{.spec.keepObjects}' 2>/dev/null || echo "")
+          [[ "$keep" == "true" ]] || die "ManagedResource $mr did not retain keepObjects:true after patch"
+          ok "Patched ManagedResource $mr"
+        fi
+        ;;
+      absent) die "PROTECT_MRS entry $mr not found on seed — refusing to uninstall, data-CR would be cascade-deleted" ;;
+      error)  die "Cannot read PROTECT_MRS entry $mr on seed — refusing to uninstall, data-CR would be cascade-deleted" ;;
+    esac
   done
 }
 
@@ -620,6 +647,9 @@ snapshot_baseline() {
     for kind in $BASELINE_SNAPSHOT_KINDS_CLUSTER; do
       info "Snapshotting $kind (cluster-scoped)..."
       kt get "$kind" -o yaml > "$STATE_DIR/baseline-$kind.yaml" 2>/dev/null || true
+      kt get "$kind" -o json | jq -r '
+        .items[] | "\(.metadata.name):\(.metadata.uid)"
+      ' > "$STATE_DIR/cr-uids-$kind.txt" 2>/dev/null || true
     done
   fi
   
@@ -628,6 +658,9 @@ snapshot_baseline() {
     for kind in $BASELINE_SNAPSHOT_KINDS_NS; do
       info "Snapshotting $kind (namespaced)..."
       kt get "$kind" -A -o yaml > "$STATE_DIR/baseline-$kind.yaml" 2>/dev/null || true
+      kt get "$kind" -A -o json | jq -r '
+        .items[] | "\(.metadata.namespace)/\(.metadata.name):\(.metadata.uid)"
+      ' > "$STATE_DIR/cr-uids-$kind.txt" 2>/dev/null || true
     done
   fi
   
@@ -879,6 +912,49 @@ phase_verify() {
       done < "$baseline_file"
     else
       warn "No baseline CRD UIDs for $group (skipping UID check)"
+    fi
+  done
+
+  # Assert baseline data CRs survived and retained their UIDs.
+  step "Verifying data-CR survival + UID preservation"
+  local kind baseline_file name old_uid new_uid state nsname ns
+  for kind in ${BASELINE_SNAPSHOT_KINDS_CLUSTER:-}; do
+    baseline_file="$STATE_DIR/cr-uids-$kind.txt"
+    if [[ -f "$baseline_file" ]]; then
+      while IFS=: read -r name old_uid; do
+        [[ -z "$name" ]] && continue
+        state=$(obj_state kt get "$kind" "$name")
+        case "$state" in
+          found) ;;
+          absent) die "Data CR missing after cutover: $kind $name" ;;
+          error) die "Cannot check data CR after cutover: $kind $name" ;;
+        esac
+        new_uid=$(kt get "$kind" "$name" -o jsonpath='{.metadata.uid}' 2>/dev/null || true)
+        [[ "$new_uid" == "$old_uid" ]] || die "Data CR UID changed: $kind $name (was $old_uid, now $new_uid)"
+        ok "Data CR UID preserved: $kind $name"
+      done < "$baseline_file"
+    else
+      warn "No baseline data-CR UIDs for $kind (skipping UID check)"
+    fi
+  done
+  for kind in ${BASELINE_SNAPSHOT_KINDS_NS:-}; do
+    baseline_file="$STATE_DIR/cr-uids-$kind.txt"
+    if [[ -f "$baseline_file" ]]; then
+      while IFS=: read -r nsname old_uid; do
+        [[ -z "$nsname" ]] && continue
+        IFS=/ read -r ns name <<< "$nsname"
+        state=$(obj_state kt get "$kind" "$name" -n "$ns")
+        case "$state" in
+          found) ;;
+          absent) die "Data CR missing after cutover: $kind $nsname" ;;
+          error) die "Cannot check data CR after cutover: $kind $nsname" ;;
+        esac
+        new_uid=$(kt get "$kind" "$name" -n "$ns" -o jsonpath='{.metadata.uid}' 2>/dev/null || true)
+        [[ "$new_uid" == "$old_uid" ]] || die "Data CR UID changed: $kind $nsname (was $old_uid, now $new_uid)"
+        ok "Data CR UID preserved: $kind $nsname"
+      done < "$baseline_file"
+    else
+      warn "No baseline data-CR UIDs for $kind (skipping UID check)"
     fi
   done
   

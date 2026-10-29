@@ -47,6 +47,11 @@ if [[ "$1" == "kubectl" ]]; then
   shift
   # Extract context and other args
   args=("$@")
+
+  if [[ -n "${ABSENT_MR:-}" && " $* " == *" managedresource $ABSENT_MR "* ]]; then
+    echo "Error from server (NotFound): managedresources \"$ABSENT_MR\" not found" >&2
+    exit 1
+  fi
   
   # Simulate various kubectl responses
   # Default: return success with empty output for most reads
@@ -267,6 +272,20 @@ test_argora_profile_protects_data_cr_mrs() {
     fi
   done
   pass "$desc"
+}
+
+test_argora_missing_protect_mr_blocks_uninstall() {
+  local desc="argora missing PROTECT_MRS entry blocks uninstall"
+  local output exit_code=0
+
+  output=$(ABSENT_MR=mr-ci-mgmt-qa-de-200 "$CUTOVER_SCRIPT" --operator argora --phase uninstall --dry-run \
+    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
+    2>&1) || exit_code=$?
+  if [[ "$exit_code" -eq 2 ]] && grep -q 'PROTECT_MRS entry mr-ci-mgmt-qa-de-200 not found on seed' <<<"$output"; then
+    pass "$desc"
+  else
+    fail "$desc" "Expected exit 2 and fail-closed missing-MR message, got exit $exit_code"
+  fi
 }
 
 test_boot_freeze_gate_queries_only_boot_kinds() {
@@ -679,6 +698,10 @@ main() {
   echo ""
   echo "--- Test: argora protects data-CR ManagedResources ---"
   test_argora_profile_protects_data_cr_mrs
+
+  echo ""
+  echo "--- Test: argora missing protect MR blocks uninstall ---"
+  test_argora_missing_protect_mr_blocks_uninstall
 
   echo ""
   echo "--- Test: boot freeze gate queries only boot kinds ---"
