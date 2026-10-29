@@ -611,11 +611,17 @@ preflight_ddo_prereqs() {
   if [[ -n "${OPERAND_CHART_DIR:-}" ]]; then
     local chart_path="$SCRIPT_DIR/../../../$OPERAND_CHART_DIR"
     if [[ -d "$chart_path" ]]; then
+      # Local chart render — use plain `helm` (NOT `u8s helm`, which does not
+      # accept `--set`), and no cluster/context is needed. Build deps first so
+      # a fresh checkout without charts/*.tgz still renders. On failure, surface
+      # the real error (don't swallow it) so a genuine template bug is visible.
+      helm dependency build "$chart_path" >/dev/null 2>&1 || true
+      local tmpl_err
       for mode in seed shoot; do
-        if ! u8s helm template test "$chart_path" --set "mode=$mode" >/dev/null 2>&1; then
-          warn "Chart template failed for mode=$mode (non-blocking)"
-        else
+        if tmpl_err=$(helm template test "$chart_path" --set "mode=$mode" 2>&1 >/dev/null); then
           ok "Chart renders for mode=$mode"
+        else
+          warn "Chart template failed for mode=$mode (non-blocking): ${tmpl_err%%$'\n'*}"
         fi
       done
     else
