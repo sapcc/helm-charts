@@ -31,6 +31,13 @@ spec:
     - jsonPath: .spec.gateway
       name: Gateway
       type: string
+    - jsonPath: .spec.leaseExpiresAt
+      name: Expires
+      type: string
+    - jsonPath: .metadata.annotations['dhcp\.metal\.ironcore\.dev/vendor']
+      name: Vendor
+      priority: 1
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -73,6 +80,12 @@ spec:
                   static lease config entry.
                 type: string
               ip:
+                type: string
+              leaseExpiresAt:
+                description: |-
+                  LeaseExpiresAt is the absolute time at which this lease expires (now + leaseTime at
+                  the moment the offer was sent). Updated on every re-lease.
+                format: date-time
                 type: string
               leaseTime:
                 description: LeaseTime is the lease duration offered for this address.
@@ -119,10 +132,9 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          OOBSubnet defines an IPv4 pool for out-of-band / BMC management ports. It is
-          synced into the cluster by an external entity (the onboarding operator / NetBox
-          sync) and is read-only to metaldhcp. The oob plugin selects the subnet whose
-          CIDR matches the DHCP relay/link information and allocates a free address from it.
+          OOBSubnet defines an IPv4 pool for out-of-band / BMC management ports. Each
+          instance selects subnets by label, allocates addresses from them, and optionally
+          filters by MAC allowlist or delays offers to let other instances respond first.
         properties:
           apiVersion:
             description: |-
@@ -143,6 +155,21 @@ spec:
             type: object
           spec:
             properties:
+              allowAllMacs:
+                description: |-
+                  AllowAllMacs, when true, disables the allowMacs filter: the instance responds to
+                  DHCP requests from any MAC for this subnet. Intended for dev/debug environments
+                  only. When false (the default), requests from MACs not in AllowMacs are silently
+                  dropped, and subnets with an empty AllowMacs are also fully silent.
+                type: boolean
+              allowMacs:
+                description: |-
+                  AllowMacs, when non-empty, restricts DHCP responses to requests whose chaddr
+                  is listed here. Requests from any other MAC are silently dropped.
+                  When empty and AllowAllMacs is false, all requests are dropped.
+                items:
+                  type: string
+                type: array
               bootURL:
                 description: |-
                   BootURL, when set, is sent as the DHCP boot file URL (BootFileName field) in
@@ -151,6 +178,18 @@ spec:
               cidr:
                 description: CIDR is the IPv4 network from which addresses are allocated,
                   e.g. "10.0.1.0/24".
+                type: string
+              dnsServers:
+                description: |-
+                  DNSServers overrides the global DNS server list (option 6) for clients in this subnet.
+                  When empty the global dnsServers value applies.
+                items:
+                  type: string
+                type: array
+              domain:
+                description: |-
+                  Domain overrides the global DNS search domain (option 15) for clients in this subnet.
+                  When empty the global domain value applies.
                 type: string
               gateway:
                 description: Gateway, when set, is excluded from allocation and offered
@@ -168,6 +207,37 @@ spec:
                   RangeStart and RangeEnd optionally narrow allocation to a window within CIDR
                   (inclusive). When unset the whole usable host range is used.
                 type: string
+              responseDelay:
+                description: |-
+                  ResponseDelay, when non-zero, delays the DHCP offer by the given duration.
+                  Use on catch-all / fallback instances so that instances with an AllowMacs
+                  filter can win the race on shared BMC subnets.
+                type: string
+              staticLeases:
+                description: StaticLeases pins specific MACs to fixed IPs within this
+                  subnet, bypassing dynamic allocation.
+                items:
+                  description: StaticLease pins a MAC address to a fixed IP within
+                    the subnet, bypassing dynamic allocation.
+                  properties:
+                    hostname:
+                      description: Hostname is the optional hostname to include in
+                        the DHCP offer (option 12).
+                      type: string
+                    ip:
+                      description: IP is the fixed IPv4 address to offer to this MAC.
+                      format: ipv4
+                      type: string
+                    mac:
+                      description: MAC is the hardware address of the client, e.g.
+                        "00:11:22:33:44:55".
+                      pattern: ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$
+                      type: string
+                  required:
+                  - ip
+                  - mac
+                  type: object
+                type: array
             required:
             - cidr
             type: object

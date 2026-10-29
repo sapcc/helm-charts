@@ -19,6 +19,12 @@ spec:
       labels:
         app.kubernetes.io/name: metaldhcp
         app.kubernetes.io/instance: {{ .Release.Name }}
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -47,8 +53,10 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: IfNotPresent
         env:
+          {{- if .Values.remoteAPIServer }}
           - name: KUBECONFIG
             value: /var/run/remote-kubeconfig/kubeconfig
+          {{- end }}
         args:
           - --config=/etc/metaldhcp/config.yaml
         ports:
@@ -91,10 +99,12 @@ spec:
         volumeMounts:
         - mountPath: /etc/metaldhcp
           name: config
+        {{- if .Values.remoteAPIServer }}
         - mountPath: /var/run/remote-kubeconfig
           name: remote-kubeconfig
         - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
           name: remote-serviceaccount
+        {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
@@ -102,6 +112,7 @@ spec:
       - configMap:
           name: metaldhcp
         name: config
+      {{- if .Values.remoteAPIServer }}
       - configMap:
           name: metaldhcp-remote-kubeconfig
         name: remote-kubeconfig
@@ -113,3 +124,4 @@ spec:
             - key: bundle.crt
               path: ca.crt
         name: remote-serviceaccount
+      {{- end }}
