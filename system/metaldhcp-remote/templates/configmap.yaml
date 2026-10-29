@@ -46,27 +46,27 @@ data:
         {{- if .bootURL }}
         bootURL: {{ .bootURL }}
         {{- end }}
-        {{- with .allowMacs }}
-        allowMacs:
+        {{- with .staticLeases }}
+        staticLeases:
+          {{- range . }}
+          - mac: {{ .mac | quote }}
+            ip: {{ .ip }}
+            {{- if .hostname }}
+            hostname: {{ .hostname }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+        {{- with .macList }}
+        macList:
           {{- range . }}
           - {{ . }}
           {{- end }}
         {{- end }}
-        {{- if .allowAllMacs }}
-        allowAllMacs: true
-        {{- end }}
         {{- if .responseDelay }}
         responseDelay: {{ .responseDelay }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
-    {{- with .Values.oob.staticLeases }}
-    staticLeases:
-      {{- range . }}
-      - mac: {{ .mac | quote }}
-        ip: {{ .ip }}
-        {{- if .hostname }}
-        hostname: {{ .hostname }}
         {{- end }}
       {{- end }}
     {{- end }}
