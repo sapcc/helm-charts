@@ -72,3 +72,30 @@ TARGET_AUTH_PASSWORD
 {{ . | upper | replace "-" "_" }}_AUTH_PASSWORD
 {{- end -}}
 {{- end -}}
+
+{{/* Fail if team-source jobs overlap any delete-cleanup job for the same target. */}}
+{{- define "content-repo.validate-destination-prefixes" -}}
+{{- $root := .root -}}
+{{- range $targetName, $targetCfg := .targets -}}
+  {{- $destinations := list -}}
+  {{- range $repo, $config := $root.Values.repos -}}
+    {{- if and (not $config.disabled) (or (not $config.only_target) (eq $targetName $config.only_target)) -}}
+      {{- $deleteCleanup := eq ($config.cleanup_strategy | default "") "delete" -}}
+      {{- $teamManaged := $config.team_managed_sources | default false -}}
+      {{- range $jobIndex, $job := $config.jobs -}}
+        {{- $container := $targetCfg.container | default $job.to.container -}}
+        {{- $prefix := $job.to.object_prefix | default "" -}}
+        {{- if and $prefix (not (hasSuffix "/" $prefix)) -}}
+          {{- $prefix = printf "%s/" $prefix -}}
+        {{- end -}}
+        {{- range $existing := $destinations -}}
+          {{- if and (eq $container $existing.container) (or $teamManaged $existing.teamManaged) (or $deleteCleanup $existing.deleteCleanup) (or (hasPrefix $existing.prefix $prefix) (hasPrefix $prefix $existing.prefix)) -}}
+            {{- fail (printf "repo %q job %d (container %q, prefix %q) overlaps repo %q job %d (container %q, prefix %q) for target %q; delete cleanup can remove the other job's objects" $repo $jobIndex $container $prefix $existing.repo $existing.jobIndex $existing.container $existing.prefix $targetName) -}}
+          {{- end -}}
+        {{- end -}}
+        {{- $destinations = append $destinations (dict "repo" $repo "jobIndex" $jobIndex "container" $container "prefix" $prefix "deleteCleanup" $deleteCleanup "teamManaged" $teamManaged) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
