@@ -1,0 +1,59 @@
+# =============================================================================
+# argora-operator-remote-ddo values
+# =============================================================================
+#
+# MODE CONTRACT (DO NOT SET mode HERE):
+#   The dual-deployment-operator injects .Values.mode = "seed" | "shoot" at
+#   render time. The chart MUST NOT declare a default for `mode` — the operator
+#   rejects any render whose user values contain `mode`.
+#
+#   Per-mode subchart flags are supplied via the DualDeploymentOperator CR:
+#     spec.source.helm.seedValues
+#     spec.source.helm.shootValues
+#
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Upstream subchart — ALL per-mode enable flags OFF by default.
+# The CR's seedValues/shootValues drive these per mode (see MODE CONTRACT above).
+# NEVER enable manager, RBAC, CRDs, metrics, Prometheus, or cert-manager here.
+# ---------------------------------------------------------------------------
+argora-operator-core:
+  # Load-bearing: preserve legacy shoot RBAC names and token-requestor identity.
+  fullnameOverride: argora-operator
+  manager:
+    enable: false
+    # The live seed controller uses the default ServiceAccount.
+    serviceAccountName: default
+  rbac:
+    enable: false
+  crd:
+    enable: false
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+  certManager:
+    enable: false
+  ironcore:
+    enable: true
+  netboxURL: "https://netbox-url"
+
+  # These vault+kvv2 resolve directives are consumed by secrets-injector
+  # in-cluster (NOT Helm). ${REGION} is substituted later by the subchart/CR
+  # via replace, not tpl; this operand chart only carries the token-bearing
+  # defaults. Keep the literal backticks and {{ resolve ... }} verbatim.
+  credentials:
+    bmcUser: "{{ resolve `vault+kvv2:///secrets/${REGION}/metal-api/remoteboards/users/metal/username` }}"
+    bmcPassword: "{{ resolve `vault+kvv2:///secrets/${REGION}/metal-api/remoteboards/users/metal/password` }}"
+    netboxToken: "{{ resolve `vault+kvv2:///secrets/shared/daybreak/netbox-auth/default/token` }}"
+
+# ---------------------------------------------------------------------------
+# Global values — per-cluster, supplied via CR values
+# ---------------------------------------------------------------------------
+global:
+  region: ""
+  clusterType: ""
+  tld: cloud.sap
+  linkerd_enabled: false
+  linkerd_requested: false
