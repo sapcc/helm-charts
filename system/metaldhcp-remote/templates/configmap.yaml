@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: metaldhcp
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: metaldhcp
+    app.kubernetes.io/name: {{ .Release.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   config.yaml: |
@@ -45,6 +45,18 @@ data:
         {{- end }}
         {{- if .bootURL }}
         bootURL: {{ .bootURL }}
+        {{- end }}
+        {{- with .allowMacs }}
+        allowMacs:
+          {{- range . }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+        {{- if .allowAllMacs }}
+        allowAllMacs: true
+        {{- end }}
+        {{- if .responseDelay }}
+        responseDelay: {{ .responseDelay }}
         {{- end }}
       {{- end }}
     {{- end }}

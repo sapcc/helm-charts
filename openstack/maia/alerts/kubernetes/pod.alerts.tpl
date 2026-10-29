@@ -13,7 +13,6 @@ groups:
           service: maia
           severity: info
           context: cpu
-          dashboard: maia-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
           meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
         annotations:
@@ -29,7 +28,6 @@ groups:
           tier: os
           service: maia
           context: memory
-          dashboard: maia-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
@@ -46,7 +44,6 @@ groups:
           service: maia
           severity: info
           context: memory
-          dashboard: maia-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
@@ -64,7 +61,6 @@ groups:
           service: maia
           severity: info
           context: memory
-          dashboard: maia-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
           meta: "{{`{{ $labels.pod_name }}`}}"
         annotations:

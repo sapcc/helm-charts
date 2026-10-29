@@ -16,7 +16,7 @@ extensions:
     track: all
 
 # Refer to the "ccloud/postgres-ng" repository in Keppel to see which image tags exist.
-imageTag: '20261021043451'
+imageTag: '20261028230736'
 
 # The version of postgres to start.
 # This will be bumped over time and auto upgrade the database.
@@ -78,7 +78,13 @@ crontab: ""
 persistence:
   enabled: true
   createBackupUser: true
-  accessMode: ReadWriteMany # compatibility to allow easy upgrades
+
+  # If your deployment targets the controlplane cluster when deployed to classic regions, leave this at the default value.
+  # Otherwise, e.g. when targeting the scaleout clusters, set this to "ReadWriteOnce".
+  #
+  # The "ReadWriteMany" setting is always technically incorrect, but kept for backwards compatibility with existing deployments.
+  # When deploying to a Gardener-based region where "ReadWriteMany" does not work, the chart will automatically switch to "ReadWriteOnce".
+  accessMode: ReadWriteMany
   size: 10Gi
   # Re-use existing (unmanaged) PVC
   # existingClaim: claimName

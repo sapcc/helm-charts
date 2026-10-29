@@ -36,9 +36,6 @@ persesPlugin:
       # -- Perses image repository and name
       name: "ccloud-dockerhub-mirror/persesdev/perses"
 
-      # -- Overrides the image tag whose default is the chart appVersion.
-      version: "v0.55.0-rc.1-debug"
-
       # -- Default image pull policy
       pullPolicy: IfNotPresent
 
@@ -253,6 +250,11 @@ persesPlugin:
       securityContext:
         # sidecar runs with escalated privelege as the metal clusters use NFS storage and fsGroup has no effect on them.
         runAsUser: 0
+        # upstream perses chart >= 0.24.0 defaults runAsNonRoot: true, which conflicts with runAsUser: 0
+        runAsNonRoot: false
+        # keep default capabilities so root can write to NFS-backed volumes
+        capabilities:
+          drop: []
 
     # -- Persistence parameters
     persistence:

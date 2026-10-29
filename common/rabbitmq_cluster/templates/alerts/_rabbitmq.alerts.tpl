@@ -9,7 +9,7 @@ groups:
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       service:  {{ include "alerts.service" . }}
       context: '{{`{{ $labels.app }}`}}'
-      dashboard: rabbitmq
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: '{{`{{ $labels.app }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} unacknowledged messages.'
       playbook: 'docs/devops/alert/rabbitmq/'
     annotations:
@@ -24,7 +24,7 @@ groups:
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       service: {{ include "alerts.service" . }}
       context: '{{`{{ $labels.app }}`}}'
-      dashboard: rabbitmq
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: 'RPC Messages are not being collected. {{`{{ $labels.app }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} rpc messages waiting.'
       playbook: 'docs/devops/alert/rabbitmq/'
     annotations:

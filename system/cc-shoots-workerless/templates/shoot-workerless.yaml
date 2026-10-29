@@ -35,6 +35,12 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: {{ printf "%s-auth-%s" $clusterType $regionName }}
+      {{- if $.Values.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: {{ required "auditing.auditPolicyConfigMapName is required" $.Values.auditing.auditPolicyConfigMapName }}
+      {{- end }}
       encryptionConfig:
         resources:
         - configmaps
@@ -48,4 +54,22 @@ spec:
     {{- end }}
   {{- end }}
   seedName: {{ include "cc-shoots-workerless.seedName" (dict "clusterName" $clusterName "cluster" $cluster "regionName" $regionName "seedType" $.Values.cluster.seedType) }}
+  {{- if $.Values.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ required "auditing.url is required" $.Values.auditing.url }}
+          tls:
+            secretReferenceName: {{ required "auditing.mtlsSecretName is required" $.Values.auditing.mtlsSecretName }}
+  resources:
+  - name: {{ required "auditing.mtlsSecretName is required" $.Values.auditing.mtlsSecretName }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: {{ required "auditing.mtlsSecretName is required" $.Values.auditing.mtlsSecretName }}
+  {{- end }}
 {{- end }}

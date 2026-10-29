@@ -42,7 +42,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 unacknowledged messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
       playbook: "docs/devops/alert/hermes/#{{`{{ $labels.check }}`}}"
@@ -61,7 +60,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 ready messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -81,7 +79,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 1,000,000 ready messages in {{`{{ $labels.kubernetes_name }}`}}. A queue is not draining and the RabbitMQ volume is at risk of filling."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -105,7 +102,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "Broker {{`{{ $labels.pod }}`}} has ready messages but ZERO consumers -- it is stranded and will fill the disk if not drained."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -127,7 +123,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "Broker {{`{{ $labels.pod }}`}} has been stranded (ready messages, ZERO consumers) for over an hour and will fill the disk."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -147,7 +142,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.pod }}`}} has hit the RabbitMQ free-disk watermark and is now BLOCKING publishers. Audit ingestion is stopping on this broker."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -164,7 +158,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
       playbook: "docs/devops/alert/hermes"
@@ -182,7 +175,6 @@ groups:
       support_group: observability
       service: hermes
       no_alert_on_absence: "true" # kafka output is disabled by default; metric is absent when logstash.kafka.enabled=false
-      dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash Kafka output plugin is failing to deliver audit events"
       playbook: "docs/devops/alert/hermes"
@@ -199,7 +191,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has failed enriching data with Metis"
       playbook: "docs/devops/alert/hermes"

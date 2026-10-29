@@ -7,15 +7,26 @@
 {{- end -}}
 
 {{- define "secret_env_vars" -}}
-{{- range $key, $val := .Values.passwords }}
+{{- $targetPasswordKeys := dict "target_auth_password" true }}
+{{- range $target := .targets }}
+{{- $_ := set $targetPasswordKeys $target.password_key true }}
+{{- end }}
+{{- range $key, $val := .root.Values.passwords -}}
+{{/* This loop includes the specific target-side password for this job, and also all passwords that are relevant on the source side (because we don't have a good way yet to filter for just the ones that this job needs). */}}
+{{- if or (eq $key $.targetCfg.password_key) (not (hasKey $targetPasswordKeys $key)) }}
 {{- if contains "DEFINED" $val }}
   {{ required "This release should be installed by the deployment pipeline!" "" }}
 {{- end }}
+{{- if eq $key $.targetCfg.password_key }}
+- name: {{ include "content-repo.target_env" $.targetName }}
+{{- else }}
 - name: {{ $key | upper }}
+{{- end }}
   valueFrom:
     secretKeyRef:
       name: swift-http-import
       key: {{ $key }}
+{{- end }}
 {{- end }}
 {{- end -}}
 

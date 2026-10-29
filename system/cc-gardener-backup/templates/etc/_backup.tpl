@@ -252,6 +252,7 @@ required_vars=(
     "PUBLIC_KEY_NAME"
     "BACKUP_RETENTION_SECONDS"
     "OS_AUTH_URL"
+    "GPG_KEY_EXPECTED_FINGERPRINT"
 )
 
 echo "Validating required environment variables..."
@@ -306,7 +307,7 @@ if [[ -z "$SWIFT_URL" ]] || [[ "$SWIFT_URL" == "null" ]]; then
 fi
 
 mkdir -p "${gpg_key_dir}"
-echo "Retriving object: "$/${CONTAINER}/${publickey_name}
+echo "Retrieving object: ${CONTAINER}/${publickey_name}"
 curl -fL --max-time 60 --connect-timeout 10 \
   -H "X-Auth-Token: $TOKEN" \
   -o "${gpg_key_dir}/${publickey_name}" \
@@ -331,6 +332,14 @@ if [[ -z "${GPG_KEY_FINGERPRINT}" ]]; then
     exit 1
 fi
 echo "Imported GPG key with fingerprint: ${GPG_KEY_FINGERPRINT}"
+
+if [[ "${GPG_KEY_FINGERPRINT}" != "${GPG_KEY_EXPECTED_FINGERPRINT}" ]]; then
+    echo "ERROR: GPG key fingerprint mismatch!"
+    echo "  Expected: ${GPG_KEY_EXPECTED_FINGERPRINT}"
+    echo "  Actual:   ${GPG_KEY_FINGERPRINT}"
+    exit 1
+fi
+echo "GPG key fingerprint verified."
 
 
 #===================================================================================================
@@ -401,7 +410,6 @@ gpg --always-trust -r "${GPG_KEY_FINGERPRINT}" --output "${encrypted_filename}" 
 # Cleanup: Remove the GPG key from keyring
 if [[ -n "${GPG_KEY_FINGERPRINT:-}" ]]; then
     echo "Removing imported GPG key from keyring..."
-    gpg --batch --yes --delete-secret-keys "${GPG_KEY_FINGERPRINT}" 2>/dev/null || true
     gpg --batch --yes --delete-keys "${GPG_KEY_FINGERPRINT}" 2>/dev/null || {
         echo "WARNING: Failed to remove GPG key from keyring"
     }

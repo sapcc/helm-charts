@@ -25,13 +25,13 @@ spec:
       values:
 {{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
 {{- end }}
-{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
+{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm (or .admission.runtimeCluster.helm.ociRepository.ref .admission.runtimeCluster.helm.ociRepository.repository .admission.runtimeCluster.helm.ociRepository.tag) }}
       runtimeCluster:
         helm:
           ociRepository:
 {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.runtimeCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
 {{- end }}
-{{- if and .admission.virtualCluster .admission.virtualCluster.helm .admission.virtualCluster.helm.ociRepository }}
+{{- if and .admission.virtualCluster .admission.virtualCluster.helm (or .admission.virtualCluster.helm.ociRepository.ref .admission.virtualCluster.helm.ociRepository.repository .admission.virtualCluster.helm.ociRepository.tag) }}
       virtualCluster:
         helm:
           ociRepository:
@@ -45,9 +45,11 @@ spec:
 {{- end }}
       values:
 {{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
+{{- if and .helm (or .helm.ociRepository.ref .helm.ociRepository.repository .helm.ociRepository.tag) }}
       helm:
         ociRepository:
 {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
+{{- end }}
       policy: OnDemand
 {{- end }}
 {{- end }}
