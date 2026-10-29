@@ -57,8 +57,18 @@ spec:
           - name: KUBECONFIG
             value: /var/run/remote-kubeconfig/kubeconfig
           {{- end }}
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         args:
           - --config=/etc/metaldhcp/config.yaml
+          - --loglevel={{ .Values.server.logLevel }}
+          - --health-addr={{ .Values.server.healthAddr }}
         ports:
         - containerPort: 67
           name: dhcp
