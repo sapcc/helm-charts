@@ -70,9 +70,11 @@ argora-operator-core:
   netboxURL: "https://netbox-url"
 
   # These vault+kvv2 resolve directives are consumed by secrets-injector
-  # in-cluster (NOT Helm). ${REGION} is substituted later by the subchart/CR
-  # via replace, not tpl; this operand chart only carries the token-bearing
-  # defaults. Keep the literal backticks and {{ resolve ... }} verbatim.
+  # in-cluster (NOT Helm). The ${REGION} token is substituted with
+  # .Values.global.region by templates/credentials-secret.yaml (a surgical
+  # `replace`, NOT `tpl` — `tpl` would choke on the {{ resolve }} directive).
+  # The upstream subchart Secret is dropped by the CR's filterKinds; the
+  # seed-only additions Secret in credentials-secret.yaml is what the pod mounts.
   credentials:
     bmcUser: "{{ resolve `vault+kvv2:///secrets/${REGION}/metal-api/remoteboards/users/metal/username` }}"
     bmcPassword: "{{ resolve `vault+kvv2:///secrets/${REGION}/metal-api/remoteboards/users/metal/password` }}"
