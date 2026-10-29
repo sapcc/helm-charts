@@ -131,6 +131,7 @@ load_profile() {
   
   # shellcheck source=/dev/null
   source "$profile_file"
+  PROTECT_MRS="${PROTECT_MRS:-}"
   
   # Apply CLI overrides
   [[ -n "${RELEASE_OVERRIDE:-}" ]] && RELEASE="$RELEASE_OVERRIDE"
@@ -354,7 +355,22 @@ protect_namespace_mr() {
   esac
 }
 
-# Gate 5: Freeze check
+# Gate 5: Data-CR ManagedResource protection (conditional)
+preflight_protect_mrs() {
+  if [[ -z "$PROTECT_MRS" ]]; then
+    info "Protect-MRs gate: none (skipping)"
+    return
+  fi
+
+  step "Preflight: Protect data-CR ManagedResources"
+
+  local mr
+  for mr in $PROTECT_MRS; do
+    protect_namespace_mr "$mr" ""
+  done
+}
+
+# Gate 6: Freeze check
 preflight_freeze_gate() {
   step "Preflight: Freeze check (deletionTimestamp)"
   
@@ -584,6 +600,7 @@ preflight() {
   preflight_crds_on_target
   preflight_mr_keepobjects
   preflight_namespace_cascade
+  preflight_protect_mrs
   preflight_freeze_gate
   preflight_ddo_prereqs
   ok "All preflight checks passed"

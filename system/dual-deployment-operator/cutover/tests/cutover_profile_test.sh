@@ -243,6 +243,32 @@ test_boot_skips_namespace_cascade_gate() {
   fi
 }
 
+test_argora_profile_protects_data_cr_mrs() {
+  local desc="argora profile protects all three data-CR ManagedResources in dry-run"
+  local profile="$CUTOVER_DIR/profiles/argora-operator-remote.env"
+  local -a protect_mrs
+  local output mr
+
+  # shellcheck source=/dev/null
+  source "$profile"
+  read -r -a protect_mrs <<<"$PROTECT_MRS"
+  if [[ "${#protect_mrs[@]}" -ne 3 ]] || [[ "${protect_mrs[*]}" != "mr-ci-mgmt-qa-de-200 mr-ippi-sci-k8s-management mr-u-mgmt-qa-de-200" ]]; then
+    fail "$desc" "Expected exactly the three argora data-CR ManagedResources, got: $PROTECT_MRS"
+    return
+  fi
+
+  output=$("$CUTOVER_SCRIPT" --operator argora --phase uninstall --dry-run \
+    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
+    2>&1 || true)
+  for mr in "${protect_mrs[@]}"; do
+    if ! grep -q "DRY-RUN: would patch $mr" <<<"$output"; then
+      fail "$desc" "Missing dry-run patch output for $mr"
+      return
+    fi
+  done
+  pass "$desc"
+}
+
 test_boot_freeze_gate_queries_only_boot_kinds() {
   local desc="boot freeze gate queries ONLY httpbootconfigs/ipxebootconfigs, NOT servers/biossettings/bmcs"
 
@@ -649,6 +675,10 @@ main() {
   echo ""
   echo "--- Test: boot skips namespace-cascade gate ---"
   test_boot_skips_namespace_cascade_gate
+
+  echo ""
+  echo "--- Test: argora protects data-CR ManagedResources ---"
+  test_argora_profile_protects_data_cr_mrs
 
   echo ""
   echo "--- Test: boot freeze gate queries only boot kinds ---"
