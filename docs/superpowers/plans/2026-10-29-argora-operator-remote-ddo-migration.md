@@ -237,7 +237,7 @@
 **Interfaces:**
 - Consumes: all prior tasks.
 
-- [ ] **Step 1: Open the helm-charts PR** (`feat/argora-operator-remote-ddo-m-qa-de-200` → master, `GH_HOST=github.com`) with the operand chart + cutover profile. Note the #13167 toolkit dependency in the PR body if Task 9 landed on the feature branch rather than the toolkit branch.
+- [ ] **Step 1: Open the helm-charts PR** (`feat/argora-operator-remote-ddo-m-qa-de-200` → master, `GH_HOST=github.com`) with the operand chart ONLY. The cutover profile + `PROTECT_MRS` gate (Task 9) landed on the separate `feat/ddo-cutover-toolkit` branch (PR #13167), NOT this branch — state that dependency explicitly in the PR body (this PR's operand chart + PR #13167's cutover profile must both merge before the live cutover runs).
 - [ ] **Step 2: After the operand chart publishes to keppel**, verify: `helm show chart oci://keppel.eu-de-1.cloud.sap/ccloud-helm/argora-operator-remote-ddo --version <published>`. Set the kube-secrets instance `source.version` to the published version (Task 7 Step 2).
   Expected: chart pullable at that version.
 - [ ] **Step 3: Open the kube-secrets PR** (its own branch → master, `GH_HOST=github.wdf.sap.corp`) — only AFTER Step 2 (publish-before-merge; else SeedRenderFailed).

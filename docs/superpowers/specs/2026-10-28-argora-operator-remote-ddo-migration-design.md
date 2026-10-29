@@ -266,9 +266,11 @@ master — `system/dual-deployment-operator/cutover/`). Add
   tenant object like boot's `mig-test-metal`). The do-no-harm invariant is CR-data/UID
   preservation, covered by the baseline snapshot, not an external sample.
 
-> **Dependency (flagged to user):** PR #13167 is not yet on master. The argora
-> helm-charts branch should either branch off `feat/ddo-cutover-toolkit` or declare
-> the merge dependency so the profile lands on the toolkit. Builder confirms sequencing.
+> **Dependency (flagged to user; RESOLVED 2026-10-29).** PR #13167 is not yet on
+> master. Decision: the argora cutover profile + the generic `PROTECT_MRS` gate were
+> added **on the `feat/ddo-cutover-toolkit` branch (PR #13167)**, NOT the argora
+> helm-charts branch. So the argora helm-charts PR carries ONLY the operand chart; the
+> cutover tooling ships via #13167. Both must merge before the live cutover runs.
 
 ## 5. The cutover shape (boot specifics → argora specifics)
 
