@@ -129,9 +129,10 @@ load_profile() {
     die "Unknown operator '$OPERATOR': profile not found at $profile_file"
   fi
   
+  # Reset profile-optional fields so environment values cannot leak between profiles.
+  PROTECT_MRS=""
   # shellcheck source=/dev/null
   source "$profile_file"
-  PROTECT_MRS="${PROTECT_MRS:-}"
   
   # Apply CLI overrides
   [[ -n "${RELEASE_OVERRIDE:-}" ]] && RELEASE="$RELEASE_OVERRIDE"
@@ -365,7 +366,9 @@ preflight_protect_mrs() {
   step "Preflight: Protect data-CR ManagedResources"
 
   local mr
-  for mr in $PROTECT_MRS; do
+  local -a _protect_mrs
+  read -r -a _protect_mrs <<< "$PROTECT_MRS"
+  for mr in "${_protect_mrs[@]}"; do
     protect_namespace_mr "$mr" ""
   done
 }
