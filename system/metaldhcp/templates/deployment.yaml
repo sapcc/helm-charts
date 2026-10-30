@@ -1,29 +1,64 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metaldhcp
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: metaldhcp
+    app.kubernetes.io/name: {{ .Release.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app.kubernetes.io/name: metaldhcp
+      app.kubernetes.io/name: {{ .Release.Name }}
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: metaldhcp
+        app.kubernetes.io/name: {{ .Release.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
-      serviceAccountName: metaldhcp
+      serviceAccountName: {{ .Release.Name }}
       hostNetwork: true
+      initContainers:
+        - name: network-init
+          image: "{{ .Values.networkInit.image.repository }}:{{ .Values.networkInit.image.tag | default .Chart.AppVersion }}"
+          command: ["/bin/sh", "/scripts/dhcp-init.sh"]
+          env:
+            - name: EXTERNALIP
+              value: {{ .Values.externalIP }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: shared
+              mountPath: /shared
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+        {{- if and .Values.tftp.enabled .Values.tftp.ipxeURL }}
+        - name: fetch-ipxe
+          image: busybox:1.37
+          command:
+            - wget
+            - -O
+            - /ipxe/snponly.efi
+            - {{ .Values.tftp.ipxeURL | quote }}
+          volumeMounts:
+            - name: ipxe-override
+              mountPath: /ipxe
+        {{- end }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -39,18 +74,30 @@ spec:
                 - key: app.kubernetes.io/name
                   operator: In
                   values:
-                  - metaldhcp
+                  - {{ .Release.Name }}
               topologyKey: "kubernetes.io/hostname"
             weight: 10
       containers:
-      - name: metaldhcp
+      - name: {{ .Release.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: IfNotPresent
         env:
+          {{- if .Values.remoteAPIServer }}
           - name: KUBECONFIG
             value: /var/run/remote-kubeconfig/kubeconfig
+          {{- end }}
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         args:
           - --config=/etc/metaldhcp/config.yaml
+          - --loglevel={{ .Values.server.logLevel }}
+          - --health-addr={{ .Values.server.healthAddr }}
         ports:
         - containerPort: 67
           name: dhcp
@@ -91,25 +138,96 @@ spec:
         volumeMounts:
         - mountPath: /etc/metaldhcp
           name: config
+        {{- if .Values.remoteAPIServer }}
         - mountPath: /var/run/remote-kubeconfig
           name: remote-kubeconfig
         - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
           name: remote-serviceaccount
+        {{- end }}
+      {{- if .Values.tftp.enabled }}
+      - name: tftpd
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        command: ["/tftpd"]
+        args:
+          - --root=/ipxe
+        ports:
+        - containerPort: 69
+          name: tftp
+          protocol: UDP
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            - NET_RAW
+            drop:
+            - ALL
+        {{- if .Values.tftp.ipxeURL }}
+        volumeMounts:
+        - name: ipxe-override
+          mountPath: /ipxe
+        {{- end }}
+      {{- end }}
+      - name: network-lifecycle
+        image: "{{ .Values.networkInit.image.repository }}:{{ .Values.networkInit.image.tag | default .Chart.AppVersion }}"
+        command: ["sleep", "infinity"]
+        env:
+          - name: EXTERNALIP
+            value: {{ .Values.externalIP }}
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+            drop: ["ALL"]
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "/scripts/dhcp-stop.sh"]
+        volumeMounts:
+          - name: scripts
+            mountPath: /scripts
+          - name: shared
+            mountPath: /shared
+      {{- if .Values.debug.enabled }}
+      - name: debug
+        image: {{ .Values.debug.image }}
+        command: ["sleep", "infinity"]
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["NET_RAW", "NET_ADMIN"]
+      {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       volumes:
       - configMap:
-          name: metaldhcp
+          name: {{ .Release.Name }}
         name: config
+      {{- if .Values.remoteAPIServer }}
       - configMap:
-          name: metaldhcp-remote-kubeconfig
+          name: {{ .Release.Name }}-remote-kubeconfig
         name: remote-kubeconfig
       - secret:
-          secretName: metaldhcp-remote-kubeconfig
+          secretName: {{ .Release.Name }}-remote-kubeconfig
           items:
             - key: token
               path: token
             - key: bundle.crt
               path: ca.crt
         name: remote-serviceaccount
+      {{- end }}
+      {{- if and .Values.tftp.enabled .Values.tftp.ipxeURL }}
+      - name: ipxe-override
+        emptyDir: {}
+      {{- end }}
+      - configMap:
+          name: {{ .Release.Name }}-scripts
+          defaultMode: 0755
+        name: scripts
+      - name: shared
+        emptyDir: {}
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+          type: Directory
