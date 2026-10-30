@@ -60,12 +60,13 @@ else
   echo "PASS: seed render is empty (no documents)"
 fi
 
-# Test 4: shoot render is empty (no documents)
-if grep -q "^kind:" /tmp/shoot_render.yaml; then
-  echo "FAIL: shoot render should be empty at this stage (found 'kind:' line)"
+# Test 4: shoot render contains all 7 vendored CRDs
+crd_count="$(grep -c '^kind: CustomResourceDefinition$' /tmp/shoot_render.yaml || true)"
+if [ "$crd_count" -ne 7 ]; then
+  echo "FAIL: shoot render should contain 7 CRDs (found $crd_count)"
   failed=1
 else
-  echo "PASS: shoot render is empty (no documents)"
+  echo "PASS: shoot render contains 7 CRDs"
 fi
 
 # Test 5: additions/seed/kustomization.yaml contains the origin annotation
