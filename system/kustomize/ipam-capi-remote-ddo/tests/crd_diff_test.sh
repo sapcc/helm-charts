@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OVERLAY_DIR="$(dirname "$SCRIPT_DIR")"
-REPO_ROOT="$(cd "$OVERLAY_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$OVERLAY_DIR/../../.." && pwd)"
 LIVE_DIR="$REPO_ROOT/.superpowers/sdd/2026-10-30-ipam-capi-remote-ddo/live-crds"
 
 command -v kustomize >/dev/null || { echo "FAIL: kustomize not found in PATH"; exit 1; }

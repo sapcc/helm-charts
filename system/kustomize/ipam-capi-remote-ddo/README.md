@@ -24,7 +24,7 @@ This is the kustomize equivalent of the Helm chart `additionsAnnotations` helper
 ### Layout
 
 ```
-system/ipam-capi-remote-ddo/
+system/kustomize/ipam-capi-remote-ddo/
 ├── base/                          # Shared upstream resources (renders to BOTH seed + shoot)
 │   ├── kustomization.yaml
 │   └── upstream-cm.yaml
@@ -105,7 +105,7 @@ When bumping the ipam-capi-remote controller version:
 
 5. **Run all tests**
    ```bash
-   cd system/ipam-capi-remote-ddo
+   cd system/kustomize/ipam-capi-remote-ddo
    bash tests/render_test.sh
    bash tests/crd_diff_test.sh
    bash tests/rbac_fidelity_test.sh
@@ -174,7 +174,7 @@ The test suite validates:
 Run all tests before merging:
 
 ```bash
-cd system/ipam-capi-remote-ddo
+cd system/kustomize/ipam-capi-remote-ddo
 for test in tests/*.sh; do
   echo "=== Running $test ==="
   bash "$test" || exit 1
@@ -203,7 +203,7 @@ The source URL must embed `?ref=<branch|tag|sha>`; there is no separate `ref` fi
 ```yaml
 source:
   kustomize:
-    url: https://github.com/sapcc/helm-charts//system/ipam-capi-remote-ddo?ref=<tag>
+    url: https://github.com/sapcc/helm-charts//system/kustomize/ipam-capi-remote-ddo?ref=<tag>
     seedPath: seed
     shootPath: shoot
 shootAccess:

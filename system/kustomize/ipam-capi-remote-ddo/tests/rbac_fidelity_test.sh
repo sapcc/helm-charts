@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OVERLAY_DIR="$(dirname "$SCRIPT_DIR")"
-REPO_ROOT="$(cd "$OVERLAY_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$OVERLAY_DIR/../../.." && pwd)"
 LIVE_DIR="$REPO_ROOT/.superpowers/sdd/2026-10-30-ipam-capi-remote-ddo/live-rbac"
 LEGACY_RBAC="$REPO_ROOT/system/kustomize/ipam-capi-remote/managedresources/rbac.yaml"
 
