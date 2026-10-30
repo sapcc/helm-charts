@@ -87,3 +87,214 @@ groups:
     annotations:
       description: "Worker node `{{ $labels.node }}` workdir is most likely out of disk space in 2 days. Drain and terminate node to create a worker with empty workdir. Node creation and volume provisioning will happen automatically."
       summary: "Worker node workdir out of disk space in the near future"
+
+  # Copies for the lifecycle-management support group, with Perses dashboard links
+  - alert: ConcoursePostgresDatabaseTooLarge
+    expr: max by (region, cluster, persistentvolumeclaim) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*postgres.*"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*postgres.*"}) > 0.75
+    for: 5m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse PostgreSQL PVC {{ $labels.persistentvolumeclaim }} usage above 75% in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-postgres?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "The PostgreSQL PVC {{ $labels.persistentvolumeclaim }} in cluster {{ $labels.cluster }} is more than 75% full and will exceed PV limits eventually. Consider pruning old build data."
+      summary: Concourse database is too large
+
+  - alert: ConcourseWorkerContainerCountStale
+    expr: changes(concourse_workers_containers{platform="linux", worker=~"mo-.*"}[5m])==0
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Worker {{ $labels.name }} has a stale container metric."
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "The workers container count seems to be stuck indicating that the worker might be stalled."
+      summary: Worker has stale container count
+
+  - alert: ConcourseGitProxyChecksFailing
+    expr: sum by (region, cluster, pod) (rate(request_duration_seconds_count{code="500", app="git-resource-proxy"}[5m])) > 0
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Git-proxy resource check request error rate to high"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "The check requests from the git-proxy resource are failing. This might be because github.wdf.sap.corp is down. Otherwise inspect the logs of git-proxy replicas in the concourse installation. Restarting the pods might help."
+      summary: Git-proxy resource checks are failing
+
+  - alert: ConcourseGitProxyWorkerStale
+    expr: sum by (region, cluster, pod) (rate(request_duration_seconds_count{cluster!~"ci2-.*|ci3-.*"}[5m])) == 0
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Git-proxy worker {{ $labels.pod }} is stalled"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "The git-proxy worker {{ $labels.pod }} seems stalled. Check its logs in the concourse namespace."
+      summary: Git-proxy worker stalled
+
+  - alert: ConcourseWorkerNodeDiskFull
+    expr: min by (region, cluster, node) (predict_linear(node_filesystem_free_bytes{mountpoint="/",node=~"kks-ci-.*-ci.*"}[1d], 2 * 24 * 3600) < 0) * on (node) kube_node_info
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Worker node {{ $labels.node }} workdir is most likely out of disk space in 2 days"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "Worker node `{{ $labels.node }}` workdir is most likely out of disk space in 2 days. Drain and terminate node to create a worker with empty workdir. Node creation and volume provisioning will happen automatically."
+      summary: "Worker node workdir out of disk space in the near future"
+
+  - alert: ConcourseAPIHighErrorRate
+    expr: sum by (region, cluster) (rate(concourse_http_responses_duration_seconds_count{status=~"5.."}[5m])) / sum by (region, cluster) (rate(concourse_http_responses_duration_seconds_count[5m])) > 0.05
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse API 5xx error rate above 5% in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "More than 5% of Concourse API requests in cluster {{ $labels.cluster }} are returning 5xx errors. Check the web pod logs and the API latency panels."
+      summary: Concourse API error rate too high
+
+  - alert: ConcourseResourceChecksHighErrorRate
+    expr: sum by (region, cluster) (rate(concourse_lidar_checks_finished_total{status="error"}[5m])) / sum by (region, cluster) (rate(concourse_lidar_checks_finished_total[5m])) > 0.1
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse resource check error rate above 10% in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "More than 10% of resource checks in cluster {{ $labels.cluster }} are failing. This may indicate a network issue or a misconfigured resource type."
+      summary: Concourse resource check error rate too high
+
+  - alert: ConcourseWorkerUnhealthyState
+    expr: max by (region, cluster, state) (concourse_workers_registered{state=~"stalled|landing|landed"}) > 0
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse worker in unhealthy state {{ $labels.state }} in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "A Concourse worker in cluster {{ $labels.cluster }} is in state {{ $labels.state }} for more than 15 minutes. The worker may need to be retired or restarted."
+      summary: Concourse worker in unhealthy state
+
+  - alert: ConcourseGCContainerBacklogHigh
+    expr: max by (region, cluster) (concourse_gc_failed_containers_to_be_garbage_collected) > 20
+    for: 30m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse GC container backlog too high in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "More than 20 containers are stuck in the failed GC state in cluster {{ $labels.cluster }}. This may indicate workers are not reachable for cleanup."
+      summary: Concourse garbage collection backlog too high
+
+  - alert: ConcoursePostgresPVCNearFull
+    expr: max by (region, cluster, persistentvolumeclaim) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*postgres.*"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*postgres.*"}) > 0.85
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse PostgreSQL PVC {{ $labels.persistentvolumeclaim }} usage above 85% in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-postgres?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "The PostgreSQL PVC {{ $labels.persistentvolumeclaim }} in cluster {{ $labels.cluster }} is more than 85% full. Consider expanding the PVC or pruning old build data."
+      summary: Concourse PostgreSQL PVC usage too high
+
+  - alert: ConcourseWorkerPodMemoryOverRequest
+    expr: max by (region, cluster, pod, namespace) (container_memory_working_set_bytes{namespace="concourse", pod=~"concourse-worker.*", container!=""} / on (pod, container, namespace) kube_pod_container_resource_requests{namespace="concourse", pod=~"concourse-worker.*", resource="memory"}) > 1
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse worker pod {{ $labels.pod }} memory exceeds its request in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "Pod {{ $labels.pod }} in cluster {{ $labels.cluster }} is using more memory than its requested amount. This indicates the resource requests are undersized and the pod risks OOM eviction."
+      summary: Concourse worker pod memory exceeds request
+
+  - alert: ConcourseWorkerPodCPUOverRequest
+    expr: max by (region, cluster, pod, namespace) (rate(container_cpu_usage_seconds_total{namespace="concourse", pod=~"concourse-worker.*", container!=""}[5m]) / on (pod, container, namespace) kube_pod_container_resource_requests{namespace="concourse", pod=~"concourse-worker.*", resource="cpu"}) > 1
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse worker pod {{ $labels.pod }} CPU exceeds its request in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "Pod {{ $labels.pod }} in cluster {{ $labels.cluster }} is using more CPU than its requested amount consistently. This indicates the resource requests are undersized and the pod may be throttled."
+      summary: Concourse worker pod CPU exceeds request
+
+  - alert: ConcourseOOMKill
+    expr: increase(kube_pod_container_status_last_terminated_reason{namespace="concourse", reason="OOMKilled"}[15m]) > 0
+    for: 0m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "OOM kill detected in concourse pod {{ $labels.pod }} in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "A container in pod {{ $labels.pod }} (container: {{ $labels.container }}) in cluster {{ $labels.cluster }} was OOM killed. Increase the memory limit or investigate memory leaks."
+      summary: Concourse pod OOM killed
+
+  - alert: ConcourseWorkerNodeMemoryHigh
+    expr: max by (region, cluster, node) (1 - node_memory_MemAvailable_bytes{node=~"kks-ci-.*-ci.*"} / node_memory_MemTotal_bytes{node=~"kks-ci-.*-ci.*"}) > 0.9
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse worker node {{ $labels.node }} memory above 90% in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "Worker node {{ $labels.node }} in cluster {{ $labels.cluster }} is using more than 90% of its memory. This increases the risk of OOM kills and postgres shared memory errors."
+      summary: Concourse worker node memory usage critical
