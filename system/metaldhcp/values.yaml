@@ -4,7 +4,12 @@ owner-info:
 
 image:
   repository: keppel.eu-de-2.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/metaldhcp
-  tag: "sha-87a7345"
+  tag: "sha-4bfbeb9"
+
+networkInit:
+  image:
+    repository: keppel.eu-de-2.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/metaldhcp-network-init
+    tag: "sha-4bfbeb9"
 
 # remoteAPIServer is the m-cluster kube-apiserver address (host:port).
 # Gardener injects the token/CA into the metaldhcp-remote-kubeconfig Secret via token-requestor.
@@ -24,6 +29,7 @@ server:
   listenAddr: "0.0.0.0:67"
   leaseTime: 3600s
   logLevel: info
+  healthAddr: ":8080"
   netmask: "255.255.255.0"
 
 oob:
@@ -37,3 +43,15 @@ oob:
   # - mac: "aa:bb:cc:dd:ee:ff"
   #   ip: 10.0.0.200
   #   hostname: node-static-01
+  reclaimGrace: ""
+
+tftp:
+  enabled: false
+  # ipxeURL: when set, an init container downloads the binary from this URL and serves
+  # it as snponly.efi. When unset, the binary baked into the image at /ipxe/snponly.efi
+  # is used. The advertised TFTP filename is always snponly.efi regardless.
+  # ipxeURL: https://boot-operator.example.com/snponly.efi
+
+debug:
+  enabled: false
+  image: nicolaka/netshoot

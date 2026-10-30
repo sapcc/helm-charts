@@ -1,0 +1,30 @@
+{{- if .Values.enable_hypervisor_operator_service_user }}
+{{- $username := required ".Values.hypervisor_operator_username is missing" .Values.hypervisor_operator_username }}
+{{- $password := required ".Values.hypervisor_operator_password is missing" .Values.hypervisor_operator_password }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-hypervisor-operator
+spec:
+  requires:
+  - monsoon3/keystone-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-cc3test-seed
+  - monsoon3/cc3test-test-seed
+  domains:
+  - name: Default
+    users:
+    - name: '{{ include "resolve_secret" $username }}'
+      description: 'OpenStack Hypervisor Operator'
+      password: '{{ include "resolve_secret" $password }}'
+      role_assignments:
+      # Hypervisor management and VM eviction.
+      - project: service
+        role: cloud_compute_admin
+      # Smoke tests after onboarding run in the cc3test/test project.
+      - project: test@cc3test
+        role: member
+      - project: test@cc3test
+        role: compute_admin
+{{- end }}
