@@ -1,0 +1,178 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ipam-capi-controller-manager
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: ipam-capi-remote
+    app.kubernetes.io/instance: ipam-capi-remote
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: ipam-capi-remote
+      app.kubernetes.io/instance: ipam-capi-remote
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        app.kubernetes.io/name: ipam-capi-remote
+        app.kubernetes.io/instance: ipam-capi-remote
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+        networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      serviceAccountName: ipam-capi-remote-webhook-injector
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: webhook-injector
+        restartPolicy: Always
+        image: ghcr.io/sap-cloud-infrastructure/webhook-injector:sha-f85df8e3d55165e3b6e1117f6b120624268d0976
+        args:
+        - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+        - --target-label=dual-deployment-operator.cc.sap/webhook-injector=ipam-capi-remote
+        - --leader-election-id=ipam-capi-remote-webhook-injector-leader
+        - --cert-secret-name=ipam-capi-remote-cert-secret
+        - --cert-sans=ipam-capi-remote-webhook-service
+        - --rotation-overlap-window=30s
+        - --rotation-gate-timeout=30s
+        ports:
+        - name: metrics
+          containerPort: 8082
+        - name: health
+          containerPort: 8083
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65532
+          runAsGroup: 65532
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8083
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8083
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/webhook-certs
+        - name: remote-serviceaccount
+          mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+          readOnly: true
+        - name: remote-kubeconfig
+          mountPath: /var/run/remote-kubeconfig
+          readOnly: true
+      containers:
+      - name: manager
+        image: registry.k8s.io/capi-ipam-ic/cluster-api-ipam-in-cluster-controller:v1.1.1
+        command:
+        - /manager
+        args:
+        - --leader-elect=false
+        - --webhook-port=9443
+        env:
+        - name: KUBECONFIG
+          value: /var/run/remote-kubeconfig/kubeconfig
+        - name: KUBERNETES_SERVICE_HOST
+          value: apiserver-url
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: cluster.local
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsGroup: 65532
+          runAsUser: 65532
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: webhook-certs
+          readOnly: true
+        - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+          name: remote-serviceaccount
+          readOnly: true
+        - mountPath: /var/run/remote-kubeconfig
+          name: remote-kubeconfig
+          readOnly: true
+      nodeSelector: {}
+      terminationGracePeriodSeconds: 10
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+      topologySpreadConstraints: []
+      volumes:
+      - name: webhook-certs
+        emptyDir: {}
+      - name: remote-serviceaccount
+        secret:
+          defaultMode: 420
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
+          secretName: ipam-capi-remote-kubeconfig
+      - name: remote-kubeconfig
+        configMap:
+          defaultMode: 420
+          name: ipam-capi-remote-kubeconfig

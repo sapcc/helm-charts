@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ipam-capi-webhook-injector
+  labels:
+    app.kubernetes.io/name: ipam-capi-remote
+    app.kubernetes.io/instance: ipam-capi-remote
+    plugin: kube-monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ipam-capi-remote
+      app.kubernetes.io/instance: ipam-capi-remote
+      app.kubernetes.io/component: webhook-injector-metrics
+  endpoints:
+  - port: metrics
+    interval: 60s
+    relabelings:
+    - targetLabel: job
+      replacement: ipam-capi-webhook-injector

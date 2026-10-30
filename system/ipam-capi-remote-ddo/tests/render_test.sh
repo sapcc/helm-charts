@@ -52,12 +52,12 @@ else
   echo "PASS: kustomize build $CHART_DIR/shoot exits 0"
 fi
 
-# Test 3: seed render is empty (no documents, i.e., no 'kind:' line)
-if grep -q "^kind:" /tmp/seed_render.yaml; then
-  echo "FAIL: seed render should be empty at this stage (found 'kind:' line)"
-  failed=1
+# Test 3: seed render contains Deployment ipam-capi-controller-manager
+if grep -q "^kind: Deployment$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-controller-manager" /tmp/seed_render.yaml; then
+  echo "PASS: seed render contains Deployment ipam-capi-controller-manager"
 else
-  echo "PASS: seed render is empty (no documents)"
+  echo "FAIL: seed render should contain Deployment ipam-capi-controller-manager"
+  failed=1
 fi
 
 # Test 4: shoot render contains all 7 vendored CRDs
