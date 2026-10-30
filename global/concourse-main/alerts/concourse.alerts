@@ -90,7 +90,7 @@ groups:
 
   # Copies for the lifecycle-management support group, with Perses dashboard links
   - alert: ConcoursePostgresDatabaseTooLarge
-    expr: pg_database_size_bytes{datname="concourse"} >= 40 * 1024^3
+    expr: max by (region, cluster, persistentvolumeclaim) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*postgres.*"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*postgres.*"}) > 0.75
     for: 5m
     labels:
       tier: ci
@@ -98,26 +98,11 @@ groups:
       severity: warning
       context: concourse
       support_group: lifecycle-management
-      meta: "Database {{ $labels.datname }} to large"
+      meta: "Concourse PostgreSQL PVC {{ $labels.persistentvolumeclaim }} usage above 75% in {{ $labels.cluster }}"
       persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-postgres?var-cluster={{ $labels.cluster }}"
     annotations:
-      description: "The concourse database size is greater than 40GB and will exceed the PV limits eventually"
+      description: "The PostgreSQL PVC {{ $labels.persistentvolumeclaim }} in cluster {{ $labels.cluster }} is more than 75% full and will exceed PV limits eventually. Consider pruning old build data."
       summary: Concourse database is too large
-
-  - alert: ConcoursePostgresSharedMemoryResize
-    expr: increase(opensearch_database_memory_allocation_failed_doc_count{failed="concourse-postgresql-0"}[6h]) > 0
-    for: 5m
-    labels:
-      tier: ci
-      service: concourse
-      severity: warning
-      context: concourse
-      support_group: lifecycle-management
-      meta: "Database could not resize shared memory segment error occured"
-      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-postgres?var-cluster={{ $labels.cluster }}"
-    annotations:
-      description: "Memory pressure on node led to postgres database could not resize shared memory segment error in cluster {{ $labels.cluster }} in pod concourse/{{ $labels.failed }}. This could trigger random pipeline execution. Make sure database is running on a node with enough free memory or scale down concourse web component."
-      summary: Concourse database shared memory error
 
   - alert: ConcourseWorkerContainerCountStale
     expr: changes(concourse_workers_containers{platform="linux", worker=~"mo-.*"}[5m])==0
@@ -131,7 +116,7 @@ groups:
       meta: "Worker {{ $labels.name }} has a stale container metric."
       persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
     annotations:
-      description: "The workers container count seems to be stuck indicating that the worker might by stalled."
+      description: "The workers container count seems to be stuck indicating that the worker might be stalled."
       summary: Worker has stale container count
 
   - alert: ConcourseGitProxyChecksFailing
@@ -253,3 +238,63 @@ groups:
     annotations:
       description: "The PostgreSQL PVC {{ $labels.persistentvolumeclaim }} in cluster {{ $labels.cluster }} is more than 85% full. Consider expanding the PVC or pruning old build data."
       summary: Concourse PostgreSQL PVC usage too high
+
+  - alert: ConcourseWorkerPodMemoryOverRequest
+    expr: max by (region, cluster, pod, namespace) (container_memory_working_set_bytes{namespace="concourse", pod=~"concourse-worker.*", container!=""} / on (pod, container, namespace) kube_pod_container_resource_requests{namespace="concourse", pod=~"concourse-worker.*", resource="memory"}) > 1
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse worker pod {{ $labels.pod }} memory exceeds its request in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "Pod {{ $labels.pod }} in cluster {{ $labels.cluster }} is using more memory than its requested amount. This indicates the resource requests are undersized and the pod risks OOM eviction."
+      summary: Concourse worker pod memory exceeds request
+
+  - alert: ConcourseWorkerPodCPUOverRequest
+    expr: max by (region, cluster, pod, namespace) (rate(container_cpu_usage_seconds_total{namespace="concourse", pod=~"concourse-worker.*", container!=""}[5m]) / on (pod, container, namespace) kube_pod_container_resource_requests{namespace="concourse", pod=~"concourse-worker.*", resource="cpu"}) > 1
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse worker pod {{ $labels.pod }} CPU exceeds its request in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "Pod {{ $labels.pod }} in cluster {{ $labels.cluster }} is using more CPU than its requested amount consistently. This indicates the resource requests are undersized and the pod may be throttled."
+      summary: Concourse worker pod CPU exceeds request
+
+  - alert: ConcourseOOMKill
+    expr: increase(kube_pod_container_status_last_terminated_reason{namespace="concourse", reason="OOMKilled"}[15m]) > 0
+    for: 0m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "OOM kill detected in concourse pod {{ $labels.pod }} in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-pods?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "A container in pod {{ $labels.pod }} (container: {{ $labels.container }}) in cluster {{ $labels.cluster }} was OOM killed. Increase the memory limit or investigate memory leaks."
+      summary: Concourse pod OOM killed
+
+  - alert: ConcourseWorkerNodeMemoryHigh
+    expr: max by (region, cluster, node) (1 - node_memory_MemAvailable_bytes{node=~"kks-ci-.*-ci.*"} / node_memory_MemTotal_bytes{node=~"kks-ci-.*-ci.*"}) > 0.9
+    for: 15m
+    labels:
+      tier: ci
+      service: concourse
+      severity: warning
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse worker node {{ $labels.node }} memory above 90% in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "Worker node {{ $labels.node }} in cluster {{ $labels.cluster }} is using more than 90% of its memory. This increases the risk of OOM kills and postgres shared memory errors."
+      summary: Concourse worker node memory usage critical
