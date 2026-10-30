@@ -86,6 +86,9 @@ for name in "${expected_validating_names[@]}"; do
 done
 
 # Test 7: Exact mutating webhook URLs
+# Capture URLs once deterministically (sorted) to avoid yq stream non-determinism
+actual_mutating_urls=$(yq eval "select(.kind == \"MutatingWebhookConfiguration\" and .metadata.name == \"ipam-capi-remote-mutating-webhook-configuration\") | .webhooks[].clientConfig.url" "$WORK_DIR/shoot.yaml" | sort)
+
 expected_mutating_urls=(
   "https://ipam-capi-remote-webhook-service:443/mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool"
   "https://ipam-capi-remote-webhook-service:443/mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterprefixpool"
@@ -93,7 +96,8 @@ expected_mutating_urls=(
   "https://ipam-capi-remote-webhook-service:443/mutate-ipam-cluster-x-k8s-io-v1alpha2-inclusterprefixpool"
 )
 for url in "${expected_mutating_urls[@]}"; do
-  if yq eval "select(.kind == \"MutatingWebhookConfiguration\" and .metadata.name == \"ipam-capi-remote-mutating-webhook-configuration\") | .webhooks[].clientConfig.url" "$WORK_DIR/shoot.yaml" | grep -qF "$url"; then
+  # Exact set-membership check: is $url in the captured string?
+  if echo "$actual_mutating_urls" | grep -qxF "$url"; then
     echo "PASS: Mutating webhook URL $url present"
   else
     echo "FAIL: Mutating webhook URL $url missing"
@@ -102,6 +106,9 @@ for url in "${expected_mutating_urls[@]}"; do
 done
 
 # Test 8: Exact validating webhook URLs
+# Capture URLs once deterministically (sorted) to avoid yq stream non-determinism
+actual_validating_urls=$(yq eval "select(.kind == \"ValidatingWebhookConfiguration\" and .metadata.name == \"ipam-capi-remote-validating-webhook-configuration\") | .webhooks[].clientConfig.url" "$WORK_DIR/shoot.yaml" | sort)
+
 expected_validating_urls=(
   "https://ipam-capi-remote-webhook-service:443/validate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool"
   "https://ipam-capi-remote-webhook-service:443/validate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterprefixpool"
@@ -109,7 +116,8 @@ expected_validating_urls=(
   "https://ipam-capi-remote-webhook-service:443/validate-ipam-cluster-x-k8s-io-v1alpha2-inclusterprefixpool"
 )
 for url in "${expected_validating_urls[@]}"; do
-  if yq eval "select(.kind == \"ValidatingWebhookConfiguration\" and .metadata.name == \"ipam-capi-remote-validating-webhook-configuration\") | .webhooks[].clientConfig.url" "$WORK_DIR/shoot.yaml" | grep -qF "$url"; then
+  # Exact set-membership check: is $url in the captured string?
+  if echo "$actual_validating_urls" | grep -qxF "$url"; then
     echo "PASS: Validating webhook URL $url present"
   else
     echo "FAIL: Validating webhook URL $url missing"
