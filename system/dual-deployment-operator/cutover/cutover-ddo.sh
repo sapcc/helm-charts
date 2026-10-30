@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # cutover-ddo.sh — Generalized DDO cutover engine (Layer 2)
 #
-# Usage: cutover-ddo.sh --operator <metal|boot> --phase <uninstall|verify> \
+# Usage: cutover-ddo.sh --operator <metal|boot|ipam-capi-remote> --phase <uninstall|verify> \
 #          --cluster <shoot> [options]
 #
 # This script implements the full cutover lifecycle for migrating a Gardener
 # extension operator to DualDeploymentOperator management. It is parameterized
-# by operator-specific profiles under profiles/<operator>-operator-remote.env.
+# by operator-specific profiles under profiles/<operator>-operator-remote.env (or <operator>.env for exact-name profiles).
 #
 # SAFETY DISCIPLINE: This script is fail-closed throughout. Any read error
 # (connectivity, auth, transient API failure) is treated as "unknown state"
@@ -124,7 +124,8 @@ source "$SCRIPT_DIR/lib/ddo-common.sh" ||
 
 load_profile() {
   local profile_file="$PROFILES_DIR/${OPERATOR}-operator-remote.env"
-  
+  [[ -f "$profile_file" ]] || profile_file="$PROFILES_DIR/${OPERATOR}.env"
+
   if [[ ! -f "$profile_file" ]]; then
     die "Unknown operator '$OPERATOR': profile not found at $profile_file"
   fi
