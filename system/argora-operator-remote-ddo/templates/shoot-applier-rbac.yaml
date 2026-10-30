@@ -1,0 +1,61 @@
+{{/*
+=============================================================================
+shoot-applier-rbac.yaml — grant the DDO shoot-applier SA access to the argora
+custom-resource group (mode=shoot, additions).
+=============================================================================
+The DualDeploymentOperator applies the SHOOT render with the ServiceAccount
+`dual-deployment-operator-shoot-applier` (kube-system). Its bootstrap ClusterRole
+(from the DDO install chart, GRM-managed) is a FIXED allowlist of infrastructure
+kinds — CRDs, RBAC, webhooks, core — and deliberately does NOT enumerate operand
+custom-resource groups. So when this chart's shoot render carries CR *instances*
+(ClusterImport/IPPoolImport/Update in `argora.cloud.sap`), the applier is
+`forbidden` to create them.
+
+Per the DDO contract (dual-deployment-operator docs/design.md, Gap 2, Option 1 —
+"operand self-describes the grant"), an operand whose shoot render ships CR
+instances MUST include, in that same render, a ClusterRole + ClusterRoleBinding
+granting the shoot-applier SA the verbs on its CRD group(s). This is
+self-describing and needs no operator-side change: the applier already holds
+rbac.authorization.k8s.io bind;escalate, and DDO orders RBAC before CR instances
+(internal/deliver/order.go), so the grant lands before the CRs it unblocks.
+A transient first-cycle `forbidden` (informer/propagation lag) self-heals on
+requeue — do not add waits.
+
+Chart-scoped name so operands sharing a cluster never collide and each grant is
+independently prunable. This is NOT a workaround for the live GRM-reverted manual
+patch — it is the durable, operand-owned grant delivered by the DDO render itself.
+*/}}
+{{- if eq .Values.mode "shoot" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "chart.name" . }}-shoot-applier
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+rules:
+  - apiGroups: ["argora.cloud.sap"]
+    resources:
+      - clusterimports
+      - ippoolimports
+      - updates
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "chart.name" . }}-shoot-applier
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "chart.name" . }}-shoot-applier
+subjects:
+  - kind: ServiceAccount
+    name: dual-deployment-operator-shoot-applier
+    namespace: kube-system
+{{- end }}
