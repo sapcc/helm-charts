@@ -30,6 +30,35 @@ spec:
     spec:
       serviceAccountName: {{ .Release.Name }}
       hostNetwork: true
+      initContainers:
+        - name: network-init
+          image: "{{ .Values.networkInit.image.repository }}:{{ .Values.networkInit.image.tag | default .Chart.AppVersion }}"
+          command: ["/bin/sh", "/scripts/dhcp-init.sh"]
+          env:
+            - name: EXTERNALIP
+              value: {{ .Values.externalIP }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: shared
+              mountPath: /shared
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+        {{- if and .Values.tftp.enabled .Values.tftp.ipxeURL }}
+        - name: fetch-ipxe
+          image: busybox:1.37
+          command:
+            - wget
+            - -O
+            - /ipxe/snponly.efi
+            - {{ .Values.tftp.ipxeURL | quote }}
+          volumeMounts:
+            - name: ipxe-override
+              mountPath: /ipxe
+        {{- end }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -115,6 +144,59 @@ spec:
         - mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
           name: remote-serviceaccount
         {{- end }}
+      {{- if .Values.tftp.enabled }}
+      - name: tftpd
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        command: ["/tftpd"]
+        args:
+          - --root=/ipxe
+        ports:
+        - containerPort: 69
+          name: tftp
+          protocol: UDP
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            - NET_RAW
+            drop:
+            - ALL
+        {{- if .Values.tftp.ipxeURL }}
+        volumeMounts:
+        - name: ipxe-override
+          mountPath: /ipxe
+        {{- end }}
+      {{- end }}
+      - name: network-lifecycle
+        image: "{{ .Values.networkInit.image.repository }}:{{ .Values.networkInit.image.tag | default .Chart.AppVersion }}"
+        command: ["sleep", "infinity"]
+        env:
+          - name: EXTERNALIP
+            value: {{ .Values.externalIP }}
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+            drop: ["ALL"]
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "/scripts/dhcp-stop.sh"]
+        volumeMounts:
+          - name: scripts
+            mountPath: /scripts
+          - name: shared
+            mountPath: /shared
+      {{- if .Values.debug.enabled }}
+      - name: debug
+        image: {{ .Values.debug.image }}
+        command: ["sleep", "infinity"]
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["NET_RAW", "NET_ADMIN"]
+      {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
@@ -135,3 +217,17 @@ spec:
               path: ca.crt
         name: remote-serviceaccount
       {{- end }}
+      {{- if and .Values.tftp.enabled .Values.tftp.ipxeURL }}
+      - name: ipxe-override
+        emptyDir: {}
+      {{- end }}
+      - configMap:
+          name: {{ .Release.Name }}-scripts
+          defaultMode: 0755
+        name: scripts
+      - name: shared
+        emptyDir: {}
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+          type: Directory
