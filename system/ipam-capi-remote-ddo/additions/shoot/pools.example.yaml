@@ -1,0 +1,31 @@
+# pools.example.yaml - Shape-agnostic GlobalInClusterIPPool example
+# 
+# This is an UNREFERENCED example resource that demonstrates the structure
+# of a GlobalInClusterIPPool in kustomize-native form (not a Helm template).
+# 
+# To use this in a cluster's overlay:
+# 1. Copy and customize it with your pool name, CIDR, and gateway
+# 2. Add it to your overlay's resources: list (e.g., additions/<mode>/kustomization.yaml)
+# 3. Adjust the namespace as needed (default: metal-servers)
+# 
+# NOTE: This file is NOT included in a-qa-de-200's render because no pools
+# are delivered for that environment. Future clusters with pools will add
+# their own copy and reference it in their overlay's resources list.
+
+apiVersion: ipam.cluster.x-k8s.io/v1alpha2
+kind: GlobalInClusterIPPool
+metadata:
+  name: example-pool
+  namespace: metal-servers
+spec:
+  # The IP pool CIDR blocks from which addresses are allocated
+  addresses:
+    - 10.220.0.0/22
+  # Optional: IP addresses or ranges to exclude from allocation
+  excludedAddresses:
+    - 10.220.0.0/30    # Reserve gateway + DHCP discovery
+    - 10.220.3.254/32  # Reserve broadcast/reserved address
+  # Prefix length for allocated IPs
+  prefix: 30
+  # Gateway IP for the pool
+  gateway: 10.220.0.1
