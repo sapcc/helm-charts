@@ -17,7 +17,7 @@
 "availability_zone:index": "rule:context_is_viewer"
 
 # allows to use OnlyHostFilter and see host field of shares and backups
-"context_is_host_admin": "rule:context_is_admin"
+"context_is_host_admin": "role:sharedfilesystem_host_admin"
 
 "quota_set:update": "rule:context_is_quota_admin"
 "quota_set:show": "rule:context_is_viewer or rule:context_is_quota_admin"

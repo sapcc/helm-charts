@@ -53,6 +53,7 @@
   'cloud_sharedfilesystem_admin':%(target.role.name)s or
   'cloud_sharedfilesystem_editor':%(target.role.name)s or
   'cloud_sharedfilesystem_viewer':%(target.role.name)s or
+  'sharedfilesystem_host_admin':%(target.role.name)s or
   'cloud_objectstore_admin':%(target.role.name)s or
   'cloud_objectstore_viewer':%(target.role.name)s or
   'service':%(target.role.name)s or

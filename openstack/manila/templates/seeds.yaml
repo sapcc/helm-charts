@@ -63,6 +63,7 @@ spec:
   - name: cloud_sharedfilesystem_editor
   - name: cloud_sharedfilesystem_viewer
   - name: sharedfilesystem_admin
+  - name: sharedfilesystem_host_admin
   - name: sharedfilesystem_viewer
 
   # default gets special handling
@@ -78,6 +79,10 @@ spec:
         role: cloud_sharedfilesystem_admin
       - project: admin
         role: cloud_sharedfilesystem_admin
+      - domain: Default
+        role: sharedfilesystem_host_admin
+      - project: admin
+        role: sharedfilesystem_host_admin
     users:
     - name: admin
       role_assignments:
@@ -85,6 +90,10 @@ spec:
         role: cloud_sharedfilesystem_admin
       - project: admin
         role: cloud_sharedfilesystem_admin
+      - domain: Default
+        role: sharedfilesystem_host_admin
+      - project: admin
+        role: sharedfilesystem_host_admin
     - name: {{ printf "%s/%s/manila/keystone-user/service/username" $vbase $region | quote }} # service user for the manila API
       description: Manila Service
       password: {{ printf "%s/%s/manila/keystone-user/service/password" $vbase $region | quote }}
@@ -95,6 +104,8 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_sharedfilesystem_admin
+      - project: service
+        role: sharedfilesystem_host_admin
     - name: {{ printf "%s/%s/manila/keystone-user/network/username" $vbase $region | quote }} # service user for manila network operations
       description: Manila Network
       password: {{ printf "%s/%s/manila/keystone-user/network/password" $vbase $region | quote }}
@@ -131,21 +142,29 @@ spec:
       role_assignments:
       - user: admin@Default
         role: cloud_sharedfilesystem_admin
+      - user: admin@Default
+        role: sharedfilesystem_host_admin
       {{- if $.Values.seeds.integration_test_user.enabled }}
       - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
         role: cloud_sharedfilesystem_admin
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: sharedfilesystem_host_admin
       {{- end }}
       {{- if $.Values.seeds.backup_user.enabled }}
       - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_objectstore_admin
       - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_sharedfilesystem_admin
+      - user: {{ $.Values.seeds.backup_user.username }}@Default
+        role: sharedfilesystem_host_admin
       {{- end }}
     {{- if $.Values.seeds.integration_test_user.enabled }}
     - name: manila
       role_assignments:
       - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
         role: cloud_sharedfilesystem_admin
+      - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
+        role: sharedfilesystem_host_admin
       - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
         role: member
       - user: {{ printf "%s/shared/hammer/tech-user/prod/username" $vbase | quote }} # technical user for integration tests
@@ -158,6 +177,8 @@ spec:
       role_assignments:
       - project: cloud_admin
         role: cloud_sharedfilesystem_admin
+      - project: cloud_admin
+        role: sharedfilesystem_host_admin
     {{- end }}
     {{- if eq . "monsoon3" }}
     - name: MONSOON3_DOMAIN_ADMINS
