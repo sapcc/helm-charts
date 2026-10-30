@@ -1,3 +1,4 @@
+{{- $region := required ".Values.global.region is missing" .Values.global.region }}
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -5,7 +6,7 @@ metadata:
   labels:
     component: coredump-exporter
 spec:
-  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.daemonsets.revisionHistory }}
   selector:
     matchLabels:
       name: {{ .Release.Name }}
@@ -13,10 +14,17 @@ spec:
     metadata:
       labels:
         name: {{ .Release.Name }}
+      annotations:
+        reloader.stakater.com/auto: "true"
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- with .Values.pod.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       securityContext:
         runAsUser: 0
-      hostNetwork: true
+        runAsGroup: 0
       tolerations:
       {{- range $k, $v := .Values.pod.tolerations }}
       - # {{ $k }}
@@ -24,51 +32,63 @@ spec:
       {{- end }}
       {{- if .Values.pod.nodeSelector }}
       nodeSelector:
-        {{- .Values.pod.nodeSelector | toYaml| nindent 8 }}
+        {{- .Values.pod.nodeSelector | toYaml | nindent 8 }}
       {{- end }}
       {{- if .Values.pod.affinity }}
       affinity:
-        {{- .Values.pod.affinity | toYaml| nindent 8 }}
+        {{- .Values.pod.affinity | toYaml | nindent 8 }}
       {{- end }}
       containers:
       - name: coredump-exporter
-        image: {{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+        image: {{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion" }}
         imagePullPolicy: IfNotPresent
         command:
-        - "sh"
-        - "-c"
-        - |
-          while read line; do export "$line" ; done < /etc/os-release
-          rclone {{ .Values.rcloneOperation }} \
-            --header-upload "X-Delete-After: {{ .Values.swiftDeleteAfter }}" \
-            --header-upload "X-Object-Meta-gardenlinux-version: $GARDENLINUX_VERSION" \
-            --header-upload "X-Object-Meta-gardenlinux-cname: $GARDENLINUX_CNAME" \
-            --header-upload "X-Object-Meta-gardenlinux-commit-id: $GARDENLINUX_COMMIT_ID" \
-            --header-upload "X-Object-Meta-hostname: $HOSTNAME" \
-            -M . swift://coredump-exporter/
-
-          while sleep {{ .Values.pollingDelay }}; do
-            rclone {{ .Values.rcloneOperation }} \
-              --max-age {{ add .Values.pollingDelay .Values.pollingFudging }} \
-              --header-upload "X-Delete-After: 864000" \
-              --header-upload "X-Object-Meta-gardenlinux-version: $GARDENLINUX_VERSION" \
-              --header-upload "X-Object-Meta-gardenlinux-cname: $GARDENLINUX_CNAME" \
-              --header-upload "X-Object-Meta-gardenlinux-commit-id: $GARDENLINUX_COMMIT_ID" \
-              --header-upload "X-Object-Meta-hostname: $HOSTNAME" \
-              -M . swift://coredump-exporter/
-          done
+        - "/bin/sh"
+        - "/scripts/ship.sh"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
         env:
         - name: OS_AUTH_URL
-          value: {{ .Values.osAuthUrl | required ".Values.osAuthUrl missing" }}
-        - name: OS_APPLICATION_CREDENTIAL_ID
-          value: {{ .Values.osApplicationCredentialId | required ".Values.osApplicationCredentialId missing" }}
-        - name: OS_APPLICATION_CREDENTIAL_NAME
-          value: {{ .Values.osApplicationCredentialName | required ".Values.osApplicationCredentialName missing" }}
-        - name: OS_APPLICATION_CREDENTIAL_SECRET
+          value: {{ required ".Values.osAuthUrl is missing" .Values.osAuthUrl }}
+        - name: OS_USERNAME
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}
-              key: osApplicationCredentialSecret
+              key: OS_USERNAME
+        - name: OS_USER_DOMAIN_NAME
+          value: {{ .Values.swiftUserDomainName }}
+        - name: OS_PROJECT_NAME
+          value: {{ .Values.swiftProjectName }}
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: {{ .Values.swiftProjectDomainName }}
+        - name: OS_REGION_NAME
+          value: {{ .Values.global.region | required ".Values.global.region missing" }}
+        - name: OS_ENDPOINT_TYPE
+          value: {{ .Values.swiftEndpointType }}
+        - name: OS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}
+              key: OS_PASSWORD
+        - name: HOME
+          value: /tmp
+        - name: SWIFT_CONTAINER
+          value: {{ .Values.swiftContainer }}
+        - name: POLLING_DELAY
+          value: {{ .Values.pollingDelay | quote }}
+        - name: POLLING_FUDGING
+          value: {{ .Values.pollingFudging | quote }}
+        - name: SWIFT_DELETE_AFTER
+          value: {{ .Values.swiftDeleteAfter | quote }}
+        - name: RCLONE_OPERATION
+          value: {{ .Values.rcloneOperation }}
+        resources:
+          {{- toYaml .Values.pod.resources | nindent 10 }}
         volumeMounts:
         - mountPath: /data
           name: data
@@ -79,6 +99,11 @@ spec:
         - mountPath: /config/rclone
           name: config
           readOnly: true
+        - mountPath: /scripts
+          name: scripts
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
       volumes:
       - name: data
         hostPath:
@@ -91,3 +116,9 @@ spec:
       - name: config
         configMap:
           name: {{ .Release.Name }}
+      - name: scripts
+        configMap:
+          name: {{ .Release.Name }}-scripts
+          defaultMode: 0755
+      - name: tmp
+        emptyDir: {}
