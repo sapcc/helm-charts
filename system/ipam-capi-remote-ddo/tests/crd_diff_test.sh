@@ -53,7 +53,7 @@ documents = [doc for doc in yaml.safe_load_all(render_path.read_text())
              if doc and doc.get("kind") == "CustomResourceDefinition"]
 live_available = live_dir.is_dir()
 if not live_available:
-    print("SKIP: live-crds/ not present; live bundle unavailable, skipping field-diff")
+    print("SKIP: live-crds baseline absent — field-diff not performed", file=sys.stderr)
 
 failures = []
 
@@ -88,6 +88,9 @@ for short_name in short_names:
         if short_name in pool_names:
             check(metadata.get("labels", {}).get("clusterctl.cluster.x-k8s.io/move-hierarchy")
                   == "", f"{source}: {name} move-hierarchy label present and empty")
+        else:
+            check("clusterctl.cluster.x-k8s.io/move-hierarchy" not in metadata.get("labels", {}),
+                  f"{source}: {name} has no move-hierarchy label")
     if live_available:
         live_path = live_dir / f"{name}.raw.yaml"
         check(live_path.is_file(), f"missing live capture {live_path}")

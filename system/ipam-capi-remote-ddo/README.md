@@ -54,7 +54,7 @@ system/ipam-capi-remote-ddo/
 │   │   └── cluster.x-k8s.io_clusters.yaml
 │   ├── rbac.yaml                  # Controller RBAC (from config/rbac)
 │   └── webhooks.yaml              # Webhook configs (Mutating + Validating)
-└── tests/                         # Test suite (render_test.sh is the aggregate gate)
+└── tests/                         # Independent test gates (run all six)
     ├── render_test.sh
     ├── crd_diff_test.sh
     ├── rbac_fidelity_test.sh
@@ -99,8 +99,8 @@ When bumping the ipam-capi-remote controller version:
    Manually merge any new permissions or container args.
 
 4. **Image tag bumps**
-   - Update the image tag in the kube-secrets CR (`dualDeploymentOperatorCRs.ipam-capi-remote`)
-   - The images transformer in `additions/seed/kustomization.yaml` references the new tag
+   - Update the image tag via the `images:` transformer in `additions/seed/kustomization.yaml`
+   - KustomizeSource has no values mechanism; point the kube-secrets CR source URL at the updated Git ref
    - Do NOT re-vendor upstream manifests just for an image tag bump
 
 5. **Run all tests**
@@ -116,7 +116,7 @@ When bumping the ipam-capi-remote controller version:
 
 ## CRD Regeneration
 
-The 7 vendored CRDs in `shoot/crds/` match the **LIVE m-qa-de-200 bundle** field-for-field (normalized: stripped `metadata.resourceVersion`/`uid`/`generation`/`creationTimestamp`/`managedFields`/`ownerReferences` + `status` + Gardener/Helm delivery labels).
+The 7 vendored CRDs in `shoot/crds/` match the **captured m-qa-de-200 bundle** field-for-field (normalized: stripped `metadata.resourceVersion`/`uid`/`generation`/`creationTimestamp`/`managedFields`/`ownerReferences` + `status` + Gardener/Helm delivery labels).
 
 ### Controller-gen Split
 
@@ -125,36 +125,31 @@ The CRDs have **split controller-gen stamps**:
 - 4 provider pool CRDs (GlobalInClusterIPPool, GlobalInClusterPrefixPool, InClusterIPPool, InClusterPrefixPool): `controller-gen v0.17.2`
 - 3 core CAPI CRDs (IPAddress, IPAddressClaim, Cluster): `controller-gen v0.21.0`
 
-This matches the upstream [v1.1.1 release](https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster/releases/tag/v1.1.1) commit 7933583138cf.
+The pool CRD stamp matches the upstream [v1.1.1 release](https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster/releases/tag/v1.1.1) commit 7933583138cf; the core CRDs retain the captured bundle's v0.21.0 stamp.
 
 ### Fidelity Enforcement
 
 The `tests/crd_diff_test.sh` script enforces this fidelity by:
 
-1. Fetching live CRDs from m-qa-de-200 shoot cluster
-2. Normalizing both live and vendored CRDs (strip volatile fields)
-3. Diffing field-for-field
+1. Always checking all 7 vendored/rendered CRDs, their split controller-gen stamps, and the move-hierarchy label on only the 4 pool CRDs
+2. Reading local captures from `.superpowers/sdd/2026-10-30-ipam-capi-remote-ddo/live-crds/` when present
+3. Normalizing captured and rendered CRDs (strip volatile fields) and diffing field-for-field
+
+The script does **not** fetch live CRDs, including in CI. When the capture directory is absent, it prints `SKIP: live-crds baseline absent — field-diff not performed` to stderr, but still runs the structural checks and exits successfully if they pass.
 
 The test **MUST pass** before merging any CRD changes.
 
 ### CRD Annotations
 
-All 7 CRDs carry the upstream labels:
+Only the 4 provider pool CRDs carry the move-hierarchy label; the 3 core CRDs do not:
 
 ```yaml
 metadata:
   labels:
     clusterctl.cluster.x-k8s.io/move-hierarchy: ""
-    cluster.x-k8s.io/provider: ipam-in-cluster
 ```
 
-The 2 provider pool CRDs (GlobalInClusterIPPool, GlobalInClusterPrefixPool) also carry the cert-manager CA-injection annotation (for admission webhooks):
-
-```yaml
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: ipam-system/ipam-serving-cert
-```
+The `cluster.x-k8s.io/provider` label and `cert-manager.io/inject-ca-from` annotation are absent from all 7 CRDs.
 
 ## Data CRs (GlobalInClusterIPPool)
 
@@ -169,8 +164,8 @@ The a-qa-de-200 CR sets NO pools, so `shoot/` overlay **omits** `additions/shoot
 
 The test suite validates:
 
-- **render_test.sh**: Aggregate gate — both overlays build cleanly, mode-isolation assertions (seed has Deployment + webhook-injector RBAC + Service, zero CRDs; shoot has all 7 CRDs + controller RBAC + both webhook configs, zero Deployment/Service)
-- **crd_diff_test.sh**: CRD fidelity against live m-qa-de-200 bundle
+- **render_test.sh**: Both overlays build cleanly, mode-isolation assertions (seed has Deployment + webhook-injector RBAC + Service, zero CRDs/webhook configurations/controller manager ClusterRole; shoot has all 7 CRDs + controller RBAC + both webhook configs, zero Deployment/Service). Does not invoke the other test scripts.
+- **crd_diff_test.sh**: Unconditional CRD structural checks and optional fidelity diff against local m-qa-de-200 captures
 - **rbac_fidelity_test.sh**: RBAC role/binding completeness
 - **no_pool_test.sh**: Shoot overlay builds when no pools are in resources
 - **seed_render_test.sh**: Seed Deployment has r7 webhook-injector sidecar with correct args
@@ -203,13 +198,14 @@ The CR lives in kube-secrets:
 
 ### CR Fields
 
+The source URL must embed `?ref=<branch|tag|sha>`; there is no separate `ref` field. Mode paths are relative to the URL's `//path` root.
+
 ```yaml
 source:
   kustomize:
-    url: https://github.com/sapcc/helm-charts
-    ref: <tag>
-    seedPath: system/ipam-capi-remote-ddo/seed
-    shootPath: system/ipam-capi-remote-ddo/shoot
+    url: https://github.com/sapcc/helm-charts//system/ipam-capi-remote-ddo?ref=<tag>
+    seedPath: seed
+    shootPath: shoot
 shootAccess:
   server: https://api.m-qa-de-200.cp.internal.a-qa-de-200.soil-garden.qa-de-1.cloud.sap
 shootNamespace: kube-system

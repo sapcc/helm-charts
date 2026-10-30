@@ -147,6 +147,30 @@ else
   echo "PASS: seed render contains ZERO CRDs"
 fi
 
+# Webhook configurations and controller RBAC belong only to shoot.
+if ! python3 - /tmp/seed_render.yaml <<'PY'
+import sys
+import yaml
+
+documents = [doc for doc in yaml.safe_load_all(open(sys.argv[1])) if doc]
+failed = False
+for kind, name in (
+    ("MutatingWebhookConfiguration", None),
+    ("ValidatingWebhookConfiguration", None),
+    ("ClusterRole", "ipam-capi-manager-role"),
+):
+    present = any(doc.get("kind") == kind
+                  and (name is None or doc.get("metadata", {}).get("name") == name)
+                  for doc in documents)
+    label = f"{kind} {name}" if name else kind
+    print(f"{'FAIL' if present else 'PASS'}: seed render contains ZERO {label}")
+    failed |= present
+sys.exit(1 if failed else 0)
+PY
+then
+  failed=1
+fi
+
 echo ""
 echo "=== Mode isolation gate: shoot render ==="
 

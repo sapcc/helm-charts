@@ -181,6 +181,15 @@ else
   echo "PASS: All objects carry dual-deployment-operator.cc.sap/origin: additions annotation"
 fi
 
+# Cluster-scoped bindings are not rewritten by DDO ApplyNamespace.
+injector_subject=$(yq eval 'select(.kind == "ClusterRoleBinding" and .metadata.name == "ipam-capi-remote-webhook-injector") | .subjects[] | select(.kind == "ServiceAccount" and .name == "ipam-capi-remote-webhook-injector") | .namespace' /tmp/seed_render_test.yaml)
+if [[ "$injector_subject" != "kube-system" ]]; then
+  echo "FAIL: webhook-injector ClusterRoleBinding subject namespace must be kube-system (got: $injector_subject)"
+  failed=1
+else
+  echo "PASS: webhook-injector ClusterRoleBinding subject namespace is kube-system"
+fi
+
 echo ""
 if [ $failed -eq 0 ]; then
   echo "=== All seed render tests PASSED ==="
