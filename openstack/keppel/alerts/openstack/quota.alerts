@@ -1,0 +1,20 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-keppel-quota.alerts
+  rules:
+  - alert: OpenstackKeppelPayloadsCephQuotaAlmostExhausted
+    expr: limitas_project_resource_usage{project="keppel-payloads",service="ceph",resource="region-premium"} / limitas_project_resource_quota{project="keppel-payloads",service="ceph",resource="region-premium"} > 0.95
+    for: 10m
+    labels:
+      context: quota
+      service: keppel
+      severity: warning
+      support_group: containers
+      tier: os
+      meta: keppel-payloads project is almost out of Ceph quota
+    annotations:
+      summary: keppel-payloads project is almost out of Ceph quota
+      description: |
+        The keppel-payloads project has used more than 95% of its Ceph region-premium quota.
+        Add a commitment in the <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/v2/cluster?cluster_id=current#/storage/edit/ceph/region-premium?resource=region-premium|Cloud Resource Admin view in Elektra> to increase the quota.
