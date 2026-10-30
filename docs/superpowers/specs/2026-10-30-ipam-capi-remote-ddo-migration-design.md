@@ -1,504 +1,402 @@
 # ipam-capi-remote → DDO migration — Design
 
-> **Status:** awaiting approval. FOURTH chart migrated to dual-deployment-operator
+> **Status:** awaiting approval. FOURTH operator migrated to dual-deployment-operator
 > (DDO) after `metal-operator-remote` (live, Ready), `boot-operator-remote` (merged,
-> published), and `argora-operator-remote` (live, Ready). Same proven pattern; ipam's
-> defining shape is **a webhook + webhook-injector sidecar** — making
-> `metal-operator-remote-ddo` (the only prior migration with a webhook) the closest
-> reference, **except** ipam has **no upstream Helm chart** so the operand chart
-> re-templates in-place instead of wrapping a vendored subchart.
+> published), and `argora-operator-remote` (live, Ready). ipam's defining shape is
+> **a webhook + webhook-injector sidecar**, making `metal-operator-remote` the closest
+> reference for the *webhook mechanics* — but ipam diverges on the **source model**.
 >
-> **Scope approved by user (2026-10-30):** thin operand chart
-> `system/ipam-capi-remote-ddo` (hand-authored, mode-guarded flat templates, vendored
-> CRDs — NO subchart) + DDO CR values in kube-secrets + an ipam profile for the
-> generalized cutover toolkit. Architecture decisions confirmed this session:
-> (1) keep `source.helm` operand chart (reject CR-only / `source.kustomize`);
-> (2) keep the legacy `build-ipam-capi-remote` helmify make target untouched (DDO work
-> is purely additive); (3) operand-chart internal layout = mode-guarded flat templates
-> with the 4 CRDs authored as `mode=shoot` template files (NOT a Helm `crds/` dir).
+> **Scope approved by user (2026-10-30):** deliver ipam to DDO via a **layered
+> kustomize overlay tree** (`source.kustomize`), **not** a Helm operand chart. The three
+> deliverables are: (1) a new kustomize overlay tree in `helm-charts` (base + seed
+> overlay + shoot overlay), git-pinned by `?ref=`; (2) a `DualDeploymentOperator` CR in
+> kube-secrets using `source.kustomize{url, seedPath, shootPath}`; (3) an ipam profile
+> for the generalized cutover toolkit.
+>
+> **Architecture decisions confirmed this session:**
+> 1. **`source.kustomize`, layered overlay** (user chose "Layered kustomize overlay").
+>    This is a deliberate divergence from the 3 prior `source.helm` charts. I had
+>    soft-recommended Helm for fleet consistency; user overrode — both were verified
+>    viable. (Decision-Discipline: user instruction > my recommendation; deviation noted.)
+> 2. The legacy `system/kustomize/ipam-capi-remote/` helmify-INPUT tree is **not reused**
+>    — it collapses entirely into the new DDO overlay tree (no helmify step at all).
+> 3. The legacy `build-ipam-capi-remote` make target and `system/ipam-capi-remote` chart
+>    stay untouched until cutover is proven; the DDO work is purely additive.
 
 ---
 
 ## 1. Intent & why
 
 Migrate the `ipam-capi-remote` deployment for cluster **m-qa-de-200** from the legacy
-Gardener ManagedResource + Helm-release model to **DDO**-managed deployment, rendered
-from a new operator-native operand chart `system/ipam-capi-remote-ddo`
-(mode=seed / mode=shoot).
+Gardener ManagedResource + Helm-release model to **DDO**-managed deployment. DDO renders
+a kustomize overlay **twice** — once for `seed` (→ the controller runs on seed
+`a-qa-de-200`) and once for `shoot` (→ CRDs/RBAC/webhook-configs/data-CRs are stored on
+the Metal-API shoot `m-qa-de-200`) — and Server-Side-Applies each render directly into
+the corresponding cluster.
 
 > **Topology / terminology (authoritative — SCI Gardener architecture doc).**
 > `m-qa-de-200` is the **Metal-API cluster**: a *workerless* shoot that only **stores**
-> the CAPI-IPAM custom resources (the `GlobalInClusterIPPool`s) — it has no nodes and
-> runs no workload. The ipam **controller runs in the seed** (`a-qa-de-200`, the
-> single-node k3s that bundles the full Gardener + Metal-API setup) in namespace
-> `shoot--cp--m-qa-de-200`, and reaches the Metal-API cluster via a token-requestor
-> kubeconfig. This maps onto DDO's two renders: the **seed render → `a-qa-de-200`**
-> (controller Deployment + webhook-injector sidecar, webhook Service, token-requestor
-> Secret, remote-kubeconfig ConfigMap, webhook-injector RBAC), the **shoot render →
-> `m-qa-de-200`** (the 4 CRDs, controller RBAC incl. the cross-operator metal binding,
-> the Mutating/Validating webhook configurations, and the `GlobalInClusterIPPool`
-> data CRs). The Metal-API cluster `m-$REGION` is **NOT** the Management cluster
-> `mgmt-$REGION`.
+> the IPAM custom resources (the `GlobalInClusterIPPool` data CRs + the pool CRDs). The
+> **controller itself runs on the seed** `a-qa-de-200`, in namespace
+> `shoot--cp--m-qa-de-200`, and reaches the shoot's API server through a token-requestor
+> kubeconfig. So the **seed render** targets `a-qa-de-200` (Deployment, webhook-injector
+> sidecar, webhook Service, injector RBAC/metrics/servicemonitor, token-requestor Secret,
+> remote-kubeconfig ConfigMap) and the **shoot render** targets `m-qa-de-200` (pool +
+> core CAPI CRDs, controller RBAC incl. the cross-operator metal binding, the Mutating +
+> Validating webhook configurations, and the `GlobalInClusterIPPool` data CRs).
 
-**Why:** continue the fleet rollout replacing the pre-render-and-commit / GRM model
-with DDO's two-render SSA model, moving per-cluster config into a
-`DualDeploymentOperator` CR delivered from `cc/kube-secrets`. ipam shares the seed CP
-namespace with the already-migrated metal + boot + argora operators and is the next
-slice.
+Why DDO: one operator reconciles the seed-side controller and the shoot-side CRDs/RBAC as
+a single unit, replacing the brittle two-headed legacy model (a Helm release on the seed
++ hand-rolled Gardener ManagedResources shipping objects to the shoot).
 
-**Why now:** metal + boot + argora are proven on this exact cluster; the DDO controller
-is installed and healthy. ipam is the chart that exercises the **webhook split** again
-(after metal) but on a chart with **no vendored upstream subchart** — the last real
-structural variation before the remaining remote charts are mechanical.
+Why kustomize here specifically: ipam has **no upstream Helm chart** (the
+cluster-api-ipam-provider-in-cluster ships only kustomize bases), the SAP additions are
+naturally expressed as kustomize patches over those upstream bases, and the DDO
+`source.kustomize` seed/shoot *path* split maps cleanly onto the two renders without any
+Helm `mode` flag. Both source models were proven viable this session (see §4); the user
+chose kustomize.
+
+---
 
 ## 2. Goals / non-goals / anti-goals
 
 **Goals**
-- A thin `system/ipam-capi-remote-ddo` operand chart DDO renders twice, hand-authored
-  with mode-guarded flat templates (no subchart; CRDs vendored as `mode=shoot`
-  templates).
-- DDO CR values (defaults + a-qa-de-200 instance) added to the existing kube-secrets
-  `dualDeploymentOperatorCRs` / `dualDeploymentOperatorCRDefaults` structure.
-- An `ipam-capi-remote` profile for the generalized cutover toolkit
-  (`system/dual-deployment-operator/cutover/`).
-- Preserve the live `GlobalInClusterIPPool` data CRs on `m-qa-de-200` — data + UID
-  preserved across re-ownership. Two pools are live:
-  `globalinclusterippool-mgmt-qa-de-200`
-  (UID `83614ed7-f367-4bd0-acdd-4fbd4de76eec`, `10.219.139.128/26`, **1 address
-  already allocated**) and `test` (UID `d7d99994-c27d-4116-835b-4d858069b7ea`, 0 used).
-- The webhook split handled exactly as metal does it: `rewriteWebhookURL` +
-  webhook-injector sidecar, with the webhook-config label patch applied to **both** the
-  Mutating and Validating webhook configurations.
+- ipam-capi-remote on `m-qa-de-200` fully reconciled by DDO (seed controller + shoot
+  CRDs/RBAC/webhooks), replacing the legacy Helm-release + ManagedResource delivery.
+- **Preserve the two live `GlobalInClusterIPPool` CRs** on `m-qa-de-200` with their UIDs
+  and allocations intact across cutover (`globalinclusterippool-mgmt-qa-de-200`,
+  UID `83614ed7-f367-4bd0-acdd-4fbd4de76eec`, `10.219.139.128/26`, 1 allocation; `test`,
+  UID `d7d99994-c27d-4116-835b-4d858069b7ea`, 0 used).
+- Reproduce the webhook wiring exactly: the single in-cluster webhook endpoint
+  (`ipam-capi-remote-webhook-service:443`) is **identical in both renders**, so no URL
+  rewrite is needed (see §4.3); the webhook-injector sidecar targets the shoot via
+  `--target-label`, and the `dual-deployment-operator.cc.sap/webhook-injector=ipam-capi-remote`
+  label is patched onto **both** the Mutating and the Validating webhook configuration.
+- Preserve the **cross-operator RBAC** verbatim (metal-operator-controller-manager's
+  access to ipam `ipaddressclaims`).
+- Stay pinned to controller **v1.1.1** (migration is a delivery-mechanism change only).
 
 **Non-goals**
-- Migrating any other remote chart, or ipam on any cluster other than m-qa-de-200.
-- Changing the legacy `build-ipam-capi-remote` helmify make target or the legacy
-  `system/ipam-capi-remote` chart (both stay; DDO work is additive).
-- Touching legacy GRM consumers on other clusters (they keep the legacy chart).
-- Upgrading the CAPI-IPAM controller version as part of this migration (stays `v1.1.1`).
+- No controller/image upgrade; no CRD API-version changes; no pool data changes.
+- No change to the legacy chart or its make target until cutover is verified.
+- No rollout to clusters other than `m-qa-de-200` / `a-qa-de-200` in this change.
 
-**Anti-goals**
-- Breaking the legacy `ipam-capi-remote` chart for non-DDO clusters.
-- An immutable-selector collision leaving two controllers churning.
-- Loss/recreation of the live `GlobalInClusterIPPool` data (the allocated address in
-  `globalinclusterippool-mgmt-qa-de-200` must survive with the same UID).
-- A webhook that points at the wrong service after the split (CREATE/UPDATE on pool
-  kinds fails closed, `failurePolicy: Fail`) — the `rewriteWebhookURL` + label-patch
-  must land on both webhook configs.
-- Dropping the **cross-operator RBAC** that lets `metal-operator-controller-manager`
-  act on ipam `ipaddressclaims` (breaks metal↔ipam integration).
+**Anti-goals (would make this a failure even if it "works")**
+- Any change to the live pool UIDs or their allocations.
+- Any widening/narrowing of the cross-operator RBAC surface.
+- Introducing a Helm `mode` default or any construct DDO rejects at render time.
+- Reaching for `source.helm` fleet-consistency shortcuts that re-introduce helmify.
 
-## 3. Constraints (cluster-authoritative unless noted)
+---
 
-- **ipam HAS a webhook + webhook-injector sidecar** (unlike boot/argora; like metal).
-  → the seed render carries the webhook-injector initContainer, the webhook Service,
-  and the webhook-injector RBAC/metrics/servicemonitor; the shoot render carries the
-  Mutating + Validating webhook configurations; a `rewriteWebhookURL` transformation
-  rewrites the webhook `clientConfig.url` for the split; a `patch` transformation
-  stamps the `dual-deployment-operator.cc.sap/webhook-injector` target label on **both**
-  webhook configs (metal patches only its single VWC — ipam has a MWC **and** a VWC).
-- **NO upstream Helm chart** for `kubernetes-sigs/cluster-api-ipam-provider-in-cluster`
-  (clusterctl / kustomize only — perplexity-confirmed). → the operand chart has **no
-  `dependencies:` / no vendored subchart**. It carries its OWN Deployment, webhook
-  Service + sidecar, RBAC, the 4 CRDs, and the data-CR template, each a hand-authored
-  template guarded by `{{- if eq .Values.mode "seed" | "shoot" }}`. This is the one
-  structural divergence from metal/boot/argora (which key subchart flags under an alias
-  like `metal-operator-core:` and drive modes via `seedValues`/`shootValues` maps).
-  ipam instead drives modes via the chart's own guards + top-level flags.
-- **Legacy chart is helmify-generated and STAYS.** `build-ipam-capi-remote`
-  (system/Makefile L87-106: `kubectl kustomize | helmify -crd-dir ipam-capi-remote`
-  then ~15 sed/yq fixups) consumes `kustomize/ipam-capi-remote/` and is listed in the
-  `build:` aggregate. The DDO operand chart is **separate and fully hand-authored**
-  (confirmed: NO `build-*-ddo` targets exist for metal/boot/argora/ipam) → the
-  migration adds files only; no Makefile edits/deletions.
-- **CRD source (Option B — "regenerate carefully", user-chosen).** The live
-  `crds-rbac.yaml` bundle carries `controller-gen.kubebuilder.io/version: v0.21.0`, but
-  upstream `v1.1.1` (`config/crd/bases`, commit `7933583138cf…`) was generated with
-  `controller-gen v0.17.2`. **→ the live CRDs were SAP-regenerated with a newer
-  controller-gen, NOT vendored upstream verbatim.** So the operand chart must vendor
-  CRDs that match the **LIVE v0.21.0 bundle** field-for-field, not raw upstream
-  `v0.17.2` output, or risk a cosmetic/field diff on the live pools (which could churn
-  the CRD on apply). The 4 pool CRDs are: `InClusterIPPool`, `GlobalInClusterIPPool`
-  (both serve v1alpha1 `storage:false` + v1alpha2 `storage:true`), `InClusterPrefixPool`,
-  `GlobalInClusterPrefixPool` (both v1alpha2 only, storage). `IPAddress`/`IPAddressClaim`
-  are **CAPI core** CRDs (`sigs.k8s.io/cluster-api v1.14.0`), not provider CRDs — the
-  live bundle vendors them too (as `mr-crd-ipaddresses-…`, `mr-crd-ipaddressclaims-…`);
-  reproduce whatever the live bundle ships. The live bundle also includes
-  `mr-crd-clusters-cluster-x-k8s-io` (group `cluster.x-k8s.io`) — 7 CRD MRs total.
-- **CRD provider labels/annotations (reproduce from live).** Upstream stamps
-  `clusterctl.cluster.x-k8s.io/move-hierarchy: ""` as a **label** (not annotation) via
-  `config/crd/patches/clusterctl-label_*.yaml`, `cluster.x-k8s.io/provider:
-  ipam-in-cluster` via `config/default` commonLabels, and a cert-manager CA-injection
-  annotation on the `InClusterIPPool` + `GlobalInClusterIPPool` CRDs via
-  `webhookcainjection_patch.yaml`. The builder reproduces **exactly what the live
-  bundle carries** (diff-driven), since the live bundle is the UID-preservation
-  authority — not what a fresh kustomize build emits.
-- **Staying updated with upstream (documented policy, user-raised).** No `helm dep up`
-  path exists (no upstream chart). The CRDs are the provider's public API and change
-  far less often than the image. Policy baked into the chart README: image bumps happen
-  entirely in the kube-secrets CR (no chart change); on an upstream version bump, diff
-  only `config/crd/bases/*`, the RBAC manifests, and the Deployment/controller config;
-  re-vendor CRDs **only if** `spec.versions` / `openAPIV3Schema` / printer columns /
-  conversion changed; always eyeball RBAC + Deployment even when the CRD diff is empty.
-- **Cross-operator RBAC (must preserve — cluster-authoritative).** The legacy
-  `managedresources/rbac.yaml` binds **both** `ipam-capi-controller-manager` **and**
-  `metal-operator-controller-manager` (kube-system) to ipam roles —
-  `ipam-capi-metal-rolebinding` / `ipam-capi-metal-admin-rolebinding` give
-  metal-operator the ipam `manager-role`/`admin-role` (ipaddressclaims
-  get/list/patch/update/watch/create/delete). The `mode=shoot` RBAC templates MUST
-  reproduce these cross-operator bindings, or metal↔ipam integration breaks.
-- **Data CRs** (`GlobalInClusterIPPool`, group `ipam.cluster.x-k8s.io/v1alpha2`) live on
-  the Metal-API cluster `m-qa-de-200` = the DDO "shoot" render target, **in namespace
-  `metal-servers`** (NOT kube-system — distinct from argora/boot). → authored as a
-  **mode=shoot addition template** driven by CR `values.pools`, namespace `metal-servers`,
-  mirroring the legacy `managedresources/globalinclusterippool.yaml` (ranges
-  `.Values.pools`, fields `addresses`/`excludedAddresses`/`prefix`/`gateway`). The
-  template MUST be **shape-agnostic** (`range` the pools map, `toYaml` the value
-  verbatim) — not a hard-coded spec — so prod regions with richer pool definitions
-  migrate later unchanged. (NB the legacy template has a duplicate `spec:` typo line —
-  do NOT reproduce the typo.)
-- **⚠ The live data CRs are NOT chart-delivered (cluster-authoritative).** Both live
-  `GlobalInClusterIPPool`s on m-qa-de-200 have **no MR-origin annotation and no labels**
-  → they were created out-of-band, not by the legacy chart. The a-qa-de-200 overlay
-  (`values/helm/admin-k3s/qa-de-1/a-qa-de-200/ipam-capi-remote.yaml`) sets **only**
-  `controllerManager.manager.env.kubernetesServiceHost` and **no `pools:` key** → the
-  legacy chart emits **NO** `GlobalInClusterIPPool` and **NO** pool data-CR MR. **→
-  there is NOTHING to protect-then-teardown** (no `mr-gicp-*` MR exists); a `helm
-  uninstall` of `ipam-capi-remote` cannot delete the pools because it never owned them.
-  The cutover must still **BASELINE-snapshot the 2 live pool UIDs and assert survival**
-  post-cutover (do-no-harm), but there is no `PROTECT_MRS` data-CR entry.
-  - **⚠ Design decision for the DDO a-qa-de-200 CR:** because the live pools are
-    out-of-band and the legacy overlay sets no `pools`, the DDO CR for a-qa-de-200 must
-    **also set no `pools`** (empty), so the shoot render emits no `GlobalInClusterIPPool`
-    and DDO does **not** try to adopt/own the 2 live out-of-band pools (which would
-    change their ownership/UID semantics). The data-CR template still ships in the chart
-    (shape-agnostic, for future clusters that DO declare pools via CR values), but is
-    inert on a-qa-de-200. Confirm with render: `--set mode=shoot` with no `pools`
-    produces zero `GlobalInClusterIPPool` objects.
-- **CRD keepObjects:** the 7 legacy CRD MRs (`mr-crd-*`) ALL have `keepObjects: true`
-  and are labeled `ipam-capi-remote-webhook-injector: "true"` → uninstall preserves the
-  CRD **schemas** (and therefore the pool data stored against them). This is already
-  correct — no CRD protect step needed.
-- **Seed controller requirements belong in the OPERAND chart values.yaml, NOT the CR**
-  (the recurring fleet lesson): the token-requestor Secret (`ipam-capi-remote-kubeconfig`)
-  + its Deployment mount, the 7 Gardener networking podLabels, `KUBERNETES_SERVICE_HOST`,
-  and `KUBECONFIG` are all static seed-controller wiring. They live in the operand chart
-  `controllerManager` block; the CR carries only per-cluster diff. **Zero vault refs in
-  the CR** (admin-k3s secrets-injector-validator forbids vault refs in non-Secret kinds)
-  — and ipam has no vault creds anyway (no macdb/netbox), so this is naturally satisfied.
-- **webhook-injector sidecar r7 port (exact).** Legacy
-  `_webhook-injector-sidecar.tpl` uses the pre-r7 arg set
-  (`--webhook-config-name`, `--managed-resource-label`, `--external-host/-port`) and has
-  a securityContext bug (`.Values.controllerManager.manager.podSecurityContext`). Port to
-  metal's r7 form: **DROP** `--webhook-config-name` / `--managed-resource-label` /
-  `--external-host` / `--external-port`; **ADD**
-  `--target-label=dual-deployment-operator.cc.sap/webhook-injector=ipam-capi-remote`;
-  **KEEP** `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig` (injector watches
-  the SHOOT), `--leader-election-id=ipam-capi-remote-webhook-injector-leader`,
+## 3. Constraints (cluster-authoritative facts)
+
+These are verified against the live clusters and the DDO operator source; they bind the
+implementation regardless of source model.
+
+- **Webhook + sidecar.** ipam has a `MutatingWebhookConfiguration`
+  (`ipam-capi-remote-mutating-webhook-configuration`) and a
+  `ValidatingWebhookConfiguration` (`ipam-capi-remote-validating-webhook-configuration`),
+  4 pool kinds each (`{,global}inclusterippool`, `{,global}inclusterprefixpool` @
+  `ipam.cluster.x-k8s.io/v1alpha2`), all `failurePolicy: Fail`, `clientConfig.url`
+  `https://ipam-capi-remote-webhook-service:443/{mutate,validate}-…`. A webhook-injector
+  sidecar provisions the serving cert and patches the `caBundle`.
+- **`fullnameOverride: ipam-capi` is load-bearing** — the live identities must be matched
+  exactly: Deployment `ipam-capi-controller-manager`; shoot SA
+  `ipam-capi-controller-manager` @ `kube-system`; injector SA/Service
+  `ipam-capi-remote-webhook-injector` / `ipam-capi-remote-webhook-service`; webhook
+  configs `ipam-capi-remote-{mutating,validating}-webhook-configuration`. Pod/selector
+  labels: `control-plane: controller-manager` + `app.kubernetes.io/name=ipam-capi-remote`
+  (+ instance).
+- **CRDs match the LIVE `v0.21.0` bundle field-for-field.** Upstream v1.1.1
+  (commit `7933583138cf`) was generated with controller-gen `v0.17.2`; the live bundle
+  shows `v0.21.0`, i.e. SAP re-generated it. The vendored CRDs must reproduce the LIVE
+  bundle (the UID/field authority), including the `clusterctl.cluster.x-k8s.io/move-hierarchy: ""`
+  **label**, the `cluster.x-k8s.io/provider: ipam-in-cluster` common label, and the
+  cert-manager CA-injection annotation on the `InClusterIPPool` + `GlobalInClusterIPPool`
+  CRDs. Pool CRD served-version shape: IPPools serve `v1alpha1` (storage:false) +
+  `v1alpha2` (storage:true); PrefixPools serve `v1alpha2` only (storage). 7 CRDs total on
+  the shoot (4 provider pool kinds + core CAPI `ipaddresses`, `ipaddressclaims`,
+  `clusters.cluster.x-k8s.io`).
+- **Cross-operator RBAC — preserve verbatim.** `ipam-capi-metal-rolebinding` /
+  `ipam-capi-metal-admin-rolebinding` grant `metal-operator-controller-manager`
+  (@ `kube-system`) the ipam `manager-role` / `manager-admin-role` (`ipaddressclaims`
+  get/list/patch/update/watch/create/delete). Plus the remote leader-election role and the
+  webhook-injector ClusterRole + bindings → `ipam-capi-controller-manager` @ `kube-system`.
+- **Data CRs are out-of-band.** The 2 live pools carry no MR-origin annotation and no
+  chart labels — they were NOT chart-delivered. The `a-qa-de-200` overlay therefore sets
+  **no pools**, so the shoot render emits zero `GlobalInClusterIPPool` and DDO does not
+  adopt or own them; they simply continue to exist. The overlay still ships a
+  shape-agnostic pool template for future clusters. Consequence for cutover:
+  `PROTECT_MRS=''` (nothing to protect-then-teardown); the 7 CRD MRs are already
+  `keepObjects: true`.
+- **webhook-injector r7 sidecar args** (vs the legacy pre-r7 form): DROP
+  `--webhook-config-name` / `--managed-resource-label` / `--external-host` /
+  `--external-port`; ADD `--target-label=dual-deployment-operator.cc.sap/webhook-injector=ipam-capi-remote`;
+  KEEP `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig`,
+  `--leader-election-id=ipam-capi-remote-webhook-injector-leader`,
   `--cert-secret-name=ipam-capi-remote-cert-secret`,
   `--cert-sans=ipam-capi-remote-webhook-service`, `--rotation-overlap-window=30s`,
-  `--rotation-gate-timeout=30s`; **FIX** securityContext to
-  `.Values.controllerManager.podSecurityContext`; pin the image from
-  `.Values.webhookInjector` (not `:latest`). Ports metrics 8082 / health 8083; mounts
-  `webhook-certs`→`/tmp/webhook-certs`, `remote-serviceaccount`, `remote-kubeconfig`.
-- **Images: upstream default in the public chart, keppel mirror override in
-  kube-secrets.** Controller default `registry.k8s.io/capi-ipam-ic/cluster-api-ipam-in-cluster-controller:v1.1.1`;
-  kube-secrets CR overrides to the live keppel gcr-mirror
+  `--rotation-gate-timeout=30s`. Fix the legacy securityContext bug (read
+  `.podSecurityContext`, not `.manager.podSecurityContext`). Pin the image (not `:latest`).
+  Ports metrics 8082 / health 8083; mounts `webhook-certs`→`/tmp/webhook-certs` +
+  `remote-serviceaccount` + `remote-kubeconfig`.
+- **Images.** Controller public default
+  `registry.k8s.io/capi-ipam-ic/cluster-api-ipam-in-cluster-controller:v1.1.1`; keppel
+  override (set by the kustomize `images:` transformer in the overlay, since the seed has
+  no registry.k8s.io egress)
   `keppel.global.cloud.sap/ccloud-gcr-mirror/k8s-staging-capi-ipam-ic/cluster-api-ipam-in-cluster-controller:v1.1.1`.
-  webhook-injector default `ghcr.io/sap-cloud-infrastructure/webhook-injector` (pin
-  metal's r7 tag `sha-f85df8e3d55165e3b6e1117f6b120624268d0976` for the target-patch
-  flags); kube-secrets CR overrides repository to metal's **verified-pullable** mirror
+  webhook-injector public default `ghcr.io/sap-cloud-infrastructure/webhook-injector`
+  (metal's r7 build `sha-f85df8e3d55165e3b6e1117f6b120624268d0976`); keppel override
   `keppel.global.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector`
-  (NOT the `cloud-infrastructure-dev` path the legacy ipam region overlay used — metal's
-  base-defaults comment warns that path lacks these tags), tag per-cluster overlay.
-- **Chart version must be clean semver** (metal lesson: `_sha` suffix → "improper
-  constraint" → SeedRenderFailed). Start `0.1.0`, bump patch per change.
-- **`charts/*.tgz` is gitignored** (root `.gitignore` `*.tgz`) — n/a here (no subchart)
-  but Chart.lock is also n/a (no dependencies). Nothing to vendor/lock.
-- **Naming / identity (⚠ load-bearing).** `fullnameOverride: ipam-capi` (matching the
-  legacy chart) so every object renders with the live legacy identity. The live seed
-  Deployment is `ipam-capi-controller-manager`; the shoot SA is
-  `ipam-capi-controller-manager` @ kube-system; the webhook-injector SA/Service use
-  `ipam-capi-remote-webhook-injector` / `ipam-capi-remote-webhook-service`; the webhook
-  configs are `ipam-capi-remote-{mutating,validating}-webhook-configuration`. The
-  token-requestor kubeconfig is minted for SA `ipam-capi-controller-manager` @
-  kube-system. **Validated by render** (helm template seed+shoot). The sidecar
-  `--target-label` value and the CR `patch` label value must match the webhook-injector
-  identity `ipam-capi-remote`.
-- **Selector parity.** Live seed Deployment selector: `control-plane: controller-manager`
-  + the chart's `app.kubernetes.io/{name,instance}` selector labels. The webhook Service
-  selector matches the manager pod (`control-plane: controller-manager` +
-  `app.kubernetes.io/name=ipam-capi-remote` + instance). The DDO seed render must
-  reproduce these; `ci/selector-parity.sh` asserts it.
-- **Shared namespace** — ~9+ releases share shoot--cp--m-qa-de-200. Teardown ownership
-  by `meta.helm.sh/release-name` annotation, NEVER a name prefix.
+  (metal-verified mirror — **not** `cloud-infrastructure-dev`, which lacks these tags).
+- **Clean semver**; shared-namespace ownership on the seed is by the
+  `meta.helm.sh/release-name` annotation (≈9 releases share `shoot--cp--m-qa-de-200`) —
+  not a name prefix.
+- **`shootNamespace: kube-system`** (the shoot SA lives there); the data pools go to the
+  `metal-servers` namespace via the pool resource's own `namespace` field.
 
-## 4. Approaches considered
+---
 
-### 4a. The operand chart shape
+## 4. Approaches
 
-**Decided (Approach 1 — mode-guarded flat templates).** Every object is a
-hand-authored template in `templates/` wrapped `{{- if eq .Values.mode "seed" }}` or
-`"shoot"`. Rejected alternatives:
-- **Helm `crds/` dir for the 4 CRDs** — rejected: DDO renders via `helm template`,
-  which **ignores `crds/` entirely**, so the CRDs would never be delivered (hard DDO
-  constraint). CRDs must be `mode=shoot`-guarded template files.
-- **Two subcharts (seed/shoot)** — rejected as over-engineered vs the flat-template
-  pattern the fleet already uses.
-- **Vendoring an upstream subchart** — impossible (no upstream chart exists).
+### 4.0 Source model — the decision (both proven viable)
 
-Authoring the CRDs as templates also keeps the `rewriteWebhookURL` / `filterKinds`
-transformations and the `chart.additionsAnnotations` origin stamp applying uniformly
-across the whole render.
+Two of my original blockers against `source.kustomize` were **empirically disproven** this
+session:
+
+- **Seed egress is open to GitHub.** A `curl` pod in `shoot--cp--m-qa-de-200` on
+  `a-qa-de-200` reached `github.com` (200), `raw.githubusercontent.com` (301), and
+  `codeload.github.com` (301) in under a second each. The DDO git resolver clones the
+  `?ref=`-pinned tree from inside the seed — so that clone works. (My "same wall as the
+  keppel image mirrors" claim was wrong; the image mirrors are a registry allowlist, not a
+  blanket internet block.)
+- **DDO delivers by direct SSA, not Gardener ManagedResources.** `internal/deliver/applier.go`
+  Server-Side-Applies every rendered manifest straight onto a per-cluster client
+  (`buildShootApplier()` builds the shoot client from the token-requestor Secret). There is
+  no ManagedResource wrapper in the DDO path; the legacy `templates/managedresource.yaml`
+  is legacy-only and is dropped. This is post-render and **source-agnostic** (identical for
+  Helm and kustomize).
+
+What remained was a genuine trade-off. Kustomize wins on: no helmify, no Helm chart to
+publish, direct pinning of the upstream CAPI-IPAM bases, SAP additions expressed as natural
+kustomize patches, and the seed/shoot **path** split matching the two renders with no `mode`
+flag. Helm would have won on fleet consistency (the 3 prior charts) and reuse of the
+`_helpers` additions-stamp + `no-mode-default.sh`/`selector-parity.sh` CI gates. **User chose
+kustomize.** ipam will be the lone `source.kustomize` operator in the fleet; that is accepted.
+
+### 4.1 DDO kustomize render contract (verified in operator source)
+
+`kustomizeSource.Render(ctx, mode, namespace)` (`internal/source/kustomize.go`):
+- `subPath = (mode == shoot) ? spec.ShootPath : spec.SeedPath`.
+- `resolver.Resolve(url, subPath)` git-clones the `?ref=`-pinned root to a temp dir and
+  returns `<tmp>/<rootSubPath>/<subPath>`.
+- `krusty.MakeKustomizer({LoadRestrictionsNone}).Run(fsOnDisk, root)` → `resMap.AsYaml()`.
+- `manifest.Parse(…, OriginUpstream)` then `ApplyNamespace(manifests, namespace)`.
+- **No values mechanism.** Per-cluster differences are expressed as committed overlay
+  content, not CR values.
+
+`gitResolver` (`internal/source/gitresolver.go`): URL form
+`https://host/org/repo//rootSubPath?ref=TAG|BRANCH|SHA`. The `//` separates the in-repo
+root path; `?ref=` is **mandatory**. A 7–40-hex SHA → full-depth fetch + checkout; a
+tag/branch → `Depth 1` single-branch clone; all fail-closed. Embedded `user:token@` is
+rejected — use `authSecretRef` (anonymous works here since helm-charts is public).
+
+### 4.2 Deliverable 1 — the kustomize overlay tree (`helm-charts`, public)
+
+A new tree under `helm-charts` (exact path a builder decision — proposed
+`system/ipam-capi-remote-ddo/` for fleet discoverability, containing only kustomize, no
+Chart.yaml):
 
 ```
 system/ipam-capi-remote-ddo/
-  Chart.yaml            # type application, NO dependencies, version 0.1.0
-  values.yaml           # fullnameOverride=ipam-capi; NO mode default;
-                        #   controllerManager (seed wiring: image, env, 7 podLabels,
-                        #   token-requestor mount); webhookInjector (ghcr default + r7 tag);
-                        #   webhook.enable; pools: {} (shape-agnostic data-CR source)
-  templates/
-    _helpers.tpl                      # COPY metal verbatim, rename chart → ipam-capi-remote:
-                                      #   dual.seed/dual.shoot guards, chart.{name,fullname,
-                                      #   chart,labels,selectorLabels}, chart.additionsAnnotations
-    _webhook-injector-sidecar.tpl     # r7 port (see §3)
-    controller-manager.yaml           # (mode=seed) Deployment + sidecar initContainer
-    webhook-service.yaml              # (mode=seed) Service ipam-capi-remote-webhook-service 443→9443
-    webhook-injector-rbac.yaml        # (mode=seed) SA/Role/RB/CR/CRB ipam-capi-remote-webhook-injector
-    webhook-injector-metrics-service.yaml   # (mode=seed)
-    webhook-injector-servicemonitor.yaml     # (mode=seed)
-    remote-kubeconfig.yaml            # (mode=seed) token-requestor Secret ipam-capi-remote-kubeconfig
-    remote-kubeconfig-configmap.yaml  # (mode=seed) ConfigMap ipam-capi-remote-kubeconfig
-    crds.yaml (or crd-*.yaml)         # (mode=shoot) the 4 (+core?) CRDs, matching live v0.21.0 bundle
-    rbac.yaml                         # (mode=shoot) controller RBAC incl. cross-operator metal binding
-    webhooks.yaml                     # (mode=shoot) Mutating + Validating webhook configurations
-    data-crs.yaml                     # (mode=shoot) GlobalInClusterIPPool, shape-agnostic, ns metal-servers
-    [manager-config.yaml]             # ConfigMap -manager-config (leaderElection resourceName) — mode? see §8
-  ci/
-    no-mode-default.sh  # copy from metal: asserts values.yaml has no `mode`
-    selector-parity.sh  # copy/adapt from metal
-  README.md             # role, no-subchart rationale, upstream-update policy (§3), render parity
-  CODEOWNERS entry      # match legacy /system/ipam-capi-remote owners
+  base/
+    kustomization.yaml        # common resources + common labels/annotations (fullname identities)
+    …shared resources…
+  seed/
+    kustomization.yaml        # resources: ../base (seed subset) + seed-only resources; images: transformer
+    deployment.yaml           # controller Deployment + webhook-injector sidecar (r7 args)
+    webhook-service.yaml
+    webhook-injector-rbac.yaml
+    webhook-injector-metrics-service.yaml
+    webhook-injector-servicemonitor.yaml
+    remote-kubeconfig-secret.yaml      # token-requestor Secret ipam-capi-remote-kubeconfig
+    remote-kubeconfig-configmap.yaml
+    …patches (podLabels, KUBERNETES_SERVICE_HOST, securityContext)…
+  shoot/
+    kustomization.yaml        # resources: CRDs + controller RBAC + webhook configs + (optional) pools
+    crds/                     # 7 CRDs vendored to match the LIVE v0.21.0 bundle
+    rbac.yaml                 # controller RBAC incl. cross-operator metal bindings (verbatim)
+    webhooks.yaml             # Mutating + Validating webhook configurations
+    pools.yaml                # shape-agnostic GlobalInClusterIPPool template (listed only by overlays of clusters that have pools; NOT referenced for a-qa-de-200)
 ```
 
-**Per-mode enablement** is via the chart's own `mode` guards (Approach A for the whole
-chart, since there is no subchart whose flags to toggle). The CR's
-`seedValues`/`shootValues` therefore carry **chart-level flags** the templates read
-(e.g. `webhook.enable`), not subchart-alias maps — the builder confirms the exact flag
-names by render. Seed set: controller Deployment + sidecar, webhook Service,
-webhook-injector RBAC/metrics/servicemonitor, token-requestor Secret +
-remote-kubeconfig ConfigMap. Shoot set: 4 CRDs, controller RBAC (incl. cross-operator
-metal binding), Mutating + Validating webhook configs, data-CRs (inert on a-qa-de-200).
+Mode-enablement is **structural**: the `seed/` kustomization lists only seed resources, the
+`shoot/` kustomization lists only shoot resources. No `mode` flag, no `if-eq`. A resource
+placed in `base/` renders into **both** seed and shoot, so `base/` carries only genuinely
+shared config (identity labels/annotations, common metadata) — never a seed-only or
+shoot-only object — keeping the two overlays DRY. Because kustomize is static (no
+conditional rendering), a pool is delivered only where its overlay's `resources:` list
+references `pools.yaml`; the a-qa-de-200 shoot overlay simply omits it.
 
-### 4b. kube-secrets CR delivery
+**CRD sourcing — vendor, not remote-base.** Although the seed *can* reach GitHub, the CRDs
+are **vendored** as local files in `shoot/crds/` (hermetic, reproducible, diffable against
+the live bundle, and immune to upstream tag retagging). They are produced once by running
+the same pinned kustomize bases the legacy tree used (provider `config/crd` +
+`config/rbac` @ `ref=v1.1.1` and the 3 core CAPI raw files @ `v1.14.2`) and then committed.
+A CI/verification gate diffs them field-for-field against the live `v0.21.0` bundle.
 
-**No new pipeline.** The CR is delivered by the already-wired `dual-deployment-operator`
-release (admin-k3s pipeline → shoot--cp--m-qa-de-200). ipam becomes a fourth entry
-alongside metal + boot + argora in the same two files:
-- `values/helm/admin-k3s/dual-deployment-operator.yaml` →
-  `dualDeploymentOperatorCRDefaults.ipam-capi-remote` (shootNamespace **kube-system** —
-  where the ipam SA lives; applyOrder SeedFirst; source repo/name
-  `ipam-capi-remote-ddo`; keppel image overrides for controller + webhook-injector;
-  seed/shootValues chart flags; the `rewriteWebhookURL` + dual-webhook-config label
-  `patch` transformations).
-- `values/helm/admin-k3s/qa-de-1/a-qa-de-200/dual-deployment-operator.yaml` →
-  `dualDeploymentOperatorCRs.ipam-capi-remote` (per-cluster diff: enabled,
-  source.version, shootAccess.server, KUBERNETES_SERVICE_HOST
-  `api.m-qa-de-200.cp.internal.a-qa-de-200.soil-garden.qa-de-1.cloud.sap`,
-  global.region/clusterType, webhook-injector tag; **no `pools`** — see §3).
+**Images** are set by a kustomize `images:` transformer in each overlay's
+`kustomization.yaml` (keppel mirrors), not by CR values.
 
-**shootNamespace:** `kube-system` (the ipam SA `ipam-capi-controller-manager` and the
-RBAC live there; the data pools go to `metal-servers` via the data-CR template's own
-`namespace:` field, independent of shootNamespace). **Transformations:**
-- `rewriteWebhookURL { urlPrefix: https://ipam-capi-remote-webhook-service:443 }` —
-  rewrites the webhook `clientConfig.url` for the split (copy metal's shape).
-- `patch` on the **MutatingWebhookConfiguration** AND `patch` on the
-  **ValidatingWebhookConfiguration** (two patch transformations, or one per kind —
-  metal uses one for its single VWC), strategicMerge
-  `metadata.labels.dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote`
-  so the webhook-injector `--target-label` matches both configs.
-- **`filterKinds`?** — the builder confirms by render whether any upstream Secret/Service
-  must be pruned from the shoot (metal/boot/argora each needed one; ipam re-templates
-  in-place so it may not emit a stray upstream Secret, but the webhook-injector metrics
-  Service and token Secret must stay **seed-only**, which the `mode=seed` guards already
-  enforce — so a `filterKinds` may be unnecessary). Decide by diffing the shoot render.
+**SAP additions** (token-requestor Secret, remote-kubeconfig ConfigMap, webhook-injector
+sidecar, the 7 Gardener networking podLabels, `KUBERNETES_SERVICE_HOST` + `KUBECONFIG`
+wiring, cross-operator RBAC) are overlay resources/patches — the same additions that would
+be Helm templates in the rejected approach.
 
-> **Dependency (flagged to user):** SCI #1542 may relocate ALL DDO CR delivery into a
-> dedicated chart fleet-wide. Proceed with the existing `dualDeploymentOperatorCRs`
-> pattern now; if #1542 lands, ipam's CR migrates with the fleet. Not a blocker.
+### 4.3 Deliverable 2 — the DDO CR (`kube-secrets`, internal)
 
-### 4c. Cutover tooling
+A `DualDeploymentOperator` CR (base defaults in
+`values/helm/admin-k3s/dual-deployment-operator.yaml` under
+`dualDeploymentOperatorCRDefaults.ipam-capi-remote`, plus the `a-qa-de-200` instance in the
+overlay), using **`source.kustomize`**:
 
-Reuse the generalized toolkit (`system/dual-deployment-operator/cutover/`, shipped via
-the argora-era PR #13167). Add `profiles/ipam-capi-remote.env`:
-- `RELEASE=ipam-capi-remote`, `DDO_CR=ipam-capi-remote`,
-  `LEGACY_CHART_DIR=system/ipam-capi-remote`,
-  `OPERAND_CHART_DIR=system/ipam-capi-remote-ddo`, `ROLLOUT_ORDER=40` (after argora's 30).
-- `DEPLOY=ipam-capi-controller-manager` (live-confirmed name).
-- `CONTROLLER_POD_SELECTOR="control-plane=controller-manager,app.kubernetes.io/name=ipam-capi-remote"`
-  (builder confirms the exact live pod labels).
-- `CRD_GROUPS="ipam.cluster.x-k8s.io"` (the pool kinds; `cluster.x-k8s.io` core CRDs are
-  shared with CAPI and NOT ipam-owned — do not teardown-gate on them).
-- `NAMESPACE_CASCADE_GATE="off"` (ipam owns no namespace).
-- `PROTECT_MRS=""` — **none.** The live pools are out-of-band (not chart-delivered), so
-  no data-CR MR exists to protect (§3).
-- `FREEZE_KINDS_NS="globalinclusterippools.ipam.cluster.x-k8s.io"` — assert no pool is
-  Terminating before teardown.
-- `BASELINE_SNAPSHOT_KINDS_NS="globalinclusterippools.ipam.cluster.x-k8s.io"` — snapshot
-  the 2 live pool UIDs + specs pre-uninstall so verify asserts data + UID preserved.
-- `VERIFY_SAMPLE=""` — the do-no-harm invariant is pool-data/UID preservation, covered
-  by the baseline snapshot.
+Base defaults under `dualDeploymentOperatorCRDefaults.ipam-capi-remote`; the per-cluster
+instance under `dualDeploymentOperatorCRs.ipam-capi-remote` in the `a-qa-de-200` overlay
+(same split the 3 prior CRs use):
 
-> **Dependency:** the cutover toolkit (PR #13167) must be on master (or its branch
-> merged) before the live cutover runs. The ipam cutover profile can ship in the ipam
-> helm-charts PR or fold into a combined profiles PR per user preference.
-
-## 5. The cutover shape
-
-Same coordinated single-window cutover as the prior three, **simpler than metal/argora**
-because there is nothing to protect (no chart-owned data-CR MR; CRD MRs already
-`keepObjects:true`):
+```yaml
+source:
+  kustomize:
+    url: https://github.com/sapcc/helm-charts//system/ipam-capi-remote-ddo?ref=<tag-or-branch>
+    seedPath: seed
+    shootPath: shoot
+shootNamespace: kube-system
+applyOrder: SeedFirst
+shootAccess:
+  secretName: dual-deployment-operator-shoot-access
+  server: https://api.m-qa-de-200.cp.internal.a-qa-de-200.soil-garden.qa-de-1.cloud.sap  # REQUIRED (per-cluster, in overlay)
+transformations:
+  # NO rewriteWebhookURL — see note below; it would be a no-op for ipam.
+  - patch:                       # MutatingWebhookConfiguration
+      target: { kind: MutatingWebhookConfiguration }
+      strategicMerge: { metadata: { labels: { dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote } } }
+  - patch:                       # ValidatingWebhookConfiguration (PatchSpec.target is a single kind → two patches)
+      target: { kind: ValidatingWebhookConfiguration }
+      strategicMerge: { metadata: { labels: { dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote } } }
 ```
-baseline-snapshot the 2 live pools (UID+spec) → freeze-check (no pool Terminating)
-  → uninstall ipam-capi-remote  (CRD schemas survive via keepObjects; pools are
-      out-of-band so untouched)
-  → (merge DDO CR PR, reconcile) → DDO renders seed+shoot, applies via SSA
-  → verify: DDO CR Ready; controller Deployment DDO-owned 1/1; webhook-injector sidecar
-      up; 4 CRDs present (UID unchanged); Mutating+Validating webhook configs point at
-      ipam-capi-remote-webhook-service and carry the target label; 2 live pools still
-      present, same UID, allocation intact
+
+> **`shootAccess.server` is required** (`api/v1alpha1/dualdeploymentoperator_types.go:95-104`,
+> `MinLength=1`) — it is a per-cluster value set in the overlay instance, not the base
+> defaults; all 3 prior CRs set it to the `m-qa-de-200` shoot apiserver endpoint above.
+>
+> **`rewriteWebhookURL` is dropped.** That transformation
+> (`internal/transform/rewrite_webhook_url.go:92-105`) only converts a *service-based*
+> `clientConfig` to a url-based one and **returns early if a `url` is already present**. The
+> legacy ipam webhook configs already use `clientConfig.url:
+> https://ipam-capi-remote-webhook-service:443/…` (all 8 webhooks, both MWC and VWC), so the
+> transformation would be a no-op. The correct URL must therefore be present in the rendered
+> kustomize output itself — and since the webhook Service name
+> (`ipam-capi-remote-webhook-service`) is identical in the seed and shoot renders, the same
+> URL is correct for both and **no rewrite is needed**. Only the two injector-target-label
+> patches remain.
+
+No `values`/`seedValues`/`shootValues` (kustomize has none). No keppel chart publish. The
+per-cluster delta (the `?ref=`, `shootAccess.server`, and anything cluster-specific) lives
+in the overlay instance — not as CR values.
+
+### 4.4 Deliverable 3 — cutover profile
+
+`system/dual-deployment-operator/cutover/profiles/ipam-capi-remote.env` for the generalized
+toolkit (on branch `feat/ddo-cutover-toolkit`):
+
 ```
-ipam specifics:
-- **No protect-then-teardown step** (the data CRs are out-of-band; the CRD MRs already
-  keepObjects). This is the simplest cutover of the four.
-- **Webhook continuity is the risk, not data.** During the window between uninstall and
-  DDO apply, the Mutating/Validating webhook configs (`failurePolicy: Fail`) could block
-  CREATE/UPDATE/DELETE on the 4 pool kinds. Pool **reads and existing IP allocations are
-  unaffected** — only writes are briefly blocked, and on qa-de-200 the pools are
-  near-static (1 pool / 1 allocation, 1 empty `test` pool), so real-world impact is
-  near-zero.
-- **Outage budget + rollback are already formalized by the cutover toolkit** (branch
-  `feat/ddo-cutover-toolkit`), and ipam adopts the defaults (user decision 2026-10-30:
-  *"Keep default 20-min budget"*). `cutover-ddo.sh` runs with `OUTAGE_BUDGET_MIN=20`:
-  it captures rollback material **before** uninstall (`hs get manifest > rollback-manifest.yaml`,
-  `hs get values > rollback-values.yaml`, `hs get all > rollback-info.txt` in the state dir),
-  stamps the uninstall epoch, and if the new deployment is not healthy within the budget
-  exits **30** ("Outage budget blown — rollback required") into the S0–S3 rollback planner
-  (S0 state-unreadable / S1 clean-uninstall → reinstall from `rollback-manifest.yaml` /
-  S2 partial → careful choreography / S3 new-deployment-healthy → proceed). No ipam-specific
-  rollback logic is needed; the profile just sets the budget and the runbook references the
-  exit-30 path. The runbook must still sequence uninstall→reconcile tightly and verify the
-  webhook endpoints resolve post-apply before declaring done.
-- **Back up** the 2 live pools + the Mutating/Validating webhook configs before the window
-  (standing "back up before live change" directive). The backed-up webhook configs are the
-  manual restore artifact if an abort lands in S2 before DDO re-applies them.
+RELEASE=ipam-capi-remote
+DDO_CR=ipam-capi-remote
+LEGACY_CHART_DIR=system/ipam-capi-remote
+OVERLAY_DIR=system/ipam-capi-remote-ddo        # replaces OPERAND_CHART_DIR (no chart)
+ROLLOUT_ORDER=40
+DEPLOY=ipam-capi-controller-manager
+CONTROLLER_POD_SELECTOR=control-plane=controller-manager,app.kubernetes.io/name=ipam-capi-remote
+CRD_GROUPS=ipam.cluster.x-k8s.io               # NOT cluster.x-k8s.io (shared core)
+NAMESPACE_CASCADE_GATE=off
+PROTECT_MRS=''                                 # nothing to protect (pools out-of-band)
+FREEZE_KINDS_NS=globalinclusterippools.ipam.cluster.x-k8s.io
+BASELINE_SNAPSHOT_KINDS_NS=globalinclusterippools.ipam.cluster.x-k8s.io
+```
+
+---
+
+## 5. Cutover shape
+
+Simplest of the four migrations. The pools are out-of-band and the CRD MRs already carry
+`keepObjects: true`, so there is **nothing to protect-then-teardown** (`PROTECT_MRS=''`).
+The toolkit still:
+- BASELINE-snapshots the 2 pool UIDs and asserts their survival post-cutover.
+- Backs up both webhook configurations and the 2 pools before the window.
+
+Outage risk: the webhooks are `failurePolicy: Fail`, so during the brief window between
+removing the legacy delivery and DDO applying the webhook configs, **pool writes** could be
+rejected. Reads and existing allocations are unaffected, and `qa-de-200` is near-static, so
+practical impact is near-zero. The toolkit's `cutover-ddo.sh` governs this with
+`OUTAGE_BUDGET_MIN=20` (user-accepted default), exit-code-30 on budget-blown, and an S0–S3
+rollback planner driven by pre-uninstall `hs get manifest/values/all` captures. If an abort
+lands mid-flight, the backed-up webhook configs + pools are the manual restore artifacts.
+
+---
 
 ## 6. Branch / PR hygiene
 
-- ONE feature branch off `master` → ONE PR per repo (user preference; no stacked PRs).
-  Proposed branch: `feat/ipam-capi-remote-ddo-m-qa-de-200`. **Create a fresh worktree**
-  (current cwd is the argora worktree).
-- Two repos → two PRs: helm-charts (public, `GH_HOST=github.com`): operand chart
-  (+ cutover profile, unless folded); kube-secrets (internal,
-  `GH_HOST=github.wdf.sap.corp`, `gh` CLI — MCP github tools CANNOT reach it): CR values.
-- **CODEOWNERS:** add `/system/ipam-capi-remote-ddo` matching the LEGACY
-  `/system/ipam-capi-remote` owners (builder reads the live CODEOWNERS entry; a reviewer
-  required this for the prior charts).
-- **Publish precondition** (the lesson that broke boot): the operand chart version MUST
-  be published to keppel BEFORE the kube-secrets CR referencing it merges (else
-  SeedRenderFailed). Verify:
-  `helm show chart oci://keppel.eu-de-1.cloud.sap/ccloud-helm/ipam-capi-remote-ddo --version 0.1.0`.
-- **Merge order (strict):** helm-charts operand-chart PR merges → publish operand chart
-  to keppel + verify → THEN kube-secrets CR PR merges → THEN live cutover (toolkit on
-  master).
+- One feature branch **`feat/ipam-capi-remote-ddo-m-qa-de-200`** (already created off
+  `master`, fresh worktree), one PR per repo.
+- helm-charts PR (public, `github.com`): the overlay tree + the cutover profile.
+- kube-secrets PR (internal, `github.wdf.sap.corp`, `gh` CLI): the DDO CR values.
+- CODEOWNERS entry on the new tree matching the legacy chart's owners.
+- **Strict merge order** (publish-before-merge, adapted for kustomize): merge the
+  helm-charts PR → **push/tag the `?ref=`** the CR points at so the overlay is resolvable →
+  then merge the kube-secrets CR PR → then run the live cutover. (If the CR's `?ref=`
+  resolves to an unmerged/absent commit, the seed render fails `SeedRenderFailed` on clone —
+  the kustomize analogue of the keppel publish-before-merge gate.)
 
-## 7. Verification path (cluster-authoritative)
+---
 
-- `helm template --set mode=seed` and `--set mode=shoot` render clean (no subchart →
-  no `helm dependency build`).
-  - **seed**: controller Deployment `ipam-capi-controller-manager` (selector
-    `control-plane: controller-manager` + chart selector labels; 7 Gardener networking
-    podLabels; manager container `…:v1.1.1`; webhook-injector initContainer with the r7
-    args + `--target-label=…=ipam-capi-remote`; mounts webhook-certs emptyDir +
-    remote-serviceaccount Secret `ipam-capi-remote-kubeconfig` {token→token,
-    bundle.crt→ca.crt} + remote-kubeconfig ConfigMap); webhook Service
-    `ipam-capi-remote-webhook-service` 443→9443; webhook-injector SA/RBAC/metrics/SM;
-    token-requestor Secret + ConfigMap. **No CRDs, no webhook configs, no data-CRs.**
-  - **shoot**: the 4 (+core, per live bundle) CRDs; SA `ipam-capi-controller-manager` +
-    the ipam ClusterRoles/bindings + **the cross-operator metal bindings**
-    (`ipam-capi-metal-rolebinding` / `-admin-rolebinding`); the Mutating + Validating
-    webhook configs (post-transformation: clientConfig.url rewritten to
-    `https://ipam-capi-remote-webhook-service:443/…`, carrying the target label); **no**
-    `GlobalInClusterIPPool` (no `pools` set); **no** controller Deployment / sidecar /
-    webhook Service.
-- **CRD field-diff vs the live v0.21.0 bundle** (Task gate): render the `mode=shoot`
-  CRDs and diff kind+name+`spec.versions`+`openAPIV3Schema`+printerColumns+labels/
-  annotations against the live `crds-rbac.yaml` — MUST be semantically identical
-  (Option B acceptance gate). Document any intentional deviation in the README.
-- **Shoot-RBAC fidelity vs legacy** (Task gate): diff the full object list (kind + name
-  + rules) against legacy `managedresources/{crds-rbac.yaml,rbac.yaml}`, confirming the
-  cross-operator metal bindings are present. Document deviations in the README.
-- **Webhook render parity:** the 2 webhook configs render with all 4 pool kinds each
-  (mutating: CREATE/UPDATE; validating: CREATE/UPDATE/DELETE), `failurePolicy: Fail`,
-  `ipam.cluster.x-k8s.io/v1alpha2`, and post-transformation point at
-  `ipam-capi-remote-webhook-service:443`.
-- Image pullability verified on-cluster (keppel refs) — already live, low risk.
-- Post-cutover: DDO CR `ipam-capi-remote` Ready=True; controller Deployment recreated,
-  DDO-owned, 1/1 with the sidecar up; 4 CRDs owned-by stamped, UID unchanged vs
-  baseline; webhook configs point at the right service + carry the target label; the 2
-  live pools Ready/present, same UID, allocation intact.
-- **Pool-preservation acceptance check (manual):** after cutover, manually diff the 2
-  live pools (name, UID, `.spec`, allocation) against the pre-uninstall baseline
-  snapshot. Manual acceptance gate in the runbook.
-- Dry-run `cutover-ddo.sh --operator ipam-capi-remote --phase uninstall --dry-run`
-  passes all read-only gates.
-- CI `no-mode-default.sh` + `selector-parity.sh` pass.
+## 7. Verification path
+
+1. **Local render parity.** `kustomize build system/ipam-capi-remote-ddo/seed` and
+   `…/shoot` produce exactly the expected seed vs shoot object sets (seed: Deployment +
+   sidecar + webhook Service + injector RBAC/metrics/SM + token-requestor Secret +
+   remote-kubeconfig ConfigMap; shoot: 7 CRDs + controller RBAC incl. cross-operator
+   bindings + both webhook configs + zero pools for a-qa-de-200).
+2. **CRD field-diff gate.** Vendored CRDs diff clean (field-for-field) against the live
+   `v0.21.0` bundle — including the move-hierarchy label, provider common-label, and
+   cert-manager CA-injection annotation.
+3. **Shoot-RBAC fidelity gate.** The cross-operator metal bindings and the ipam roles match
+   the live cluster exactly (no widening/narrowing).
+4. **Webhook render parity.** After the two label patches, both webhook configs carry the
+   injector target label and the correct `clientConfig.url` (already present in the rendered
+   output — no `rewriteWebhookURL`, see §4.3).
+5. **Post-cutover UID preservation.** Both pool UIDs unchanged; allocations intact; DDO CR
+   `Ready=True`; seed + shoot resources Healthy.
+
+---
 
 ## 8. Left to the builder
 
-- **Exact chart-level flag names for mode enablement.** Since there is no subchart, the
-  `seedValues`/`shootValues` in the CR toggle chart-level flags the templates read
-  (e.g. `webhook.enable`, and whatever gates CRDs/RBAC/Deployment). The builder defines
-  these flags in `values.yaml` (all OFF/mode-appropriate by default) and confirms the
-  CR `seedValues`/`shootValues` drive them — mirroring how boot/argora split
-  controller-vs-crd/rbac, but keyed at chart top-level not under an alias. Render-verify
-  seed emits the Deployment+webhook-Service and shoot emits CRDs+RBAC+webhook-configs.
-- **CRD regeneration (Option B, "carefully").** Vendor the 4 pool CRDs (+ the core/
-  cluster CRDs the live bundle ships) matching the **live v0.21.0 bundle** field-for-
-  field — NOT raw upstream v0.17.2 output. Start from the live `crds-rbac.yaml` CRD
-  stanzas as the authority; cross-check against upstream `config/crd/bases` at tag
-  `v1.1.1` (commit `7933583138cf…`) for schema correctness; reproduce the live
-  labels/annotations (`clusterctl.cluster.x-k8s.io/move-hierarchy` label,
-  `cluster.x-k8s.io/provider` label, cert-manager CA-injection annotation where live).
-  Diff gate in §7.
-- **`filterKinds` necessity:** confirm by shoot-render diff whether any upstream
-  Secret/Service leaks into the shoot that must be pruned (likely not, since the chart
-  is hand-authored with mode guards — unlike the subchart-wrapping prior three). If the
-  seed-only objects are already guarded `mode=seed`, omit `filterKinds`.
-- **`manager-config.yaml` ConfigMap:** the legacy chart ships a `-manager-config`
-  ConfigMap (controllerManagerConfigYaml, leaderElection resourceName
-  `7bb7acb4.ipam.cluster.x-k8s.io`). Confirm whether the v1.1.1 controller still
-  consumes a mounted config file or takes flags only (legacy Deployment passes
-  `--leader-elect=false --webhook-port=9443` as args and does NOT mount the ConfigMap —
-  suggesting the ConfigMap is vestigial). Decide by render parity vs the live Deployment;
-  likely drop, but verify the controller doesn't read `/controller_manager_config.yaml`.
-- **webhook-injector mirror confirmation:** verify metal's
-  `keppel.global.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector`
-  has the r7 target-patch tag pullable on-cluster before pinning it in the CR (the
-  legacy ipam overlay used the different `cloud-infrastructure-dev` path — do NOT reuse
-  that one).
-- **Exact live pod/selector labels** for `CONTROLLER_POD_SELECTOR` and
-  `selector-parity.sh` — read from the live Deployment.
-- **`networkpolicy.yaml` / `ingress.yaml`:** confirm against the rendered legacy
-  manifest whether the legacy chart ships either (recon saw a `network-policy.yaml`
-  template). If the legacy render includes a NetworkPolicy, reproduce it as a `mode=seed`
-  addition; ipam has no ingress.
-- **Exact chart version** (start 0.1.0) and keppel publish/CI mechanics.
-- **PR #13167 / cutover-toolkit sequencing** — confirm the toolkit is on master or fold
-  the ipam profile per user preference.
-- **Two patch transformations vs one:** confirm whether the DDO `patch` transformation
-  targets by `kind` only (then one patch can't hit both MWC+VWC) or supports a list —
-  from `api/v1alpha1` PatchSpec.target is a single Selector, so **two** patch
-  transformations are needed (one per webhook-config kind). Verify against the DDO
-  types.
+- Exact overlay tree path/layout under `helm-charts` (proposed `system/ipam-capi-remote-ddo/`;
+  confirm vs a `system/kustomize/`-style location) and how `base/` is split from the two
+  overlays.
+- Produce the vendored CRDs from the pinned bases and prove the field-diff gate green.
+- Confirm `filterKinds` is unnecessary (expected: overlays list only mode-appropriate
+  resources, so no post-render kind filtering is needed).
+- Confirm `manager-config.yaml` is vestigial (the live Deployment passes `--leader-elect` /
+  `--webhook-port` as args and does not mount the ConfigMap) and omit it.
+- Verify the webhook-injector keppel mirror
+  (`i-cant-believe-its-not-cloud-infrastructure-dev`) is pullable from the seed and pick the
+  exact r7 tag.
+- Confirm exact live pod/selector labels and whether a NetworkPolicy/Ingress object is part
+  of the live set.
+- Confirm the two separate webhook label-patch transformations are accepted by the CR schema
+  (PatchSpec.target is a single kind selector → two patches).
+- Choose the `?ref=` strategy (branch during bring-up, pin to a tag/SHA for the durable CR).
+- PR `#13167` sequencing for the cutover toolkit profile (fold into the helm-charts PR vs
+  its own, per the prior charts).
