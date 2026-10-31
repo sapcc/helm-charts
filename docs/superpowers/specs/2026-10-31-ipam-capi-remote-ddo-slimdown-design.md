@@ -306,6 +306,48 @@ pools.example.yaml`, the kube-secrets CR (#5683) and cutover profile (#13167).
 - A render from a fresh/offline checkout must still produce all 7 CRDs (proves
   the pins resolve and the in-repo core kustomization is wired).
 
+### 5.7 Maximize-upstream audit — why only CRDs are fetched
+
+The slim-down principle is *fetch from pinned upstream, vendor only genuine SAP
+changes*. Applying it to **every** vendored file (not just CRDs), the fetch
+surface turns out to be exactly the 7 CRDs. Each other vendored file was checked
+against its upstream origin:
+
+- **`shoot/rbac.yaml` (258 lines) — stays vendored.** The legacy tree fetched
+  `//config/rbac?ref=v1.1.1`, so it looks fetchable. But at the pinned SHA that
+  directory's `kustomization.yaml` emits (under `namePrefix: ipam-capi-`): SA,
+  `manager-role` (= `role.yaml`, byte-identical to vendored lines 8-70), its
+  binding, `metrics-reader`, `proxy-role` — **plus an auth-proxy set**
+  (`auth_proxy_service`, `auth_proxy_role_binding`,
+  `auth_proxy_client_clusterrole`) that is **absent from the live m-qa-de-200
+  bundle**, and a **namespaced** `leader-election-role` where live uses a
+  **cluster-scoped** `ipam-capi-remote-leader-election-role` (SAP variant).
+  Fetching `//config/rbac` wholesale would therefore inject 3 objects not on the
+  live cluster and install the wrong-scope leader-election role — breaking the
+  `rbac_fidelity_test.sh` live-match guarantee. The remaining 8 objects (metal
+  cross-operator bindings, `manager-admin-role`, cluster-scoped leader-election
+  role + binding, webhook-injector role + binding) are pure SAP additions with
+  no upstream source. Reconciling the divergence would need a `//config/rbac`
+  fetch + kustomize `$patch: delete` for the 3 auth-proxy objects + a
+  leader-election-scope override + the SAP additions as patches — strictly more
+  moving parts that fight the live-match guarantee. Net: vendoring the single
+  normalized `shoot/rbac.yaml` is both simpler and safer, so RBAC stays vendored.
+- **`shoot/webhooks.yaml` — stays vendored.** It has no upstream origin: the
+  legacy tree **intentionally omitted** `config/webhook`, and the
+  Mutating/Validating webhook configurations are SAP url-based (the
+  webhook-injector endpoint), not the upstream SERVICE-ref form.
+- **`additions/seed/*` — stays vendored.** All SAP: the controller Deployment,
+  r7 webhook-injector sidecar, webhook Service, injector RBAC/metrics/
+  servicemonitor, token-requestor Secret, remote-kubeconfig ConfigMap. No
+  upstream counterpart.
+- **`additions/shoot/pools.example.yaml` — stays vendored.** SAP example, not
+  referenced by the a-qa-de-200 overlay.
+
+Conclusion: the 7 CRDs are the whole upstream-fetch surface; approach C already
+captures the entire ~7,453-line (79%) reduction. Everything else is either
+genuinely SAP-authored or diverges from upstream in a way that fetching would
+make *less* safe, not slimmer.
+
 ---
 
 ## 6. Merge / rollout
