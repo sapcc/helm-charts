@@ -1,308 +1,182 @@
 # DDO Migration Cutover Runbook
 
-> **Scope:** Replacing a legacy `<operator>-remote` Helm release with
-> dual-deployment-operator (DDO)-managed deployment on a single cluster, using
-> `cutover-ddo.sh --operator <name>`.
->
-> **Audience:** operator running a planned maintenance window. `helm uninstall`
-> is gated behind an exact-token confirmation, but preflight can patch the
-> namespace ManagedResource to `keepObjects:true` **before confirmation**.
-> Verify re-runs that preflight and can also patch it. Applying the DDO CR happens **outside** this
-> script (merge the kube-secrets PR + reconcile).
->
-> **Profile-driven:** the per-operator differences (namespace ownership, freeze
-> predicate, CRDs, do-no-harm sample) live in
-> `profiles/<operator>-operator-remote.env`. This runbook describes the shared
-> procedure; the **boot-operator specifics** are called out in §6.
+## Safety boundary
 
----
+This is a planned, single-cluster maintenance procedure, not automatic rollback.
+Do not remove a working legacy release until its exact recovery artifact, preservation
+baseline, actual replacement renders and legacy reconciler freeze are established.
+The script never activates the replacement CR or performs rollback itself.
 
-## 0. TL;DR — the one thing to get right
+**IPAM remains blocked** until the installed DDO supports safe Git-directory **and
+HTTP-file** fetching, and the installed/published admin chart actually renders
+`source.kustomize`. A successful local Kustomize build is not installed-platform
+acceptance. Draft operand/CR PRs are not evidence that these prerequisites exist.
 
-You cannot safely do either half alone:
+Deletion of a DDO CR can finalize and delete its owned data CRs and namespaces.
+`keepObjects:true` protects against legacy ManagedResource teardown, **not DDO
+finalization**. Never delete the DDO CR, strip finalizers, or detach ownership as
+a generic recovery step. Once `deletionTimestamp` is set, the object cannot be
+resurrected with its original UID. See [Kubernetes finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/).
 
-| Naive action | Why it fails |
-| --- | --- |
-| **Uninstall the legacy release only** | The running controller disappears while CR finalizers are live → reconcile deadlock until the DDO CR lands. |
-| **Apply the DDO CR while the old release still lives** | DDO and the old release render the **same controller Deployment** with **different immutable `spec.selector`** → SSA cannot mutate it → DDO goes `Degraded`, two owners churn. |
+## 1. Prepare the window
 
-**The correct path is a coordinated cutover in one window:**
+1. Select the correct profile and explicit shoot/seed contexts and CP namespace.
+   Metal/boot/argora use their short operator names; IPAM uses `ipam-capi-remote`.
+   Confirm the actual cluster identities independently.
+2. Obtain the **exact installed legacy chart archive**, including dependencies.
+   Check immutable provenance/content, digest, chart name and version against the
+   deployed release. Never substitute the `*-ddo` operand chart.
+3. Prepare `--freeze-evidence` recording the actual legacy reconciler/declarative
+   input, original state, proof that legacy desired state is disabled, and precise
+   restoration procedures for success, rollback and interruption. Freeze must not
+   itself delete the legacy release. Keep legacy desired state disabled while DDO
+   owns the replacement; do not blindly restore the old reconciler after an abort.
+4. Prepare `--readiness-evidence`: installed DDO/admin identities and capability
+   proof, published/resolved source, exact expected ownership label, reviewed
+   recovery archive digest/provenance, and hash-bound actual seed/shoot render
+   Lists plus the intended DDO CR List. These are environment-specific outputs
+   after the real values/transformations, not chart defaults.
+5. Plan functional acceptance, operator availability and an external outage clock.
+   No deletions, drains or GC of baseline data are permitted during the window.
 
-```
-uninstall <release>  →  merge DDO-CR PR + reconcile  →  DDO renders & applies  →  verify
-```
+The JSON schemas and identity preparation procedure are documented in
+[`SAFETY-EVIDENCE.md`](SAFETY-EVIDENCE.md). Evidence is a trusted human gate backed
+by machine checks, not certification of assertions made by the operator.
 
-The gap between uninstall and CR-reconcile is a **single-controller outage**
-that the operator must keep within the budget (§4). CRDs + CR data are protected by `keepObjects:true`
-and finalizers only *pause* (they do not destroy anything) while no controller
-runs — provided nobody deletes a finalized CR during the window (**the freeze**).
-
----
-
-## 1. Phases & exit codes
-
-`cutover-ddo.sh` runs in two phases:
+## 2. Rehearse without changing live state
 
 ```bash
-# Phase 1 — preflight gates + confirmed uninstall + teardown barrier, then pause (exit 20).
-./cutover-ddo.sh --operator <name> --phase uninstall --cluster <shoot>
-
-# ... merge the kube-secrets DDO-CR PR for this cluster, wait for reconcile ...
-
-# Phase 2 — automated presence/CRD UID checks, then manual acceptance (see §6).
-./cutover-ddo.sh --operator <name> --phase verify --cluster <shoot>
+./cutover-ddo.sh --operator ipam-capi-remote --phase uninstall \
+  --cluster m-qa-de-200 --seed-context a-qa-de-200 \
+  --legacy-chart-archive /private/path/exact-legacy.tgz \
+  --state-dir /private/path/window-state --dry-run
 ```
 
-> `--cluster <shoot>` is the only cluster coordinate you need: the target/shoot
-> context defaults to `<shoot>`, the seed namespace to `shoot--cp--<shoot>`, and
-> the seed context is auto-discovered. Override with `--target-context`,
-> `--namespace`, or `--seed-context` when a name diverges.
+Rehearsal requires valid installed-release and baseline capture inputs; it does
+not require real freeze/readiness attestations. It never patches or uninstalls,
+uses a separate rehearsal directory and returns `0` with a rehearsal-only message.
+It **does not authorize CR activation**. `--skip-prereq-check` is rehearsal-only.
+Do not use `--resume` or the verify phase with `--dry-run`.
 
-| Exit | Meaning | What to do |
-| --- | --- | --- |
-| `0` | automated phase checks completed | finish the manual acceptance checks before declaring success |
-| `2` | aborted by a gate / confirmation / usage error | inspect output and live state to determine how far execution got; the MR patch or uninstall may already have happened |
-| `20` | handoff printed — **not an error**; also returned by dry-run | only after a real uninstall + teardown barrier, merge the CR PR, let it reconcile, then run `--phase verify`; **dry-run exit 20 is not permission to merge** |
-| `30` | outage budget blown | invoke the rollback plan the script printed (§5) |
+## 3. Confirmed uninstall
 
-Always preview first: add `--dry-run` to the uninstall phase. This suppresses
-cluster mutations, but still writes local snapshots/rollback files and prints
-the handoff; it skips uninstall and the teardown barrier.
+```bash
+./cutover-ddo.sh --operator ipam-capi-remote --phase uninstall \
+  --cluster m-qa-de-200 --seed-context a-qa-de-200 \
+  --legacy-chart-archive /private/path/exact-legacy.tgz \
+  --freeze-evidence /private/path/freeze.json \
+  --readiness-evidence /private/path/readiness.json \
+  --state-dir /private/path/window-state
+```
 
----
+The tool checks legacy/DDO state before capture, captures and seals evidence,
+validates inventories and health, then runs profile preservation/freeze gates.
+Real protection patches require the verified freeze contract; they can occur
+**before uninstall confirmation**. An abort does not imply nothing changed.
 
-## 2. Preflight gates and manual prerequisites
+Required captures/parse failures block. Expected CRDs are decoded from the
+installed release's CRD-MR Secret payloads and checked on shoot. Ownership of
+ManagedResources is strictly `meta.helm.sh/release-name == RELEASE`, never a name
+prefix or namespace-wide match. Required protected MRs must be present and
+`keepObjects:true`, read back after patch and immediately before destruction.
 
-Both phases run preflight. With the namespace gate `on`, it can patch the MR
-before the uninstall confirmation; neither phase is strictly read-only.
-Exit `2` does **not** mean nothing changed (including after uninstall if the
-barrier detects namespace loss). Primary `obj_state` object reads distinguish
-server-side NotFound from errors, but the exceptions below matter.
+After exact-token confirmation, a durable epoch is published **before** Helm
+uninstall. All engine u8s calls are whole-process bounded by at most 60 seconds
+and the remaining outage budget. A timeout may have partially changed server
+state: never automatically retry uninstall.
 
-1. **Target connectivity / CRD probes** — attempts to read the target's
-   `default` namespace **once**, without a cold-login retry or cluster-identity
-   comparison. A successful **empty** label-filtered CRD list passes the CRD
-   probe. **Operator must manually confirm the target identity and that all
-   expected CRDs are present** before uninstall.
-2. **CRD ManagedResources `keepObjects:true`** — every `mr-crd-*` for this
-   release must have `keepObjects:true`, or uninstall would cascade-delete the
-   CRDs and all CRs. A violation aborts.
-3. **Namespace-cascade gate** *(only if the profile's `NAMESPACE_CASCADE_GATE`
-   is `on`)* — patches the owned namespace's MR to `keepObjects:true`
-   (idempotent, **before uninstall confirmation**, also during verify). A missing
-   MR only warns and is skipped: **manually confirm the namespace is protected**.
-   **Skipped entirely when the gate is `off`** (operator owns no namespace).
-4. **Freeze gate** — checks the configured kinds:
-   - **Deletion checks:** inspects `deletionTimestamp` on the profile's
-     `FREEZE_KINDS_CLUSTER` / `FREEZE_KINDS_NS`. Deletions are split into
-     **fresh** (< `FRESH_DELETE_MIN`, default 48h → **block**, a delete is in
-     flight) vs **stale** (older → warn + continue, pre-existing debt the
-     cutover inherits unchanged). An **unparseable** timestamp is treated as
-      fresh → block. Failed reads matching missing-resource-type or
-      `could not find` are warned and **skipped**; other list errors abort.
-      **Operator must manually resolve skipped reads and confirm the freeze.**
-   - **Hardware state machine** *(only if `FREEZE_SERVER_STATES=1`)*:
-      checks `Server.status.state` against `SERVER_STABLE_STATES_REGEX` only
-      where state exists; Servers with missing state are **skipped**.
-      BIOSSettings/BIOSVersion block only on `observedGeneration < generation`
-      where **both fields exist and the object is not deleting**. No BIOS
-      terminal state is checked. **Operator must manually confirm Server/BIOS
-      terminal states and investigate missing status fields.** Operators with
-      `FREEZE_SERVER_STATES=0` skip these hardware checks.
-5. **DDO prerequisites** *(unless `--skip-prereq-check`)* — requires a successful
-   seed-wide Deployment LIST with the DDO instance selector (**even an empty
-   list passes**, no availability or replica check), existence of the
-   `DualDeploymentOperator` CRD (**not** Established), and successful target
-   `auth can-i get crd`. Missing shoot-access Secret warns; read errors block.
-   Local `helm template` is attempted for `mode=seed` and `mode=shoot` if the
-   operand chart directory exists; render failures are **non-blocking warnings**,
-   and a missing directory skips rendering.
+The teardown barrier waits for this release's non-CRD MRs and controller Pods to
+disappear, checks namespace survival where configured, verifies baseline UIDs,
+and rejects a reappearing legacy release before printing handoff. API errors or
+malformed inventories are not absence. Do not activate DDO before this barrier:
+immutable Deployment selector and ownership conflicts can otherwise occur.
 
-> **Operator must manually verify before uninstall:** the DDO controller is
-> `Available=True` with ready replicas, the DualDeploymentOperator CRD is
-> `Established=True`, and the operand chart renders cleanly for **both**
-> `mode=seed` and `mode=shoot`. A passed prerequisite gate does not prove these.
+## 4. Handoff and verify
 
-> `--skip-prereq-check` is for **pre-window rehearsals only** — never a real window.
+After real teardown, exit `20` authorizes the printed handoff only for the exact
+reviewed source/CR. Keep the reconciler frozen and monitor the outage clock while
+activating the durable DDO configuration externally. The script cannot monitor
+the gap while it is not running.
 
-### The freeze is load-bearing
+```bash
+./cutover-ddo.sh --operator ipam-capi-remote --phase verify \
+  --cluster m-qa-de-200 --seed-context a-qa-de-200 \
+  --resume --state-dir /private/path/window-state \
+  --freeze-evidence /private/path/freeze.json \
+  --readiness-evidence /private/path/readiness.json \
+  --acceptance-evidence /private/path/acceptance.json
+```
 
-During the uninstall→CR-reconcile gap, a finalized CR that receives a
-`deletionTimestamp` with **no controller running** hangs in `Terminating`
-forever. **Do not delete, drain, or GC any of this operator's CRs during the
-window, and never strip a finalizer by hand to "unstick" one.**
+Use identical original coordinates, profile, budget and overrides. Verify requires
+sealed original evidence and the original epoch; it never captures a new baseline.
+The tool requires current-generation Ready on the CR, reviewed source equality,
+exact expected Deployment ownership, a non-Terminating healthy Deployment with
+positive desired/ready/available/updated replicas, legacy release absence, and
+baseline object UID/non-Terminating preservation. It separately requires recorded
+manual functional/do-no-harm acceptance, and rechecks the seconds deadline before
+success. Logs are diagnostic, not proof of functionality.
 
----
+### IPAM acceptance
 
-## 3. Uninstall phase (§1 Phase 1 in detail)
+On m-qa-de-200 preserve both `metal-servers` GlobalInClusterIPPools:
 
-1. Preflight (§2) + attempted baseline snapshots (the profile's
-   `BASELINE_SNAPSHOT_KINDS_*` for later diffing, CRD UIDs, live finalizers).
-   Capture failures are ignored. **Manually validate the files are complete and
-   record the sample's UID, Ready condition and deletionTimestamp before uninstall.**
-2. Read the old release state, fail-closed: a helm/API **error** is never read
-   as "already removed".
-3. Attempt rollback capture (`helm get manifest` / `helm get values` / `helm get all`).
-   Failures are ignored; **manually validate usable rollback material and record
-   the correct legacy chart and exact version before confirming uninstall**.
-4. **DESTRUCTIVE** — exact-token confirmation, then `helm uninstall`. Stamps the
-   uninstall time for the outage-budget clock. (`--dry-run` describes only.)
-5. **Teardown barrier** (§4) — wait for the old release to fully drain.
-6. Print the handoff instructions and exit `20` (also happens in dry-run).
+| Name | Original UID |
+| --- | --- |
+| `globalinclusterippool-mgmt-qa-de-200` | `83614ed7-f367-4bd0-acdd-4fbd4de76eec` |
+| `test` | `d7d99994-c27d-4116-835b-4d858069b7ea` |
 
----
+These pools are out-of-band, not automatically DDO-owned. Required baseline
+capture rejects either missing/changed UID. Inspect allocations and foreign-workload
+behavior as well. Verify both mutating and validating injector labels, URLs,
+certificates/CA/SANs, endpoint reachability, and positive/negative admission probes.
+**Keep `failurePolicy: Fail` unchanged**; weakening it is not acceptance or recovery.
 
-## 4. Teardown barrier
+### Other profiles
 
-`helm uninstall` returns before the Gardener Resource Manager finishes
-finalizing the release's ManagedResources. Applying the DDO CR during that lag
-races GRM (DDO adopts an object GRM then deletes). The barrier blocks (bounded
-by the outage budget) until all of:
+Metal protects the `metal-servers` namespace and checks configured hardware states.
+Boot has no namespace cascade gate and uses boot CR freeze checks; replace any
+sample placeholder with its exact landscape object before preparing evidence.
+Argora protects three data-CR MRs for same-UID adoption. Those CRs must also survive
+any later DDO recovery; their legacy protection is not a DDO retention guarantee.
 
-- **Every ManagedResource owned by THIS release is gone**, where ownership is
-  determined **strictly by the `meta.helm.sh/release-name` annotation equal to
-  the release** — **never by an `mr-*` name prefix.** The seed CP namespace is
-  shared by ~9 releases whose MRs are also named `mr-*`; a prefix match would
-  either wait forever on foreign MRs or wrongly delete them. `mr-crd-*` for this
-  release are intentionally retained (keepObjects). A failed **list** of MRs
-  counts as "not yet gone" (keep waiting), never "gone".
-- **No controller Pods** matching `CONTROLLER_POD_SELECTOR` remain on the seed.
-- *(Namespace-cascade gate `on` only)* the owned namespace on the target exists
-  and checks for a `deletionTimestamp`. A failure of this secondary timestamp
-  read is treated as an **empty value**, so **manually verify the namespace
-  exists and is not Terminating**. If it is gone or a timestamp is detected, that is a
-  hard stop (unrecoverable by waiting) — the script prints the rollback plan and
-  aborts. **Skipped when the gate is `off`.**
+## 5. State, interruption and rollback
 
-On budget timeout the barrier prints the rollback plan and aborts.
+Default root is `${XDG_STATE_HOME:-$HOME/.local/state}/ddo-cutover/<operator>-<cluster>`;
+`--state-dir` specifies that root, not its `active/` child. Keep it private: archived
+values/manifests can contain Secrets. Store secure backups outside ephemeral temp
+storage. A local PID/hostname lock prevents concurrent use of the same root; it
+is not a distributed cluster lock. Never auto-break a stale lock.
 
-### Budget enforcement and state preservation
+`active/` holds immutable identity, sealed baseline/recovery artifacts, publish-once
+epoch and acceptance. Rehearsals have separate directories. Checksums detect accidental
+alteration, not an adversary able to rewrite both evidence and checksums. Do not delete
+or overwrite original evidence after an interruption or successful migration.
 
-The barrier polls the budget; verify checks it **only at entry**, using elapsed
-whole minutes, and **skips the check entirely if `uninstall-epoch` is missing**.
-There is no monitoring during the handoff pause or through verify completion.
-**Preserve `${TMPDIR:-/tmp}/ddo-cutover-<operator>-<cluster>` between phases**
-(same TMPDIR/operator/cluster), including `uninstall-epoch`, CRD UID baselines
-and rollback files. The barrier falls back to its start time if the epoch cannot
-be read. **Operator must monitor the clock during handoff and verification**
-and act on budget expiry; do not rely on an eventual exit `0` to enforce it.
+An incomplete capture or identity mismatch blocks resume. After proving there was
+no destructive action/epoch, archive the failed run before preparing a new one.
+An epoch plus a still-present release is partial uninstall: specialist recovery is
+required, not another uninstall. Read failures or expired budget likewise require
+manual assessment, with the freeze maintained until safe restoration is known.
 
----
+| State | Recovery boundary |
+| --- | --- |
+| S0: unreadable/malformed | No destructive procedure; restore observability and escalate. |
+| S1 candidate: CR and Deployment absent | Absence is not proof of retention. Validate inventories, UIDs and DDO desired-state disablement; only after specialist approval use the exact captured legacy archive/values with explicit seed context/namespace. |
+| S2: partial | **Blocked:** do not delete the DDO CR or detach ownership. Review actual inventories, retention and irreversible deletion risks before any recovery. |
+| S3: validated new controller/CR healthy | Fix forward; verify preservation and functional acceptance, rather than destroying a healthy replacement. |
 
-## 5. Rollback — four states (`print_rollback_plan`)
+Actual DDO namespace/name/UID/selector/original replicas are captured in
+`active/evidence/ddo-controller.json`. The tool prints no automatic stop/detach/restart
+sequence. Never blindly restart at one replica or restore legacy desired state beside DDO.
+Helm operation timeouts are not guarantees of total recovery duration; keep external
+monitoring ([Helm rollback documentation](https://helm.sh/docs/helm/helm_rollback/)).
 
-The engine **prints** a procedure; it does not execute rollback. Its initial
-`obj_state` reads of the CR/Deployment are fail-closed: errors select S0, not
-absence. The Helm release lookup likewise distinguishes a typed missing release
-from an error (the scanner uses `helm_state`). This is **not** a throughout-script
-guarantee: freeze reads can be skipped (§2), baseline/rollback captures can fail
-silently (§3), and namespace timestamp reads can become empty (§4).
-Also, **secondary readiness/ownership read errors in rollback can fall through
-to S2 instead of S0**. Manually establish readable health/ownership before
-following a destructive printed plan.
+| Exit | Meaning |
+| --- | --- |
+| `0` | Rehearsal completed, or real verify health/preservation and recorded acceptance passed; read the phase-specific output. |
+| `2` | Gate/error/confirmation abort; inspect state and recorded epoch to determine changes already made. |
+| `20` | Real uninstall/barrier complete, manual activation handoff. |
+| `30` | Seconds deadline exhausted; manual recovery, never blind deletion/restoration. |
 
-| State | How detected | Rollback shape |
-| --- | --- | --- |
-| **S0** — UNREADABLE | the DDO CR and/or controller Deployment read **errored** (not a clean NotFound) | **Do nothing automatically.** Restore connectivity, re-run verify; escalate. Never defaults to S1. |
-| **S1** — uninstall done, nothing landed | DDO CR **and** Deployment both confirmed absent | printed install uses `OPERAND_CHART_DIR` + rollback values, **no version pin**, not `LEGACY_CHART_DIR`; establish correct legacy chart/exact version and validate captured material before running |
-| **S2** — partial / in-progress | remaining readable states not matched by S3 or S1 | detach from DDO **in order**, then reinstall (see below) |
-| **S3** — labelled Deployment with ready replicas | Deployment found, `readyReplicas > 0` AND nonempty `owned-by` label value | evaluated **before S2**, regardless of CR presence; **do not roll back the controller** — fix forward; manually confirm correct DDO ownership and full health (`ready == desired > 0`) |
-
-**S2 ordering (namespace-cascade `on`, do NOT reorder):** scale the DDO
-controller to 0 (wait for zero pods — a failed pod-list read does **not** count
-as zero) → strip the `owned-by` label from the live namespace on the target and
-confirm it's gone → delete the DDO CR and gate on **accepted deletion**
-(nonempty `deletionTimestamp`, not completion yet) → restart the DDO controller
-so its finalizer runs the deletion (skipping the now-unlabelled namespace) →
-confirm **completed deletion** (CR returns server-side NotFound), **controller
-Deployment gone**, and namespace survived → manually verify the foreign-shoot
-sample is intact → reinstall the correct legacy chart/version with validated
-rollback values. A failed read is not proof of absence.
-
-When the gate is **off**, the printed S2 plan says to delete the CR and wait for
-**deletion to complete (NotFound)** before reinstall; merely accepted deletion
-is insufficient. It omits an explicit Deployment-gone step in this branch:
-**operator must manually confirm both CR and controller Deployment are gone
-before reinstalling**, and verify the sample remains intact.
-
----
-
-## 6. boot-operator specifics
-
-boot-operator is the simplest profile — the gates adapt via
-`profiles/boot-operator-remote.env`:
-
-- **No namespace of its own.** `NAMESPACE_CASCADE_GATE=off` → the namespace
-  keepObjects patch and the teardown barrier's namespace-survival check are
-  **skipped entirely**. The script never queries a namespace MR for boot. (S2
-  rollback uses the collapsed, no-namespace path.)
-- **Minimal freeze gate.** `FREEZE_SERVER_STATES=0` and no cluster-scoped kinds;
-  the freeze is just `deletionTimestamp` checks on
-  `httpbootconfigs.boot.ironcore.dev` and `ipxebootconfigs.boot.ironcore.dev`.
-  No Server / BIOS / BMC hardware state machine.
-- **CRDs:** `boot.ironcore.dev` (HTTPBootConfig, IPXEBootConfig) — preflight checks
-  matching CRD MRs for `keepObjects:true`. Verify compares UIDs only for entries
-  in baseline files; missing files warn and skip, empty files check nothing.
-  **Manually ensure the baseline includes every expected CRD and compare UIDs.**
-- **Manual "do no harm" acceptance.** A foreign shoot (`mig-test-metal`) owns an
-  IPXEBootConfig in the shared `metal-servers` namespace. It **must** remain
-  `Ready`, same UID, **not** Terminating across the whole cutover. The profile's
-  `VERIFY_SAMPLE` points verify at it, but the script **only checks existence**,
-  not UID, Ready or deletionTimestamp.
-
-  > **Operator action before the window:** confirm the profile's `VERIFY_SAMPLE`
-  > object name matches the *actual* live IPXEBootConfig name on the target
-  > (list `ipxebootconfigs -n metal-servers` and set the exact name) — the
-  > shipped value is a placeholder and the real resource name is
-  > cluster-specific.
-
-### Acceptance checks — required for either operator
-
-The script automatically requires the DDO CR, controller Deployment and
-configured sample to exist, compares recorded CRD UID entries, prints CR
-conditions (without asserting Ready), and warns on a missing Deployment
-`owned-by` label (without asserting ownership or health).
-
-**Before declaring success, the operator must manually:**
-
-1. Compare the sample's UID with the pre-uninstall capture, confirm its
-   `Ready=True` condition and **empty deletionTimestamp**, and investigate any
-   change against the baseline. Recheck these through the window, not just at exit.
-2. Confirm the controller Deployment is owned by the intended DDO CR and healthy:
-   `Available=True` and `readyReplicas == spec.replicas > 0`.
-3. Confirm the DDO CR has `Ready=True`, review conditions/logs, and confirm all
-   expected CRD UIDs are preserved using complete baseline records.
-
-Exit `0` alone proves neither adoption nor full do-no-harm.
-
-### metal vs boot at a glance
-
-| Aspect | metal | boot |
-| --- | --- | --- |
-| Owns a namespace | yes (`metal-servers`) → cascade gate **on** | no → cascade gate **off** |
-| Hardware state machine | yes (`FREEZE_SERVER_STATES=1`) | no (`FREEZE_SERVER_STATES=0`) |
-| Freeze kinds | servers/bmcs/biossettings/biosversions (+ns claims/bootconfigs/maintenances) | httpbootconfigs/ipxebootconfigs only |
-| CRD group | `metal.ironcore.dev` | `boot.ironcore.dev` |
-| Do-no-harm sample | `server node001` | `ipxebootconfig -n metal-servers <mig-test-metal ...>` |
-
----
-
-## 7. Guardrails recap
-
-- ✅ Matching release CRD MRs are checked for `keepObjects:true`; manually confirm coverage.
-- ✅ Namespace MR protection is patched when present and the cascade gate is on;
-  manually confirm protection/survival if reads are skipped or fail.
-- ✅ Freeze gate blocks fresh/unparseable deletions and the specified hardware
-  predicates; manually resolve skipped reads and confirm terminal states.
-- ✅ DDO-prereq gate checks list success/CRD existence/authorization;
-  manually confirm controller availability, CRD establishment and both chart renders.
-- ✅ Teardown barrier keys ownership on the release-name annotation, never a
-  name prefix (shared namespace).
-- ✅ Budget expiry detected by barrier polling or verify entry → plan + exit 30;
-  preserve state and manually monitor handoff/verification time.
-- ✅ Primary classification read errors select S0/unknown, not absence;
-  secondary rollback readiness/ownership errors can still select S2.
-- 🚫 Never apply the DDO CR before uninstalling (immutable-selector collision).
-- 🚫 Never delete/strip a finalizer on any of this operator's CRs during the
-  window.
-- 🚫 Never use `--skip-prereq-check` in a real window.
+After accepted success, preserve/archive evidence and execute only the recorded
+success restoration contract, keeping obsolete legacy desired state disabled.
