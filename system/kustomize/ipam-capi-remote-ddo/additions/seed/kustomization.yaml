@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonAnnotations:
+  dual-deployment-operator.cc.sap/origin: additions
+resources:
+- deployment.yaml
+- webhook-service.yaml
+- webhook-injector-rbac.yaml
+- webhook-injector-metrics-service.yaml
+- webhook-injector-servicemonitor.yaml
+- remote-kubeconfig-secret.yaml
+- remote-kubeconfig-configmap.yaml
+images:
+- name: registry.k8s.io/capi-ipam-ic/cluster-api-ipam-in-cluster-controller
+  newName: keppel.global.cloud.sap/ccloud-gcr-mirror/k8s-staging-capi-ipam-ic/cluster-api-ipam-in-cluster-controller
+  newTag: v1.1.1
+- name: ghcr.io/sap-cloud-infrastructure/webhook-injector
+  newName: keppel.global.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector
+  newTag: sha-f85df8e3d55165e3b6e1117f6b120624268d0976
