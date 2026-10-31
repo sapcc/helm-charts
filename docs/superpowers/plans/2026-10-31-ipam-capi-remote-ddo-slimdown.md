@@ -89,7 +89,7 @@ Resolve two spec ambiguities without changing behavior: keep move-hierarchy labe
 
 ## Final review and integration
 
-Require a whole-change review of source wiring, exact seven-CRD parity, service-null conversion semantics, unchanged RBAC/seed resources, and release-gate evidence. Fix blocking findings before integration. Open one follow-up PR to the repository's integration branch (`master` here) only when requested; no stacked base and no kube-secrets/cutover PR. Do not merge until PR #13218 and the required DDO release prerequisites are satisfied.
+Require a whole-change review of source wiring, exact seven-CRD parity, service-null conversion semantics, unchanged RBAC/seed resources, and release-gate evidence. Fix blocking findings before integration. User's execution-time decision: fold this into existing PR #13218 and mark it draft/blocked, rather than opening a separate or stacked PR. Keep kube-secrets PR #5683 draft and aligned; retain both default webhook-label transformations when per-cluster lists replace defaults. Do not merge or activate until the required DDO remote-fetch release and the admin chart's source.kustomize delivery support are released/deployed.
 
 ## Self-review
 

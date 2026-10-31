@@ -12,7 +12,11 @@ evidence: cold-cache fetch succeeds, warm-cache rendering works with outbound
 network blocked, an unavailable uncached source fails closed, and repeated
 renders are deterministic. A local Kustomize CLI build does not prove any of
 these DDO guarantees. Fresh CLI builds require network; offline DDO builds
-require a populated cache. The original migration PR #13218 must land first.
+require a populated cache. This variant is folded into draft migration PR
+#13218; it is not a separate follow-up. The admin DDO chart must also support
+rendering `spec.source.kustomize` (its current 0.1.8 CR template renders Helm
+sources only). Release/publish that delivery support before merging the related
+kube-secrets CR PR #5683. Both PRs remain blocked until these prerequisites hold.
 
 ## Structural mode contract
 

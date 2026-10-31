@@ -1,6 +1,6 @@
 # ipam-capi-remote-ddo overlay slim-down — design
 
-**Status:** design (awaiting approval)
+**Status:** approved; implemented in draft migration PR #13218, release-gated
 **Date:** 2026-10-31
 **Author:** orchestrator (with D065300)
 **Premise:** this change is **gated on DDO issue #58** (safe `source.kustomize`
@@ -205,10 +205,7 @@ This base emits the 4 pool CRDs with controller-gen v0.17.2 schemas
 must correct:
 
 1. **move-hierarchy label** `clusterctl.cluster.x-k8s.io/move-hierarchy: ""` on
-   each pool CRD — clusterctl-only, not runtime-functional for ipam-on-DDO.
-   **Drop it** via a patch (or leave it; builder's call — it is inert. Default:
-   drop, to match today's... actually today's vendored copies *carry* it; see
-   §7 open item). 
+   each pool CRD — retain it to preserve today's exact delivered metadata.
 2. **conversion clientConfig is SERVICE-ref upstream** (`{namespace: system,
    name: webhook-service, path: /convert}`); ipam needs **URL-ref + concrete
    caBundle** (the webhook-injector endpoint). **Re-apply via patch** (§5.4).
@@ -235,9 +232,10 @@ immutable despite not using `?ref=`. This is exactly the mechanism the legacy
 `system/kustomize/ipam-capi-remote/managedresources/kustomization.yaml` already
 uses for these same 3 core CRDs (it pins the `v1.14.2` tag; we pin the SHA).
 
-These 3 base files carry **no conversion block, no webhook strategy, no
-cert-manager annotation, no move-hierarchy label** (verified at the pinned SHA)
-→ **no patch needed**; they render as-is.
+These 3 base files carry no conversion block, webhook strategy, cert-manager
+annotation or move-hierarchy label. Execution-time parity verification found
+the existing bundle explicitly records `conversion: {strategy: None}`; restore
+that default with one scoped JSON patch in core-crds. No schemas or pins change.
 
 `shoot/kustomization.yaml` references `core-crds` as a single resource.
 
@@ -357,8 +355,12 @@ not merge until DDO issue #58 Option B is released and the operand clusters run
 a DDO build that supports safe remote bases** — otherwise the live render
 breaks (krusty in-seed clone, unpinned). Because the overlay *root* path and the
 seed/shoot subdir names are unchanged, the kube-secrets CR (#5683) needs no
-change. This refactor should land **after** the original overlay PR #13218 is
-merged (it edits the same tree).
+change to its source path. User's execution-time override is to fold this into
+the existing PR #13218 and keep it draft/blocked, rather than a separate
+follow-up. Related kube-secrets PR #5683 also remains draft and retains the
+complete four-entry transformation list. The admin DDO chart's Helm-only CR
+renderer additionally needs source.kustomize support before delivery; that
+platform prerequisite is not implemented by this CRD-sourcing refactor.
 
 ---
 
