@@ -135,13 +135,13 @@ else
   failed=1
 fi
 
-# Test 10: NO webhook has the dual-deployment-operator.cc.sap/webhook-injector label
-# (This label is added by DDO CR patch transformations, NOT in the vendored file)
-if yq eval 'select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration") | select(.metadata.labels."dual-deployment-operator.cc.sap/webhook-injector")' "$WORK_DIR/shoot.yaml" | grep -q "kind:"; then
-  echo "FAIL: Webhook config has dual-deployment-operator.cc.sap/webhook-injector label (should be added by DDO CR patch, not vendored file)"
+# Test 10: Both admission configurations are target-mode injector sources.
+target_count=$(yq eval 'select(.kind == "MutatingWebhookConfiguration" or .kind == "ValidatingWebhookConfiguration") | select(.metadata.labels."dual-deployment-operator.cc.sap/webhook-injector" == "ipam-capi-remote")' "$WORK_DIR/shoot.yaml" | grep -c '^kind:' || true)
+if [[ "$target_count" != "2" ]]; then
+  echo "FAIL: Both admission configurations must carry the exact injector target label"
   failed=1
 else
-  echo "PASS: NO webhook config has dual-deployment-operator.cc.sap/webhook-injector label"
+  echo "PASS: Both admission configurations carry the injector target label"
 fi
 
 echo ""

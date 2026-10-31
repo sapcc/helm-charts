@@ -183,11 +183,11 @@ fi
 
 # Cluster-scoped bindings are not rewritten by DDO ApplyNamespace.
 injector_subject=$(yq eval 'select(.kind == "ClusterRoleBinding" and .metadata.name == "ipam-capi-remote-webhook-injector") | .subjects[] | select(.kind == "ServiceAccount" and .name == "ipam-capi-remote-webhook-injector") | .namespace' /tmp/seed_render_test.yaml)
-if [[ "$injector_subject" != "kube-system" ]]; then
-  echo "FAIL: webhook-injector ClusterRoleBinding subject namespace must be kube-system (got: $injector_subject)"
+if [[ "$injector_subject" != "null" ]]; then
+  echo "FAIL: webhook-injector ClusterRoleBinding subject requires the documented DDO placement patch (got: $injector_subject)"
   failed=1
 else
-  echo "PASS: webhook-injector ClusterRoleBinding subject namespace is kube-system"
+  echo "PASS: webhook-injector ClusterRoleBinding has no misleading fixed namespace; migration_contract_test covers both placement patches"
 fi
 
 echo ""

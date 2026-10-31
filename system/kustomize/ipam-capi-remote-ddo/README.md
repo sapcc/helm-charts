@@ -5,18 +5,21 @@ A **DDO source.kustomize operand**, not a Helm chart. DDO renders `seed/` and
 
 ## Release gate
 
-**Do not activate this remote-source variant until safe fetching is released and
-deployed.** [DDO issue #58](https://github.com/SAP-cloud-infrastructure/dual-deployment-operator/issues/58)
-must cover both Git directory bases and plain-HTTP file resources. Required
-evidence: cold-cache fetch succeeds, warm-cache rendering works with outbound
-network blocked, an unavailable uncached source fails closed, and repeated
-renders are deterministic. A local Kustomize CLI build does not prove any of
-these DDO guarantees. Fresh CLI builds require network; offline DDO builds
-require a populated cache. This variant is folded into draft migration PR
-#13218; it is not a separate follow-up. The admin DDO chart must also support
-rendering `spec.source.kustomize` (its current 0.1.8 CR template renders Helm
-sources only). Release/publish that delivery support before merging the related
-kube-secrets CR PR #5683. Both PRs remain blocked until these prerequisites hold.
+**Do not activate this candidate based only on these static tests.** Deploy a
+DDO release supporting safely acquired, SHA-pinned Git directory bases and
+`spec.source.kustomize`, plus an admin chart that renders that source type.
+There are **no raw HTTP resources**: the three core CRDs are vendored verbatim;
+the real provider Git directory remains remote. Do not relax DDO preflight.
+An online CLI build is not evidence of production cache/offline semantics.
+
+Before cutover: independently verify DDO integration, the required seed binding
+transformation below, current shoot credentials, initial CA stamping and rotation,
+and shoot-apiserver reachability/TLS to the legacy short webhook URL. Preserve
+the out-of-band pools and coordinate old/new injector ownership. Runtime target
+mode patches CA only; it does not create targets or repair their URLs. Publish
+the required operator/chart releases and review the complete downstream CR
+transformation list before activating kube-secrets PR #5683 / migration PR #13218.
+No live connectivity, upgrade or rotation safety is established by this suite.
 
 ## Structural mode contract
 
@@ -43,19 +46,24 @@ system/kustomize/ipam-capi-remote-ddo/
     webhook-injector-rbac.yaml
     webhook-injector-metrics-service.yaml
     webhook-injector-servicemonitor.yaml
+    legacy-support.yaml                # three policies + manager ConfigMap
   additions/shoot/
     kustomization.yaml
     pools.example.yaml                 # unreferenced example
   seed/kustomization.yaml
   shoot/
     kustomization.yaml                 # provider Git base + core-crds + local RBAC/webhooks
-    core-crds/kustomization.yaml        # three HTTP files + explicit conversion default
+    core-crds/                         # three exact pinned files + provenance README
+      kustomization.yaml               # local resources + explicit conversion default
     patches/conversion-*.yaml           # four SAP pool conversion shims
     rbac.yaml
     webhooks.yaml
+    legacy-support.yaml                # old leader-election pair + metrics Service
   tests/
     crd-baseline.json                   # compact immutable render fingerprints
     crd_parity.py
+    legacy_render.py                   # independent pinned Helm oracle
+    migration_contract.py              # guarded deltas + mutation tests
     *_test.sh
 ```
 
@@ -64,20 +72,24 @@ system/kustomize/ipam-capi-remote-ddo/
 | Origin | Release | Resolved commit | Delivered objects |
 | --- | --- | --- | --- |
 | kubernetes-sigs/cluster-api-ipam-provider-in-cluster | v1.1.1 | `7933583138cf1b5b16b6a1dd82a804729f83afab` | Four pool CRDs through `//config/crd?ref=<SHA>` |
-| kubernetes-sigs/cluster-api | v1.14.2 | `5f7d58c9ad647f31bd342bf8de33092c27f7fc38` | Cluster, IPAddress, IPAddressClaim through `raw.githubusercontent.com/<owner>/<repo>/<SHA>/core/config/crd/bases/<file>` |
+| kubernetes-sigs/cluster-api | v1.14.2 | `5f7d58c9ad647f31bd342bf8de33092c27f7fc38` | Exactly Cluster, IPAddress, IPAddressClaim vendored in `shoot/core-crds/` |
 
-Git directory bases require a kustomization directory; per-file Git references
-do not work. The HTTP file loader fetches individual core CRDs with the commit
-SHA in the URL path. Do not import CAPI's entire CRD directory: it introduces ten
-additional CRDs this operand does not own.
+Git directory bases require a kustomization directory. See
+[core provenance and SHA-256 checksums](shoot/core-crds/README.md) for the exact
+three upstream files. Do not import CAPI's entire CRD directory: it introduces
+ten additional CRDs this operand does not own.
 
 The four pool patches preserve URL-only conversion to
-`https://ipam-capi-remote-webhook-service:443/convert`, the captured CA bytes,
-and review version `v1`. `clientConfig.service: null` explicitly removes the
+`https://ipam-capi-remote-webhook-service:443/convert` and review version `v1`.
+There is **no static CA**. `clientConfig.service: null` explicitly removes the
 upstream service reference. The three core sources omit `conversion`; a small
 patch restores the existing explicit `{strategy: None}` default. No upstream
-schema is copied or changed. Keeping the captured CA is a parity decision,
-**not** a claim that every cluster shares a CA because its issuer CN matches.
+schema is changed. All four pools and both admission configurations carry
+`dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote`, matching
+exactly one injector `--target-label` argument. Core CRDs are not targeted.
+The injector owns CA dynamically; DDO must continue stripping only the CA leaf
+before SSA. The short URL and `--cert-sans=ipam-capi-remote-webhook-service`
+preserve the legacy topology; they do not prove that the endpoint is reachable.
 
 Pool CRDs retain controller-gen v0.17.2 and the empty
 `clusterctl.cluster.x-k8s.io/move-hierarchy` label. Core CRDs retain v0.21.0 and
@@ -85,12 +97,18 @@ no move-hierarchy label. Provider and cert-manager injection metadata are absent
 
 ### Accepted maximize-upstream scope
 
-This refactor fetches all seven CRDs. The existing normalized `shoot/rbac.yaml`
+This candidate fetches four CRDs and vendors three. The existing `shoot/rbac.yaml`
 stays local: importing the full upstream RBAC base adds unwanted objects and
 namespaced leader-election roles instead of the existing remote cluster-scoped
 variant. It also contains SAP metal cross-operator bindings and webhook-injector
-permissions. The URL-based webhook configurations, seed remote-controller
-wiring, and pool example remain local and unchanged. This is the accepted
+permissions. Only the shoot injector role changes: named `get,patch` for the
+four pool CRDs and each admission configuration, plus separate unrestricted
+`list,watch` for informer discovery. Label selection is **not RBAC authorization**.
+No target `create/update` rights are needed. The binding still grants these
+rights to `ipam-capi-controller-manager/kube-system`, so manager and injector
+share credentials. Unrelated manager roles and seed permissions are unchanged.
+The URL-based webhook configurations, seed remote-controller wiring, and pool
+example remain local. This is the accepted
 CRD-only scope, not a prohibition on future selective upstream RBAC/manager
 refactoring with its own parity checks.
 
@@ -106,35 +124,59 @@ Helm values:
 
 The shared seed kubeconfig and manager host retain neutral placeholders.
 Per-cluster kube-secrets CR transformations supply the actual kubeconfig server
-and `KUBERNETES_SERVICE_HOST`, plus injector target labels on both shoot webhook
-configurations. `shootAccess.server` configures DDO's client, not the operand's
+and `KUBERNETES_SERVICE_HOST`, plus the seed ClusterRoleBinding subject namespace.
+All six target labels are already in source. `shootAccess.server` configures DDO's client, not the operand's
 mounted kubeconfig.
 
 ## Maintenance and fidelity
 
 1. Resolve a new upstream release tag to its **commit**, not its tag object.
 2. Review upstream schema, served/storage versions, conversion, RBAC and manager
-   changes against the current pins. Bump Git and HTTP pins coherently.
+   changes against the current pins. Update Git pins and vendored bytes/checksums coherently.
 3. Review conversion patches and any necessary local RBAC/Deployment changes.
    Image tags are maintained separately via `images:`.
 4. Run the complete suite. Intentional schema changes require explicit baseline
    review; never regenerate fingerprints automatically to hide a mismatch.
 5. Review the source-pin and fingerprint diff together before deployment.
 
-`tests/crd-baseline.json` records the pre-refactor Git commit, upstream pins, and
-SHA-256 fingerprints per normalized object identity for both renders. The
-canonicalization ignores mapping/document order and only the existing
-server-populated metadata/status and Gardener/Helm delivery artifacts; it does
-not ignore schema arrays, meaningful metadata, or CA bytes. It is a compact
-historical reference, not a second copied CRD bundle.
+`tests/crd-baseline.json` is an **unchanged historical reference**, not a regenerated
+approval of this repair. Its file hash is guarded. Tests first render the actual
+Helm chart at `97d52c25ae067c00fd5f5b3e7a66771fdcbc10db`, unwrap ManagedResources
+and the webhook ConfigMap, and require its exact **15 seed / 25 shoot identities**.
+Independent nonsecret input values pin the same images/security settings as the
+candidate. No live capture is needed; those Git commits must exist locally.
 
-`crd_diff_test.sh` **always** checks this tracked baseline, all seven names,
-split stamps, labels and conversion wiring. Missing baseline fails; no
-disposable live-capture directory is required. `crd_parity_test.sh` proves that
-schema, inventory, CA and baseline mutations fail. `remote_sources_test.sh`
-checks exact approved references and rejects mutable pins, extra CAPI sources,
-missing patches and service/URL coexistence. The existing render, RBAC, seed,
-webhook and no-pool gates still run independently.
+The only guarded migration deltas are: core `conversion: {strategy: None}`;
+pool Service→exact URL plus dynamic-CA target label; admission target labels;
+exact old→target-only injector arguments and exact Pod origin annotation;
+the exact shoot injector rules; and the co-located ServiceMonitor's explicit
+namespaceSelector→implicit own namespace. Seed CRB subjects must actually match
+after applying the documented placement patch, never through comparison masking.
+Exact chart-generated provenance values (`helm.sh/chart`, app version/managed-by)
+and the additions origin are guarded separately; other metadata is compared.
+
+Only after legacy comparison succeeds are the repaired fields reconstructed
+in memory to compare the old historical hashes: remove the six exact labels,
+restore the old rules/fixed subject and historical public CA, and omit only the
+seven resources already checked against legacy. No CA certificate is stored in
+new source/artifacts. Schema/version arrays, all remaining Pod fields, webhook
+paths/policies, RBAC, network selectors and meaningful metadata remain checked.
+Mutation tests reject removals of every identity, all seven schema changes,
+target/URL/CA/SAN drift, broad RBAC and NetworkPolicy changes. Raw-file references,
+wrong vendored hashes, extra CAPI resources and service/URL coexistence fail.
+
+Three restored seed policies preserve same-namespace apiserver traffic TCP9443
+and `name=kube-monitoring` namespace traffic TCP8082. Their selected apiservers
+are egress-isolated subject to the union of policies; no selectors were broadened.
+The manager ConfigMap, old leader-election ClusterRole/Binding and controller
+metrics Service (8443→`https`, selector `control-plane=controller-manager`) are
+preserved even if redundant. The old leader-election pair retains its legacy
+`metadata.namespace: kube-system`; it does not change cluster-scoped RBAC scope.
+
+Test prerequisites: Git (with both pinned legacy/historical commits available),
+Helm, Kustomize, `yq`, and Python 3.12+ with PyYAML. Standalone render tests use
+the real public provider base; for one verification run the same unchanged render
+may be reused across checks after an actual online build.
 
 ```bash
 cd system/kustomize/ipam-capi-remote-ddo
@@ -157,8 +199,8 @@ SA lives in `kube-system`; DDO injects the seed object namespace at delivery.
 
 ## DDO CR contract
 
-The overlay root is unchanged; no kube-secrets or cutover update is required by
-this sourcing refactor. The CR resides under admin-k3s base defaults and the
+The overlay root is unchanged, but a downstream binding patch **is required**.
+The CR resides under admin-k3s base defaults and the
 qa-de-1/a-qa-de-200 instance in kube-secrets. The source URL includes `?ref=`;
 `seedPath` and `shootPath` are relative to its `//path` root:
 
@@ -173,3 +215,33 @@ shootAccess:
 shootNamespace: kube-system
 applyOrder: SeedFirst
 ```
+
+The real seed CR namespace is `shoot--cp--m-qa-de-200`; shoot placement is
+`kube-system`. DDO stamps object namespaces, **not ClusterRoleBinding subjects**.
+The seed source deliberately omits that subject namespace instead of misleadingly
+fixing it to `kube-system`. Append this entry to the CR's complete transformation
+list (fragment, not a replacement list):
+
+<!-- seed-namespace-contract -->
+```yaml
+transformations:
+  - patch:
+      target:
+        kind: ClusterRoleBinding
+        name: ipam-capi-remote-webhook-injector
+        origin: additions
+      jsonPatch:
+        - op: add
+          path: /subjects/0/namespace
+          value: shoot--cp--m-qa-de-200
+```
+
+For another seed namespace, replace this value with the CR namespace; tests also
+exercise `ipam-alternate-seed` with the same patch mechanism and corresponding
+ServiceAccount. Preserve exactly one injector ServiceAccount subject and the
+existing ClusterRole roleRef. Do not place a Helm expression in the raw source.
+Instance transformation arrays replace defaults: retain **all** host/kubeconfig
+and other required entries when adding this patch. No kube-secrets files are
+changed here. The tests parse this documented fragment; they model its leaf add
+and namespace placement, not the production DDO transform engine. Independent
+DDO integration remains a separate release gate.

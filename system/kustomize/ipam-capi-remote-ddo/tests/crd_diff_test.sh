@@ -7,7 +7,7 @@ WORK="$(mktemp -d "${TMPDIR:-/tmp}/ipam-crd-parity.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 kustomize build "$ROOT/shoot" > "$WORK/shoot.yaml"
 kustomize build "$ROOT/seed" > "$WORK/seed.yaml"
-python3 "$DIR/crd_parity.py" "$WORK/shoot.yaml" "$WORK/seed.yaml" "$DIR/crd-baseline.json"
+PYTHONDONTWRITEBYTECODE=1 python3 "$DIR/migration_contract.py" "$WORK/shoot.yaml" "$WORK/seed.yaml"
 python3 - "$WORK/shoot.yaml" <<'PY'
 import sys, yaml
 docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d and d['kind']=='CustomResourceDefinition']
@@ -23,7 +23,8 @@ for d in docs:
         conversion=d['spec']['conversion']; client=conversion['webhook']['clientConfig']
         assert conversion['strategy']=='Webhook' and conversion['webhook']['conversionReviewVersions']==['v1']
         assert client['url']=='https://ipam-capi-remote-webhook-service:443/convert'
-        assert client.get('caBundle') and 'service' not in client
+        assert 'caBundle' not in client and 'service' not in client
+        assert labels['dual-deployment-operator.cc.sap/webhook-injector']=='ipam-capi-remote'
     else:
         assert 'clusterctl.cluster.x-k8s.io/move-hierarchy' not in labels
 print('PASS: exact seven CRDs, split stamps, labels and URL-only conversion')
