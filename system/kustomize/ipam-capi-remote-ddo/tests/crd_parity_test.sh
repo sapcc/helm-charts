@@ -39,4 +39,8 @@ with tempfile.TemporaryDirectory() as tmp:
     check('server metadata normalized', [changed], True)
     changed = copy.deepcopy(original); changed['metadata']['labels'] = {'meaningful': 'changed'}
     check('meaningful metadata preserved', [changed], False)
+    tampered=json.loads(baseline.read_text())
+    tampered['shoot'][next(iter(tampered['shoot']))]='0'*64
+    baseline.write_text(json.dumps(tampered))
+    check('changed baseline fingerprint rejected', [original], False)
 PY
