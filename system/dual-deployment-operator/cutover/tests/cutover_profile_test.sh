@@ -11,6 +11,9 @@
 #   d) unknown --operator value exits 2
 #
 # Uses a fake u8s wrapper that logs all kubectl/helm invocations for inspection.
+# Profile tests source the guarded engine and exercise its actual gate functions,
+# not the complete uninstall phase (which requires sealed readiness/recovery
+# evidence). No production gate is replaced or disabled by this test harness.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,10 +34,11 @@ cleanup() {
 trap cleanup EXIT
 
 setup() {
-  TMPDIR_TEST="$(mktemp -d)"
+  [[ -n "$TMPDIR_TEST" ]] || TMPDIR_TEST="$(mktemp -d)"
   FAKE_BIN="$TMPDIR_TEST/bin"
   U8S_LOG="$TMPDIR_TEST/u8s.log"
   mkdir -p "$FAKE_BIN"
+  export XDG_STATE_HOME="$TMPDIR_TEST/state"
 
   # Create a fake u8s that logs all invocations
   cat > "$FAKE_BIN/u8s" <<'EOF'
@@ -53,9 +57,7 @@ if [[ "$1" == "kubectl" ]]; then
     exit 1
   fi
   
-  # Simulate various kubectl responses
-  # Default: return success with empty output for most reads
-  # For get commands, return "not found" style response for unknown resources
+  # JSON reads return real object/List shapes, never text tables.
   
   # Check if this is a "get" command
   for i in "${!args[@]}"; do
@@ -64,52 +66,48 @@ if [[ "$1" == "kubectl" ]]; then
       resource="${args[$((i+1))]:-}"
       case "$resource" in
         managedresource|managedresources)
-          # For ManagedResource queries, return annotation-based response
-          echo "NAME   RELEASE"
+          jq -n --arg name "${args[$((i+2))]}" --arg release "$FIXTURE_RELEASE" \
+            '{apiVersion:"resources.gardener.cloud/v1alpha1",kind:"ManagedResource",metadata:{name:$name,uid:"mr-uid",annotations:{"meta.helm.sh/release-name":$release}},spec:{keepObjects:false}}'
           exit 0
           ;;
         deployment|deployments)
-          # Return a fake deployment
-          echo "NAME                               READY"
-          echo "dual-deployment-operator           1/1"
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         crd|crds|customresourcedefinition|customresourcedefinitions)
-          # Return fake CRDs
-          echo "NAME"
-          echo "servers.metal.ironcore.dev"
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         namespace|namespaces|ns)
-          # Return success for namespace queries
-          echo "NAME           STATUS"
-          echo "metal-servers  Active"
+          echo '{"apiVersion":"v1","kind":"Namespace","metadata":{"name":"metal-servers","uid":"ns-uid"}}'
           exit 0
           ;;
         servers|servers.metal.ironcore.dev)
-          # Return fake servers
-          echo "NAME      STATE"
-          echo "node001   Available"
+          echo '{"apiVersion":"v1","kind":"List","items":[{"metadata":{"name":"node001","uid":"server-uid"},"status":{"state":"Available"}}]}'
           exit 0
           ;;
         bmcs|bmcs.metal.ironcore.dev)
-          echo "NAME      STATE"
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         biossettings|biossettings.metal.ironcore.dev)
-          echo "NAME      STATE"
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         biosversions|biosversions.metal.ironcore.dev)
-          echo "NAME      STATE"
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         httpbootconfigs|httpbootconfigs.boot.ironcore.dev)
-          echo "NAME      STATE"
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         ipxebootconfigs|ipxebootconfigs.boot.ironcore.dev)
-          echo "NAME      STATE"
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
+          exit 0
+          ;;
+        serverclaims.metal.ironcore.dev|serverbootconfigurations.metal.ironcore.dev|servermaintenances.metal.ironcore.dev)
+          echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         secret|secrets)
@@ -122,8 +120,8 @@ if [[ "$1" == "kubectl" ]]; then
           exit 1
           ;;
         *)
-          # Default: empty success
-          exit 0
+          echo "Unexpected fixture resource: $resource" >&2
+          exit 1
           ;;
       esac
     fi
@@ -167,6 +165,21 @@ EOF
   export PATH="$FAKE_BIN:$PATH"
 }
 
+# Run each real gate in a separate shell so engine globals/traps cannot leak
+# into test counters, and a gate failure cannot be hidden by the caller's `if`.
+run_profile_gate() {
+  bash -c '
+    source "$1"
+    OPERATOR="$2"
+    shift 2
+    CLUSTER=test-cluster; TARGET_CTX=test-ctx; SEED_CTX=seed-ctx
+    NAMESPACE=test-ns; PHASE=uninstall; DRY_RUN=true
+    load_profile
+    export FIXTURE_RELEASE="$RELEASE"
+    "$@"
+  ' profile-gate "$CUTOVER_SCRIPT" "$@"
+}
+
 # Test assertion helpers
 pass() {
   echo "✓ PASS: $1"
@@ -207,10 +220,10 @@ test_metal_runs_namespace_cascade_gate() {
   # Clear the log
   > "$U8S_LOG"
 
-  # Run metal uninstall dry-run — will fail at some point but we capture what it queries
-  "$CUTOVER_SCRIPT" --operator metal --phase uninstall --dry-run \
-    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
-    >/dev/null 2>&1 || true
+  if ! run_profile_gate metal preflight_namespace_cascade >"$TMPDIR_TEST/gate-output" 2>&1; then
+    fail "$desc" "Namespace gate failed before completing the dry-run"
+    return
+  fi
 
   # Check that it queried managedresource for mr-n-metal-servers (the namespace MR)
   if grep -q 'managedresource.*mr-n-metal-servers\|mr-n-metal-servers.*managedresource' "$U8S_LOG"; then
@@ -233,10 +246,14 @@ test_boot_skips_namespace_cascade_gate() {
   # Clear the log
   > "$U8S_LOG"
 
-  # Run boot uninstall dry-run
-  "$CUTOVER_SCRIPT" --operator boot --phase uninstall --dry-run \
-    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
-    >/dev/null 2>&1 || true
+  if ! run_profile_gate boot preflight_namespace_cascade >"$TMPDIR_TEST/gate-output" 2>&1; then
+    fail "$desc" "Namespace gate failed instead of deliberately skipping"
+    return
+  fi
+  if ! grep -q 'Namespace cascade gate: OFF' "$TMPDIR_TEST/gate-output"; then
+    fail "$desc" "Expected explicit namespace-gate skip"
+    return
+  fi
 
   # Boot must NOT query any mr-n-* ManagedResource at all
   if grep -q 'mr-n-' "$U8S_LOG"; then
@@ -262,9 +279,10 @@ test_argora_profile_protects_data_cr_mrs() {
     return
   fi
 
-  output=$("$CUTOVER_SCRIPT" --operator argora --phase uninstall --dry-run \
-    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
-    2>&1 || true)
+  if ! output=$(run_profile_gate argora preflight_protect_mrs 2>&1); then
+    fail "$desc" "Data-CR protection gate failed: $output"
+    return
+  fi
   for mr in "${protect_mrs[@]}"; do
     if ! grep -q "DRY-RUN: would patch $mr" <<<"$output"; then
       fail "$desc" "Missing dry-run patch output for $mr"
@@ -278,9 +296,7 @@ test_argora_missing_protect_mr_blocks_uninstall() {
   local desc="argora missing PROTECT_MRS entry blocks uninstall"
   local output exit_code=0
 
-  output=$(ABSENT_MR=mr-ci-mgmt-qa-de-200 "$CUTOVER_SCRIPT" --operator argora --phase uninstall --dry-run \
-    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
-    2>&1) || exit_code=$?
+  output=$(ABSENT_MR=mr-ci-mgmt-qa-de-200 run_profile_gate argora preflight_protect_mrs 2>&1) || exit_code=$?
   if [[ "$exit_code" -eq 2 ]] && grep -q 'PROTECT_MRS entry mr-ci-mgmt-qa-de-200 not found on seed' <<<"$output"; then
     pass "$desc"
   else
@@ -294,16 +310,16 @@ test_boot_freeze_gate_queries_only_boot_kinds() {
   # Clear the log
   > "$U8S_LOG"
 
-  # Run boot uninstall dry-run
-  "$CUTOVER_SCRIPT" --operator boot --phase uninstall --dry-run \
-    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
-    >/dev/null 2>&1 || true
+  if ! run_profile_gate boot preflight_freeze_gate >"$TMPDIR_TEST/gate-output" 2>&1; then
+    fail "$desc" "Freeze gate failed before checking all configured kinds"
+    return
+  fi
 
   local found_boot_kinds=false
   local found_metal_kinds=false
 
   # Check for boot kinds (should be present)
-  if grep -qE 'httpbootconfigs|ipxebootconfigs' "$U8S_LOG"; then
+  if grep -q 'httpbootconfigs.boot.ironcore.dev' "$U8S_LOG" && grep -q 'ipxebootconfigs.boot.ironcore.dev' "$U8S_LOG"; then
     found_boot_kinds=true
   fi
 
@@ -332,13 +348,15 @@ test_metal_freeze_gate_queries_hardware_kinds() {
   # Clear the log
   > "$U8S_LOG"
 
-  # Run metal uninstall dry-run
-  "$CUTOVER_SCRIPT" --operator metal --phase uninstall --dry-run \
-    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
-    >/dev/null 2>&1 || true
+  if ! run_profile_gate metal preflight_freeze_gate >"$TMPDIR_TEST/gate-output" 2>&1; then
+    fail "$desc" "Hardware freeze gate failed before completing all checks"
+    return
+  fi
 
-  # Metal should query servers (at minimum) for the freeze gate
-  if grep -qE '\bservers\b' "$U8S_LOG"; then
+  if grep -q 'servers.metal.ironcore.dev' "$U8S_LOG" &&
+     grep -q 'bmcs.metal.ironcore.dev' "$U8S_LOG" &&
+     grep -q 'biossettings.metal.ironcore.dev' "$U8S_LOG" &&
+     grep -q 'biosversions.metal.ironcore.dev' "$U8S_LOG"; then
     pass "$desc"
   else
     fail "$desc" "Metal freeze gate did not query servers (expected hardware state machine check)"
@@ -382,11 +400,11 @@ if [[ "$1" == "kubectl" ]]; then
           ;;
         httpbootconfigs.boot.ironcore.dev)
           # Return JSON with an UNPARSEABLE deletionTimestamp
-          echo '{"items":[{"metadata":{"name":"test-httpboot","deletionTimestamp":"GARBAGE-NOT-A-DATE"}}]}'
+           echo '{"apiVersion":"v1","kind":"List","items":[{"metadata":{"name":"test-httpboot","uid":"boot-uid","deletionTimestamp":"GARBAGE-NOT-A-DATE"}}]}'
           exit 0
           ;;
         ipxebootconfigs.boot.ironcore.dev)
-          echo '{"items":[]}'
+           echo '{"apiVersion":"v1","kind":"List","items":[]}'
           exit 0
           ;;
         secret|secrets)
@@ -430,15 +448,13 @@ EOFP0
   # Clear the log
   > "$U8S_LOG"
 
-  # Run boot uninstall dry-run — should BLOCK due to unparseable timestamp
+  # Run the real boot freeze gate — should BLOCK due to unparseable timestamp
   local output exit_code=0
-  output=$("$CUTOVER_SCRIPT" --operator boot --phase uninstall --dry-run \
-    --cluster test-cluster --target-context test-ctx --seed-context seed-ctx --namespace test-ns \
-    2>&1) || exit_code=$?
+  output=$(run_profile_gate boot preflight_freeze_gate 2>&1) || exit_code=$?
 
-  # The script should exit 2 (ABORT) because of the blocked freeze gate
-  # AND the output should mention "unparseable" or "Fresh deletions"
-  if [[ "$exit_code" -eq 2 ]] && echo "$output" | grep -qiE 'unparseable|fresh.*deletion|blocked'; then
+  # Require the exact fixture's timestamp classification, not an unrelated
+  # early "blocked" gate that happens to return the same exit code.
+  if [[ "$exit_code" -eq 2 ]] && grep -qF 'test-httpboot(unparseable-ts)' <<<"$output"; then
     pass "$desc"
   else
     fail "$desc" "Expected exit 2 with unparseable/blocked message, got exit $exit_code"
