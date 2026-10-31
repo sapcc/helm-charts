@@ -114,13 +114,27 @@ pin/patch files.
 All three assume #58, pin by commit SHA, and re-apply the SAP deltas rather than
 copying CRDs.
 
+> **Core-CRD mechanism correction (2026-10-31, post builder-check):** the
+> original Approach-C plan sourced the 3 core CRDs as per-file **git** resources
+> (`//core/config/crd/bases/<file>?ref=<SHA>`). That does **not** work: kustomize
+> v5.8.1's git getter only accepts a **directory** base and errors on a single
+> remote file (`refers to file '…'; expecting directory`). Verified empirically.
+> The legacy `system/kustomize/ipam-capi-remote` tree already solved this: it
+> pulls the 3 core CRDs as **plain-HTTP `raw.githubusercontent.com` file URLs**,
+> which route through kustomize's HTTP file loader (a different code path that
+> *does* fetch single files). A raw URL pins the ref in its **path segment**, and
+> a full **commit SHA** works there too (verified) — so the SHA-on-the-safe-side
+> requirement still holds. The design below uses the raw-HTTP mechanism for the 3
+> core CRDs.
+
 **Approach A — full remote base (loose resources).**
 `shoot/crds/` deleted. The 4 pool CRDs come from the provider's native
-`config/crd` kustomization as one remote base; the 3 core CRDs come in as three
-**loose per-file** `resources:` entries (`//core/config/crd/bases/<file>?ref=<SHA>`).
-Conversion shim re-applied as strategicMerge patches over the 4 pool CRDs.
-Maximum slim. Downside: the three core pins are three scattered `resources:`
-lines mixed in with everything else — less obviously a reviewable unit.
+`config/crd` kustomization as one remote **git dir** base; the 3 core CRDs come
+in as three **loose** `resources:` entries, each a SHA-pinned
+`raw.githubusercontent.com` file URL. Conversion shim re-applied as
+strategicMerge patches over the 4 pool CRDs. Maximum slim. Downside: the three
+core pins are three scattered `resources:` lines mixed in with everything else —
+less obviously a reviewable unit.
 
 **Approach B — pool-only slim (partial, safe).**
 Swap only the 4 pool CRDs to the provider remote base (−~1,000 lines). Keep the
@@ -130,23 +144,30 @@ un-referenced, so it does not actually answer the maintenance objection.
 
 **Approach C — pool base + thin in-repo CAPI kustomization (CHOSEN).**
 `shoot/crds/` deleted entirely. The 4 pool CRDs come from the provider remote
-base. The 3 core CRDs come from a **small in-repo kustomization file** that
-lists the three per-file SHA-pinned remote resources as one named unit. Same
-full savings as A (drops all 7 vendored CRDs including `clusters.yaml`), but the
-three core pins live in **one small reviewable file** that is bumped as a unit.
-Matches the "slim wrapper that references origin" intent best.
+git dir base. The 3 core CRDs come from a **small in-repo kustomization file**
+that lists the three SHA-pinned `raw.githubusercontent.com` file URLs as one
+named unit. Same full savings as A (drops all 7 vendored CRDs including
+`clusters.yaml`), but the three core pins live in **one small reviewable file**
+that is bumped as a unit. Matches the "slim wrapper that references origin"
+intent best.
 
 **Rejected mechanism (applies to A and C both):** pulling CAPI's whole
-`core/config/crd` kustomization. It bundles **all 13** core CAPI CRDs
+`core/config/crd` git kustomization. It bundles **all 13** core CAPI CRDs
 (clusterclasses, clusters, machines, machinesets, machinedeployments,
 machinedrainrules, machinepools, clusterresourcesets,
 clusterresourcesetbindings, machinehealthchecks, extensionconfigs, ipaddresses,
 ipaddressclaims) and wires conversion patches. ipam owns only 3 of those 13;
 the whole base would inject 10 unwanted CRDs into the ipam shoot. Non-starter —
-hence the per-file references.
+and the per-file **git** reference that would avoid it is unsupported by
+kustomize — hence the raw-HTTP file URLs.
+
+**Also rejected:** per-file **git** references
+(`//core/config/crd/bases/<file>?ref=<SHA>`). Unsupported by kustomize v5.8.1
+(git getter demands a directory). The raw-HTTP file URL is the working
+equivalent and is what legacy ipam-capi-remote uses.
 
 **Decision: Approach C.** Full savings, pins grouped into one reviewable
-in-repo file.
+in-repo file, using the raw-HTTP file mechanism legacy already proves works.
 
 ---
 
@@ -163,7 +184,7 @@ system/kustomize/ipam-capi-remote-ddo/
                                  #   rbac.yaml, webhooks.yaml
                                  # patches: 4 pool conversion-shim patches
     core-crds/
-      kustomization.yaml         # 3 per-file SHA-pinned remote resources
+      kustomization.yaml         # 3 SHA-pinned raw.githubusercontent.com file URLs
     crds/                        # DELETED (all 7 vendored files removed)
     rbac.yaml                    # unchanged
     webhooks.yaml                # unchanged
@@ -192,7 +213,7 @@ must correct:
    name: webhook-service, path: /convert}`); ipam needs **URL-ref + concrete
    caBundle** (the webhook-injector endpoint). **Re-apply via patch** (§5.4).
 
-### 5.3 Core CRDs — thin in-repo kustomization
+### 5.3 Core CRDs — thin in-repo kustomization (raw-HTTP file URLs)
 
 `shoot/core-crds/kustomization.yaml`:
 
@@ -200,10 +221,19 @@ must correct:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - https://github.com/kubernetes-sigs/cluster-api//core/config/crd/bases/cluster.x-k8s.io_clusters.yaml?ref=5f7d58c9ad647f31bd342bf8de33092c27f7fc38
-  - https://github.com/kubernetes-sigs/cluster-api//core/config/crd/bases/ipam.cluster.x-k8s.io_ipaddresses.yaml?ref=5f7d58c9ad647f31bd342bf8de33092c27f7fc38
-  - https://github.com/kubernetes-sigs/cluster-api//core/config/crd/bases/ipam.cluster.x-k8s.io_ipaddressclaims.yaml?ref=5f7d58c9ad647f31bd342bf8de33092c27f7fc38
+  - https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/5f7d58c9ad647f31bd342bf8de33092c27f7fc38/core/config/crd/bases/cluster.x-k8s.io_clusters.yaml
+  - https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/5f7d58c9ad647f31bd342bf8de33092c27f7fc38/core/config/crd/bases/ipam.cluster.x-k8s.io_ipaddresses.yaml
+  - https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/5f7d58c9ad647f31bd342bf8de33092c27f7fc38/core/config/crd/bases/ipam.cluster.x-k8s.io_ipaddressclaims.yaml
 ```
+
+**Mechanism note:** these are plain-HTTP `raw.githubusercontent.com` file URLs,
+**not** git `//path?ref=` references. Kustomize's git getter only loads a
+**directory** base (a single remote file errors with `expecting directory`);
+its HTTP file loader fetches a single file. The ref is pinned in the raw URL's
+**path segment** — a full **commit SHA** works there (verified), so the pin is
+immutable despite not using `?ref=`. This is exactly the mechanism the legacy
+`system/kustomize/ipam-capi-remote/managedresources/kustomization.yaml` already
+uses for these same 3 core CRDs (it pins the `v1.14.2` tag; we pin the SHA).
 
 These 3 base files carry **no conversion block, no webhook strategy, no
 cert-manager annotation, no move-hierarchy label** (verified at the pinned SHA)
@@ -230,6 +260,21 @@ re-applied as a **strategicMerge patch** over the remote-base output (one patch
 per CRD name, or one multi-doc patch). This replaces the upstream SERVICE-ref
 clientConfig with the URL-ref + caBundle that the DDO/webhook-injector design
 uses everywhere else.
+
+**strategicMerge gotcha (builder-check):** strategicMerge *merges* maps, so
+setting `clientConfig.url` + `caBundle` alone leaves the upstream
+`clientConfig.service` in place — the rendered CRD would carry **both** a
+service-ref and a url-ref. The patch MUST explicitly null the service ref:
+
+```yaml
+spec:
+  conversion:
+    webhook:
+      clientConfig:
+        service: null
+        url: https://ipam-capi-remote-webhook-service:443/convert
+        caBundle: <base64 webhook-injector cert>
+```
 
 **caBundle placement (decided): keep it static in the overlay patch**, matching
 how the 4 vendored pool CRDs carry it today. Rationale: it is the
@@ -292,9 +337,15 @@ merged (it edits the same tree).
 - **Exact `patches:` vs `patchesStrategicMerge` syntax** for the installed
   kustomize version (v5.x uses `patches:` with inline or file `path`).
 - **DDO #58 acceptance:** before merge, verify the released DDO build actually
-  prefetches + SHA-pins + caches + builds offline for `?ref=`-pinned remote
-  bases (both a dir base and a per-file base). If #58 shipped a narrower
-  variant, re-scope.
+  prefetches + SHA-pins + caches + builds offline for the two remote mechanisms
+  this overlay uses: (a) a **git dir base** (`?ref=<SHA>` provider `config/crd`)
+  and (b) **plain-HTTP `raw.githubusercontent.com` file URLs** (the 3 core CRDs).
+  Note #58's original framing mentioned "per-file git base" — that is NOT what
+  this overlay uses (kustomize can't do it); the core CRDs are HTTP file fetches,
+  so #58's prefetch/cache must cover **HTTP file resources**, not just git bases.
+  Also note: raw URLs cannot carry `authSecretRef` (fine — these are public
+  repos, and legacy already relies on this exact public HTTP fetch). If #58
+  shipped a narrower variant that doesn't cover HTTP file resources, re-scope.
 - **Drift-check CI (optional, nice-to-have):** a CI job that re-renders and
   diffs the pool-CRD schemas against the pinned provider commit, so an upstream
   bump that changes schemas is loud. Lower priority than the refactor itself.
