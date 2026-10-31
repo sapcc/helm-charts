@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# CAPI v1.14.2, resolved to its immutable commit. Only these three are owned
+# by this operand; the full CAPI directory would introduce ten extra CRDs.
+resources:
+  - https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/5f7d58c9ad647f31bd342bf8de33092c27f7fc38/core/config/crd/bases/cluster.x-k8s.io_clusters.yaml
+  - https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/5f7d58c9ad647f31bd342bf8de33092c27f7fc38/core/config/crd/bases/ipam.cluster.x-k8s.io_ipaddresses.yaml
+  - https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/5f7d58c9ad647f31bd342bf8de33092c27f7fc38/core/config/crd/bases/ipam.cluster.x-k8s.io_ipaddressclaims.yaml
+# The apiserver-defaulted field is explicit in the existing delivered bundle.
+# Restore it without copying or changing any upstream schema.
+patches:
+  - target:
+      group: apiextensions.k8s.io
+      version: v1
+      kind: CustomResourceDefinition
+    patch: |-
+      - op: add
+        path: /spec/conversion
+        value:
+          strategy: None
