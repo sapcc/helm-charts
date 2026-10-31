@@ -6,6 +6,7 @@ import copy, importlib.util, json, subprocess, sys, tempfile
 from pathlib import Path
 import yaml
 directory = Path(sys.argv[1])
+sys.dont_write_bytecode = True
 utility = directory / 'crd_parity.py'
 assert utility.is_file(), 'FAIL: mandatory parity utility is absent'
 spec = importlib.util.spec_from_file_location('parity', utility)
