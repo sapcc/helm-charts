@@ -34,6 +34,12 @@ SEED_CTX=""
 NAMESPACE=""
 PHASE=""
 DRY_RUN=false
+RESUME=false
+STATE_DIR_OVERRIDE=""
+FREEZE_EVIDENCE=""
+READINESS_EVIDENCE=""
+ACCEPTANCE_EVIDENCE=""
+LEGACY_CHART_ARCHIVE=""
 OUTAGE_BUDGET_MIN="${OUTAGE_BUDGET_MIN:-20}"
 SKIP_PREREQ_CHECK=false
 FRESH_DELETE_MIN="${FRESH_DELETE_MIN:-2880}"  # 48 hours
@@ -72,8 +78,14 @@ Optional:
   --ddo-cr <name>         DualDeploymentOperator CR name (default: from profile)
   --deploy <name>         Controller Deployment name (default: from profile)
   --dry-run               Show what would be done without making changes
+  --resume                Reuse immutable active evidence; required for verify
+  --state-dir <dir>       Durable run root (default: ~/.local/state/ddo-cutover/<operator>-<cluster>)
+  --freeze-evidence <json> Verified manual reconciler freeze/restoration contract
+  --readiness-evidence <json> Reviewed exact source + actual seed/shoot renders
+  --legacy-chart-archive <tgz> Exact installed LEGACY chart for recovery
+  --acceptance-evidence <json> Functional/do-no-harm evidence for final verify
   --outage-budget <min>   Minutes allowed for cutover (default: 20)
-  --skip-prereq-check     Skip DDO prerequisite checks (use with caution)
+  --skip-prereq-check     Rehearsal-only; never bypass real execution readiness
   --help                  Show this help
 
 Exit codes:
@@ -98,6 +110,12 @@ parse_args() {
       --deploy)        DEPLOY_OVERRIDE="$2"; shift 2 ;;
       --phase)         PHASE="$2"; shift 2 ;;
       --dry-run)       DRY_RUN=true; shift ;;
+      --resume)        RESUME=true; shift ;;
+      --state-dir)     STATE_DIR_OVERRIDE="$2"; shift 2 ;;
+      --freeze-evidence) FREEZE_EVIDENCE="$2"; shift 2 ;;
+      --readiness-evidence) READINESS_EVIDENCE="$2"; shift 2 ;;
+      --acceptance-evidence) ACCEPTANCE_EVIDENCE="$2"; shift 2 ;;
+      --legacy-chart-archive) LEGACY_CHART_ARCHIVE="$2"; shift 2 ;;
       --outage-budget) OUTAGE_BUDGET_MIN="$2"; shift 2 ;;
       --skip-prereq-check) SKIP_PREREQ_CHECK=true; shift ;;
       --help|-h)       usage 0 ;;
@@ -121,6 +139,7 @@ PROFILES_DIR="$SCRIPT_DIR/profiles"
 # shellcheck source=lib/ddo-common.sh
 source "$SCRIPT_DIR/lib/ddo-common.sh" ||
   { echo "error: cannot source $SCRIPT_DIR/lib/ddo-common.sh" >&2; exit 2; }
+source "$SCRIPT_DIR/lib/cutover-safety.sh" || exit 2
 
 load_profile() {
   local profile_file="$PROFILES_DIR/${OPERATOR}-operator-remote.env"
@@ -161,9 +180,7 @@ load_profile() {
 # ============================================================================
 STATE_DIR=""
 init_state_dir() {
-  STATE_DIR="${TMPDIR:-/tmp}/ddo-cutover-$OPERATOR-$CLUSTER"
-  mkdir -p "$STATE_DIR"
-  info "State directory: $STATE_DIR"
+  init_safe_state
 }
 
 # ============================================================================
@@ -249,21 +266,11 @@ preflight_target_connection() {
 # Gate 2: CRDs present on target
 preflight_crds_on_target() {
   step "Preflight: CRDs present on target"
-  local group
+  local group json
+  json=$(kt get crd -o json) || die "Cannot list CRDs on target cluster"
+  validate_list "$json"
   for group in $CRD_GROUPS; do
-    local state
-    state=$(obj_state kt get crd -l "api-approved.kubernetes.io/group=$group" -o name)
-    # Fallback: just check if any CRD from the group exists
-    if [[ "$state" != "found" ]]; then
-      state=$(obj_state kt get crd -o name)
-      if [[ "$state" == "error" ]]; then
-        die "Cannot list CRDs on target cluster"
-      fi
-      # Check if any CRD matches our group
-      if ! kt get crd -o name 2>/dev/null | grep -q "$group"; then
-        die "CRDs for group $group not found on target cluster"
-      fi
-    fi
+    jq -e --arg g "$group" '[.items[] | select(.spec.group == $g and .metadata.deletionTimestamp == null)] | length > 0' <<<"$json" >/dev/null || die "CRDs for group $group missing/terminating"
     ok "CRDs for $group present on target"
   done
 }
@@ -277,6 +284,8 @@ preflight_mr_keepobjects() {
   if ! mr_list=$(ks get managedresource -o json 2>&1); then
     die "Cannot list ManagedResources on seed: $mr_list"
   fi
+  validate_list "$mr_list"
+  check_mr_coverage "$mr_list"
   
   # Parse MRs belonging to this release (by annotation)
   local crd_mrs
@@ -285,7 +294,7 @@ preflight_mr_keepobjects() {
     select(.metadata.annotations["meta.helm.sh/release-name"] == $release) |
     select(.metadata.name | startswith("mr-crd-")) |
     "\(.metadata.name):\(.spec.keepObjects // false)"
-  ' 2>/dev/null || true)
+  ') || die "Cannot parse release CRD MR inventory"
   
   local mr_name keep
   while IFS=: read -r mr_name keep; do
@@ -332,7 +341,10 @@ protect_namespace_mr() {
     found)
       # Check current keepObjects value
       local keep
-      keep=$(ks get managedresource "$mr_name" -o jsonpath='{.spec.keepObjects}' 2>/dev/null || echo "")
+      local json
+      json=$(ks get managedresource "$mr_name" -o json) || die "Cannot read $mr_name"
+      jq -e --arg r "$RELEASE" '.kind == "ManagedResource" and .metadata.annotations["meta.helm.sh/release-name"] == $r and .metadata.deletionTimestamp == null' <<<"$json" >/dev/null || die "Foreign/terminating MR $mr_name"
+      keep=$(jq -r '.spec.keepObjects // false' <<<"$json") || die "Invalid MR $mr_name"
       if [[ "$keep" == "true" ]]; then
         ok "ManagedResource $mr_name already has keepObjects:true"
       else
@@ -344,12 +356,12 @@ protect_namespace_mr() {
             die "Failed to patch ManagedResource $mr_name"
           fi
           ok "Patched ManagedResource $mr_name"
+          assert_protected_mr "$mr_name"
         fi
       fi
       ;;
     absent)
-      # MR not found — not managed by this release, nothing to patch
-      warn "ManagedResource $mr_name not found (not managed by this release) — skipping"
+      die "Required namespace ManagedResource $mr_name missing"
       ;;
     error)
       die "Cannot read ManagedResource $mr_name (API error, not NotFound)"
@@ -376,11 +388,11 @@ preflight_protect_mrs() {
       found)
         if $DRY_RUN; then
           warn "DRY-RUN: would back up $mr"
-        else
-          info "Backing up ManagedResource $mr"
-          ks get managedresource "$mr" -o yaml > "$STATE_DIR/protect-mr-$mr.yaml" 2>/dev/null || true
         fi
-        keep=$(ks get managedresource "$mr" -o jsonpath='{.spec.keepObjects}' 2>/dev/null || echo "")
+        local json
+        json=$(ks get managedresource "$mr" -o json) || die "Cannot read $mr"
+        jq -e --arg r "$RELEASE" '.kind == "ManagedResource" and .metadata.annotations["meta.helm.sh/release-name"] == $r and .metadata.deletionTimestamp == null' <<<"$json" >/dev/null || die "Foreign/terminating MR $mr"
+        keep=$(jq -r '.spec.keepObjects // false' <<<"$json") || die "Invalid MR $mr"
         if [[ "$keep" == "true" ]]; then
           ok "ManagedResource $mr already has keepObjects:true"
         elif $DRY_RUN; then
@@ -390,8 +402,7 @@ preflight_protect_mrs() {
           if ! ks patch managedresource "$mr" --type=merge -p '{"spec":{"keepObjects":true}}'; then
             die "Failed to patch ManagedResource $mr"
           fi
-          keep=$(ks get managedresource "$mr" -o jsonpath='{.spec.keepObjects}' 2>/dev/null || echo "")
-          [[ "$keep" == "true" ]] || die "ManagedResource $mr did not retain keepObjects:true after patch"
+          assert_protected_mr "$mr"
           ok "Patched ManagedResource $mr"
         fi
         ;;
@@ -447,11 +458,6 @@ check_freeze_kind_cluster() {
   
   local result
   if ! result=$(kt get "$kind" -o json 2>&1); then
-    # Check if it's a "not found" for the CRD itself
-    if grep -qE 'the server doesn.t have a resource type|could not find' <<<"$result"; then
-      warn "Kind $kind not found on cluster (CRD missing?) — skipping"
-      return
-    fi
     die "Cannot list $kind: $result"
   fi
   
@@ -464,10 +470,6 @@ check_freeze_kind_ns() {
   
   local result
   if ! result=$(kt get "$kind" -A -o json 2>&1); then
-    if grep -qE 'the server doesn.t have a resource type|could not find' <<<"$result"; then
-      warn "Kind $kind not found on cluster (CRD missing?) — skipping"
-      return
-    fi
     die "Cannot list $kind: $result"
   fi
   
@@ -477,6 +479,7 @@ check_freeze_kind_ns() {
 parse_deletion_timestamps() {
   local json="$1"
   local kind="$2"
+  validate_list "$json"
   local now_epoch
   now_epoch=$(date +%s)
   
@@ -486,7 +489,7 @@ parse_deletion_timestamps() {
     .items[] |
     select(.metadata.deletionTimestamp != null) |
     "\(.metadata.name)|\(.metadata.deletionTimestamp)"
-  ' 2>/dev/null || true)
+  ') || die "Cannot parse deletion timestamps for $kind"
   
   while IFS='|' read -r name ts; do
     [[ -z "$name" ]] && continue
@@ -513,13 +516,9 @@ check_server_state_machine() {
   
   local result
   if ! result=$(kt get servers.metal.ironcore.dev -o json 2>&1); then
-    if grep -qE 'the server doesn.t have a resource type' <<<"$result"; then
-      warn "Server CRD not found — skipping state machine check"
-      return
-    fi
     die "Cannot list Servers: $result"
   fi
-  
+  validate_list "$result"
   # Check for servers in transitional states
   local transitional
   transitional=$(echo "$result" | jq -r --arg regex "${SERVER_STABLE_STATES_REGEX:-}" '
@@ -527,7 +526,7 @@ check_server_state_machine() {
     select(.status.state != null) |
     select(.status.state | test($regex) | not) |
     "\(.metadata.name):\(.status.state)"
-  ' 2>/dev/null || true)
+  ') || die "Cannot parse Server states"
   
   if [[ -n "$transitional" ]]; then
     die "BLOCKED: Servers in transitional states: $transitional"
@@ -537,11 +536,9 @@ check_server_state_machine() {
   for bios_kind in biossettings.metal.ironcore.dev biosversions.metal.ironcore.dev; do
     local bios_result
     if ! bios_result=$(kt get "$bios_kind" -o json 2>&1); then
-      if grep -qE 'the server doesn.t have a resource type' <<<"$bios_result"; then
-        continue
-      fi
       die "Cannot list $bios_kind: $bios_result"
     fi
+    validate_list "$bios_result"
     
     # Check for observedGeneration lag
     local lagging
@@ -551,7 +548,7 @@ check_server_state_machine() {
       select(.status.observedGeneration != null and .metadata.generation != null) |
       select(.status.observedGeneration < .metadata.generation) |
       .metadata.name
-    ' 2>/dev/null || true)
+    ') || die "Cannot parse $bios_kind"
     
     if [[ -n "$lagging" ]]; then
       die "BLOCKED: $bios_kind with pending changes: $lagging"
@@ -564,7 +561,8 @@ check_server_state_machine() {
 # Gate 6: DDO prerequisites
 preflight_ddo_prereqs() {
   if $SKIP_PREREQ_CHECK; then
-    warn "Skipping DDO prerequisite checks (--skip-prereq-check)"
+    $DRY_RUN || die "--skip-prereq-check is rehearsal-only"
+    warn "REHEARSAL ONLY: skipping DDO prerequisite checks; NOT execution readiness"
     return
   fi
   
@@ -572,13 +570,11 @@ preflight_ddo_prereqs() {
   
   # P1: DDO controller Deployment available
   info "P1: Checking DDO controller Deployment..."
-  local ddo_deploy_state
-  ddo_deploy_state=$(obj_state ks_global get deployment -l app.kubernetes.io/instance=dual-deployment-operator -A -o name)
-  case "$ddo_deploy_state" in
-    found)  ok "DDO controller Deployment found" ;;
-    absent) die "DDO controller Deployment not found (is DDO installed?)" ;;
-    error)  die "Cannot check DDO controller Deployment" ;;
-  esac
+  local deployments
+  deployments=$(ks_global get deployment -l app.kubernetes.io/instance=dual-deployment-operator -A -o json) || die "Cannot check DDO Deployment"
+  validate_list "$deployments"
+  jq -e '.items | length == 1' <<<"$deployments" >/dev/null || die "Expected exactly one DDO controller"
+  check_ddo_coordinates "$deployments"
   
   # P2: DualDeploymentOperator CRD established
   info "P2: Checking DualDeploymentOperator CRD..."
@@ -607,37 +603,25 @@ preflight_ddo_prereqs() {
   fi
   ok "Target apiserver authorized"
   
-  # P5: Operand chart renders cleanly (optional)
-  info "P5: Checking operand chart templates..."
-  if [[ -n "${OPERAND_CHART_DIR:-}" ]]; then
-    local chart_path="$SCRIPT_DIR/../../../$OPERAND_CHART_DIR"
-    if [[ -d "$chart_path" ]]; then
-      # Local chart render — use plain `helm` (NOT `u8s helm`, which does not
-      # accept `--set`), and no cluster/context is needed. Build deps first so
-      # a fresh checkout without charts/*.tgz still renders. On failure, surface
-      # the real error (don't swallow it) so a genuine template bug is visible.
-      helm dependency build "$chart_path" >/dev/null 2>&1 || true
-      local tmpl_err
-      for mode in seed shoot; do
-        if tmpl_err=$(helm template test "$chart_path" --set "mode=$mode" 2>&1 >/dev/null); then
-          ok "Chart renders for mode=$mode"
-        else
-          warn "Chart template failed for mode=$mode (non-blocking): ${tmpl_err%%$'\n'*}"
-        fi
-      done
-    else
-      warn "Chart directory not found: $chart_path (skipping template check)"
-    fi
+  # Actual seed/shoot renders and installed platform support are mandatory
+  # operator evidence, not inferred from a local default-values Helm render.
+  if $DRY_RUN; then
+    warn "REHEARSAL ONLY: no source/platform readiness certification"
+  else
+    require_manual_contracts
   fi
 }
 
 preflight() {
   step "Running preflight checks"
+  if ! $DRY_RUN; then require_manual_contracts; fi
   preflight_target_connection
   preflight_crds_on_target
-  preflight_mr_keepobjects
-  preflight_namespace_cascade
-  preflight_protect_mrs
+  if [[ "$PHASE" == uninstall ]]; then
+    preflight_mr_keepobjects
+    preflight_namespace_cascade
+    preflight_protect_mrs
+  fi
   preflight_freeze_gate
   preflight_ddo_prereqs
   ok "All preflight checks passed"
@@ -647,56 +631,7 @@ preflight() {
 # Baseline snapshot
 # ============================================================================
 snapshot_baseline() {
-  step "Snapshotting baseline state"
-  
-  # Dump cluster-scoped baseline kinds
-  if [[ -n "${BASELINE_SNAPSHOT_KINDS_CLUSTER:-}" ]]; then
-    for kind in $BASELINE_SNAPSHOT_KINDS_CLUSTER; do
-      info "Snapshotting $kind (cluster-scoped)..."
-      kt get "$kind" -o yaml > "$STATE_DIR/baseline-$kind.yaml" 2>/dev/null || true
-      kt get "$kind" -o json | jq -r '
-        .items[] | "\(.metadata.name):\(.metadata.uid)"
-      ' > "$STATE_DIR/cr-uids-$kind.txt" 2>/dev/null || true
-    done
-  fi
-  
-  # Dump namespaced baseline kinds
-  if [[ -n "${BASELINE_SNAPSHOT_KINDS_NS:-}" ]]; then
-    for kind in $BASELINE_SNAPSHOT_KINDS_NS; do
-      info "Snapshotting $kind (namespaced)..."
-      kt get "$kind" -A -o yaml > "$STATE_DIR/baseline-$kind.yaml" 2>/dev/null || true
-      kt get "$kind" -A -o json | jq -r '
-        .items[] | "\(.metadata.namespace)/\(.metadata.name):\(.metadata.uid)"
-      ' > "$STATE_DIR/cr-uids-$kind.txt" 2>/dev/null || true
-    done
-  fi
-  
-  # Dump CRD UIDs for UID preservation check
-  for group in $CRD_GROUPS; do
-    info "Snapshotting CRD UIDs for $group..."
-    kt get crd -o json | jq -r --arg group "$group" '
-      .items[] |
-      select(.spec.group == $group) |
-      "\(.metadata.name):\(.metadata.uid)"
-    ' > "$STATE_DIR/crd-uids-$group.txt" 2>/dev/null || true
-  done
-  
-  # Report finalizers on live CRs
-  info "Checking finalizers on live CRs..."
-  for kind in ${BASELINE_SNAPSHOT_KINDS_CLUSTER:-} ${BASELINE_SNAPSHOT_KINDS_NS:-}; do
-    local finalizers
-    finalizers=$(kt get "$kind" -A -o json 2>/dev/null | jq -r '
-      .items[] |
-      select(.metadata.finalizers != null and (.metadata.finalizers | length) > 0) |
-      "\(.metadata.name): \(.metadata.finalizers | join(", "))"
-    ' 2>/dev/null || true)
-    if [[ -n "$finalizers" ]]; then
-      warn "Finalizers on $kind:"
-      echo "$finalizers" | sed 's/^/  /'
-    fi
-  done
-  
-  ok "Baseline snapshot complete: $STATE_DIR"
+  capture_baselines "$STATE_DIR"
 }
 
 # ============================================================================
@@ -704,22 +639,16 @@ snapshot_baseline() {
 # ============================================================================
 phase_uninstall() {
   step "Phase: Uninstall ($OPERATOR)"
-  
-  # Run preflight
-  preflight
-  
-  # Snapshot baseline
-  snapshot_baseline
-  
-  # Check current release state — FAIL-CLOSED
+  # Check release and DDO BEFORE any capture; resume never refreshes evidence.
   step "Checking current Helm release state"
   local release_state
-  if hs status "$RELEASE" >/dev/null 2>&1; then
+  local status_output
+  if status_output=$(hs status "$RELEASE" 2>&1); then
     release_state="found"
     info "Release $RELEASE is currently installed"
   else
     local err
-    err=$(hs status "$RELEASE" 2>&1 || true)
+    err="$status_output"
     if grep -qE '^Error: release: not found$' <<<"$err"; then
       release_state="absent"
       warn "Release $RELEASE not found — already uninstalled?"
@@ -727,27 +656,44 @@ phase_uninstall() {
       die "Cannot determine release state (API error): $err"
     fi
   fi
-  
-  if [[ "$release_state" == "found" ]]; then
-    # Capture rollback material
-    info "Capturing rollback material..."
-    hs get manifest "$RELEASE" > "$STATE_DIR/rollback-manifest.yaml" 2>/dev/null || true
-    hs get values "$RELEASE" -o yaml > "$STATE_DIR/rollback-values.yaml" 2>/dev/null || true
-    hs get all "$RELEASE" > "$STATE_DIR/rollback-info.txt" 2>/dev/null || true
-    
-    # DESTRUCTIVE: Uninstall
-    confirm_token "UNINSTALL-$RELEASE-$CLUSTER"
-    
-    if $DRY_RUN; then
-      warn "DRY-RUN: would run: helm uninstall $RELEASE"
+  local cr_state
+  cr_state=$(obj_state ks get dualdeploymentoperator "$DDO_CR")
+  [[ "$cr_state" == absent ]] || die "DDO state is $cr_state; S0/S2 manual recovery required, no uninstall or recapture"
+  if ! $DRY_RUN; then require_manual_contracts; fi
+  if $RESUME; then
+    evidence check "$STATE_DIR/evidence" || die "Resume evidence invalid"
+    if [[ -f "$STATE_DIR/uninstall-epoch" ]]; then
+      check_outage_budget
+      [[ "$release_state" == absent ]] || die "Interrupted/partial uninstall: S0 manual recovery; never automatically repeat uninstall"
     else
+      [[ "$release_state" == found ]] || die "Release disappeared without epoch; S0 manual recovery"
+    fi
+  else
+    [[ "$release_state" == found ]] || die "Initial release absent; refusing post-cutover baseline capture"
+    capture_evidence
+  fi
+  if [[ "$release_state" == found ]]; then
+    preflight
+    verify_baseline
+    confirm_token "UNINSTALL-$RELEASE-$CLUSTER"
+    if $DRY_RUN; then
+      warn "REHEARSAL ONLY: would uninstall $RELEASE; no readiness or handoff certified"
+      return 0
+    else
+      require_manual_contracts
+      # Durable epoch BEFORE any destructive operation, including failed uninstall.
+      local epoch_input
+      epoch_input=$(mktemp "$STATE_DIR/.epoch.XXXXXX")
+      date +%s > "$epoch_input"
+      evidence publish "$STATE_DIR/uninstall-epoch" "$epoch_input" || die "Cannot persist outage epoch"
+      rm "$epoch_input"
+      recheck_preservation
+      check_outage_budget
       info "Uninstalling release $RELEASE..."
       if ! hs uninstall "$RELEASE"; then
         die "Helm uninstall failed"
       fi
       
-      # Stamp uninstall epoch for outage budget
-      date +%s > "$STATE_DIR/uninstall-epoch"
       ok "Release $RELEASE uninstalled"
     fi
   fi
@@ -772,20 +718,11 @@ phase_uninstall() {
 wait_for_old_release_gone() {
   step "Teardown barrier: waiting for old release resources to be removed"
   
-  local start_epoch
-  start_epoch=$(cat "$STATE_DIR/uninstall-epoch" 2>/dev/null || date +%s)
-  local deadline=$((start_epoch + OUTAGE_BUDGET_MIN * 60))
-  
   while true; do
-    local now
-    now=$(date +%s)
-    if [[ $now -gt $deadline ]]; then
-      print_rollback_plan "teardown-barrier"
-      exit 30
-    fi
-    
-    local remaining=$(( (deadline - now) / 60 ))
-    info "Checking teardown state (${remaining}m remaining in budget)..."
+    check_outage_budget
+    local remaining
+    remaining=$(remaining_seconds) || die "Cannot read outage deadline"
+    info "Checking teardown state (${remaining}s remaining in budget)..."
     
     local all_gone=true
     
@@ -795,6 +732,7 @@ wait_for_old_release_gone() {
       warn "Cannot list ManagedResources (will retry)"
       all_gone=false
     else
+      validate_list "$mr_list"
       # Find MRs with this release annotation, excluding mr-crd-* (intentionally retained)
       local owned_mrs
       owned_mrs=$(echo "$mr_list" | jq -r --arg release "$RELEASE" '
@@ -802,7 +740,7 @@ wait_for_old_release_gone() {
         select(.metadata.annotations["meta.helm.sh/release-name"] == $release) |
         select(.metadata.name | startswith("mr-crd-") | not) |
         .metadata.name
-      ' 2>/dev/null || true)
+      ') || die "Invalid teardown MR inventory"
       
       if [[ -n "$owned_mrs" ]]; then
         info "ManagedResources still present: $owned_mrs"
@@ -812,12 +750,12 @@ wait_for_old_release_gone() {
     
     # (b) Check controller pods
     local pods
-    if ! pods=$(ks get pods -l "${CONTROLLER_POD_SELECTOR:-app.kubernetes.io/name=$DEPLOY}" -o name 2>&1); then
+    if ! pods=$(ks get pods -l "${CONTROLLER_POD_SELECTOR:-app.kubernetes.io/name=$DEPLOY}" -o json 2>&1); then
       warn "Cannot list pods (will retry)"
       all_gone=false
-    elif [[ -n "$pods" ]]; then
-      info "Controller pods still present: $pods"
-      all_gone=false
+    else
+      validate_list "$pods"
+      if [[ $(jq '.items | length' <<<"$pods") -gt 0 ]]; then all_gone=false; fi
     fi
     
     # (c) Namespace survival check (only if namespace-cascade gate is ON)
@@ -825,34 +763,21 @@ wait_for_old_release_gone() {
       local gate_ns
       read -r _ _ gate_ns <<<"$NAMESPACE_CASCADE_GATE"
       
-      local ns_state
-      ns_state=$(obj_state kt get ns "$gate_ns")
-      case "$ns_state" in
-        found)
-          # Check for deletionTimestamp
-          local ns_deleting
-          ns_deleting=$(kt get ns "$gate_ns" -o jsonpath='{.metadata.deletionTimestamp}' 2>/dev/null || true)
-          if [[ -n "$ns_deleting" ]]; then
-            print_rollback_plan "namespace-terminating"
-            die "FATAL: Namespace $gate_ns is terminating — not recoverable by waiting"
-          fi
-          ;;
-        absent)
-          print_rollback_plan "namespace-gone"
-          die "FATAL: Namespace $gate_ns is gone — not recoverable"
-          ;;
-        error)
-          warn "Cannot check namespace $gate_ns (will retry)"
-          all_gone=false
-          ;;
-      esac
+      assert_namespace "$gate_ns"
     fi
     
     if $all_gone; then
+      check_outage_budget
+      assert_legacy_absent
+      verify_baseline
+      check_outage_budget
       ok "Teardown complete — all old release resources removed"
       return
     fi
     
+    remaining=$(remaining_seconds) || die "Cannot read deadline"
+    [[ $remaining -gt 0 ]] || check_outage_budget
+    [[ $remaining -gt 10 ]] || { sleep "$remaining"; check_outage_budget; }
     sleep 10
   done
 }
@@ -862,108 +787,17 @@ wait_for_old_release_gone() {
 # ============================================================================
 phase_verify() {
   step "Phase: Verify ($OPERATOR)"
+  $DRY_RUN && die "Dry-run cannot certify active cutover verification"
   
   # Check outage budget FIRST
   check_outage_budget
   
   # Run preflight again
   preflight
+  assert_legacy_absent
   
-  # Assert DDO CR present and converged
-  step "Verifying DDO CR state"
-  local cr_state
-  cr_state=$(obj_state ks get dualdeploymentoperator "$DDO_CR")
-  case "$cr_state" in
-    found)  ok "DDO CR $DDO_CR found" ;;
-    absent) die "DDO CR $DDO_CR not found — was the CR PR merged?" ;;
-    error)  die "Cannot check DDO CR $DDO_CR" ;;
-  esac
-  
-  # Check CR conditions
-  local conditions
-  conditions=$(ks get dualdeploymentoperator "$DDO_CR" -o jsonpath='{.status.conditions}' 2>/dev/null || echo "[]")
-  info "DDO CR conditions: $conditions"
-  
-  # Assert controller Deployment recreated with DDO ownership
-  step "Verifying controller Deployment"
-  local deploy_state
-  deploy_state=$(obj_state ks get deployment "$DEPLOY")
-  case "$deploy_state" in
-    found)
-      # Check owned-by label
-      local owned_by
-      owned_by=$(ks get deployment "$DEPLOY" -o jsonpath="{.metadata.labels['$OWNED_BY_LABEL']}" 2>/dev/null || true)
-      if [[ -n "$owned_by" ]]; then
-        ok "Controller Deployment $DEPLOY found with $OWNED_BY_LABEL=$owned_by"
-      else
-        warn "Controller Deployment $DEPLOY found but missing $OWNED_BY_LABEL label"
-      fi
-      ;;
-    absent) die "Controller Deployment $DEPLOY not found" ;;
-    error)  die "Cannot check controller Deployment $DEPLOY" ;;
-  esac
-  
-  # Assert CRD UIDs unchanged
-  step "Verifying CRD UID preservation"
-  for group in $CRD_GROUPS; do
-    local baseline_file="$STATE_DIR/crd-uids-$group.txt"
-    if [[ -f "$baseline_file" ]]; then
-      while IFS=: read -r crd_name old_uid; do
-        [[ -z "$crd_name" ]] && continue
-        local new_uid
-        new_uid=$(kt get crd "$crd_name" -o jsonpath='{.metadata.uid}' 2>/dev/null || true)
-        if [[ "$new_uid" != "$old_uid" ]]; then
-          die "CRD UID changed: $crd_name (was $old_uid, now $new_uid)"
-        fi
-        ok "CRD UID preserved: $crd_name"
-      done < "$baseline_file"
-    else
-      warn "No baseline CRD UIDs for $group (skipping UID check)"
-    fi
-  done
-
-  # Assert baseline data CRs survived and retained their UIDs.
-  step "Verifying data-CR survival + UID preservation"
-  local kind baseline_file name old_uid new_uid state nsname ns
-  for kind in ${BASELINE_SNAPSHOT_KINDS_CLUSTER:-}; do
-    baseline_file="$STATE_DIR/cr-uids-$kind.txt"
-    if [[ -f "$baseline_file" ]]; then
-      while IFS=: read -r name old_uid; do
-        [[ -z "$name" ]] && continue
-        state=$(obj_state kt get "$kind" "$name")
-        case "$state" in
-          found) ;;
-          absent) die "Data CR missing after cutover: $kind $name" ;;
-          error) die "Cannot check data CR after cutover: $kind $name" ;;
-        esac
-        new_uid=$(kt get "$kind" "$name" -o jsonpath='{.metadata.uid}' 2>/dev/null || true)
-        [[ "$new_uid" == "$old_uid" ]] || die "Data CR UID changed: $kind $name (was $old_uid, now $new_uid)"
-        ok "Data CR UID preserved: $kind $name"
-      done < "$baseline_file"
-    else
-      warn "No baseline data-CR UIDs for $kind (skipping UID check)"
-    fi
-  done
-  for kind in ${BASELINE_SNAPSHOT_KINDS_NS:-}; do
-    baseline_file="$STATE_DIR/cr-uids-$kind.txt"
-    if [[ -f "$baseline_file" ]]; then
-      while IFS=: read -r nsname old_uid; do
-        [[ -z "$nsname" ]] && continue
-        IFS=/ read -r ns name <<< "$nsname"
-        state=$(obj_state kt get "$kind" "$name" -n "$ns")
-        case "$state" in
-          found) ;;
-          absent) die "Data CR missing after cutover: $kind $nsname" ;;
-          error) die "Cannot check data CR after cutover: $kind $nsname" ;;
-        esac
-        new_uid=$(kt get "$kind" "$name" -n "$ns" -o jsonpath='{.metadata.uid}' 2>/dev/null || true)
-        [[ "$new_uid" == "$old_uid" ]] || die "Data CR UID changed: $kind $nsname (was $old_uid, now $new_uid)"
-        ok "Data CR UID preserved: $kind $nsname"
-      done < "$baseline_file"
-    else
-      warn "No baseline data-CR UIDs for $kind (skipping UID check)"
-    fi
-  done
+  verify_controller_health
+  verify_baseline
   
   # Assert verify sample unaffected
   if [[ -n "${VERIFY_SAMPLE:-}" ]]; then
@@ -988,26 +822,23 @@ phase_verify() {
     warn "No controller pod found for log inspection"
   fi
   
-  ok "Verification complete"
+  check_outage_budget
+  [[ -n "$ACCEPTANCE_EVIDENCE" ]] || die "Automated preservation/health gates passed, but --acceptance-evidence is required for functional/do-no-harm acceptance"
+  evidence contract "$ACCEPTANCE_EVIDENCE" "$STATE_DIR/identity.json" acceptance || die "Functional acceptance incomplete"
+  evidence publish "$STATE_DIR/acceptance.json" "$ACCEPTANCE_EVIDENCE" || die "Acceptance already recorded or cannot be persisted (no overwrite)"
+  check_outage_budget
+  ok "Automated preservation/health gates and recorded manual functional acceptance passed"
+  warn "Keep legacy desired state disabled; execute only the recorded success restoration contract"
 }
 
 check_outage_budget() {
-  if [[ ! -f "$STATE_DIR/uninstall-epoch" ]]; then
-    info "No uninstall epoch found — budget check skipped"
-    return
-  fi
-  
-  local start_epoch now elapsed_min
-  start_epoch=$(cat "$STATE_DIR/uninstall-epoch")
-  now=$(date +%s)
-  elapsed_min=$(( (now - start_epoch) / 60 ))
-  
-  if [[ $elapsed_min -gt $OUTAGE_BUDGET_MIN ]]; then
-    print_rollback_plan "budget-blown"
+  local remaining
+  remaining=$(remaining_seconds) || die "Active cutover requires valid outage epoch"
+  if [[ $remaining -le 0 ]]; then
+    warn "S0: deadline reached; state unknown. Manual recovery required; DO NOT delete/detach DDO or restore the legacy reconciler blindly."
     exit 30
   fi
-  
-  info "Outage budget: ${elapsed_min}m elapsed of ${OUTAGE_BUDGET_MIN}m"
+  info "Outage budget: ${remaining}s remaining"
 }
 
 # ============================================================================
@@ -1044,12 +875,19 @@ EOF
   
   # S3: New Deployment healthy
   if [[ "$deploy_state" == "found" ]]; then
-    local ready
-    ready=$(ks get deployment "$DEPLOY" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
-    local owned_by
-    owned_by=$(ks get deployment "$DEPLOY" -o jsonpath="{.metadata.labels['$OWNED_BY_LABEL']}" 2>/dev/null || true)
-    
-    if [[ "${ready:-0}" -gt 0 && -n "$owned_by" ]]; then
+    local json cr_json owner health_dir
+    if ! json=$(ks get deployment "$DEPLOY" -o json) || ! cr_json=$(ks get dualdeploymentoperator "$DDO_CR" -o json); then
+      warn "S0: secondary state read failed. Manual recovery blocked until state is readable; no detach/delete."
+      return
+    fi
+    if ! jq -e '.kind == "Deployment" and (.metadata | type == "object")' <<<"$json" >/dev/null || ! jq -e '.kind == "DualDeploymentOperator" and (.metadata | type == "object")' <<<"$cr_json" >/dev/null; then
+      warn "S0: malformed secondary state. No automated recovery."
+      return
+    fi
+    health_dir=$(mktemp -d "$STATE_DIR/.rollback-health.XXXXXX")
+    printf '%s\n' "$json" > "$health_dir/deploy.json"
+    printf '%s\n' "$cr_json" > "$health_dir/cr.json"
+    if owner=$(jq -er '.expectedOwnerValue' "$STATE_DIR/evidence/readiness.json" 2>/dev/null) && evidence healthy "$health_dir/deploy.json" deployment "$owner" && evidence healthy "$health_dir/cr.json" cr; then
       cat <<EOF
 
 ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -1061,7 +899,7 @@ EOF
 ║  Fix forward:                                                               ║
 ║  1. Check DDO CR conditions: ks get ddo $DDO_CR -o yaml                     ║
 ║  2. Check controller logs: ks logs deploy/$DEPLOY                           ║
-║  3. Diff CRs vs baseline: $STATE_DIR/baseline-*.yaml                        ║
+║  3. Diff CRs vs baseline: $STATE_DIR/evidence/baseline-*.json               ║
 ║  4. If VERIFY_SAMPLE state changed, escalate immediately                    ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 EOF
@@ -1071,79 +909,28 @@ EOF
   
   # S1: Clean uninstall state (both CR and Deployment absent)
   if [[ "$cr_state" == "absent" && "$deploy_state" == "absent" ]]; then
-    cat <<EOF
-
-╔═══════════════════════════════════════════════════════════════════════════╗
-║  S1: CLEAN UNINSTALL STATE                                                 ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║  Both DDO CR and controller Deployment are absent.                          ║
-║                                                                             ║
-║  ROLLBACK: Plain helm install of the old chart.                             ║
-║                                                                             ║
-║  cd $SCRIPT_DIR/../../../${OPERAND_CHART_DIR:-charts/$OPERATOR}
-║  helm install $RELEASE . -n $NAMESPACE \\
-║    -f $STATE_DIR/rollback-values.yaml
-║                                                                             ║
-║  Then verify: helm status $RELEASE -n $NAMESPACE                            ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-EOF
+    if ! evidence check "$STATE_DIR/evidence"; then
+      warn "S0: exact legacy recovery artifacts unavailable/altered. Recovery blocked; no guessed chart installation."
+      return
+    fi
+    warn "S1 candidate only: manual inventory/UID/deletionTimestamp review on BOTH clusters and disable DDO desired state before recovery. CR absence alone does not prove teardown or preservation."
+    warn "After specialist approval and the recorded rollback restoration contract ONLY, the exact captured legacy recovery command is:"
+    printf '  u8s helm --kube-context %q -n %q install %q %q -f %q\n' "$SEED_CTX" "$NAMESPACE" "$RELEASE" "$STATE_DIR/evidence/legacy-chart.tgz" "$STATE_DIR/evidence/rollback-values.json"
+    printf '  u8s helm --kube-context %q -n %q status %q\n' "$SEED_CTX" "$NAMESPACE" "$RELEASE"
     return
   fi
   
-  # S2: Partial state (CR present, or Deployment present, or mismatched)
   cat <<EOF
-
-╔═══════════════════════════════════════════════════════════════════════════╗
-║  S2: PARTIAL STATE — CAREFUL CHOREOGRAPHY REQUIRED                         ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║  DDO CR: $cr_state
-║  Deployment: $deploy_state
-EOF
-
-  if [[ "$NAMESPACE_CASCADE_GATE" != "off" ]]; then
-    local gate_ns
-    read -r _ _ gate_ns <<<"$NAMESPACE_CASCADE_GATE"
-    cat <<EOF
-║                                                                             ║
-║  DANGEROUS ORDERING (namespace $gate_ns must survive):                      ║
-║                                                                             ║
-║  1. Scale DDO controller to 0 and WAIT for zero pods:                       ║
-║     ks scale deploy/dual-deployment-operator --replicas=0                   ║
-║     ks wait --for=delete pod -l app.kubernetes.io/instance=dual-deployment-operator --timeout=60s
-║                                                                             ║
-║  2. Strip owned-by label from namespace ON TARGET:                          ║
-║     kt label ns $gate_ns $OWNED_BY_LABEL-                                   ║
-║     Confirm: kt get ns $gate_ns -o jsonpath='{.metadata.labels}'            ║
-║                                                                             ║
-║  3. Delete the DDO CR and GATE on accepted deletion:                        ║
-║     ks delete ddo $DDO_CR                                                   ║
-║     Wait for deletionTimestamp to appear (NOT NotFound yet)                 ║
-║                                                                             ║
-║  4. Restart DDO controller:                                                 ║
-║     ks scale deploy/dual-deployment-operator --replicas=1                   ║
-║     (finalizer runs, skips unlabelled namespace, cleans up)                 ║
-║                                                                             ║
-║  5. Verify: CR gone, Deployment gone, namespace $gate_ns EXISTS             ║
-║                                                                             ║
-║  6. Reinstall old chart:                                                    ║
-║     helm install $RELEASE ... -f $STATE_DIR/rollback-values.yaml            ║
-EOF
-  else
-    cat <<EOF
-║                                                                             ║
-║  ROLLBACK (no namespace-cascade, simpler):                                  ║
-║                                                                             ║
-║  1. Delete the DDO CR:                                                      ║
-║     ks delete ddo $DDO_CR                                                   ║
-║     Wait for deletion to complete (NotFound)                                ║
-║                                                                             ║
-║  2. Reinstall old chart:                                                    ║
-║     helm install $RELEASE ... -f $STATE_DIR/rollback-values.yaml            ║
-EOF
-  fi
-
-  cat <<EOF
-╚═══════════════════════════════════════════════════════════════════════════╝
+S2: PARTIAL STATE — AUTOMATED RECOVERY BLOCKED (CR=$cr_state, Deployment=$deploy_state).
+Do NOT delete the DDO CR or detach ownership. Finalizers are not backups:
+adopted data CRs and protected namespaces can be irreversibly deleted.
+Keep the legacy reconciler frozen. Escalate for a reviewed recovery plan that
+examines actual seed/shoot inventories, retention, exact baseline UIDs and
+deletionTimestamp. No automatic stop/restore/detach sequence is provided.
+Actual DDO coordinates, UID, selector and original replicas are recorded at:
+  $STATE_DIR/evidence/ddo-controller.json
+Use the recorded freeze restoration contract for interruption/rollback; never
+restore the legacy desired state alongside active DDO ownership.
 EOF
 }
 
@@ -1151,6 +938,11 @@ EOF
 # Handoff instructions
 # ============================================================================
 print_handoff() {
+  if $DRY_RUN; then
+    warn "REHEARSAL ONLY: no uninstall, no handoff, no execution-readiness certification"
+    return
+  fi
+  check_outage_budget
   cat <<EOF
 
 ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -1168,12 +960,16 @@ print_handoff() {
 ║       --cluster $CLUSTER \\
 ║       --target-context $TARGET_CTX \\
 ║       --seed-context $SEED_CTX \\
-║       --namespace $NAMESPACE
+║       --namespace $NAMESPACE --release $RELEASE --ddo-cr $DDO_CR --deploy $DEPLOY \\
+║       --outage-budget $OUTAGE_BUDGET_MIN --resume --state-dir ${STATE_DIR%/active} \\
+║       --freeze-evidence <current-freeze.json> --readiness-evidence <readiness.json> \\
+║       --acceptance-evidence <functional-acceptance.json>
 ║                                                                             ║
 ║  OUTAGE BUDGET: ${OUTAGE_BUDGET_MIN} minutes from uninstall epoch           ║
 ║  State directory: $STATE_DIR                                                ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 EOF
+  warn "Keep an external outage clock running. Keep legacy desired state disabled; restore only via the recorded success/rollback/interruption contract."
 }
 
 # ============================================================================
@@ -1193,8 +989,11 @@ main() {
   fi
   
   load_profile
-  init_state_dir
+  if $RESUME && [[ -z "$SEED_CTX" ]]; then
+    die "--resume requires the original explicit --seed-context (no discovery outside the active deadline)"
+  fi
   discover_seed "$CLUSTER" "$NAMESPACE" || die "Could not auto-discover seed context for namespace $NAMESPACE (pass --seed-context)"
+  init_state_dir
   
   case "$PHASE" in
     uninstall) phase_uninstall ;;
@@ -1202,4 +1001,4 @@ main() {
   esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then main "$@"; fi
