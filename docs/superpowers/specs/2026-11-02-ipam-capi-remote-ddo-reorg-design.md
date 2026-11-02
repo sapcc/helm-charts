@@ -33,8 +33,11 @@ overlay a cleaner organization — while keeping the overlay **generic**
 
 ## Non-goals
 
-- No change to the controller image, CRD sources, conversion-webhook wiring, or
-  the shoot-side injector ClusterRole (those are correct after `463740c01f`).
+- No change to the controller image, conversion-webhook wiring, or the
+  shoot-side injector ClusterRole (those are correct after `463740c01f`).
+- No change to the CRD *bytes* or sha pins in this reorg. The CRD **sourcing
+  model** is recorded below (CRD sourcing) but the flip to all-remote is
+  deferred to the DDO krusty-fetch work, not done here.
 - No live cutover, no activation. The overlay PR stays draft behind its
   platform gates (DDO remote-fetch, admin-chart `source.kustomize` support).
 
@@ -130,6 +133,30 @@ with its lease in the seed namespace.
    the kubeconfig ConfigMap patch, and the Deployment host-env patch). The
    fragile patch was only ever *documented* in the README, never added to the
    CR. The README `seed-namespace-contract` section is removed as part of item 3.
+
+## CRD sourcing (target vs today)
+
+The CRDs should be fetched **remotely** (SHA-pinned), not hand-vendored — the
+user's direction. The overlay already does this for the 4 provider **pool**
+CRDs via a SHA-pinned git directory base
+(`cluster-api-ipam-provider-in-cluster//config/crd?ref=7933583…`, v1.1.1).
+
+- **Target model:** all 7 CRDs fetched remotely, SHA-pinned. This becomes
+  possible once the DDO **krusty-fetch** capability lands (the user is
+  implementing it; it is the remote-base support tracked as DDO issue #58).
+- **Today (buildable, DDO-safe):** a hybrid — pool CRDs remote git base (as
+  above); the 3 core CAPI CRDs (`clusters.cluster.x-k8s.io`,
+  `ipaddresses` / `ipaddressclaims.ipam.cluster.x-k8s.io`) stay **vendored**
+  under `shoot/core-crds/` with sha256 pins + a `conversion: {strategy: None}`
+  patch.
+- **Why the 3 core CRDs can't go remote yet (verified at CAPI
+  `5f7d58c9…` = v1.14.2):** `core/config/crd/bases` bundles **13** CRDs and
+  there is no CAPI directory containing only our 3. A DDO git-directory base
+  would pull 10 unwanted CRDs, and DDO's resolver cannot fetch single raw-HTTP
+  files. So remote-all-7 waits on krusty-fetch; until then the 3 stay vendored.
+
+This reorg keeps the hybrid as-is (no CRD byte/pin change). The flip of the 3
+core CRDs to a remote base is a follow-up gated on krusty-fetch shipping.
 
 ## What's left to the builder
 
