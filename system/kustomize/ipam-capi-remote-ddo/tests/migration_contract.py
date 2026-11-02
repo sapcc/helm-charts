@@ -8,7 +8,7 @@ import sys
 import yaml
 
 from crd_parity import fingerprints
-from legacy_render import ROOT, PREFIX, HISTORICAL, documents, git_file, place, render
+from migration_render import ROOT, PREFIX, HISTORICAL, documents, git_file, place, render
 
 LABEL = 'dual-deployment-operator.cc.sap/webhook-injector'
 ORIGIN = 'dual-deployment-operator.cc.sap/origin'

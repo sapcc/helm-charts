@@ -9,7 +9,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 - "$DIR" "$WORK/shoot.yaml" <<'PY'
 import sys
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
-from legacy_render import documents, place, render
+from migration_render import documents, place, render
 from migration_contract import INJECTOR, NEW_RULES, OLD_RULES, index
 kinds={'ServiceAccount','ClusterRole','ClusterRoleBinding','Role','RoleBinding'}
 actual=index(d for d in place(documents(Path(sys.argv[2]).read_text()), 'kube-system') if d['kind'] in kinds)

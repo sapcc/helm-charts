@@ -46,7 +46,8 @@ system/kustomize/ipam-capi-remote-ddo/
     webhook-injector-rbac.yaml
     webhook-injector-metrics-service.yaml
     webhook-injector-servicemonitor.yaml
-    legacy-support.yaml                # three policies + manager ConfigMap
+    networkpolicies.yaml               # three migration-inventory NetworkPolicies
+    manager-config.yaml                # manager ConfigMap (migration inventory)
   additions/shoot/
     kustomization.yaml
     pools.example.yaml                 # unreferenced example
@@ -58,11 +59,11 @@ system/kustomize/ipam-capi-remote-ddo/
     patches/conversion-*.yaml           # four SAP pool conversion shims
     rbac.yaml
     webhooks.yaml
-    legacy-support.yaml                # old leader-election pair + metrics Service
+    metrics-service.yaml               # controller metrics Service (migration inventory)
   tests/
     crd-baseline.json                   # compact immutable render fingerprints
     crd_parity.py
-    legacy_render.py                   # independent pinned Helm oracle
+    migration_render.py                # independent pinned Helm oracle
     migration_contract.py              # guarded deltas + mutation tests
     *_test.sh
 ```
@@ -124,9 +125,8 @@ Helm values:
 
 The shared seed kubeconfig and manager host retain neutral placeholders.
 Per-cluster kube-secrets CR transformations supply the actual kubeconfig server
-and `KUBERNETES_SERVICE_HOST`, plus the seed ClusterRoleBinding subject namespace.
-All six target labels are already in source. `shootAccess.server` configures DDO's client, not the operand's
-mounted kubeconfig.
+and `KUBERNETES_SERVICE_HOST`. All six target labels are already in source.
+`shootAccess.server` configures DDO's client, not the operand's mounted kubeconfig.
 
 ## Maintenance and fidelity
 
@@ -217,31 +217,9 @@ applyOrder: SeedFirst
 ```
 
 The real seed CR namespace is `shoot--cp--m-qa-de-200`; shoot placement is
-`kube-system`. DDO stamps object namespaces, **not ClusterRoleBinding subjects**.
-The seed source deliberately omits that subject namespace instead of misleadingly
-fixing it to `kube-system`. Append this entry to the CR's complete transformation
-list (fragment, not a replacement list):
-
-<!-- seed-namespace-contract -->
-```yaml
-transformations:
-  - patch:
-      target:
-        kind: ClusterRoleBinding
-        name: ipam-capi-remote-webhook-injector
-        origin: additions
-      jsonPatch:
-        - op: add
-          path: /subjects/0/namespace
-          value: shoot--cp--m-qa-de-200
-```
-
-For another seed namespace, replace this value with the CR namespace; tests also
-exercise `ipam-alternate-seed` with the same patch mechanism and corresponding
-ServiceAccount. Preserve exactly one injector ServiceAccount subject and the
-existing ClusterRole roleRef. Do not place a Helm expression in the raw source.
-Instance transformation arrays replace defaults: retain **all** host/kubeconfig
-and other required entries when adding this patch. No kube-secrets files are
-changed here. The tests parse this documented fragment; they model its leaf add
-and namespace placement, not the production DDO transform engine. Independent
-DDO integration remains a separate release gate.
+`kube-system`. DDO stamps object namespaces at delivery. The webhook-injector's
+seed RBAC is a namespaced Role/RoleBinding whose same-namespace ServiceAccount
+subject needs no explicit subject namespace, so no per-placement binding patch is
+required. Instance transformation arrays replace defaults: retain **all**
+host/kubeconfig and other required entries. No kube-secrets files are changed
+here. Independent DDO integration remains a separate release gate.

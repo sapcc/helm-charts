@@ -9,7 +9,7 @@ provider='7933583138cf1b5b16b6a1dd82a804729f83afab'
 capi='5f7d58c9ad647f31bd342bf8de33092c27f7fc38'
 base=f'https://github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/crd?ref={provider}'
 shoot=yaml.safe_load((root/'shoot/kustomization.yaml').read_text())
-assert shoot['resources']==['../base','../additions/shoot',base,'core-crds','rbac.yaml','webhooks.yaml','legacy-support.yaml'], 'FAIL: exact source composition missing'
+assert shoot['resources']==['../base','../additions/shoot',base,'core-crds','rbac.yaml','webhooks.yaml','metrics-service.yaml'], 'FAIL: exact source composition missing'
 assert not list((root/'shoot/crds').glob('*.yaml')), 'FAIL: copied CRDs remain'
 core=yaml.safe_load((root/'shoot/core-crds/kustomization.yaml').read_text())
 names=['cluster.x-k8s.io_clusters','ipam.cluster.x-k8s.io_ipaddresses','ipam.cluster.x-k8s.io_ipaddressclaims']
