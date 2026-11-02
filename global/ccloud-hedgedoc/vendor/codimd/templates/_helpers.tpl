@@ -42,7 +42,7 @@ app.kubernetes.io/name: {{ include "codimd.name" . }}
 helm.sh/chart: {{ include "codimd.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/version: {{ default .Chart.AppVersion .Values.image.tag }}
+app.kubernetes.io/version: {{ default .Chart.AppVersion .Values.image.tag | quote }}
 {{- end -}}
 
 
