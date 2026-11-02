@@ -6,11 +6,13 @@ A **DDO source.kustomize operand**, not a Helm chart. DDO renders `seed/` and
 ## Release gate
 
 **Do not activate this candidate based only on these static tests.** Deploy a
-DDO release supporting safely acquired, SHA-pinned Git directory bases and
+DDO release supporting safely acquired, SHA-pinned remote sources —
+both Git directory bases and individual raw file URLs — and
 `spec.source.kustomize`, plus an admin chart that renders that source type.
-There are **no raw HTTP resources**: the three core CRDs are vendored verbatim;
-the real provider Git directory remains remote. Do not relax DDO preflight.
-An online CLI build is not evidence of production cache/offline semantics.
+All seven CRDs are fetched remotely: the four provider pool CRDs through a
+pinned Git directory base, the three core CRDs through SHA-pinned raw file
+URLs. Nothing is vendored. Do not relax DDO preflight. An online CLI build is
+not evidence of production cache/offline semantics.
 
 Before cutover: independently verify DDO integration, the required seed binding
 transformation below, current shoot credentials, initial CA stamping and rotation,
@@ -54,8 +56,8 @@ system/kustomize/ipam-capi-remote-ddo/
   seed/kustomization.yaml
   shoot/
     kustomization.yaml                 # provider Git base + core-crds + local RBAC/webhooks
-    core-crds/                         # three exact pinned files + provenance README
-      kustomization.yaml               # local resources + explicit conversion default
+    core-crds/                         # three SHA-pinned raw CRD URLs + provenance README
+      kustomization.yaml               # remote resources + explicit conversion default
     patches/conversion-*.yaml           # four SAP pool conversion shims
     rbac.yaml
     webhooks.yaml
@@ -73,12 +75,14 @@ system/kustomize/ipam-capi-remote-ddo/
 | Origin | Release | Resolved commit | Delivered objects |
 | --- | --- | --- | --- |
 | kubernetes-sigs/cluster-api-ipam-provider-in-cluster | v1.1.1 | `7933583138cf1b5b16b6a1dd82a804729f83afab` | Four pool CRDs through `//config/crd?ref=<SHA>` |
-| kubernetes-sigs/cluster-api | v1.14.2 | `5f7d58c9ad647f31bd342bf8de33092c27f7fc38` | Exactly Cluster, IPAddress, IPAddressClaim vendored in `shoot/core-crds/` |
+| kubernetes-sigs/cluster-api | v1.14.2 | `5f7d58c9ad647f31bd342bf8de33092c27f7fc38` | Exactly Cluster, IPAddress, IPAddressClaim via SHA-pinned raw file URLs in `shoot/core-crds/` |
 
-Git directory bases require a kustomization directory. See
-[core provenance and SHA-256 checksums](shoot/core-crds/README.md) for the exact
-three upstream files. Do not import CAPI's entire CRD directory: it introduces
-ten additional CRDs this operand does not own.
+The provider pool CRDs use a Git directory base. The three core CRDs are each
+referenced individually as SHA-pinned raw file URLs — CAPI's
+`core/config/crd/bases` directory bundles thirteen CRDs and this operand owns
+only three, so the whole directory must never be imported. See
+[core source provenance](shoot/core-crds/README.md) for the exact three URLs.
+Every remote ref MUST be a full 40-character commit SHA, never a mutable tag.
 
 The four pool patches preserve URL-only conversion to
 `https://ipam-capi-remote-webhook-service:443/convert` and review version `v1`.
@@ -98,7 +102,8 @@ no move-hierarchy label. Provider and cert-manager injection metadata are absent
 
 ### Accepted maximize-upstream scope
 
-This candidate fetches four CRDs and vendors three. The existing `shoot/rbac.yaml`
+This candidate fetches all seven CRDs remotely (four pool CRDs via a pinned Git
+directory base, three core CRDs via SHA-pinned raw file URLs). The existing `shoot/rbac.yaml`
 stays local: importing the full upstream RBAC base adds unwanted objects and
 namespaced leader-election roles instead of the existing remote cluster-scoped
 variant. It also contains SAP metal cross-operator bindings and webhook-injector
@@ -132,7 +137,7 @@ and `KUBERNETES_SERVICE_HOST`. All six target labels are already in source.
 
 1. Resolve a new upstream release tag to its **commit**, not its tag object.
 2. Review upstream schema, served/storage versions, conversion, RBAC and manager
-   changes against the current pins. Update Git pins and vendored bytes/checksums coherently.
+   changes against the current pins. Update the Git directory and raw-file commit pins coherently.
 3. Review conversion patches and any necessary local RBAC/Deployment changes.
    Image tags are maintained separately via `images:`.
 4. Run the complete suite. Intentional schema changes require explicit baseline
@@ -167,8 +172,9 @@ resources already checked against the oracle. No CA certificate is stored in
 new source/artifacts. Schema/version arrays, all remaining Pod fields, webhook
 paths/policies, RBAC, network selectors and meaningful metadata remain checked.
 Mutation tests reject removals of every identity, all seven schema changes,
-target/URL/CA/SAN drift, broad RBAC and NetworkPolicy changes. Raw-file references,
-wrong vendored hashes, extra CAPI resources and service/URL coexistence fail.
+target/URL/CA/SAN drift, broad RBAC and NetworkPolicy changes. Mutable (non-SHA)
+remote refs, the full CAPI CRD directory, extra CAPI resources and service/URL
+coexistence fail.
 
 Three restored seed policies preserve same-namespace apiserver traffic TCP9443
 and `name=kube-monitoring` namespace traffic TCP8082. Their selected apiservers
