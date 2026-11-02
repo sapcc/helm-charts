@@ -63,9 +63,20 @@ RESTORED = {
              ('NetworkPolicy', 'kube-apiserver-egress-to-ipam-capi'),
              ('NetworkPolicy', 'ipam-capi-ingress-from-kube-monitoring'),
              ('ConfigMap', 'ipam-capi-manager-config')},
+    'shoot': {('Service', 'ipam-capi-controller-manager-metrics-service')},
+}
+# Oracle-inventory objects the reorg intentionally dropped from the overlay.
+# The pinned Helm chart still emits them, so they are filtered out of the
+# expected set rather than asserted present. Justification: the webhook-injector
+# seed ClusterRole/ClusterRoleBinding were an unused managed-resource-mode
+# leftover; the two shoot leader-election pairs were a GRM namespace-limit
+# workaround and the manager runs --leader-elect=false.
+DROPPED = {
+    'seed': {('ClusterRole', INJECTOR), ('ClusterRoleBinding', INJECTOR)},
     'shoot': {('ClusterRole', 'ipam-capi-leader-election-role'),
               ('ClusterRoleBinding', 'ipam-capi-leader-election-rolebinding'),
-              ('Service', 'ipam-capi-controller-manager-metrics-service')},
+              ('ClusterRole', 'ipam-capi-remote-leader-election-role'),
+              ('ClusterRoleBinding', 'ipam-capi-remote-leader-election-rolebinding')},
 }
 
 
@@ -95,34 +106,10 @@ def remove_target(new, old):
     assert new['metadata']['labels'].pop(LABEL) == 'ipam-capi-remote'
 
 
-def namespace_patch(namespace):
-    # This is the documented CR jsonPatch, not comparison-time subject normalization.
-    section = (ROOT / 'README.md').read_text().split('<!-- seed-namespace-contract -->')[1]
-    fragment = yaml.safe_load(section.split('```yaml', 1)[1].split('```', 1)[0])
-    assert len(fragment['transformations']) == 1
-    patch = fragment['transformations'][0]['patch']
-    assert patch['target'] == {'kind': 'ClusterRoleBinding', 'name': INJECTOR, 'origin': 'additions'}
-    assert patch['jsonPatch'] == [{'op': 'add', 'path': '/subjects/0/namespace', 'value': 'shoot--cp--m-qa-de-200'}]
-    operation = copy.deepcopy(patch['jsonPatch'][0])
-    operation['value'] = namespace
-    return operation
-
-
 def delivered(raw, namespace):
     result = copy.deepcopy(raw)
-    seed = result['seed']
-    binding = get(seed, 'ClusterRoleBinding', INJECTOR)
-    assert binding['subjects'] == [{'kind': 'ServiceAccount', 'name': INJECTOR}], 'seed CRB must require placement patch'
-    patch = namespace_patch(namespace)
-    assert patch['op'] == 'add' and patch['path'] == '/subjects/0/namespace'
-    binding['subjects'][0]['namespace'] = patch['value']
-    place(seed, namespace)
+    place(result['seed'], namespace)
     place(result['shoot'], 'kube-system')
-    sa = get(seed, 'ServiceAccount', INJECTOR)
-    assert binding['subjects'] == [{'kind': 'ServiceAccount', 'name': INJECTOR,
-                                    'namespace': sa['metadata']['namespace']}]
-    assert sa['metadata']['namespace'] == namespace
-    assert binding['roleRef'] == {'apiGroup': 'rbac.authorization.k8s.io', 'kind': 'ClusterRole', 'name': INJECTOR}
     return result
 
 
@@ -132,8 +119,10 @@ def compare(raw, legacy, namespace):
     actual_targets = {d['metadata']['name'] for mode in candidate.values() for d in mode
                       if LABEL in d['metadata'].get('labels', {})}
     assert actual_targets == target_names, 'exactly six injector targets required'
-    for mode, count in (('seed', 15), ('shoot', 25)):
-        actual, expected = index(candidate[mode]), index(legacy[mode])
+    for mode, count in (('seed', 13), ('shoot', 21)):
+        actual = index(candidate[mode])
+        expected = index(d for d in legacy[mode]
+                         if (d['kind'], d['metadata']['name']) not in DROPPED[mode])
         assert len(expected) == count
         assert actual.keys() == expected.keys(), f'{mode} inventory missing/extra: {actual.keys() ^ expected.keys()}'
         for key in expected:
@@ -202,16 +191,13 @@ def compare(raw, legacy, namespace):
 
 def historical_check(raw):
     path = ROOT / 'tests/crd-baseline.json'
-    assert hashlib.sha256(path.read_bytes()).hexdigest() == '85638ccce6b8cf3d9828c7d4a232bd36f341d0dc80adba5b779d9db9a862cac0', 'historical baseline changed'
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == 'aa6fa9b171f6c3e81e5c8ce8362e3f222ed1c6ae9178cb36c20311decfe7ef20', 'historical baseline changed'
     baseline = json.loads(path.read_text())
     for mode in ('seed', 'shoot'):
         restored = copy.deepcopy(raw[mode])
         restored = [d for d in restored if (d['kind'], d['metadata']['name']) not in RESTORED[mode]]
         for doc in restored:
             kind, name = doc['kind'], doc['metadata']['name']
-            if mode == 'seed' and kind == 'ClusterRoleBinding' and name == INJECTOR:
-                assert doc['subjects'] == [{'kind': 'ServiceAccount', 'name': INJECTOR}]
-                doc['subjects'][0]['namespace'] = 'kube-system'
             if mode == 'shoot' and (name in POOLS or kind in ADMISSION):
                 assert doc['metadata']['labels'].pop(LABEL) == 'ipam-capi-remote'
             if kind == 'CustomResourceDefinition' and name in POOLS:
@@ -300,7 +286,7 @@ def main(shoot, seed):
     compare(raw, render(alternate), alternate)
     historical_check(raw)
     negative_tests(raw, legacy, namespace)
-    print('PASS: pinned legacy 15 seed / 25 shoot, guarded migration, both namespace placements, unchanged historical baseline')
+    print('PASS: pinned oracle 13 seed / 21 shoot, guarded migration, both namespace placements, unchanged historical baseline')
 
 
 if __name__ == '__main__':

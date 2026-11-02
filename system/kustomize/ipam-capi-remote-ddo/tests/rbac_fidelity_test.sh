@@ -10,10 +10,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from migration_render import documents, place, render
-from migration_contract import INJECTOR, NEW_RULES, OLD_RULES, index
+from migration_contract import INJECTOR, NEW_RULES, OLD_RULES, index, DROPPED
 kinds={'ServiceAccount','ClusterRole','ClusterRoleBinding','Role','RoleBinding'}
 actual=index(d for d in place(documents(Path(sys.argv[2]).read_text()), 'kube-system') if d['kind'] in kinds)
-expected=index(d for d in render('shoot--cp--m-qa-de-200')['shoot'] if d['kind'] in kinds)
+expected=index(d for d in render('shoot--cp--m-qa-de-200')['shoot']
+               if d['kind'] in kinds and (d['kind'], d['metadata']['name']) not in DROPPED['shoot'])
 assert actual.keys()==expected.keys(), 'RBAC inventory differs'
 for key, old in expected.items():
     new=actual[key]

@@ -33,7 +33,7 @@ def place(docs, namespace):
 
 
 def render(namespace):
-    with tempfile.TemporaryDirectory(prefix='ipam-legacy-') as work:
+    with tempfile.TemporaryDirectory(prefix='ipam-migration-') as work:
         archive = subprocess.check_output(
             ['git', 'archive', LEGACY, 'system/ipam-capi-remote'], cwd=REPO)
         with tarfile.open(fileobj=io.BytesIO(archive)) as bundle:
