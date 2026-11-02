@@ -294,6 +294,8 @@ then
 fi
 
 echo ""
+if [ $failed -eq 0 ]; then
+  echo "=== All render tests PASSED ==="
   exit 0
 else
   echo "=== Some tests FAILED ==="
