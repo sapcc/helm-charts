@@ -181,14 +181,31 @@ else
   echo "PASS: All objects carry dual-deployment-operator.cc.sap/origin: additions annotation"
 fi
 
-# Cluster-scoped bindings are not rewritten by DDO ApplyNamespace.
-injector_subject=$(yq eval 'select(.kind == "ClusterRoleBinding" and .metadata.name == "ipam-capi-remote-webhook-injector") | .subjects[] | select(.kind == "ServiceAccount" and .name == "ipam-capi-remote-webhook-injector") | .namespace' /tmp/seed_render_test.yaml)
-if [[ "$injector_subject" != "null" ]]; then
-  echo "FAIL: webhook-injector ClusterRoleBinding subject requires the documented DDO placement patch (got: $injector_subject)"
-  failed=1
-else
-  echo "PASS: webhook-injector ClusterRoleBinding has no misleading fixed namespace; migration_contract_test covers both placement patches"
-fi
+# Test 10: webhook-injector seed RBAC is namespaced-only (SA + Role + RoleBinding present).
+# The injector patches CRDs/webhook-configs on the SHOOT via --target-kubeconfig (shoot token),
+# so the seed pod ServiceAccount needs only namespaced perms. A namespaced RoleBinding defaults
+# its ServiceAccount subject namespace to the binding's own namespace (stamped by DDO to
+# cr.Namespace), so no explicit subject namespace and no cluster-scoped binding is required.
+for kind in ServiceAccount Role RoleBinding; do
+  if ! yq eval "select(.kind == \"$kind\" and .metadata.name == \"ipam-capi-remote-webhook-injector\") | .metadata.name" /tmp/seed_render_test.yaml | grep -q "ipam-capi-remote-webhook-injector"; then
+    echo "FAIL: webhook-injector seed $kind not found"
+    failed=1
+  else
+    echo "PASS: webhook-injector seed $kind present"
+  fi
+done
+
+# Test 11: the dead seed-side injector ClusterRole + ClusterRoleBinding are ABSENT.
+# They granted resources.gardener.cloud/managedresources + secrets — a leftover for the
+# unused --managed-resource-label mode; the r7 injector never uses them on the seed.
+for kind in ClusterRole ClusterRoleBinding; do
+  if yq eval "select(.kind == \"$kind\" and .metadata.name == \"ipam-capi-remote-webhook-injector\") | .metadata.name" /tmp/seed_render_test.yaml | grep -q "ipam-capi-remote-webhook-injector"; then
+    echo "FAIL: dead webhook-injector seed $kind should have been removed"
+    failed=1
+  else
+    echo "PASS: dead webhook-injector seed $kind absent"
+  fi
+done
 
 echo ""
 if [ $failed -eq 0 ]; then
