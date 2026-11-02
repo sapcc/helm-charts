@@ -122,20 +122,20 @@ else
   failed=1
 fi
 
-# Test 11: seed render contains webhook-injector ClusterRole
+# Test 11: seed render contains ZERO webhook-injector ClusterRole (dropped; injector uses target kubeconfig)
 if grep -q "^kind: ClusterRole$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" /tmp/seed_render.yaml; then
-  echo "PASS: seed render contains ClusterRole ipam-capi-remote-webhook-injector"
-else
-  echo "FAIL: seed render should contain ClusterRole ipam-capi-remote-webhook-injector"
+  echo "FAIL: seed render should NOT contain ClusterRole ipam-capi-remote-webhook-injector"
   failed=1
+else
+  echo "PASS: seed render contains ZERO ClusterRole ipam-capi-remote-webhook-injector"
 fi
 
-# Test 12: seed render contains webhook-injector ClusterRoleBinding
+# Test 12: seed render contains ZERO webhook-injector ClusterRoleBinding (dropped)
 if grep -q "^kind: ClusterRoleBinding$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" /tmp/seed_render.yaml; then
-  echo "PASS: seed render contains ClusterRoleBinding ipam-capi-remote-webhook-injector"
-else
-  echo "FAIL: seed render should contain ClusterRoleBinding ipam-capi-remote-webhook-injector"
+  echo "FAIL: seed render should NOT contain ClusterRoleBinding ipam-capi-remote-webhook-injector"
   failed=1
+else
+  echo "PASS: seed render contains ZERO ClusterRoleBinding ipam-capi-remote-webhook-injector"
 fi
 
 # Test 13: seed render contains ZERO CustomResourceDefinitions
@@ -251,9 +251,49 @@ else
   echo "PASS: shoot render contains ZERO Service ipam-capi-remote-webhook-service"
 fi
 
+# Test 22: shoot render contains ZERO leader-election RBAC (manager runs --leader-elect=false)
+if ! python3 - /tmp/shoot_render.yaml <<'PY'
+import sys, yaml
+docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d]
+failed = False
+for kind, name in (
+    ("ClusterRole", "ipam-capi-leader-election-role"),
+    ("ClusterRoleBinding", "ipam-capi-leader-election-rolebinding"),
+    ("ClusterRole", "ipam-capi-remote-leader-election-role"),
+    ("ClusterRoleBinding", "ipam-capi-remote-leader-election-rolebinding"),
+):
+    present = any(d.get("kind") == kind and d.get("metadata", {}).get("name") == name for d in docs)
+    print(f"{'FAIL' if present else 'PASS'}: shoot render contains ZERO {kind} {name}")
+    failed |= present
+sys.exit(1 if failed else 0)
+PY
+then
+  failed=1
+fi
+
+# Test 23: regression guard — shoot still has injector ClusterRole + metal bindings + core controller bindings
+if ! python3 - /tmp/shoot_render.yaml <<'PY'
+import sys, yaml
+docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d]
+failed = False
+for kind, name in (
+    ("ClusterRole", "ipam-capi-remote-webhook-injector"),
+    ("ClusterRoleBinding", "ipam-capi-remote-webhook-injector-rolebinding"),
+    ("ClusterRoleBinding", "ipam-capi-metal-rolebinding"),
+    ("ClusterRoleBinding", "ipam-capi-metal-admin-rolebinding"),
+    ("ClusterRoleBinding", "ipam-capi-manager-rolebinding"),
+    ("ClusterRoleBinding", "ipam-capi-proxy-rolebinding"),
+):
+    present = any(d.get("kind") == kind and d.get("metadata", {}).get("name") == name for d in docs)
+    print(f"{'PASS' if present else 'FAIL'}: shoot render retains {kind} {name}")
+    failed |= not present
+sys.exit(1 if failed else 0)
+PY
+then
+  failed=1
+fi
+
 echo ""
-if [ $failed -eq 0 ]; then
-  echo "=== All tests PASSED ==="
   exit 0
 else
   echo "=== Some tests FAILED ==="
