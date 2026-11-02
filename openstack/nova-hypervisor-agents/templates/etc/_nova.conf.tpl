@@ -91,6 +91,7 @@ project_name = "{{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 valid_interfaces = public
 region_name = {{.Values.global.region}}
+timeout = {{.Values.placement_timeout}}
 
 [barbican]
 backend = barbican
