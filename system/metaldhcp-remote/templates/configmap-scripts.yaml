@@ -22,10 +22,10 @@ data:
 
     ip addr add ${EXTERNALIP}/32 dev ${INTERFACE} || true
 
-    if iptables-nft -t nat -C POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP} 2>/dev/null; then
+    if iptables-nft -t nat -C POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP}:67 2>/dev/null; then
         echo "SNAT DHCP rule already present"
     else
-        iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP}
+        iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP}:67
     fi
     {{- if .Values.tftp.enabled }}
 
@@ -61,7 +61,7 @@ data:
         echo "WARNING: /shared/interface not found, skipping ip addr del"
     fi
 
-    iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP} || true
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP}:67 || true
     {{- if .Values.tftp.enabled }}
     iptables-nft -t nat -D PREROUTING -d ${EXTERNALIP}/32 -p udp --dport 69 -j ACCEPT || true
     iptables-nft -t raw -D PREROUTING -p udp --dport 69 -j CT --helper tftp || true
