@@ -170,7 +170,7 @@ usage() {
 }
 
 main() {
-  local cluster='' profile output state detail rc order
+  local cluster='' profile output state detail order
   local -a profiles
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -219,27 +219,44 @@ main() {
     fi
   done
   printf 'chart | state | detail\n'
+  local -a candidates=()
+  local had_problem=0
   while IFS= read -r profile; do
     unset RELEASE DDO_CR LEGACY_CHART_DIR ROLLOUT_ORDER
     # shellcheck source=/dev/null
     source "$profile"
     set +e
     output="$(classify_chart "$RELEASE" "$DDO_CR")"
-    rc=$?
     set -e
     state="${output%% *}"
     detail="${output#* }"
     printf '%s | %s | %s\n' "$RELEASE" "$state" "$detail"
     case "$state" in
       migrated) ;;
-      not-migrated) echo "next candidate: $RELEASE"; return 0 ;;
-      attention|unknown) echo "needs attention: $RELEASE ($detail)"; return "$rc" ;;
+      not-migrated) candidates+=("$RELEASE") ;;
+      attention|unknown) had_problem=1 ;;
     esac
   done < <(for profile in "${profiles[@]}"; do
     order=$(bash -c 'source "$1"; printf "%s" "$ROLLOUT_ORDER"' _ "$profile")
     printf '%s %s\n' "$order" "$profile"
   done | sort -n | cut -d' ' -f2-)
-  echo 'all charts migrated'
+
+  # Summary. Candidates are listed in rollout order (the loop already runs in
+  # that order). A read failure or ambiguous state anywhere fails the scan so
+  # callers never act on an incomplete picture.
+  if ((${#candidates[@]} > 0)); then
+    local candidate
+    for candidate in "${candidates[@]}"; do
+      echo "candidate: $candidate"
+    done
+  fi
+  if ((had_problem)); then
+    echo 'scan found charts needing attention'
+    return 1
+  fi
+  if ((${#candidates[@]} == 0)); then
+    echo 'all charts migrated'
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

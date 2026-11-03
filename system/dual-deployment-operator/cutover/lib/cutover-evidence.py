@@ -65,14 +65,40 @@ def items(obj):
     return obj["items"]
 
 
-def embedded_crds(manifest):
+def resolve_crd_mrs(objects, requested):
+    """Resolve the CRD-protecting ManagedResource name inventory.
+
+    When `requested` (explicit profile CRD_MRS) is nonempty it is authoritative
+    and we never fall back to the prefix. Otherwise derive from the legacy
+    mr-crd-* naming convention used by the other remote charts. Either way the
+    resolved set must be nonempty and duplicate-free, and every selected name
+    must identify exactly one ManagedResource in the captured manifest.
+    """
+    mr_names = [o["metadata"]["name"] for o in objects
+                if o.get("kind") == "ManagedResource"]
+    if requested:
+        require(len(requested) == len(set(requested)),
+                "duplicate CRD MR inventory")
+        names = requested
+        for name in names:
+            require(mr_names.count(name) == 1,
+                    "CRD MR named in CRD_MRS absent/ambiguous: " + name)
+    else:
+        names = [n for n in mr_names if n.startswith("mr-crd-")]
+        require(names, "empty legacy CRD MR inventory")
+        require(len(names) == len(set(names)), "duplicate CRD MR inventory")
+    return names
+
+
+def embedded_crds(manifest, requested=None):
     """Decode only Secret payloads referenced by the actual CRD MRs.
 
     kubectl does YAML conversion later; unknown/empty payload layouts block.
     """
     objects = items(manifest)
+    names = resolve_crd_mrs(objects, requested or [])
     mrs = [o for o in objects if o.get("kind") == "ManagedResource"
-           and o["metadata"]["name"].startswith("mr-crd-")]
+           and o["metadata"]["name"] in names]
     require(mrs, "empty legacy CRD MR inventory")
     chunks = []
     for mr in mrs:
@@ -197,7 +223,12 @@ def main():
     elif cmd == "list":
         items(read(args[0]))
     elif cmd == "embedded-crds":
-        print(embedded_crds(read(args[0])), end="")
+        print(embedded_crds(read(args[0]), args[1:]), end="")
+    elif cmd == "crd-mrs":
+        # Resolve and print (one per line) the sealed CRD-MR name inventory from
+        # the normalized legacy manifest. args[1:] are the explicit profile names.
+        names = resolve_crd_mrs(items(read(args[0])), args[1:])
+        print("\n".join(names))
     elif cmd == "crd-coverage":
         expected, live = items(read(args[0])), items(read(args[1]))
         require(expected and all(o.get("kind") == "CustomResourceDefinition" for o in expected), "invalid/empty rendered CRD payload")

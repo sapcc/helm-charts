@@ -6,7 +6,8 @@
 #
 # This script implements the full cutover lifecycle for migrating a Gardener
 # extension operator to DualDeploymentOperator management. It is parameterized
-# by operator-specific profiles under profiles/<operator>-operator-remote.env (or <operator>.env for exact-name profiles).
+# by operator-specific profiles under profiles/<operator>-operator-remote.env,
+# profiles/<operator>-remote.env, or profiles/<operator>.env.
 #
 # SAFETY DISCIPLINE: This script is fail-closed throughout. Any read error
 # (connectivity, auth, transient API failure) is treated as "unknown state"
@@ -141,8 +142,28 @@ source "$SCRIPT_DIR/lib/ddo-common.sh" ||
   { echo "error: cannot source $SCRIPT_DIR/lib/ddo-common.sh" >&2; exit 2; }
 source "$SCRIPT_DIR/lib/cutover-safety.sh" || exit 2
 
+validate_crd_mrs() {
+  local tok seen=""
+  # Disable pathname expansion: CRD_MRS tokens are ManagedResource names and must
+  # NEVER be glob-expanded against the local filesystem. A value like "*" must be
+  # rejected as an invalid name, not silently expanded into matching filenames.
+  # Save/restore the noglob flag portably (bash 3.2 has no `local -`).
+  local _had_noglob=0; [[ -o noglob ]] && _had_noglob=1
+  set -f
+  for tok in ${CRD_MRS:-}; do
+    [[ "$tok" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ ]] \
+      || { [[ $_had_noglob -eq 1 ]] || set +f; die "CRD_MRS contains an invalid ManagedResource name: '$tok'"; }
+    case " $seen " in *" $tok "*) [[ $_had_noglob -eq 1 ]] || set +f; die "CRD_MRS contains a duplicate: '$tok'";; esac
+    seen="$seen $tok"
+  done
+  [[ $_had_noglob -eq 1 ]] || set +f
+}
+
 load_profile() {
   local profile_file="$PROFILES_DIR/${OPERATOR}-operator-remote.env"
+  if [[ ! -f "$profile_file" ]]; then
+    profile_file="$PROFILES_DIR/${OPERATOR}-remote.env"
+  fi
   [[ -f "$profile_file" ]] || profile_file="$PROFILES_DIR/${OPERATOR}.env"
 
   if [[ ! -f "$profile_file" ]]; then
@@ -151,6 +172,7 @@ load_profile() {
   
   # Reset profile-optional fields so environment values cannot leak between profiles.
   PROTECT_MRS=""
+  CRD_MRS=""
   # shellcheck source=/dev/null
   source "$profile_file"
   
@@ -166,7 +188,14 @@ load_profile() {
   [[ -n "${CRD_GROUPS:-}" ]]  || die "Profile missing CRD_GROUPS"
   [[ -n "${NAMESPACE_CASCADE_GATE:-}" ]] || die "Profile missing NAMESPACE_CASCADE_GATE"
   [[ -n "${OWNED_BY_LABEL:-}" ]] || die "Profile missing OWNED_BY_LABEL"
-  
+
+  # CRD_MRS (optional) names the CRD-protecting ManagedResources explicitly.
+  # When set it is authoritative; when empty the CRD-MR set is derived from the
+  # mr-crd-* prefix in the captured legacy manifest. Validate each token as an
+  # RFC1123 resource name and reject wildcards/duplicates so a malformed profile
+  # cannot smuggle a glob (jq treats "*" literally) or silently drop coverage.
+  validate_crd_mrs
+
   info "Loaded profile: $OPERATOR"
   info "  RELEASE=$RELEASE"
   info "  DDO_CR=$DDO_CR"
@@ -276,34 +305,21 @@ preflight_crds_on_target() {
 }
 
 # Gate 3: ManagedResource keepObjects check
+# Delegates to the single shared preservation validator (check_mr_coverage),
+# which resolves the CRD-MR set from the sealed inventory (explicit CRD_MRS
+# authoritative; else mr-crd-* prefix) and requires, for each name: exactly one
+# live MR, release-owned, keepObjects:true, not terminating — plus live CRD
+# inventory preservation. No second prefix-based selection loop lives here.
 preflight_mr_keepobjects() {
   step "Preflight: ManagedResource keepObjects check"
-  
-  # Check that mr-crd-* ManagedResources have keepObjects:true
+
   local mr_list
   if ! mr_list=$(ks get managedresource -o json 2>&1); then
     die "Cannot list ManagedResources on seed: $mr_list"
   fi
   validate_list "$mr_list"
   check_mr_coverage "$mr_list"
-  
-  # Parse MRs belonging to this release (by annotation)
-  local crd_mrs
-  crd_mrs=$(echo "$mr_list" | jq -r --arg release "$RELEASE" '
-    .items[] |
-    select(.metadata.annotations["meta.helm.sh/release-name"] == $release) |
-    select(.metadata.name | startswith("mr-crd-")) |
-    "\(.metadata.name):\(.spec.keepObjects // false)"
-  ') || die "Cannot parse release CRD MR inventory"
-  
-  local mr_name keep
-  while IFS=: read -r mr_name keep; do
-    [[ -z "$mr_name" ]] && continue
-    if [[ "$keep" != "true" ]]; then
-      die "ManagedResource $mr_name does not have keepObjects:true — uninstall would cascade-delete CRDs!"
-    fi
-    ok "ManagedResource $mr_name has keepObjects:true"
-  done <<<"$crd_mrs"
+  ok "CRD-protecting ManagedResources present with keepObjects:true"
 }
 
 # Gate 4: Namespace cascade protection (conditional)
@@ -733,12 +749,28 @@ wait_for_old_release_gone() {
       all_gone=false
     else
       validate_list "$mr_list"
-      # Find MRs with this release annotation, excluding mr-crd-* (intentionally retained)
+      # Every ManagedResource owned by this release must be fully gone — INCLUDING
+      # the CRD MR(s). keepObjects:true preserves the MANAGED objects (the CRD), not
+      # the ManagedResource object itself; helm uninstall deletes the MR object while
+      # gardener-resource-manager leaves the CRD orphaned (survival asserted via the
+      # CRD baseline in verify_baseline). A still-listed MR (even Terminating, with a
+      # deletionTimestamp) counts as present until its finalizer clears.
+      #
+      # Selection is release-annotation OR membership in the sealed CRD-MR inventory:
+      # an attacker/operator stripping or mutating the meta.helm.sh/release-name
+      # annotation on a still-terminating CRD MR must not make it invisible to the
+      # barrier. The sealed crd-mrs.txt (bound into evidence at capture time) is the
+      # authoritative identity, passed as a JSON array so names are matched literally.
+      local crd_mrs_json
+      crd_mrs_json=$(jq -R -s -c 'split("\n") | map(select(length > 0))' "$STATE_DIR/evidence/crd-mrs.txt") \
+        || die "Cannot read sealed CRD-MR inventory for teardown barrier"
       local owned_mrs
-      owned_mrs=$(echo "$mr_list" | jq -r --arg release "$RELEASE" '
+      owned_mrs=$(echo "$mr_list" | jq -r --arg release "$RELEASE" --argjson crdmrs "$crd_mrs_json" '
         .items[] |
-        select(.metadata.annotations["meta.helm.sh/release-name"] == $release) |
-        select(.metadata.name | startswith("mr-crd-") | not) |
+        select(
+          .metadata.annotations["meta.helm.sh/release-name"] == $release
+          or (.metadata.name as $n | $crdmrs | index($n))
+        ) |
         .metadata.name
       ') || die "Invalid teardown MR inventory"
       
@@ -757,6 +789,21 @@ wait_for_old_release_gone() {
       validate_list "$pods"
       if [[ $(jq '.items | length' <<<"$pods") -gt 0 ]]; then all_gone=false; fi
     fi
+    
+    # (b2) Check the old controller Deployment is fully gone. In uninstall-first the
+    # DDO CR is not yet active, so no replacement Deployment exists — the legacy
+    # Deployment (the one helm uninstall removes) must be absent. A still-present
+    # object, even Terminating, blocks the barrier until it clears. Use the shared
+    # obj_state classifier (FAIL-CLOSED): only a genuine server-side NotFound counts
+    # as absence; auth/connectivity/discovery errors return "error" → retry, never
+    # mistaken for absence.
+    local deploy_state
+    deploy_state=$(obj_state ks get deployment "$DEPLOY")
+    case "$deploy_state" in
+      absent) : ;;
+      found)  info "Controller Deployment still present: $DEPLOY"; all_gone=false ;;
+      *)      warn "Cannot determine Deployment state (will retry)"; all_gone=false ;;
+    esac
     
     # (c) Namespace survival check (only if namespace-cascade gate is ON)
     if [[ "$NAMESPACE_CASCADE_GATE" != "off" ]]; then

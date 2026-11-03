@@ -39,7 +39,7 @@ u8s() { bounded_call u8s "$@"; }
 run_identity() {
   evidence identity "$OPERATOR" "$CLUSTER" "$TARGET_CTX" "$SEED_CTX" "$NAMESPACE" \
     "$RELEASE" "$DDO_CR" "$DEPLOY" "$((OUTAGE_BUDGET_MIN * 60))" \
-    "$CRD_GROUPS|$NAMESPACE_CASCADE_GATE|${PROTECT_MRS:-}|${BASELINE_SNAPSHOT_KINDS_CLUSTER:-}|${BASELINE_SNAPSHOT_KINDS_NS:-}|$OWNED_BY_LABEL|${FREEZE_KINDS_CLUSTER:-}|${FREEZE_KINDS_NS:-}|${FREEZE_SERVER_STATES:-0}|${CONTROLLER_POD_SELECTOR:-}|${VERIFY_SAMPLE:-}"
+    "$CRD_GROUPS|$NAMESPACE_CASCADE_GATE|${PROTECT_MRS:-}|${BASELINE_SNAPSHOT_KINDS_CLUSTER:-}|${BASELINE_SNAPSHOT_KINDS_NS:-}|$OWNED_BY_LABEL|${FREEZE_KINDS_CLUSTER:-}|${FREEZE_KINDS_NS:-}|${FREEZE_SERVER_STATES:-0}|${CONTROLLER_POD_SELECTOR:-}|${VERIFY_SAMPLE:-}|${CRD_MRS:-}"
 }
 
 release_lock() {
@@ -117,7 +117,7 @@ capture_baselines() {
   for kind in ${BASELINE_SNAPSHOT_KINDS_CLUSTER:-} ${BASELINE_SNAPSHOT_KINDS_NS:-}; do
     local args=()
     case " ${BASELINE_SNAPSHOT_KINDS_NS:-} " in *" $kind "*) args=(-A);; esac
-    capture_json "$dir/baseline-$kind.json" kt get "$kind" "${args[@]}" -o json
+    capture_json "$dir/baseline-$kind.json" kt get "$kind" ${args[@]+"${args[@]}"} -o json
     local invariant=ordinary
     if [[ "$OPERATOR" == ipam-capi-remote && "$CLUSTER" == m-qa-de-200 && "$kind" == globalinclusterippools.ipam.cluster.x-k8s.io ]]; then
       invariant=ipam-known-two
@@ -144,7 +144,7 @@ capture_evidence() {
   local dir
   dir=$(mktemp -d "$STATE_DIR/.capture.XXXXXX")
   cp "$STATE_DIR/identity.json" "$dir/identity.json" || die "Cannot bind evidence to run identity"
-  hs list -a -o json > "$dir/releases.json" || die "Cannot capture installed release metadata"
+  hs list -a -o=json > "$dir/releases.json" || die "Cannot capture installed release metadata"
   [[ -n "${LEGACY_CHART_ARCHIVE:-}" && -f "$LEGACY_CHART_ARCHIVE" ]] || die "--legacy-chart-archive exact installed legacy .tgz is required"
   cp "$LEGACY_CHART_ARCHIVE" "$dir/legacy-chart.tgz" || die "Cannot copy legacy archive"
   evidence chart "$dir/legacy-chart.tgz" "$dir/releases.json" "$RELEASE" "${LEGACY_CHART_DIR##*/}" || die "Exact installed legacy chart unavailable"
@@ -153,7 +153,7 @@ capture_evidence() {
     archive_hash=$(python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$dir/legacy-chart.tgz") || die "Cannot hash recovery archive"
     [[ "$archive_hash" == "$(jq -er '.legacyArchiveSha256' "$READINESS_EVIDENCE")" ]] || die "Legacy archive differs from reviewed recovery artifact"
   fi
-  hs get values "$RELEASE" -o json > "$dir/rollback-values.json" || die "Rollback values capture failed"
+  hs get values "$RELEASE" -o=json > "$dir/rollback-values.json" || die "Rollback values capture failed"
   jq -e 'type == "object" or . == null' "$dir/rollback-values.json" >/dev/null || die "Invalid rollback values"
   # Helm returns null when there are no user-supplied values; {} is equivalent.
   if [[ $(jq -r type "$dir/rollback-values.json") == null ]]; then printf '{}\n' > "$dir/rollback-values.json"; fi
@@ -162,7 +162,19 @@ capture_evidence() {
   # Kubernetes handles YAML decoding; this is CLIENT dry-run, never server create.
   ks create --dry-run=client --validate=false -f "$dir/rollback-manifest.yaml" -o json > "$dir/manifest-stream.json" || die "Cannot decode legacy manifest"
   evidence normalize "$dir/manifest-stream.json" > "$dir/legacy-manifest.json" || die "Invalid legacy manifest"
-  evidence embedded-crds "$dir/legacy-manifest.json" > "$dir/legacy-crds.yaml" || die "Cannot extract CRD inventory from installed legacy manifest"
+  # Resolve the CRD-MR inventory ONCE from the sealed legacy manifest (explicit
+  # CRD_MRS authoritative; else mr-crd-* prefix) and seal it. Every downstream
+  # CRD-MR check (keepObjects gate, coverage recheck, teardown barrier) consumes
+  # this same list so profile selection is bound into the evidence.
+  # set -f: CRD_MRS tokens are passed as argv by word-splitting; disable pathname
+  # expansion so a token can never be glob-expanded against the local filesystem.
+  # Save/restore the noglob flag portably (bash 3.2 has no `local -`).
+  local _had_noglob=0; [[ -o noglob ]] && _had_noglob=1
+  set -f
+  evidence crd-mrs "$dir/legacy-manifest.json" ${CRD_MRS:-} > "$dir/crd-mrs.txt" || die "Cannot resolve CRD MR inventory"
+  [[ -s "$dir/crd-mrs.txt" ]] || die "Resolved CRD MR inventory is empty"
+  evidence embedded-crds "$dir/legacy-manifest.json" ${CRD_MRS:-} > "$dir/legacy-crds.yaml" || die "Cannot extract CRD inventory from installed legacy manifest"
+  [[ $_had_noglob -eq 1 ]] || set +f
   kt create --dry-run=client --validate=false -f "$dir/legacy-crds.yaml" -o json > "$dir/crd-stream.json" || die "Cannot decode legacy CRDs"
   evidence normalize "$dir/crd-stream.json" > "$dir/legacy-crds.json" || die "Invalid legacy CRD inventory"
   capture_baselines "$dir"
@@ -201,12 +213,17 @@ capture_evidence() {
 }
 
 check_mr_coverage() {
-  local live=$1 expected
-  expected=$(jq -er '[.items[] | select(.kind == "ManagedResource") | select(.metadata.name | startswith("mr-crd-")) | .metadata.name] | if length > 0 then .[] else error("empty CRD MR inventory") end' "$STATE_DIR/evidence/legacy-manifest.json") || die "Legacy manifest has no required CRD MR inventory"
-  local mr
-  for mr in $expected; do
+  local live=$1
+  # Consume the sealed CRD-MR inventory resolved once at capture time (explicit
+  # CRD_MRS authoritative; else mr-crd-* prefix). Fail closed on an empty list.
+  [[ -s "$STATE_DIR/evidence/crd-mrs.txt" ]] || die "Legacy manifest has no required CRD MR inventory"
+  local mr count=0
+  while IFS= read -r mr; do
+    [[ -n "$mr" ]] || continue
+    count=$((count + 1))
     jq -e --arg name "$mr" --arg release "$RELEASE" '[.items[] | select(.metadata.name == $name and .metadata.annotations["meta.helm.sh/release-name"] == $release and .spec.keepObjects == true and .metadata.deletionTimestamp == null)] | length == 1' <<<"$live" >/dev/null || die "Legacy CRD MR missing/unprotected/not release-owned: $mr"
-  done
+  done < "$STATE_DIR/evidence/crd-mrs.txt"
+  [[ $count -gt 0 ]] || die "Legacy manifest has no required CRD MR inventory"
   local crds
   crds=$(mktemp "$STATE_DIR/.crds.XXXXXX")
   kt get crd -o json > "$crds" || die "Cannot recheck expected legacy CRDs"
@@ -264,8 +281,14 @@ verify_baseline() {
       [[ -n "$name" ]] || continue
       local args=()
       [[ "$ns" == _cluster ]] || args=(-n "$ns")
-      json=$(kt get "$kind" "$name" "${args[@]}" -o json) || die "Baseline object unreadable/missing: $kind/$name"
+      json=$(kt get "$kind" "$name" ${args[@]+"${args[@]}"} -o json) || die "Baseline object unreadable/missing: $kind/$name"
       jq -e --arg uid "$uid" '.metadata.uid == $uid and .metadata.deletionTimestamp == null' <<<"$json" >/dev/null || die "Baseline object replaced/terminating: $kind/$name"
+      # CRDs must additionally be Established=True: survival of the CRD object is not
+      # enough — its API must be served for the new controller to adopt the group.
+      if [[ "$kind" == crd ]]; then
+        jq -e '[.status.conditions[]? | select(.type == "Established") | .status] | any(. == "True")' <<<"$json" >/dev/null \
+          || die "Baseline CRD not Established=True: $kind/$name"
+      fi
     done < <(jq -r '.items[] | [.metadata.name, (.metadata.namespace // "_cluster"), .metadata.uid] | @tsv' "$file")
   done
 }

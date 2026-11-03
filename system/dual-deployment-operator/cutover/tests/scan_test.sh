@@ -34,10 +34,15 @@ fi
 
 if [[ "$1" == "helm" ]]; then
   release="${@: -1}"
-  case "${FIXTURE_HELM}_${release}" in
-    present_*) exit 0 ;;
-    absent_*) printf 'Error: release: not found\n' >&2; exit 1 ;;
-    error_*) printf 'connection refused\n' >&2; exit 1 ;;
+  # Per-release override: HELM_<release>=present|absent|error wins over the
+  # global FIXTURE_HELM, so a single `main` run can mix migrated/not-migrated
+  # charts. Falls back to FIXTURE_HELM when no per-release var is set.
+  override_var="HELM_${release}"
+  state="${!override_var:-$FIXTURE_HELM}"
+  case "$state" in
+    present) exit 0 ;;
+    absent) printf 'Error: release: not found\n' >&2; exit 1 ;;
+    error) printf 'connection refused\n' >&2; exit 1 ;;
   esac
 fi
 
@@ -52,19 +57,24 @@ if [[ "$1" == "kubectl" ]]; then
     [[ "$arg" == -o ]] && jsonpath=true
     previous="$arg"
   done
-  case "${FIXTURE_CR}_${cr}" in
-    ready_*) printf 'True' ;;
-    notready_*) printf 'False' ;;
-    readyerror_*)
+  # Per-release override: CR_<cr>=ready|notready|readyerror|absent|
+  # missingresource|error wins over the global FIXTURE_CR, mirroring the Helm
+  # override so a single `main` run can mix chart states.
+  override_var="CR_${cr}"
+  state="${!override_var:-$FIXTURE_CR}"
+  case "$state" in
+    ready) printf 'True' ;;
+    notready) printf 'False' ;;
+    readyerror)
       if [[ "$jsonpath" == true ]]; then
         printf 'connection refused\n' >&2
         exit 7
       fi
       printf 'True'
       ;;
-    absent_*) printf 'Error from server (NotFound): dualdeploymentoperators "%s" not found\n' "$cr" >&2; exit 1 ;;
-    missingresource_*) printf 'error: the server doesn\047t have a resource type "ddo"\n' >&2; exit 1 ;;
-    error_*) printf 'connection refused\n' >&2; exit 1 ;;
+    absent) printf 'Error from server (NotFound): dualdeploymentoperators "%s" not found\n' "$cr" >&2; exit 1 ;;
+    missingresource) printf 'error: the server doesn\047t have a resource type "ddo"\n' >&2; exit 1 ;;
+    error) printf 'connection refused\n' >&2; exit 1 ;;
   esac
   exit 0
 fi
@@ -124,21 +134,57 @@ source "$METAL_PROFILE"
 source "$BOOT_PROFILE"
 [[ "$LEGACY_CHART_DIR" == system/boot-operator-remote ]] || { echo "wrong boot legacy chart dir: $LEGACY_CHART_DIR" >&2; exit 1; }
 
-output="$(FIXTURE_HELM=present FIXTURE_CR=absent main)"
-[[ "$output" == *'next candidate: first'* ]] || { echo "did not nominate first candidate: $output" >&2; exit 1; }
-[[ "$output" != *'second |'* ]] || { echo "did not stop after first candidate: $output" >&2; exit 1; }
+# Full scan: every profile is classified and printed; the scan never stops
+# early. Both charts not-migrated -> both rows present, both listed as
+# candidates in rollout order, exit 0.
+output="$(HELM_first=present CR_first=absent HELM_second=present CR_second=absent main)"
+[[ "$output" == *'first | not-migrated |'* ]] || { echo "missing first row: $output" >&2; exit 1; }
+[[ "$output" == *'second | not-migrated |'* ]] || { echo "missing second row (scan stopped early?): $output" >&2; exit 1; }
+[[ "$output" == *'candidate: first'* ]] || { echo "did not list first candidate: $output" >&2; exit 1; }
+[[ "$output" == *'candidate: second'* ]] || { echo "did not list second candidate: $output" >&2; exit 1; }
+# Candidates listed in rollout order (first before second).
+[[ "$output" != *'candidate: second'*'candidate: first'* ]] || { echo "candidates out of rollout order: $output" >&2; exit 1; }
 
-output="$(FIXTURE_HELM=present FIXTURE_CR=ready main)"
-[[ "$output" == *'needs attention: first ('* ]] || { echo "did not report attention: $output" >&2; exit 1; }
-[[ "$output" != *'next candidate:'* ]] || { echo "nominated candidate after attention: $output" >&2; exit 1; }
-
+# Mixed states: first migrated, second not-migrated. Full scan still prints
+# both rows; only the not-migrated chart is listed as a candidate; exit 0.
 set +e
-output="$(FIXTURE_HELM=error FIXTURE_CR=absent main)"
+output="$(HELM_first=absent CR_first=ready HELM_second=present CR_second=absent main)"
 rc=$?
 set -e
-[[ "$rc" -ne 0 ]] || { echo "unknown main result must fail" >&2; exit 1; }
-[[ "$output" == *'needs attention: first ('* ]] || { echo "did not report unknown: $output" >&2; exit 1; }
-[[ "$output" != *'next candidate:'* ]] || { echo "nominated candidate after unknown: $output" >&2; exit 1; }
+[[ "$rc" == 0 ]] || { echo "clean mixed scan must exit 0, got $rc: $output" >&2; exit 1; }
+[[ "$output" == *'first | migrated |'* ]] || { echo "missing migrated first row: $output" >&2; exit 1; }
+[[ "$output" == *'second | not-migrated |'* ]] || { echo "missing not-migrated second row: $output" >&2; exit 1; }
+[[ "$output" == *'candidate: second'* ]] || { echo "did not list second candidate: $output" >&2; exit 1; }
+[[ "$output" != *'candidate: first'* ]] || { echo "listed migrated chart as candidate: $output" >&2; exit 1; }
+
+# attention no longer halts the scan: later profiles are still processed and
+# printed, and the overall result fails (exit non-zero).
+set +e
+output="$(HELM_first=present CR_first=ready HELM_second=present CR_second=absent main)"
+rc=$?
+set -e
+[[ "$rc" -ne 0 ]] || { echo "scan with attention must fail: $output" >&2; exit 1; }
+[[ "$output" == *'first | attention |'* ]] || { echo "missing attention first row: $output" >&2; exit 1; }
+[[ "$output" == *'second | not-migrated |'* ]] || { echo "scan stopped at attention, missing second row: $output" >&2; exit 1; }
+[[ "$output" == *'candidate: second'* ]] || { echo "did not list candidate after attention: $output" >&2; exit 1; }
+
+# unknown (read failure) no longer halts the scan either; result fails.
+set +e
+output="$(HELM_first=error CR_first=absent HELM_second=present CR_second=absent main)"
+rc=$?
+set -e
+[[ "$rc" -ne 0 ]] || { echo "scan with unknown must fail" >&2; exit 1; }
+[[ "$output" == *'first | unknown |'* ]] || { echo "missing unknown first row: $output" >&2; exit 1; }
+[[ "$output" == *'second | not-migrated |'* ]] || { echo "scan stopped at unknown, missing second row: $output" >&2; exit 1; }
+
+# All charts migrated: no candidates, clean summary, exit 0.
+set +e
+output="$(HELM_first=absent CR_first=ready HELM_second=absent CR_second=ready main)"
+rc=$?
+set -e
+[[ "$rc" == 0 ]] || { echo "all-migrated scan must exit 0, got $rc: $output" >&2; exit 1; }
+[[ "$output" == *'all charts migrated'* ]] || { echo "did not report all migrated: $output" >&2; exit 1; }
+[[ "$output" != *'candidate:'* ]] || { echo "listed a candidate when all migrated: $output" >&2; exit 1; }
 
 set +e
 output="$(PROFILE_DIR=/nonexistent-profile-dir FIXTURE_HELM=absent FIXTURE_CR=ready main)"
@@ -147,7 +193,7 @@ set -e
 [[ "$rc" -ne 0 ]] || { echo "missing profiles must fail" >&2; exit 1; }
 [[ "$output" != *'all charts migrated'* ]] || { echo "missing profiles reported migration complete: $output" >&2; exit 1; }
 
-echo 'existing scan cases passed (classification, profiles, candidate, attention, unknown, missing profiles)'
+echo 'full-scan cases passed (all-candidates, mixed, attention, unknown, all-migrated, missing profiles)'
 
 export ATTEMPT_DIR="$FAKE_BIN/attempts"
 mkdir "$ATTEMPT_DIR"
