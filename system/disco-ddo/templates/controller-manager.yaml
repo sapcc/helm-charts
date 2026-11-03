@@ -3,10 +3,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: disco
     {{- with .Values.controllerLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+    app: disco
     {{- include "chart.labels" . | nindent 4 }}
   annotations:
     {{- include "chart.additionsAnnotations" . | nindent 4 }}
@@ -23,12 +23,12 @@ spec:
         kubectl.kubernetes.io/default-container: manager
         checksum/config: {{ include (print $.Template.BasePath "/disco-config.yaml") . | sha256sum }}
       labels:
-        app: disco
-        networking.gardener.cloud/to-shoot-apiserver: allowed
-        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
         {{- with .Values.controllerLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        app: disco
+        networking.gardener.cloud/to-shoot-apiserver: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
     spec:
       containers:
       - command:
