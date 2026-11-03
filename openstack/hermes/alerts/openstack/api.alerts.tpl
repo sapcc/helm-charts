@@ -252,7 +252,7 @@ groups:
       summary: "Log Router falling back to DLQ — data not reaching S3"
 
   - alert: OpenstackHermesLogRouterAllWritesDenied
-    expr: sum(increase(log_router_events_dropped_total{reason="access_denied"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
+    expr: sum(increase(log_router_events_dropped_total{reason=~"access_denied|writer_not_authorized"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
     for: 5m
     labels:
       context: log-router
@@ -265,7 +265,7 @@ groups:
       meta: "Log Router: every write is denied by the object store, events are being dropped"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "Log Router is dropping events as access_denied and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration). A lost storage role does not show up here, see OpenstackHermesLogRouterFlushFailing."
+      description: "Log Router is dropping events as access_denied or writer_not_authorized and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration), or, with project-scoped writes, the writer user lost objectstore_admin in every project. A lost storage role does not show up here, see OpenstackHermesLogRouterFlushFailing."
       summary: "Log Router writes denied for all tenants"
 
   - alert: OpenstackHermesLogRouterFlushFailing
