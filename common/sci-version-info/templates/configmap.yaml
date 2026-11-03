@@ -1,0 +1,41 @@
+{{- if not .Values.image -}}
+  {{- fail ".Values.sci-version-info.image is missing; set it to the release's application image reference (a tag or a digest)" -}}
+{{- end -}}
+
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+  name: sci-version-of-{{ .Release.Name }}
+  labels:
+    # This can be used to validate via policy that everyone uses a reasonably up-to-date version of this chart.
+    sci-version-info-version: {{ quote .Chart.Version }}
+
+data:
+  image: {{ .Values.image | quote }}
+  {{- range $k, $v := .Values.info }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+  # We need this configmap to be present early because it is used by a mutating webhook when the
+  # other objects in this Helm release are written into the Kubernetes DB.
+  name: early-sci-version-of-{{ .Release.Name }}
+  labels:
+    # This can be used to validate via policy that everyone uses a reasonably up-to-date version of this chart.
+    sci-version-info-version: {{ quote .Chart.Version }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-100"
+    "helm.sh/hook-delete-policy": before-hook-creation,post-delete
+
+data:
+  image: {{ .Values.image | quote }}
+  {{- range $k, $v := .Values.info }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
