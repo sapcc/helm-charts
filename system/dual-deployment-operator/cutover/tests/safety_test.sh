@@ -234,6 +234,137 @@ real_object_classifier() {
   [[ $(obj_state missing_kind get deployment x) == error ]]
   [[ $(obj_state missing_object get deployment x) == absent ]]
 }
+crd_mrs_prefix_fallback() {
+  # Empty CRD_MRS -> derive from the mr-crd-* legacy naming (the 4 existing profiles).
+  defaults; fixtures
+  [[ "$(evidence crd-mrs "$STATE_DIR/manifest.json")" == mr-crd-pools ]]
+}
+crd_mrs_explicit_authoritative() {
+  # Explicit name (disco) is authoritative; a present non-mr-crd MR resolves by name.
+  defaults; fixtures
+  cat > "$STATE_DIR/disco-manifest.json" <<'JSON'
+{"apiVersion":"v1","kind":"List","items":[
+ {"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource",
+  "metadata":{"name":"disco-remote-crd","namespace":"cp","annotations":{"meta.helm.sh/release-name":"disco-remote"}},
+  "spec":{"keepObjects":true,"secretRefs":[{"name":"disco-remote-crd"}]}},
+ {"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource",
+  "metadata":{"name":"disco-remote-rbac","namespace":"cp","annotations":{"meta.helm.sh/release-name":"disco-remote"}},
+  "spec":{"keepObjects":false,"secretRefs":[{"name":"disco-remote-rbac"}]}}
+]}
+JSON
+  [[ "$(evidence crd-mrs "$STATE_DIR/disco-manifest.json" disco-remote-crd)" == disco-remote-crd ]]
+}
+crd_mrs_explicit_absent_blocks() {
+  # Explicit name that is not present in the manifest fails closed (never prefix-falls-back).
+  defaults; fixtures
+  reject evidence crd-mrs "$STATE_DIR/manifest.json" nonexistent-crd-mr
+}
+crd_mrs_explicit_duplicate_blocks() {
+  defaults; fixtures
+  reject evidence crd-mrs "$STATE_DIR/manifest.json" mr-crd-pools mr-crd-pools
+}
+crd_mrs_empty_no_prefix_blocks() {
+  # No explicit names AND no mr-crd-* MRs -> empty inventory, fail closed.
+  defaults; fixtures
+  echo '{"apiVersion":"v1","kind":"List","items":[{"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource","metadata":{"name":"disco-remote-rbac","namespace":"cp"},"spec":{"keepObjects":false}}]}' > "$STATE_DIR/no-crd-mr.json"
+  reject evidence crd-mrs "$STATE_DIR/no-crd-mr.json"
+}
+crd_mrs_explicit_embedded_extraction() {
+  # embedded-crds honors the explicit name: extracts the CRD payload from the named MR Secret.
+  defaults; fixtures
+  cat > "$STATE_DIR/disco-embed.json" <<'JSON'
+{"apiVersion":"v1","kind":"List","items":[
+ {"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource",
+  "metadata":{"name":"disco-remote-crd","namespace":"cp","annotations":{"meta.helm.sh/release-name":"disco-remote"}},
+  "spec":{"keepObjects":true,"secretRefs":[{"name":"disco-crd-secret"}]}},
+ {"apiVersion":"v1","kind":"Secret","metadata":{"name":"disco-crd-secret","namespace":"cp"},
+  "data":{"crd.yaml":"a2luZDogQ3VzdG9tUmVzb3VyY2VEZWZpbml0aW9u"}}
+]}
+JSON
+  [[ "$(evidence embedded-crds "$STATE_DIR/disco-embed.json" disco-remote-crd)" == *CustomResourceDefinition* ]]
+}
+crd_mrs_wildcard_rejected() {
+  # A CRD_MRS value of "*" must be rejected as an invalid name, never glob-expanded
+  # against the local filesystem (even when matching filenames exist in CWD).
+  defaults
+  local probe="$TMP/glob-probe-$RANDOM"; mkdir -p "$probe"
+  : > "$probe/disco-remote-crd"; : > "$probe/mr-crd-pools"
+  ( cd "$probe"; CRD_MRS='*'; reject validate_crd_mrs )
+}
+teardown_deploy_read_error_blocks() {
+  # Deployment read that is NOT a genuine server-side NotFound (auth/transport) must
+  # NOT clear the barrier. With no MRs and no pods, a credential-helper error on the
+  # Deployment read must keep the barrier blocked (fail-closed), not succeed.
+  defaults; date +%s > "$STATE_DIR/uninstall-epoch"
+  mkdir -p "$STATE_DIR/evidence"; printf 'disco-remote-crd\n' > "$STATE_DIR/evidence/crd-mrs.txt"
+  ks() {
+    case "$2" in
+      managedresource) echo '{"apiVersion":"v1","kind":"List","items":[]}';;
+      pods) echo '{"apiVersion":"v1","kind":"List","items":[]}';;
+      deployment) echo 'error: exec: executable credential-helper not found' >&2; return 1;;
+    esac
+  }
+  # Drive loop termination through the REAL check_outage_budget: budget positive on the
+  # first pass, exhausted on the next -> real exit 30. File-based counter survives any
+  # subshell; sleep is a no-op in tests.
+  printf '%s' "$(( $(date +%s) - 1 ))" > "$STATE_DIR/uninstall-epoch"
+  OUTAGE_BUDGET_MIN=1
+  : > "$STATE_DIR/rs.count"
+  remaining_seconds() { local c; c=$(wc -l < "$STATE_DIR/rs.count"); echo x >> "$STATE_DIR/rs.count"; [[ $c -ge 2 ]] && echo 0 || echo 30; }
+  sleep() { :; }
+  assert_legacy_absent() { : > "$STATE_DIR/CLEARED"; }
+  reject wait_for_old_release_gone
+  [[ ! -e "$STATE_DIR/CLEARED" ]]
+}
+teardown_sealed_crdmr_blocks() {
+  # A CRD MR still present (Terminating) whose release annotation was stripped/changed
+  # must remain visible via the sealed crd-mrs.txt inventory and block the barrier.
+  defaults; date +%s > "$STATE_DIR/uninstall-epoch"
+  mkdir -p "$STATE_DIR/evidence"; printf 'disco-remote-crd\n' > "$STATE_DIR/evidence/crd-mrs.txt"
+  ks() {
+    case "$2" in
+      managedresource) echo '{"apiVersion":"v1","kind":"List","items":[{"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource","metadata":{"name":"disco-remote-crd","namespace":"cp","deletionTimestamp":"2026-01-01T00:00:00Z","annotations":{}}}]}';;
+      pods) echo '{"apiVersion":"v1","kind":"List","items":[]}';;
+      deployment) return 1;;
+    esac
+  }
+  obj_state() { echo absent; }
+  printf '%s' "$(( $(date +%s) - 1 ))" > "$STATE_DIR/uninstall-epoch"
+  OUTAGE_BUDGET_MIN=1
+  : > "$STATE_DIR/rs.count"
+  remaining_seconds() { local c; c=$(wc -l < "$STATE_DIR/rs.count"); echo x >> "$STATE_DIR/rs.count"; [[ $c -ge 2 ]] && echo 0 || echo 30; }
+  sleep() { :; }
+  assert_legacy_absent() { : > "$STATE_DIR/CLEARED"; }
+  reject wait_for_old_release_gone
+  [[ ! -e "$STATE_DIR/CLEARED" ]]
+}
+baseline_crd_not_established_blocks() {
+  # A surviving CRD with the correct uid but Established!=True must fail verify_baseline:
+  # object survival alone is insufficient; its API must be served for adoption. The
+  # matching-uid baseline + sealed identity ensure the run reaches the Established check
+  # (not an earlier identity/checksum abort), so the assertion exercises the real gate.
+  defaults
+  BASELINE_SNAPSHOT_KINDS_CLUSTER=''; BASELINE_SNAPSHOT_KINDS_NS=''
+  NAMESPACE_CASCADE_GATE=off
+  run_identity > "$STATE_DIR/identity.json"
+  mkdir -p "$STATE_DIR/evidence"
+  cp "$STATE_DIR/identity.json" "$STATE_DIR/evidence/identity.json"
+  cat > "$STATE_DIR/evidence/baseline-crds.json" <<'JSON'
+{"apiVersion":"v1","kind":"List","items":[{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","namespace":"_cluster","uid":"uid-123"}}]}
+JSON
+  evidence seal "$STATE_DIR/evidence"
+  # (1) Established=False must fail.
+  kt() { echo '{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","uid":"uid-123"},"status":{"conditions":[{"type":"Established","status":"False"}]}}'; }
+  reject verify_baseline || return 1
+  # (2) Missing Established condition must fail.
+  kt() { echo '{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","uid":"uid-123"},"status":{"conditions":[{"type":"NamesAccepted","status":"True"}]}}'; }
+  reject verify_baseline || return 1
+  # (3) Established=True with the SAME fixture must pass — proves the gate is specific
+  # to the Established status, not an unrelated abort.
+  kt() { echo '{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","uid":"uid-123"},"status":{"conditions":[{"type":"Established","status":"True"}]}}'; }
+  verify_baseline
+}
+
 test_case 'legacy release reappearance blocks final verification' reappeared_release
 test_case 'real obj_state distinguishes object absence from read/kind errors' real_object_classifier
 test_case 'complete valid mocked evidence capture is sealed and cannot repeat' valid_capture
@@ -242,6 +373,16 @@ test_case 'dryrun cannot serve as execution readiness' dryrun_cannot_certify
 test_case 'missing actual seed render blocks readiness' missing_render
 test_case 'missing interruption restoration contract blocks freeze' missing_restore_contract
 test_case 'missing CRD MR referenced Secret blocks inventory extraction' missing_embedded_secret
+test_case 'empty CRD_MRS derives mr-crd-* prefix inventory (existing profiles)' crd_mrs_prefix_fallback
+test_case 'explicit CRD_MRS name is authoritative (disco non-mr-crd naming)' crd_mrs_explicit_authoritative
+test_case 'explicit CRD_MRS name absent from manifest fails closed' crd_mrs_explicit_absent_blocks
+test_case 'duplicate explicit CRD_MRS names blocked' crd_mrs_explicit_duplicate_blocks
+test_case 'no explicit names and no mr-crd-* MR fails closed' crd_mrs_empty_no_prefix_blocks
+test_case 'embedded-crds honors explicit CRD_MRS name extraction' crd_mrs_explicit_embedded_extraction
+test_case 'CRD_MRS wildcard is rejected not glob-expanded' crd_mrs_wildcard_rejected
+test_case 'teardown Deployment read error blocks (fail-closed)' teardown_deploy_read_error_blocks
+test_case 'teardown sealed CRD-MR inventory blocks relabeled terminating MR' teardown_sealed_crdmr_blocks
+test_case 'surviving CRD not Established=True blocks baseline' baseline_crd_not_established_blocks
 test_case 'missing exact legacy CRD blocks despite valid empty List' missing_expected_crd
 test_case 'capture cannot truncate existing evidence file' baseline_no_overwrite
 test_case 'direct preflight cannot patch before mandatory freeze' readonly_before_freeze

@@ -67,6 +67,7 @@ the outage externally during the activation gap and any manual recovery.
 | `boot` | boot-operator-remote | boot CR freeze and landscape sample |
 | `argora` | argora-operator-remote | three protected data-CR MRs; DDO recovery retention requires separate proof |
 | `ipam-capi-remote` | ipam-capi-remote | two out-of-band pool UIDs on m-qa-de-200; Fail-policy webhook acceptance |
+| `disco-remote` | disco-remote | explicit `CRD_MRS=disco-remote-crd` (legacy chart hand-writes the CRD MR instead of the `mr-crd-*` convention); `records.disco.stable.sap.cc` freeze |
 
 IPAM real execution is blocked until installed DDO safe Git/HTTP fetching and
 published/installed admin `source.kustomize` CR rendering are demonstrated. Local
