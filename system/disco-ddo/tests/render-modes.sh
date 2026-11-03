@@ -80,6 +80,7 @@ SEED_EXPECTED = sorted([
     "Secret/disco-config",
     "Secret/disco-remote-kubeconfig",
     "Service/disco-webhook-service",
+    "ServiceAccount/disco-controller-manager",
 ])
 
 SHOOT_EXPECTED = sorted([
