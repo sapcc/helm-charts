@@ -10,9 +10,8 @@ helm template disco-ddo "$chart_dir" --set mode=seed >"$rendered"
 deployment_selector="$(yq -o=json 'select(.kind == "Deployment" and .metadata.name == "disco-controller-manager") | .spec.selector.matchLabels' "$rendered")"
 
 if [[ -z "$deployment_selector" || "$deployment_selector" == "null" ]] || ! printf '%s\n' "$deployment_selector" | jq -e \
-  'type == "object" and length > 0 and .["app"] == "disco"' >/dev/null; then
-  echo "FAIL: disco-controller-manager Deployment selector must contain app=disco"
+  '. == {"app":"disco"}' >/dev/null; then
+  echo "FAIL: disco-controller-manager Deployment selector must be exactly {app: disco}"
   exit 1
 fi
-
-echo "PASS: disco-controller-manager Deployment selector contains app=disco"
+echo "PASS: disco-controller-manager Deployment selector is exactly {app: disco}"
