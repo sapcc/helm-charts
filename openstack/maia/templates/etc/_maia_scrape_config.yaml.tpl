@@ -217,6 +217,8 @@
       - '{__name__="aws_ses_cronus_provider_received"}'
       - '{__name__="aws_ses_cronus_provider_publish_success"}'
       - '{__name__="aws_ses_cronus_provider_publish_failure"}'
+      - '{__name__="cronus_compliance_rule_info"}'
+      - '{__name__="cronus_compliance_rules_count"}'
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
