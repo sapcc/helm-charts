@@ -13,11 +13,15 @@ data:
         - {{ .Values.server.listenAddr | quote }}
       plugins:
         - lease_time: {{ .Values.server.leaseTime }}
-        - server_id: {{ .Values.externalIP }}
-        - netmask:{{ if .Values.server.netmask }} {{ .Values.server.netmask }}{{ end }}
         - oob: /etc/metaldhcp/oob.yaml
+        {{- if .Values.tftp.enabled }}
+        - nbp: tftp://{{ required "externalIP is required when tftp.enabled" .Values.externalIP }}/snponly.efi
+        {{- end }}
   oob.yaml: |
     namespace: {{ .Values.oob.namespace }}
+    {{- with .Values.externalIP }}
+    serverIP: {{ . }}
+    {{- end }}
     {{- with .Values.oob.subnetLabels }}
     subnetLabels:
       {{- range . }}
