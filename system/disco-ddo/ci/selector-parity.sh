@@ -5,7 +5,16 @@ chart_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rendered="$(mktemp)"
 trap 'rm -f "$rendered"' EXIT
 
-helm template disco-ddo "$chart_dir" --set mode=seed --set apiServerHost=ci.example.com >"$rendered"
+helm template disco-ddo "$chart_dir" --set mode=seed --set apiServerHost=ci.example.com \
+  --set record=ci.example. \
+  --set openstack.authURL=https://ci.example.com \
+  --set openstack.regionName=ci-region \
+  --set openstack.username=ci-user \
+  --set openstack.userDomainName=ci-domain \
+  --set openstack.password=ci-pass \
+  --set openstack.projectName=ci-project \
+  --set openstack.projectDomainName=ci-project-domain \
+  --set openstack.zoneName=ci.zone. >"$rendered"
 
 deployment_selector="$(yq -o=json 'select(.kind == "Deployment" and .metadata.name == "disco-controller-manager") | .spec.selector.matchLabels' "$rendered")"
 

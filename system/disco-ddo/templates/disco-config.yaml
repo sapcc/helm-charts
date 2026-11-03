@@ -1,0 +1,21 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: disco-config
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+type: Opaque
+stringData:
+  DEFAULT_DNS_RECORD: {{ required ".Values.record missing" .Values.record | quote }}
+  DEFAULT_DNS_ZONE_NAME: {{ required ".Values.openstack.zoneName missing" .Values.openstack.zoneName | quote }}
+  OS_AUTH_URL: {{ required ".Values.openstack.authURL missing" .Values.openstack.authURL | quote }}
+  OS_PASSWORD: {{ required ".Values.openstack.password missing" .Values.openstack.password | quote }}
+  OS_PROJECT_DOMAIN_NAME: {{ required ".Values.openstack.projectDomainName missing" .Values.openstack.projectDomainName | quote }}
+  OS_PROJECT_NAME: {{ required ".Values.openstack.projectName missing" .Values.openstack.projectName | quote }}
+  OS_REGION_NAME: {{ required ".Values.openstack.regionName missing" .Values.openstack.regionName | quote }}
+  OS_USER_DOMAIN_NAME: {{ required ".Values.openstack.userDomainName missing" .Values.openstack.userDomainName | quote }}
+  OS_USERNAME: {{ required ".Values.openstack.username missing" .Values.openstack.username | quote }}
+{{- end }}
