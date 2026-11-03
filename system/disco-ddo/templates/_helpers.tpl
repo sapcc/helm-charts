@@ -79,3 +79,11 @@ by the operator itself).
 {{- define "chart.additionsAnnotations" -}}
 dual-deployment-operator.cc.sap/origin: additions
 {{- end }}
+
+{{/*
+Stub for disco-config checksum — overridden by the actual template once
+system/disco-ddo/templates/disco-config.yaml is created in Task 3.
+The stub emits an empty string so sha256sum renders a deterministic zero-content hash.
+*/}}
+{{- define "disco-ddo/templates/disco-config.yaml" -}}
+{{- end }}

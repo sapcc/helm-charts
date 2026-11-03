@@ -5,7 +5,7 @@ chart_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rendered="$(mktemp)"
 trap 'rm -f "$rendered"' EXIT
 
-helm template disco-ddo "$chart_dir" --set mode=seed >"$rendered"
+helm template disco-ddo "$chart_dir" --set mode=seed --set apiServerHost=ci.example.com >"$rendered"
 
 deployment_selector="$(yq -o=json 'select(.kind == "Deployment" and .metadata.name == "disco-controller-manager") | .spec.selector.matchLabels' "$rendered")"
 
