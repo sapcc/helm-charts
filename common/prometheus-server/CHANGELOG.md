@@ -1,3 +1,7 @@
+## 8.2.9
+
+* remove `disableCompaction` workaround; the Thanos sidecar path mismatch is fixed in prometheus-operator v0.94.0 (prometheus-operator/prometheus-operator#8763)
+
 ## 8.2.6
 
 * disable absent-metrics-operator for Thanos-Ruler alerts 

@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-scripts
+  namespace: {{ .Release.Namespace }}
+data:
+  dhcp-init.sh: |
+    #!/bin/sh
+    set -euxo pipefail
+
+    # Discover the interface to assign the VIP to.
+    # If the VIP is already assigned (pod restart), ip route get returns 'local dev lo'.
+    # In that case, find the interface directly from ip addr.
+    INTERFACE=$(ip -o addr show | awk -v vip="${EXTERNALIP}/32" '$4 == vip {print $2; exit}')
+    if [ -z "${INTERFACE}" ]; then
+        INTERFACE=$(ip route get ${EXTERNALIP} | awk '{for(i=1;i<=NF;i++) if($i=="dev") {print $(i+1); exit}}')
+    fi
+    echo "Interface for VIP ${EXTERNALIP}: ${INTERFACE}"
+    echo "${INTERFACE}" > /shared/interface
+
+    ip addr add ${EXTERNALIP}/32 dev ${INTERFACE} || true
+
+    if iptables-nft -t nat -C POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP} 2>/dev/null; then
+        echo "SNAT DHCP rule already present"
+    else
+        iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP}
+    fi
+    {{- if .Values.tftp.enabled }}
+
+    if iptables-nft -t nat -C PREROUTING -d ${EXTERNALIP}/32 -p udp --dport 69 -j ACCEPT 2>/dev/null; then
+        echo "PREROUTING ACCEPT rule for TFTP already present"
+    else
+        iptables-nft -t nat -I PREROUTING 1 -d ${EXTERNALIP}/32 -p udp --dport 69 -j ACCEPT
+    fi
+
+    modprobe nf_conntrack_tftp
+    modprobe nf_nat_tftp
+
+    if iptables-nft -t raw -C PREROUTING -p udp --dport 69 -j CT --helper tftp 2>/dev/null; then
+        echo "CT helper rule for TFTP already present"
+    else
+        iptables-nft -t raw -I PREROUTING 1 -p udp --dport 69 -j CT --helper tftp
+    fi
+
+    if iptables-nft -t nat -C POSTROUTING -p udp -m conntrack --ctstate RELATED --ctorigdstport 69 -j SNAT --to-source ${EXTERNALIP} 2>/dev/null; then
+        echo "SNAT TFTP RELATED rule already present"
+    else
+        iptables-nft -t nat -I POSTROUTING 1 -p udp -m conntrack --ctstate RELATED --ctorigdstport 69 -j SNAT --to-source ${EXTERNALIP}
+    fi
+    {{- end }}
+  dhcp-stop.sh: |
+    #!/bin/sh
+    set -euxo pipefail
+
+    INTERFACE=$(cat /shared/interface 2>/dev/null || true)
+    if [ -n "${INTERFACE}" ]; then
+        ip addr del ${EXTERNALIP}/32 dev ${INTERFACE} || true
+    else
+        echo "WARNING: /shared/interface not found, skipping ip addr del"
+    fi
+
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${EXTERNALIP} || true
+    {{- if .Values.tftp.enabled }}
+    iptables-nft -t nat -D PREROUTING -d ${EXTERNALIP}/32 -p udp --dport 69 -j ACCEPT || true
+    iptables-nft -t raw -D PREROUTING -p udp --dport 69 -j CT --helper tftp || true
+    iptables-nft -t nat -D POSTROUTING -p udp -m conntrack --ctstate RELATED --ctorigdstport 69 -j SNAT --to-source ${EXTERNALIP} || true
+    {{- end }}

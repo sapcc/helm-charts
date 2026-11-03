@@ -233,6 +233,14 @@ build-metal-operator-remote:
 	fi
 
 
+build-metaldhcp:
+	@helm dep up metaldhcp
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metaldhcp/Chart.yaml
+
+build-metaldhcp-remote:
+	@helm dep up metaldhcp-remote
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metaldhcp-remote/Chart.yaml
+
 build-boot-operator:
 	@helm dep up boot-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator/Chart.yaml

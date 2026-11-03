@@ -1,0 +1,106 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: dhcpleases.dhcp.metal.ironcore.dev
+spec:
+  group: dhcp.metal.ironcore.dev
+  names:
+    kind: DHCPLease
+    listKind: DHCPLeaseList
+    plural: dhcpleases
+    singular: dhcplease
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.macAddress
+      name: MAC
+      type: string
+    - jsonPath: .spec.hostname
+      name: Hostname
+      type: string
+    - jsonPath: .spec.clientID
+      name: ClientID
+      priority: 1
+      type: string
+    - jsonPath: .spec.ip
+      name: IP
+      type: string
+    - jsonPath: .spec.gateway
+      name: Gateway
+      type: string
+    - jsonPath: .spec.leaseExpiresAt
+      name: Expires
+      type: string
+    - jsonPath: .metadata.annotations['dhcp\.metal\.ironcore\.dev/vendor']
+      name: Vendor
+      priority: 1
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          DHCPLease records an IPv4 lease issued by metaldhcp. It is the durable allocation
+          ledger (the oob plugin rebuilds its in-memory allocator from these on startup) and
+          the event that triggers the onboarding flow in the onboarding operator. metaldhcp
+          owns these objects; the object name is the normalized MAC (e.g. "3cecefaabbcc") so
+          re-leases patch the same object.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              clientID:
+                description: ClientID is the DHCPv4 client identifier (option 61)
+                  from the request, if present.
+                type: string
+              gateway:
+                description: Gateway is the pool gateway for the assigned address.
+                type: string
+              hostname:
+                description: |-
+                  Hostname is the client hostname, either from option 12 in the request or from a
+                  static lease config entry.
+                type: string
+              ip:
+                type: string
+              leaseExpiresAt:
+                description: |-
+                  LeaseExpiresAt is the absolute time at which this lease expires (now + leaseTime at
+                  the moment the offer was sent). Updated on every re-lease.
+                format: date-time
+                type: string
+              leaseTime:
+                description: LeaseTime is the lease duration offered for this address.
+                  Updated on re-lease.
+                type: string
+              macAddress:
+                type: string
+            required:
+            - ip
+            - macAddress
+            type: object
+        type: object
+    selectableFields:
+    - jsonPath: .spec.macAddress
+    - jsonPath: .spec.ip
+    served: true
+    storage: true
+    subresources: {}

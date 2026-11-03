@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: metaldhcp
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: metaldhcp
+    app.kubernetes.io/name: {{ .Release.Name }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   config.yaml: |
@@ -46,15 +46,27 @@ data:
         {{- if .bootURL }}
         bootURL: {{ .bootURL }}
         {{- end }}
-      {{- end }}
-    {{- end }}
-    {{- with .Values.oob.staticLeases }}
-    staticLeases:
-      {{- range . }}
-      - mac: {{ .mac | quote }}
-        ip: {{ .ip }}
-        {{- if .hostname }}
-        hostname: {{ .hostname }}
+        {{- with .staticLeases }}
+        staticLeases:
+          {{- range . }}
+          - mac: {{ .mac | quote }}
+            ip: {{ .ip }}
+            {{- if .hostname }}
+            hostname: {{ .hostname }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .mode }}
+        mode: {{ .mode }}
+        {{- end }}
+        {{- with .macList }}
+        macList:
+          {{- range . }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+        {{- if .responseDelay }}
+        responseDelay: {{ .responseDelay }}
         {{- end }}
       {{- end }}
     {{- end }}
@@ -72,4 +84,7 @@ data:
       {{- range . }}
       - {{ . }}
       {{- end }}
+    {{- end }}
+    {{- with .Values.oob.reclaimGrace }}
+    reclaimGrace: {{ . }}
     {{- end }}
