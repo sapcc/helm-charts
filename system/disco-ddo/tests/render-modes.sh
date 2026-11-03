@@ -3,8 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 CHART_DIR=$(cd -- "$SCRIPT_DIR/.." && pwd)
-TMP_ROOT=${TMPDIR:-/private/var/folders/8m/nyl995ss465f1mn4g6r6lx400000gn/T/opencode}
-TMP_DIR=$(mktemp -d "$TMP_ROOT/disco-ddo-render.XXXXXX")
+TMP_DIR=$(mktemp -d)
 SEED_RENDER_FILE="$TMP_DIR/seed-render.yaml"
 SHOOT_RENDER_FILE="$TMP_DIR/shoot-render.yaml"
 NOOP_RENDER_FILE="$TMP_DIR/noop-render.yaml"
@@ -66,166 +65,70 @@ if [[ "$NOOP_DOC_COUNT" -ne 0 ]]; then
 fi
 printf 'PASS: no-mode render is empty\n'
 
-log "Asserting rendered object sets"
+log "Asserting exact object inventories"
 python3 - "$SEED_RENDER_FILE" "$SHOOT_RENDER_FILE" <<'PY'
 import sys
 import yaml
 
 seed_path, shoot_path = sys.argv[1:3]
-failures = []
-passes = []
+
+SEED_EXPECTED = sorted([
+    "Certificate/disco-serving-cert",
+    "Deployment/disco-controller-manager",
+    "Issuer/disco-selfsigned-issuer",
+    "MutatingWebhookConfiguration/disco-ddo-mutating-webhook-configuration",
+    "Secret/disco-config",
+    "Secret/disco-remote-kubeconfig",
+    "Service/disco-webhook-service",
+])
+
+SHOOT_EXPECTED = sorted([
+    "ClusterRole/disco-ddo-manager-role",
+    "ClusterRole/disco-ddo-metrics-reader",
+    "ClusterRole/disco-ddo-proxy-role",
+    "ClusterRoleBinding/disco-ddo-manager-rolebinding",
+    "ClusterRoleBinding/disco-ddo-proxy-rolebinding",
+    "CustomResourceDefinition/records.disco.stable.sap.cc",
+    "Role/disco-leader-election-role",
+    "RoleBinding/disco-leader-election-rolebinding",
+    "ServiceAccount/disco-controller-manager",
+])
 
 def load_docs(path):
     with open(path) as fh:
         return [doc for doc in yaml.safe_load_all(fh) if isinstance(doc, dict)]
 
-seed_docs = load_docs(seed_path)
+def inventory(docs):
+    items = []
+    for doc in docs:
+        kind = doc.get("kind") or "Unknown"
+        name = ((doc.get("metadata") or {}).get("name")) or "unnamed"
+        items.append(f"{kind}/{name}")
+    return sorted(items)
+
+def assert_inventory(label, actual, expected):
+    if actual == expected:
+        print(f"PASS: {label} exact inventory matches ({len(expected)} objects)")
+        return True
+    extra   = sorted(set(actual) - set(expected))
+    missing = sorted(set(expected) - set(actual))
+    print(f"FAIL: {label} inventory mismatch", file=sys.stderr)
+    if missing:
+        for item in missing:
+            print(f"  MISSING: {item}", file=sys.stderr)
+    if extra:
+        for item in extra:
+            print(f"  EXTRA:   {item}", file=sys.stderr)
+    return False
+
+seed_docs  = load_docs(seed_path)
 shoot_docs = load_docs(shoot_path)
 
-def name_of(doc):
-    return ((doc.get("metadata") or {}).get("name"))
+ok = True
+ok = assert_inventory("seed",  inventory(seed_docs),  SEED_EXPECTED)  and ok
+ok = assert_inventory("shoot", inventory(shoot_docs), SHOOT_EXPECTED) and ok
 
-def docs_of_kind(docs, kind):
-    return [doc for doc in docs if doc.get("kind") == kind]
-
-def find_doc(docs, kind, name):
-    for doc in docs:
-        if doc.get("kind") == kind and name_of(doc) == name:
-            return doc
-    return None
-
-def expect(condition, message):
-    if condition:
-        passes.append(f"PASS: {message}")
-    else:
-        failures.append(f"FAIL: {message}")
-
-# ── SEED assertions ────────────────────────────────────────────────────────────
-
-expect(
-    find_doc(seed_docs, "Deployment", "disco-controller-manager") is not None,
-    "seed render contains Deployment/disco-controller-manager",
-)
-expect(
-    find_doc(seed_docs, "Secret", "disco-config") is not None,
-    "seed render contains Secret/disco-config",
-)
-expect(
-    find_doc(seed_docs, "Issuer", "disco-selfsigned-issuer") is not None,
-    "seed render contains Issuer/disco-selfsigned-issuer",
-)
-expect(
-    find_doc(seed_docs, "Certificate", "disco-serving-cert") is not None,
-    "seed render contains Certificate/disco-serving-cert",
-)
-expect(
-    find_doc(seed_docs, "Service", "disco-webhook-service") is not None,
-    "seed render contains Service/disco-webhook-service",
-)
-expect(
-    find_doc(seed_docs, "MutatingWebhookConfiguration", "disco-ddo-mutating-webhook-configuration") is not None,
-    "seed render contains MutatingWebhookConfiguration/disco-ddo-mutating-webhook-configuration",
-)
-expect(
-    find_doc(seed_docs, "Secret", "disco-remote-kubeconfig") is not None,
-    "seed render contains Secret/disco-remote-kubeconfig",
-)
-
-# SEED must NOT contain shoot-side objects
-expect(
-    len(docs_of_kind(seed_docs, "CustomResourceDefinition")) == 0,
-    "seed render omits CustomResourceDefinition",
-)
-expect(
-    len(docs_of_kind(seed_docs, "ClusterRole")) == 0,
-    "seed render omits ClusterRole",
-)
-expect(
-    len(docs_of_kind(seed_docs, "ClusterRoleBinding")) == 0,
-    "seed render omits ClusterRoleBinding",
-)
-expect(
-    len(docs_of_kind(seed_docs, "Role")) == 0,
-    "seed render omits Role",
-)
-expect(
-    len(docs_of_kind(seed_docs, "RoleBinding")) == 0,
-    "seed render omits RoleBinding",
-)
-
-# ── SHOOT assertions ───────────────────────────────────────────────────────────
-
-expect(
-    find_doc(shoot_docs, "CustomResourceDefinition", "records.disco.stable.sap.cc") is not None,
-    "shoot render contains CustomResourceDefinition/records.disco.stable.sap.cc",
-)
-expect(
-    find_doc(shoot_docs, "ServiceAccount", "disco-controller-manager") is not None,
-    "shoot render contains ServiceAccount/disco-controller-manager",
-)
-expect(
-    find_doc(shoot_docs, "ClusterRole", "disco-ddo-manager-role") is not None,
-    "shoot render contains ClusterRole/disco-ddo-manager-role",
-)
-expect(
-    find_doc(shoot_docs, "ClusterRole", "disco-ddo-proxy-role") is not None,
-    "shoot render contains ClusterRole/disco-ddo-proxy-role",
-)
-expect(
-    find_doc(shoot_docs, "ClusterRole", "disco-ddo-metrics-reader") is not None,
-    "shoot render contains ClusterRole/disco-ddo-metrics-reader",
-)
-expect(
-    find_doc(shoot_docs, "ClusterRoleBinding", "disco-ddo-manager-rolebinding") is not None,
-    "shoot render contains ClusterRoleBinding/disco-ddo-manager-rolebinding",
-)
-expect(
-    find_doc(shoot_docs, "ClusterRoleBinding", "disco-ddo-proxy-rolebinding") is not None,
-    "shoot render contains ClusterRoleBinding/disco-ddo-proxy-rolebinding",
-)
-expect(
-    find_doc(shoot_docs, "Role", "disco-leader-election-role") is not None,
-    "shoot render contains Role/disco-leader-election-role",
-)
-expect(
-    find_doc(shoot_docs, "RoleBinding", "disco-leader-election-rolebinding") is not None,
-    "shoot render contains RoleBinding/disco-leader-election-rolebinding",
-)
-
-# SHOOT must NOT contain seed-side objects
-expect(
-    len(docs_of_kind(shoot_docs, "Deployment")) == 0,
-    "shoot render omits Deployment",
-)
-expect(
-    len(docs_of_kind(shoot_docs, "Secret")) == 0,
-    "shoot render omits Secret",
-)
-expect(
-    len(docs_of_kind(shoot_docs, "Service")) == 0,
-    "shoot render omits Service",
-)
-expect(
-    len(docs_of_kind(shoot_docs, "Issuer")) == 0,
-    "shoot render omits Issuer",
-)
-expect(
-    len(docs_of_kind(shoot_docs, "Certificate")) == 0,
-    "shoot render omits Certificate",
-)
-expect(
-    len(docs_of_kind(shoot_docs, "MutatingWebhookConfiguration")) == 0,
-    "shoot render omits MutatingWebhookConfiguration",
-)
-
-# ── Results ────────────────────────────────────────────────────────────────────
-
-for line in passes:
-    print(line)
-
-if failures:
-    for line in failures:
-        print(line, file=sys.stderr)
+if not ok:
     sys.exit(1)
 
 print("PASS: all render-mode assertions succeeded")
