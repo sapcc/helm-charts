@@ -269,8 +269,8 @@ groups:
       summary: "Log Router writes denied for all tenants"
 
   - alert: OpenstackHermesLogRouterWriterNotAuthorized
-    expr: sum by (tenant) (increase(log_router_events_dropped_total{reason="writer_not_authorized"}[15m])) > 0
-    for: 15m
+    # 1h: a partition flushes from minute 15 of its hour on, so drops come in bursts.
+    expr: sum by (tenant) (increase(log_router_events_dropped_total{reason="writer_not_authorized"}[1h])) > 0
     labels:
       context: log-router
       dashboard: hermes-log-router
@@ -282,7 +282,7 @@ groups:
       meta: "Log Router drops audit events of project {{`{{ $labels.tenant }}`}}: the writer user has no objectstore_admin there"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "With project-scoped writes on, Keystone refuses the writer user (hermes@Default) a token for project {{`{{ $labels.tenant }}`}}, so its audit events are dropped. Usually an iaas- project that was enabled before hermes.dataplane_assign_writer_role was on and was never re-enabled. Fix: a project admin re-enables dataplane through hermez, or a cloud admin runs openstack role add --user hermes --user-domain Default --project {{`{{ $labels.tenant }}`}} objectstore_admin."
+      description: "With project-scoped writes on, Keystone refuses the writer user (hermes@Default) a token for project {{`{{ $labels.tenant }}`}}, so its audit events are dropped. Usually an iaas- project that was enabled before hermes.dataplane_assign_writer_role was on and was never re-enabled. Fix: a project admin re-enables dataplane through hermez with the current config (including target_bucket), or a cloud admin runs openstack role add --user hermes --user-domain Default --project {{`{{ $labels.tenant }}`}} objectstore_admin."
       summary: "Log Router writer has no role in project {{`{{ $labels.tenant }}`}}"
 
   - alert: OpenstackHermesLogRouterFlushFailing

@@ -30,8 +30,10 @@ data:
   LOG_ROUTER_S3_PREFIX: {{ .Values.logRouter.s3.prefix | quote }}
   LOG_ROUTER_SWIFT_ENABLED: {{ .Values.logRouter.swift.enabled | quote }}
   LOG_ROUTER_SWIFT_SERVICE_TYPE: {{ .Values.logRouter.swift.service_type | quote }}
-  {{- if and (eq (toString .Values.hermes.dataplane_project_scoped_writes) "true") (ne (toString .Values.hermes.dataplane_assign_writer_role) "true") }}
+  {{- $scoped := eq (.Values.hermes.dataplane_project_scoped_writes | toString | lower) "true" }}
+  {{- $assign := eq (.Values.hermes.dataplane_assign_writer_role | toString | lower) "true" }}
+  {{- if and $scoped (not $assign) }}
   {{- fail "hermes.dataplane_project_scoped_writes needs hermes.dataplane_assign_writer_role" }}
   {{- end }}
-  LOG_ROUTER_SWIFT_PROJECT_SCOPED: {{ .Values.hermes.dataplane_project_scoped_writes | quote }}
+  LOG_ROUTER_SWIFT_PROJECT_SCOPED: {{ $scoped | quote }}
 {{- end }}
