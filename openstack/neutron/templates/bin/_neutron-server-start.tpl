@@ -22,7 +22,7 @@ function process_config {
     cp /neutron-etc-vendor/ml2-conf-manila.ini  /etc/neutron/plugins/ml2/ml2-conf-manila.ini
     cp /neutron-etc-vendor/ml2-conf-asr1k.ini  /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini
 
-    cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
+    cp /neutron-etc/neutron-policy.yaml  /etc/neutron/policy.yaml
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
 
     {{- if .Values.audit.enabled }}
