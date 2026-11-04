@@ -1,6 +1,68 @@
 # Changelog
 
-## v0.38.1 - 2026/06/21
+## v0.44.1 - 2026/10/15
+* move the `metrics` (mysqld-exporter) sidecar probes to `metrics.livenessProbe` / `metrics.readinessProbe`; leave them empty by default
+  * MariaDB readiness depends on the metrics sidecar readiness
+  * a failed probe might restart the exporter and make the database unavailable
+* chart version bumped
+
+## v0.44.0 - 2026/10/01
+* truncate the active slow-query log during the run once it exceeds `slow_query_log.rotation.max_size_mb` (default 1024), checked every `interval_seconds` (default 300) by a `slow-log-rotator` sidecar; `keep_previous` (default true) retains one `*.1` copy
+* the rotator runs as a native sidecar when `global.mariadb.native_sidecar.enabled`, otherwise as a regular sidecar container
+* chart version bumped
+
+## v0.43.0 - 2026/09/24
+* prune slow-query logs older than `slow_query_log.cleanup.max_age_days` (default 14) on pod init
+* optionally write the slow query log to a dedicated PVC (`slow_query_log.persistence`); it is written per-pod as `<dir>/<pod>-slow.log` so `cleanup` prunes it across restarts, and the PVC auto-provisions as `<release>-mariadb-logs` by default
+* opt-in data-PVC free-space alert at `alerts.pvc_free_enabled` (threshold `alerts.pvc_free_threshold`, default 0.20; severity `alerts.pvc_free_severity`, default warning)
+* fix `context` label typo (`datbase`) on the too-many-connections alert
+* chart version bumped
+
+## v0.42.3 - 2026/09/23
+* add `tolerations` value (default `[]`) to `deployment.yaml` and `sync-statefulset.yaml`
+* chart version bumped
+
+## v0.42.2 - 2026/08/25
+* MariaDB version updated to [10.11.19](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.19)
+* `maria-back-me-up` updated to `10.11-20260825091346`
+* chart version bumped
+
+## v0.42.1 - 2026/08/20
+* `maria-back-me-up` updated to `10.11-20260820143216` with ceph-s3 fixes
+* updated optional `go-maria-sync` deployment image tag
+* updated sidecar images:
+  * `mysqld-exporter` updated to `v0.20.0`
+  * `mariadb-credentials-updater`
+  * `pod-readiness`
+* chart version bumped
+
+## v0.42.0 - 2026/07/13
+* support SSE-C for Ceph S3 backup uploads
+  * default at `global.mariadb.backup_v2.ceph_s3.sse_customer_key`
+  * per-target override at `global.mariadb.backup_v2.ceph_s3.targets[].sse_customer_key` (set to `""` to opt out of an inherited default)
+* chart version bumped
+
+## v0.41.0 - 2026/07/06
+* support configurable S3 object lock on backup uploads
+  * default at `backup_v2.object_lock.{enabled,lock_mode,retention_days}`
+  * per-target overrides at `global.mariadb.backup_v2.aws.object_lock` and `global.mariadb.backup_v2.ceph_s3.targets[].object_lock`
+* `maria-back-me-up` updated to `10.11-20260706142324` for object-lock upload support
+* chart version bumped
+
+## v0.40.0 - 2026/07/03
+* optionally cohost the mariadb and the mariadb-backup pods on the same node via the `.Values.backup_v2.cohost_with_mariadb` flag
+* chart version bumped
+
+## v0.39.0 - 2026/06/22
+* support multiple Ceph S3 backup targets via `global.mariadb.backup_v2.ceph_s3.targets`
+* drop `global.mariadb.backup_v2.ceph_s3.{endpoint,region,bucket_name,aws_access_key_id,aws_secret_access_key}` keys
+* chart version bumped
+
+## v0.38.2 - 2026/06/16
+* use global.mariadb.backup_v2 for ceph s3 access and secret key
+* chart version bumped
+
+## v0.38.1 - 2026/06/11
 * `maria-back-me-up` updated to `10.11-20260611113653`
   * fixes aws s3 upload
 * chart version bumped

@@ -1,0 +1,38 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/metal-maintenance-operator
+
+mmo-core:
+  fullnameOverride: metal-maintenance-operator
+  crd:
+    enable: true
+  rbac:
+    namespaced: true
+    helpers:
+      enable: false
+  serviceAccount:
+    enable: true
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+  certManager:
+    enable: false
+  ingress:
+    enable: true
+    domain: "metal-maintenance-operator.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+    tls: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      disco: "true"
+  serverReadinessNamespaces: []
+  manager:
+    enabled: true
+    image:
+      repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-maintenance-operator-controller-manager
+    args:
+      - "--sanitization-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/sanitizer@sha256:82f78c3d4c991a3b055415cb649cb371faaf63a64ed1407b7eeadf97680713e7"
+      # - "--sanitization-namespace=DEFINE_IN_REGION_VALUES"
+      # - "--sanitization-tolerations=DEFINE_IN_REGION_VALUES"
+      # - "--readiness-checks=DEFINE_IN_REGION_VALUES"
+      - "--report-base-url=https://metal-maintenance-operator.garden.<region>.cloud.sap"

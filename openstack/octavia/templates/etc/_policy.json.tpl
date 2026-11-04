@@ -101,5 +101,6 @@
     "os_load-balancer_api:amphora:get_stats": "rule:context_is_admin",
 
     "os_load-balancer_api:provider-flavor:get_all": "rule:context_is_admin",
-    "os_load-balancer_api:provider-availability-zone:get_all": "rule:context_is_admin"
+    "os_load-balancer_api:provider-availability-zone:get_all": "rule:context_is_admin",
+    "os_load-balancer_api:member:put_cross_pool_members": "{{- if .Values.early_lbaas_cpbmu_access_project_ids }}{{ range $i, $projectID := .Values.early_lbaas_cpbmu_access_project_ids }}{{ if $i }} or {{ end }}project_id:{{ $projectID }}{{ end }}{{- else }}!{{- end }}"
 }

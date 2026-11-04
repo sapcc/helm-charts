@@ -15,7 +15,6 @@ groups:
       service: limes
       context: limes
       meta: "CCloud Limes API is down"
-      dashboard: "cc3test-api-status?var-service=limes"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service=limes"
       playbook: "docs/resources/limes/playbooks/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -33,7 +32,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Limes API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/resources/limes/playbooks/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"

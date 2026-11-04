@@ -2,7 +2,9 @@ service_type: 'compute'
 service_name: 'nova'
 # this works for DevStack only
 # prefix: '/compute/v2.1'
-prefix: '/v2[0-9\.]*(?:/[0-9a-f\-]+)?'
+# optional project ID must be a whole path segment, otherwise hex-looking
+# resource names lose their first letters (/flavors -> Xavors)
+prefix: '/v2[0-9\.]*(?:/[0-9a-f]{32})?(?=/|$)'
 
 resources:
     # NOTE: proxy-kind API are ignored

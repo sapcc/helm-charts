@@ -65,11 +65,12 @@ server_migration_driver_continue_update_interval = {{ .Values.server_migration_d
 server_migration_extend_neutron_network = {{ .Values.server_migration_extend_neutron_network | default true }}
 ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval | default 14400 }}
 
+# SCI: we don't want snapshot_policy here as driver_updatable_metadata,
+# because we configured 'netapp_volume_snapshot_policy_exceptions' option
+driver_updatable_metadata = cross_volume_dedupe
+driver_updatable_subnet_metadata = showmount,pnfs
 # Prevent shares from transitioning to 'ensuring' status (2025.1 default changed to True)
 update_shares_status_on_ensure = False
-
-# Metadata applied on share server create when set on the subnet. Updating the metadata will not cause an update in driver.
-# driver_updatable_subnet_metadata = pnfs,showmount
 
 # manila by default would put "{project_id}_" as prefix, but since we anyhow don't have cross-project share servers, we can skip that.
 # obviously having shares with the same mount point name in the same share server is not possible,
@@ -91,6 +92,7 @@ share_groups = {{ .Values.quota.share_groups }}
 share_group_snapshots = {{ .Values.quota.share_group_snapshots }}
 share_replicas = {{ .Values.quota.share_replicas }}
 replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
+share_server_replicas = {{ .Values.quota.share_server_replicas }}
 
 [neutron]
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}

@@ -60,6 +60,16 @@ data:
         serve-expired-ttl: 86400
         serve-expired-client-timeout: 1800
 
+        {{- if hasKey .Values.unbound "discard_timeout" }}
+        # discard responses that take longer than this to arrive (unbound default is 1900ms)
+        discard-timeout: {{ .Values.unbound.discard_timeout }}
+        {{- end }}
+
+        {{- if hasKey .Values.unbound "outgoing_range" }}
+        # outgoing query capacity (unbound default is 4096)
+        outgoing-range: {{ .Values.unbound.outgoing_range }}
+        {{- end }}
+
         # Faster UDP with multithreading (only on Linux)
         so-reuseport: yes
 

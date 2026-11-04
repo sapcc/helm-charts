@@ -49,14 +49,14 @@ security_compliance = True
 build_timeout=10800
 
 [network]
-project_network_cidr = 10.199.0.0/16
+project_network_cidr = {{ .Values.tempest_common.project_network_cidr }}
 public_network_id = {{ .Values.tempest_common.public_network_id }}
 endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 floating_network_name = FloatingIP-external-monsoon3-01
 build_timeout=600
 build_interval=20
-subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
+subnet_id = {{ required "Missing tempest_common.subnet_id!" .Values.tempest_common.subnet_id }}
 
 [network-feature-enabled]
 ipv6 = False

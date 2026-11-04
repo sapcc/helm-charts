@@ -1,0 +1,25 @@
+{{- if .Values.enable_coredump_exporter }}
+{{- $username := required ".Values.coredump_exporter_username is missing" .Values.coredump_exporter_username }}
+{{- $password := required ".Values.coredump_exporter_password is missing" .Values.coredump_exporter_password }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-coredump-exporter
+spec:
+  requires:
+  - swift/swift-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  domains:
+  - name: Default
+    users:
+    - name: '{{ include "resolve_secret" $username }}'
+      description: 'Coredump shipment to Swift'
+      password: '{{ include "resolve_secret" $password }}'
+  - name: ccadmin
+    projects:
+    - name: master
+      role_assignments:
+      - user: '{{ include "resolve_secret" $username }}@Default'
+        role: objectstore_admin
+{{- end }}

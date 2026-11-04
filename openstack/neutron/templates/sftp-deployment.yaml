@@ -1,3 +1,4 @@
+{{- if .Values.sftp.swift.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -20,7 +21,7 @@ spec:
         component: neutron-sftp-backup
       annotations:
         kubectl.kubernetes.io/default-container: sftp
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/sftp-secrets.yaml") . | sha256sum }}
+        secret-sftp-secrets-hash: {{ include (print $.Template.BasePath "/sftp-secrets.yaml") $ | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       containers:
@@ -58,3 +59,5 @@ spec:
             secretName: neutron-sftp-backup
         - name: cache-volume
           emptyDir: {}
+{{- end -}}
+

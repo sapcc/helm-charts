@@ -1,0 +1,76 @@
+# Wrapper values for the dual-deployment-operator controller subchart (alias: controller).
+# Only values that diverge from the subchart defaults are set here.
+controller:
+  enabled: true
+
+  manager:
+    image:
+      # Pinned to the keppel mirror (in-cluster-pullable). Split repository + tag so the
+      # subchart appends the tag exactly once (manager.yaml:106). Do NOT put the ":tag" in
+      # repository — the subchart's guard only suppresses the appended tag for the "@sha256:"
+      # digest form, so a ":tag" in repository would be doubled.
+      #
+      # PHASED ROLLOUT: the TAG is the rollout knob. It is overridden from kube-secrets —
+      #   base default:  values/helm/admin-k3s/dual-deployment-operator.yaml
+      #   per-cluster:   values/helm/admin-k3s/<region>/<cluster>/dual-deployment-operator.yaml
+      # A per-cluster overlay bumps controller.manager.image.tag to canary a new build on
+      # that cluster first; promote by moving the tag into the admin-k3s base. The value
+      # here is only a fallback for renders without the kube-secrets layer.
+      repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sap-cloud-infrastructure/dual-deployment-operator
+      tag: sha-f72fe3ff29e4f5ff40144a166f69a4713d4e284f
+      pullPolicy: IfNotPresent
+    envOverrides:
+      # main.go:213: webhook setup runs unless ENABLE_WEBHOOKS == "false".
+      # certManager.enabled=false (default) → no TLS cert → webhook server crashloops.
+      ENABLE_WEBHOOKS: "false"
+
+  shootRbac:
+    # SHOOT-READY: emit the shoot-applier bootstrap ManagedResource + token-requestor Secret
+    # to the shoot. Per-shoot = per-shoot-cluster, so the static SA name is unique per shoot.
+    enabled: true
+    # required{} in applier-bootstrap.yaml:20-21 and remote-kubeconfig.yaml:13-14.
+    # These equal the chart defaults (values.yaml:177,179) but must be explicit here because
+    # enabled: true triggers the required{} checks at render time.
+    serviceAccountName: dual-deployment-operator-shoot-applier
+    serviceAccountNamespace: kube-system
+
+  metrics:
+    # Secure metrics endpoint needs a cert; certManager is off → disable metrics.
+    enabled: false
+
+  crd:
+    # Seed-scoped CRD. The prod release (shoot--cp--m-<region>) is the durable owner
+    # (crd.enabled: true). Non-owner releases set crd.enabled: false in their per-shoot
+    # values file. NEVER flip the owner to false (resource-policy: keep orphans the CRD).
+    enabled: true
+    keep: true
+
+
+# ---------------------------------------------------------------------------
+# DualDeploymentOperator CR instances (operator-agnostic machinery).
+#
+# This chart is operator-agnostic: it only knows HOW to render a DualDeploymentOperator
+# CR from two maps, both keyed by CR name (= CR metadata.name):
+#   dualDeploymentOperatorCRDefaults.<name>  — shared defaults for that CR (operator-specific
+#                                              content lives in kube-secrets base overlays,
+#                                              NOT in this chart).
+#   dualDeploymentOperatorCRs.<name>         — per-cluster enable + overrides.
+#
+# For each instance with `enabled: true`, the template deep-merges defaults UNDER the
+# instance (instance wins). A CR renders ONLY when its instance sets `enabled: true`.
+#
+# Region templating: any `${REGION}` token in a CR's `values` is replaced with that
+# instance's `values.global.region` at render time (lists replace wholesale on merge).
+#
+# Both maps are EMPTY here on purpose — this chart ships no operator-specific defaults.
+# kube-secrets supplies them via layered base files, e.g.:
+#   values/helm/admin-k3s/dual-deployment-operator.yaml  (dualDeploymentOperatorCRDefaults.<op>)
+#   values/helm/<type>/<region>/<cluster>/dual-deployment-operator.yaml  (dualDeploymentOperatorCRs.<op>)
+# ---------------------------------------------------------------------------
+
+# Shared defaults per CR. Empty here — populated by kube-secrets base overlays.
+dualDeploymentOperatorCRDefaults: {}
+
+# Per-cluster enable + overrides. Empty here — populated by kube-secrets overlays.
+# A CR renders ONLY when its instance sets `enabled: true` (default false).
+dualDeploymentOperatorCRs: {}

@@ -10,7 +10,6 @@ groups:
       severity: warning
       support_group: observability
       playbook: 'docs/support/playbook/opensearch/octobus/data-in-not-reachable/#octobus-endpoint-not-reachable'
-      dashboard: 'audit-log-shipping'
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-log-shipping"
     annotations:
       description: "*{{`{{ $labels.region }}`}}/{{`{{ $labels.clusterType }}`}}* cannot reach Octobus endpoint: {{`{{ $labels.instance }}`}}"

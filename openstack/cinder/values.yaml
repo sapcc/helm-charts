@@ -82,6 +82,11 @@ backends:
     vmware_storage_profile: cinder-fcd-std
     enable_image_cache: False
 
+# optional volume types appended to the cinder-type-seed OpenstackSeed CR
+type_seeds:
+  premium:
+    # seed a 'premium' volume type for KVM/NFS backends
+    enabled: false
 
 cinderApiPortPublic: 443
 cinderApiPortInternal: 8776
@@ -479,6 +484,11 @@ api_rate_limit:
   log_sleep_time_seconds: 10
   backend_timeout_seconds: 15
   project_whitelist: []
+  # Skip rate limiting for service-to-service requests carrying a Keystone-confirmed
+  # service token (e.g. Nova calling Cinder during volume attach). Enabled by default;
+  # set to false to include service-to-service traffic in per-project rate limits.
+  # Safe because service_token_roles_required = True is set in [keystone_authtoken].
+  bypass_service_token: true
 
 # Configuration for custom resource CinderNetappConfig used by
 # kvm-cinder-netapp-operator. Should be enabled only if operator is
@@ -491,7 +501,8 @@ cindernetappconfig:
   volumeregextemplate: "(^cinder_|^nfs_{{FilerName}}_).*"
   cinderbackendconfig:
     reserved_percentage: 20
-  
+    netapp_nfs_break_locks: "True"
+
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -530,4 +541,4 @@ manage_service_user_passwords: false
 
 statsd:
   image: 'shared-app-images/statsd-exporter'
-  imageTag: '0.28.0-latest'
+  imageTag: '0.31.0-latest'

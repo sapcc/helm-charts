@@ -35,6 +35,31 @@ updater:
     mellanox: Mellanox
     skhynix: SK Hynix
 
+  # NIC manufacturers that map to L-type Netbox interfaces (L1, L2, ...) instead of NIC1, NIC2.
+  # Only applies when no StructuredName is present and port speed <= lom_max_speed_mbps.
+  lom_manufacturers:
+    - Intel
+    - Broadcom
+
+  # Maximum port speed (Mbps) for a NIC to be treated as a LOM/onboard interface (L-type naming).
+  # NICs from lom_manufacturers above this threshold are treated as standard NICs.
+  # Default 10000 (10G): catches 1G/10G onboard NICs, excludes 25G/100G OCP adapters.
+  lom_max_speed_mbps: 10000
+
+  # Set to true to automatically create interfaces missing in Netbox when a MAC and speed are known.
+  create_missing_interfaces: false
+
+  # Known BMC/management interface names in Netbox (used as fallback when no interface
+  # is marked mgmt_only). Values are matched case-insensitively, separators are ignored.
+  bmc_interface_names:
+    - remoteboard   # internal collector key
+    - iLO           # HPE
+    - iDRAC         # Dell
+    - XCC           # Lenovo
+    - iRMC          # Fujitsu
+    - BMC
+    - MGMT
+
 resources:
   requests:
     memory: 200Mi

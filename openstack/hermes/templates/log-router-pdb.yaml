@@ -1,0 +1,16 @@
+{{- if and .Values.logRouter.enabled (gt (.Values.logRouter.replicas | int) 1) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: log-router
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: log-router
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      component: log-router
+{{- end }}

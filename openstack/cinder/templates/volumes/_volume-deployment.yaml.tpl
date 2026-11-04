@@ -40,6 +40,9 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
       terminationGracePeriodSeconds: {{ .Values.pod.terminationGracePeriodSeconds.volume }}
       hostname: {{ .Release.Name }}-volume-{{ $name }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}

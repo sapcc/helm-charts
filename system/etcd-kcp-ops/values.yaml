@@ -1,0 +1,75 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/gardener/etcd-backup-restore
+
+clusterName:
+
+deployment:
+  enable: true
+  replicas: 1
+  initContainer:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/amazon/aws-cli
+      tag: 2.31.1
+  container:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/etcdbrctl
+      tag: v0.40.0
+    resources:
+      requests:
+        cpu: 20m
+        memory: 80Mi
+    securityContext:
+      runAsUser: 0
+    metricsPort: 8080
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccountName: etcd-kcp-backup
+
+greenhouseScrapeTarget: kube-monitoring
+
+configmap:
+  enable: true
+
+secret:
+  enable: true
+
+service:
+  enable: true
+
+serviceAccount:
+  enable: true
+
+clusterRole:
+  enable: true
+
+clusterRoleBinding:
+  enable: true
+
+lease:
+  enable: true
+
+awsCredentials:
+  principal:
+  accessKeyID:
+  secretAccessKey:
+  region:
+
+# Encryption key rotation CronJob (Mjolnir rotate-k8s)
+encryptionRotation:
+  enabled: false
+  schedule: "0 */8 * * *"
+  image:
+    repository: keppel.global.cloud.sap/ccloud/mjolnir
+    tag: latest
+  rotationDays: 90
+  secretLength: 32
+  nodesCount: 3
+  resources: "secrets.v1.,configmaps.v1.,bmcsecrets.v1alpha1.metal.ironcore.dev"
+  # CAPI namespace where KCP + encryption Secret live
+  capiNamespace: ""
+  # KCP name (same as cluster name)
+  kcpName: ""
+  # K8s Secret name for encryption config
+  secretName: etcd-encryption-config

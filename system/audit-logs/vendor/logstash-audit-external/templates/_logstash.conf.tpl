@@ -18,7 +18,7 @@ input {
     tags => ["audit"]
     user => '${AUDIT_HTTP_USER}'
     password => '${AUDIT_HTTP_PWD}'
-{{ if eq .Values.global.clusterType "metal" -}}
+{{ if ne .Values.global.clusterType "scaleout" -}}
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
@@ -213,19 +213,6 @@ filter {
             split {
               field => "items"
           }
-          # ---- clean managedFields ----
-          ruby {
-            code => '
-              mf = event.get("[requestObject][managedFields]")
-              if mf.is_a?(Array)
-                mf.each do |entry|
-                  entry.delete(".") if entry.is_a?(Hash)
-                end
-              elsif mf.is_a?(Hash)
-                mf.delete(".")
-              end
-            '
-          }
 
           if [items][annotations][shoot.gardener.cloud/name] {
             grok {
@@ -247,6 +234,106 @@ filter {
                           event.remove("items")
                 '
          }
+
+          # ---- remove managedFields entirely (contains dot-only keys that ES rejects) ----
+          # Must be AFTER items flatten so the field paths are correct
+          mutate {
+            remove_field => [
+              "[requestObject][metadata][managedFields]",
+              "[responseObject][metadata][managedFields]"
+            ]
+          }
+
+          # ---- never store admission patches ----
+          # A mutating webhook's patch can contain the values it injected, independently of
+          # the resource bodies. Remove the patch annotations from every event, and keep the
+          # routing, authorization and mutation-summary annotations. This alone doesn't mark
+          # the event: webhooks routinely patch ordinary objects such as shoots.
+          ruby {
+            code => '
+              annotations = event.get("annotations")
+              if annotations.is_a?(Hash)
+                removed = annotations.keys.select { |key| key.start_with?("patch.webhook.admission.k8s.io/") }
+                unless removed.empty?
+                  removed.each { |key| annotations.delete(key) }
+                  event.set("annotations", annotations)
+                  event.set("[@metadata][admission_patch_removed]", true)
+                end
+              end
+            '
+          }
+
+          # ---- never store credentials, whatever the audit policy logs ----
+          # Remove every body that can hold a credential and mark the event, so a policy
+          # that logs them can be found without storing the data:
+          # - Secrets, InternalSecrets and BMCSecrets: the response, the request (except a
+          #   delete's DeleteOptions) and admission patches, which can carry injected values.
+          # - TokenReviews: both bodies; the request holds the token under review.
+          # - The token, adminkubeconfig and viewerkubeconfig subresources: the response,
+          #   which holds the issued credential. Their request (audiences, expiration) is kept.
+          if [objectRef][resource] in ["secrets", "internalsecrets", "bmcsecrets"] {
+            if [requestObject] and [verb] not in ["delete", "deletecollection"] {
+              mutate {
+                remove_field => ["requestObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+            if [responseObject] or [@metadata][admission_patch_removed] {
+              mutate {
+                remove_field => ["responseObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+          } else if [objectRef][resource] == "tokenreviews" {
+            if [requestObject] or [responseObject] or [@metadata][admission_patch_removed] {
+              mutate {
+                remove_field => ["requestObject", "responseObject"]
+                replace => { "[@metadata][credential_body_removed]" => "true" }
+              }
+            }
+          } else if [objectRef][subresource] in ["token", "adminkubeconfig", "viewerkubeconfig"] and [responseObject] {
+            mutate {
+              remove_field => ["responseObject"]
+              replace => { "[@metadata][credential_body_removed]" => "true" }
+            }
+          }
+          if [@metadata][credential_body_removed] {
+            # The id makes the exporter count these events
+            # (logstash_node_plugin_events_out_total) for the KubeAuditCredentialBodyRemoved alert.
+            mutate {
+              id => "audit_credential_body_removed"
+              replace => { "[sap][cc][audit][credential_body_removed]" => "true" }
+            }
+            mutate {
+              convert => { "[sap][cc][audit][credential_body_removed]" => "boolean" }
+            }
+          }
+
+          # ---- fix responseObject.status type conflict ----
+          # When responseObject is a K8s Status (error response), the "status" field
+          # is a string ("Failure"/"Success") which conflicts with the object mapping
+          # from Shoot resources where status is a complex object.
+          if [responseObject][kind] == "Status" {
+            mutate {
+              rename => { "[responseObject][status]" => "[responseObject][statusText]" }
+            }
+          }
+          if [responseStatus][status] {
+            mutate {
+              rename => { "[responseStatus][status]" => "[responseStatus][statusText]" }
+            }
+          }
+
+          # ---- use API server timestamp for correct event ordering ----
+          # requestReceivedTimestamp is when the API server received the request,
+          # which is the authoritative "when did this happen" time.
+          # Without this, @timestamp reflects batching/forwarding time which
+          # causes events from different API servers to appear out of order.
+          date {
+            match => ["requestReceivedTimestamp", "ISO8601"]
+            target => "@timestamp"
+            tag_on_failure => ["_dateparsefailure_requestReceivedTimestamp"]
+          }
         }
       }
 

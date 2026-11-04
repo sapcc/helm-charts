@@ -11,7 +11,6 @@ groups:
       service: maia
       context: maia
       meta: "CCloud Maia API is down"
-      dashboard: "cc3test-api-status?var-service=maia"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service=maia"
       playbook: "docs/support/playbook/maia/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -28,7 +27,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "CCloud Maia API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/maia/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -46,7 +44,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Maia is missing metric {{`{{ $labels.name }}`}}"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/maia/alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -64,7 +61,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Maia has flapping metric {{`{{ $labels.name }}`}}"
-      dashboard: "cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/maia/alerts/cc3test-alert-datapath/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"

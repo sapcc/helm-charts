@@ -12,10 +12,10 @@ spec:
     port: 67
     protocol: UDP
     targetPort: 67
-  - name: dhcp-69
-    port: 69
-    protocol: UDP
-    targetPort: 69
+  # TFTP (port 69) is intentionally NOT exposed via the Service.
+  # kube-proxy DNAT rewrites the destination IP which breaks TFTP because
+  # dnsmasq binds to listen-address (externalIP) only. Instead, TFTP works
+  # directly via hostNetwork + ip addr add of the externalIP on the node.
   type: LoadBalancer
   loadBalancerIP: {{ .Values.dnsmasq.externalIP }}
   externalTrafficPolicy: Local

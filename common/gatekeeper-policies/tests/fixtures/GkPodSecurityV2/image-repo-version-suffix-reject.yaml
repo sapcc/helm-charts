@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: image-repo-version-suffix-reject
+  namespace: foo
+spec:
+  containers:
+  # OCM relativeOciReference encodes the tag into the repo name as a suffix
+  # "test-app/unprivileged-v1_34_8" does not match any glob allowlist entry, so privileged should be rejected
+  - name: foo-container
+    image: foo.image-registry.com/test-app/unprivileged-v1_34_8:20250519150208
+    securityContext:
+      privileged: true

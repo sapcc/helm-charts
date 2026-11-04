@@ -44,6 +44,9 @@
 {{- range $pool := .Values.catz_pools }}
 - name: {{ $pool.name }}
   description: Catz Pool
+  {{- with $pool.domain_id }}
+  domain_id: {{ . }}
+  {{- end }}
   {{- if $pool.attributes}}
   attributes:
    {{- range $attr := $pool.attributes}}
@@ -79,6 +82,9 @@
 {{- range $pool := .Values.akamai_pools_v2 }}
 - name: {{ $pool.name }}
   description: Akamai Edge DNS v2 Pool
+  {{- with $pool.domain_id }}
+  domain_id: {{ . }}
+  {{- end }}
   attributes:
    {{- range $attr := $pool.attributes}}
     {{ $attr.tag }}

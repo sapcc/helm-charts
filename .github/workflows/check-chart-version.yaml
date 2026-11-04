@@ -76,6 +76,11 @@ jobs:
           # Check version increment for each chart
           FAILED=0
           for chart in $CHARTS_TO_CHECK; do
+            NEW_VERSION=$(grep '^version:' ${chart}/Chart.yaml | awk '{print $2}')
+            if echo "$NEW_VERSION" | grep -qE '^0\.0\.0-'; then
+              echo "⏭️ Skipping version increment check for $chart: dev build version $NEW_VERSION"
+              continue
+            fi
             echo "Checking version increment for: $chart"
             if ! ct lint --lint-conf ci/lintconf.yaml --config ci/config.yaml --target-branch ${{ github.base_ref }} --check-version-increment --skip-helm-dependencies 2>&1; then
               echo "❌ Version check failed for: $chart"

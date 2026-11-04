@@ -3,6 +3,9 @@ apiVersion: apps/v1
 
 metadata:
   name: aurora
+  annotations:
+    # redeploy on secret "aurora-feedback" change so all the aurora pods gets the same secrets
+    secret.reloader.stakater.com/reload: "aurora-feedback"
 
 spec:
   selector:
@@ -20,6 +23,11 @@ spec:
     metadata:
       labels:
         name: aurora
+      annotations:
+        # Ensure that prometheus scrapes the metrics
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/port: {{ .Values.port | quote }}
     spec:
       affinity:
         podAntiAffinity:
@@ -42,13 +50,16 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: server
-              containerPort: 3000
+              containerPort: {{ .Values.port }}
           env:
 {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          envFrom:
+          - secretRef:
+              name: aurora-feedback
           livenessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: {{ .Values.port }}
             timeoutSeconds: 10
             failureThreshold: 3
             periodSeconds: 60
@@ -56,7 +67,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: {{ .Values.port }}
             timeoutSeconds: 5
             periodSeconds: 5
             failureThreshold: 3

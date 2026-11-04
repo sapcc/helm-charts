@@ -86,7 +86,14 @@ cronus:
     {{- end }}
     allowedServices:
     {{- range $key, $value := .Values.config.allowedServices }}
+      {{- if kindIs "slice" $value }}
+      {{ $key }}:
+        {{- range $value }}
+        - {{ . }}
+        {{- end }}
+      {{- else }}
       {{ $key }}: {{ $value }}
+      {{- end }}
     {{- end }}
   listenAddr:
     http: :{{ .Values.cronus.http }} # default :5000
@@ -326,6 +333,7 @@ cronus:
 {{- end }}
 {{- if .Values.hermes }}
   auditSink:
+    enabled: {{ .Values.config.cronusAuditSink.enabled | default false }}
     queueName: {{ .Values.config.cronusAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}

@@ -11,12 +11,15 @@ metadata:
     greenhouse.sap/owned-by: containers
     greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
     metadata.greenhouse.sap/region: {{ $key }}
+    {{- with merge (default dict $cluster.extraLabels) (default dict $.Values.shootExtraLabels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   purpose: {{ default "production" $cluster.purpose }}
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  credentialsBindingName: metal-{{ $key }}
+  credentialsBindingName: metal-wi-{{ $key }}
   seedName: rt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -30,7 +33,13 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
+      {{- if $cluster.networking.vethMTU }}
+      vethMTU: {{ $cluster.networking.vethMTU | quote }}
+      {{- else if $.Values.networking.overlay }}
+      vethMTU: "8930"
+      {{- else }}
       vethMTU: "8950"
+      {{- end }}
       ipam:
         type: host-local
         cidr: usePodCIDR
@@ -58,7 +67,13 @@ spec:
             name: audit-policy-cp
       {{- end }}
     verticalPodAutoscaler:
-      enabled: true # VPA needs to enabled for ManagedSeed
+      enabled: true # VPA needs to be enabled for ManagedSeed
+      targetCPUPercentile: 0.75
+      targetMemoryPercentile: 0.85
+      recommendationMarginFraction: 0.05
+      {{- with dig "verticalPodAutoscaler" "maxAllowed" nil $cluster }}
+      maxAllowed: {{ toYaml . | nindent 8 }}
+      {{- end }}
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -119,10 +134,10 @@ spec:
               assignmentMode: {{ default "Automatic" .assignmentMode }}
             {{- end }}
           calicoBgpConfig:
-            asNumber: {{ $cluster.networking.asNumber }}
+            asNumber: {{ include "asNumber" $cluster.networking.asNumber }}
             bgpPeer:
             {{- range $cluster.networking.bgpPeers }}
-            - asNumber: {{ printf "%.0f" (default $cluster.networking.asNumber .asNumber) }}
+            - asNumber: {{ include "asNumber" (default $cluster.networking.asNumber .asNumber) }}
               nodeSelector: {{ .nodeSelector }}
               peerIP: {{ .peerIP }}
               filters:
@@ -131,12 +146,22 @@ spec:
             bgpFilter:
               - name: v4filter
                 exportV4:
+                  {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
+                  {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
+                  {{- /* Block non-pod nodes from re-exporting mesh-learned /32 LB routes to eBGP TOR peers */}}
+                  {{- if $.Values.networking.overlay }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: In
+                    action: Reject
+                    source: RemotePeers
+                  {{- end }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
-                  {{- if $.Values.networking.overlay }}        
+                  {{- end }}
+                  {{- if $.Values.networking.overlay }}
                   - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
                     matchOperator: In
                     action: Reject
@@ -171,7 +196,7 @@ spec:
         machineControllerManager:
           machineCreationTimeout: 1h30m0s
           machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: 1h30m0s
+          machineDrainTimeout: 240h0m0s
         providerConfig:
           apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
           kind: WorkerConfig

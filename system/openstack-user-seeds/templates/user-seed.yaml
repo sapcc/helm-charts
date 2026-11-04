@@ -1,0 +1,23 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: openstack-user-seed
+spec:
+  requires:
+  - {{ .Values.keystoneNamespace }}/keystone-seed
+  - {{ .Values.keystoneNamespace }}/domain-default-seed
+  - {{ .Values.keystoneNamespace }}/domain-ccadmin-seed
+
+  domains:
+  - name: {{ .Values.name }}
+    users:
+    {{- range .Values.users }}
+    - name: {{ .name | quote }}
+      description: {{ .description | quote }}
+      password: {{ .password | quote }}
+      role_assignments:
+      {{- range .roleAssignments }}
+      - project: {{ .project | quote }}
+        role: {{ .role | quote }}
+      {{- end }}
+    {{- end }}

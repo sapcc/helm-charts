@@ -35,7 +35,9 @@ spec:
         pod.beta.kubernetes.io/hostname:  asr1k-{{ $config_agent.name }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" $context.Values.metrics.prometheus | quote }}
-        configmap-asr1k-{{ $config_agent.name }}: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
+        configmap-asr1k-{{ $config_agent.name }}-hash: {{ tuple $context $config_agent |include "asr1k_configmap" | sha256sum  }}
+        secret-asr1k-{{ $config_agent.name }}-hash: {{ tuple $context $config_agent |include "asr1k_secret" | sha256sum  }}
+        secret-neutron-common-hash: {{ include (print $context.Template.BasePath "/secret-neutron-common.yaml") $context | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" $context | indent 8 }}
     spec:
       hostname:  asr1k-{{ $config_agent.name }}

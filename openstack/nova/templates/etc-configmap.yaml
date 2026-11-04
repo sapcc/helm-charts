@@ -33,6 +33,9 @@ data:
 {{- $configErrorMsg := printf "'.Values.%[1]s.conductor.config_file' is required for cell '%[1]s'" $cellId }}
 {{- $cellValues := get $envAll.Values $cellId | required $configErrorMsg }}
 {{- $conductorConfig := $cellValues.conductor.config_file | required $configErrorMsg }}
+{{- if hasKey $envAll.Values.conductor.config_file "cross_hv" }}
+{{- $_ := set $conductorConfig "cross_hv" $envAll.Values.conductor.config_file.cross_hv }}
+{{- end }}
   nova-{{ $cellName }}-conductor.conf: |
 {{ include "util.helpers.valuesToIni" $conductorConfig | indent 4 }}
 {{- end }}
@@ -55,8 +58,9 @@ data:
 {{ include (print .Template.BasePath "/etc/_vspc.conf.tpl") . | indent 4 }}
   statsd-exporter.yaml: |
     defaults:
-      timer_type: histogram
-      buckets: [.025, .1, .25, 1, 2.5]
+      observer_type: histogram
+      histogram_options:
+        buckets: [.025, .1, .25, 1, 2.5]
       match_type: glob
       glob_disable_ordering: false
       ttl: 0 # metrics do not expire

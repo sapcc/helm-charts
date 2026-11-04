@@ -12,66 +12,6 @@ subjects:
   kind: Group
   name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_ADMIN {{- else -}} CC_IAS_CONTROLPLANE_PROD_ADMIN {{- end }}
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: metal-token-rotate
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: metal-token-rotate
-rules:
-- apiGroups:
-  - "authentication.k8s.io"
-  resources:
-  - tokenreviews
-  verbs:
-  - create
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: metal-token-rotate
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: metal-token-rotate
-subjects:
-- kind: ServiceAccount
-  name: metal-token-rotate
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: metal-token-rotate
-  namespace: kube-system
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts/token
-  resourceNames:
-  - metal-operator-controller-manager
-  verbs:
-  - create
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: metal-token-rotate
-  namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: metal-token-rotate
-subjects:
-- kind: ServiceAccount
-  name: metal-token-rotate
-  namespace: kube-system
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -172,6 +112,37 @@ subjects:
     name: {{ $val }}
   {{- end }}
 {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metal-operator-dns-records
+rules:
+  - apiGroups:
+      - disco.stable.sap.cc
+    resources:
+      - records
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metal-operator-dns-records-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-operator-dns-records
+subjects:
+  - kind: ServiceAccount
+    name: metal-operator-controller-manager
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

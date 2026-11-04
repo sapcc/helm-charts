@@ -1,0 +1,24 @@
+{{- if .Values.apacheMetrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Release.Name }}-apache-exporter
+  labels:
+    app: barbican
+    system: openstack
+    component: barbican
+    type: podmonitor
+    prometheus: openstack
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  podMetricsEndpoints:
+    - port: apache-metrics
+      path: /metrics
+      honorLabels: true
+      interval: 60s
+{{- end }}

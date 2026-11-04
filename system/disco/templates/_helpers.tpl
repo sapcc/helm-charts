@@ -21,7 +21,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: disco-manager-role
+  name: {{ .Release.Name }}-manager-role
 rules:
 - apiGroups:
   - ""
@@ -71,11 +71,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: disco-manager-rolebinding
+  name: {{ index . "releaseName" }}-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: disco-manager-role
+  name: {{ index . "releaseName" }}-manager-role
 subjects:
 - kind: ServiceAccount
   name: {{ index . "serviceAccountName" }}
@@ -142,7 +142,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: disco-proxy-role
+  name: {{ .Release.Name }}-proxy-role
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -162,11 +162,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: disco-proxy-rolebinding
+  name: {{ index . "releaseName" }}-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: disco-proxy-role
+  name: {{ index . "releaseName" }}-proxy-role
 subjects:
 - kind: ServiceAccount
   name: {{ index . "serviceAccountName" }}
@@ -177,7 +177,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: disco-metrics-reader
+  name: {{ .Release.Name }}-metrics-reader
 rules:
 - nonResourceURLs:
   - /metrics
@@ -192,7 +192,7 @@ them. All namespaced resources are fixed to kube-system — that is where Garden
 token-requestor looks up the ServiceAccount on the shoot cluster.
 */}}
 {{- define "disco.shootRBAC" -}}
-{{- $ctx := dict "namespace" .Values.remote.shootNamespace "serviceAccountName" .Values.serviceAccount.name }}
+{{- $ctx := dict "namespace" .Values.remote.shootNamespace "serviceAccountName" .Values.serviceAccount.name "releaseName" .Release.Name }}
 {{ include "disco.serviceAccount" $ctx }}
 ---
 {{ include "disco.clusterRole.manager" . }}

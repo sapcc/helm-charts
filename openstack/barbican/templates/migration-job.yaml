@@ -1,20 +1,12 @@
 {{- $secrets := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-secrets") -}}
-{{- $serviceaccount := lookup "v1" "ServiceAccount" .Release.Namespace .Release.Name -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: barbican-migration-job
+  name: {{ tuple . "migration-job" | include "job_name" }}
   labels:
     system: openstack
     type: configuration
     component: barbican
-    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
-    ccloud/support-group: identity
-    ccloud/service: barbican
-  annotations:
-    "helm.sh/hook": "post-install,pre-upgrade"
-    "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     metadata:
@@ -25,7 +17,7 @@ spec:
       annotations:
 {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
-      {{- if $serviceaccount }}
+      {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
       {{- end }}
       restartPolicy: OnFailure

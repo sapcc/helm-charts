@@ -46,7 +46,7 @@ start_as_primary () {
     --wsrep_cluster_address="gcomm://" --wsrep_sst_method=xtrabackup-v2 \
     --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
     --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" \
-    --wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;gmcast.segment=$gmcast_segment" \
+    --wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;ist.recv_bind=0.0.0.0:4568;gmcast.segment=$gmcast_segment" \
     --log-bin=$hostname-bin $CMDARG \
     --init-file=/etc/mysql/init-file/init.sql \
     --skip-name-resolve
@@ -74,7 +74,7 @@ exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_n
 --wsrep_cluster_address="gcomm://{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}" --wsrep_sst_method=xtrabackup-v2 \
 --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
 --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" \
---wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;gmcast.segment=$gmcast_segment" \
+--wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;ist.recv_bind=0.0.0.0:4568;gmcast.segment=$gmcast_segment" \
 --log-bin=$hostname-bin $CMDARG \
 --init-file=/etc/mysql/init-file/init.sql \
 --skip-name-resolve

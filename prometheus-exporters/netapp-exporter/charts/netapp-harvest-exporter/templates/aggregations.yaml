@@ -1,15 +1,80 @@
 {{- range $path, $bytes := .Files.Glob "aggregations/*.yaml" }}
 {{- with $ }}
+{{- if .Values.podMonitor.enabled }}
+{{- range $az := required ".Values.global.availability_zones missing" .Values.global.availability_zones }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" .) $path | trimSuffix ".yaml" | replace "/"  "-" }}
+  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" $) ($path | trimSuffix ".yaml") | replace "/" "-" }}-{{ $az }}
+  labels:
+    type: aggregation-rules
+    {{- include "netapp-harvest.labels" $ | nindent 4 }}
+    prometheus: {{ printf "storage-metrics-product-%s" $az }}
+spec:
+  {{- printf "%s" $bytes | nindent 2 }}
+---
+{{- end }}
+{{- else }}
+{{- $spec := fromYaml (printf "%s" $bytes) }}
+{{- if contains "aggregations/maia.yaml" $path }}
+{{- $centralSpec := fromYaml (.Files.Get "aggregations/thanos-regional/snapmirror.yaml") }}
+{{- $maiaRules := list }}
+{{- range (index $centralSpec.groups 0).rules }}
+{{- if hasSuffix ":maia" (default "" .record) }}
+{{- $maiaRules = append $maiaRules . }}
+{{- end }}
+{{- end }}
+{{- $rules := concat (index $spec.groups 0).rules $maiaRules }}
+{{- $_ := set (index $spec.groups 0) "rules" $rules }}
+{{- end }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" .) $path | trimSuffix ".yaml" | replace "/" "-" }}
   labels:
     type: aggregation-rules
     {{- include "netapp-harvest.labels" . | nindent 4 }}
     prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
 spec:
-  {{- printf "%s" $bytes | nindent 2 }}
+  {{- toYaml $spec | nindent 2 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Aggregation rules that combine metrics across multiple availability zones
+(e.g. source/destination filers of a snapmirror relationship can live in
+different AZs) can't be evaluated by any single AZ-scoped Prometheus. In the
+per-AZ setup they are evaluated by the regional Thanos Ruler. Legacy setups
+retain the original Prometheus evaluator.
+*/}}
+{{- range $path, $bytes := .Files.Glob "aggregations/thanos-regional/*.yaml" }}
+{{- with $ }}
+{{- $spec := fromYaml (printf "%s" $bytes) }}
+{{- if not .Values.podMonitor.enabled }}
+{{- $snapmirrorRules := list }}
+{{- range (index $spec.groups 0).rules }}
+{{- if not (hasSuffix ":maia" (default "" .record)) }}
+{{- $snapmirrorRules = append $snapmirrorRules . }}
+{{- end }}
+{{- end }}
+{{- $_ := set (index $spec.groups 0) "rules" $snapmirrorRules }}
+{{- end }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "%s/%s" (include "netapp-harvest.fullname" .) ($path | replace "thanos-regional/" "") | trimSuffix ".yaml" | replace "/" "-" }}
+  labels:
+    type: aggregation-rules
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+    {{- if .Values.podMonitor.enabled }}
+    thanos-ruler: regional
+    {{- else }}
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+    {{- end }}
+spec:
+  {{- toYaml $spec | nindent 2 }}
 ---
 {{- end }}
 {{- end }}

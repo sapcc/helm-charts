@@ -8,7 +8,6 @@ groups:
       severity: warning
       support_group: observability
       service: cc3test
-      dashboard: cc3test-quota-status
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-quota-status"
       meta: "More than 99% of {{`{{ $labels.service }}`}} / {{`{{ $labels.resource }}`}} quota consumed in project {{`{{ $labels.domain }}`}} / {{`{{ $labels.project }}`}}"
       playbook: "docs/support/playbook/cc3test/alerts"

@@ -33,6 +33,15 @@ spec:
 {{- end }}
     spec:
       affinity:
+{{- if .Values.backup_v2.cohost_with_mariadb }}
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: {{ include "fullName" . }}
+            topologyKey: kubernetes.io/hostname
+{{- end }}
+
 {{- if .Values.nodeAffinity }}
       {{- with .Values.nodeAffinity }}
         nodeAffinity:

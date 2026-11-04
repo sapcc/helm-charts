@@ -18,7 +18,9 @@ rules:
   - ipam.cluster.x-k8s.io
   resources:
   - globalinclusterippools
+  - globalinclusterprefixpools
   - inclusterippools
+  - inclusterprefixpools
   - ipaddresses
   verbs:
   - create
@@ -32,7 +34,9 @@ rules:
   - ipam.cluster.x-k8s.io
   resources:
   - globalinclusterippools/finalizers
+  - globalinclusterprefixpools/finalizers
   - inclusterippools/finalizers
+  - inclusterprefixpools/finalizers
   - ipaddressclaims/finalizers
   - ipaddresses/finalizers
   verbs:
@@ -41,7 +45,9 @@ rules:
   - ipam.cluster.x-k8s.io
   resources:
   - globalinclusterippools/status
+  - globalinclusterprefixpools/status
   - inclusterippools/status
+  - inclusterprefixpools/status
   - ipaddressclaims/status
   - ipaddresses/status
   verbs:
@@ -72,5 +78,5 @@ roleRef:
   name: '{{ include "provider-ipam.fullname" . }}-manager-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "provider-ipam.fullname" . }}-controller-manager'
+  name: '{{ include "provider-ipam.serviceAccountName" . }}'
   namespace: '{{ .Release.Namespace }}'

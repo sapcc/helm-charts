@@ -74,10 +74,14 @@ spec:
           readOnly: true
         - mountPath: /tmp
           name: tmp
+      nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
-      serviceAccountName: {{ include "provider-helm.fullname" . }}-controller-manager
+      serviceAccountName: {{ include "provider-helm.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
+      tolerations: {{- toYaml .Values.controllerManager.tolerations | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.controllerManager.topologySpreadConstraints
+        | nindent 8 }}
       volumes:
       - name: cert
         secret:

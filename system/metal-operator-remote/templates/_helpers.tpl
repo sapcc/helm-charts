@@ -60,3 +60,22 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Resource name with proper truncation for Kubernetes 63-character limit.
+Takes a dict with:
+  - .suffix: Resource name suffix (e.g., "metaldata", "metaldata-role")
+  - .context: Template context (root context with .Values, .Release, etc.)
+Mirrors metal-operator-core's own "metal-operator.resourceName" helper so vendored templates
+derived from it (controller-manager.yaml, metaldata*.yaml) keep the same naming convention.
+*/}}
+{{- define "chart.resourceName" -}}
+{{- $fullname := include "chart.fullname" .context }}
+{{- $suffix := .suffix }}
+{{- $maxLen := sub 62 (len $suffix) | int }}
+{{- if gt (len $fullname) $maxLen }}
+{{- printf "%s-%s" (trunc $maxLen $fullname | trimSuffix "-") $suffix | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" $fullname $suffix | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}

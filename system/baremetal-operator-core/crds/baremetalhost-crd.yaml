@@ -208,14 +208,23 @@ spec:
                     ExternallyProvisioned means something else has provisioned the
                     image running on the host, and the operator should only manage
                     the power status. This field is used for integration with already
-                    provisioned hosts and when pivoting hosts between clusters. If
-                    unsure, leave this field as false.
+                    provisioned hosts and when pivoting hosts between clusters.
+
+                    This field can be set to true either:
+                    1. During initial host creation (e.g., for pre-provisioned hosts)
+                    2. After inspection completes when the host reaches Available state
+
+                    When used in environments with Cluster API Provider Metal3 (CAPM3),
+                    ensure hosts are labeled appropriately so CAPM3's host selector can
+                    distinguish them from CAPM3-managed hosts. If unsure, leave this
+                    field as false.
                   type: boolean
                 firmware:
                   description: |-
                     Firmware (BIOS) configuration for bare metal server. If set, the
                     requested settings will be applied before the host is provisioned.
-                    Only some vendor drivers support this field. An alternative is to
+
+                    Deprecated: no longer supported by any driver. An alternative is to
                     use HostFirmwareSettings resources that allow changing arbitrary
                     values and support the generic Redfish-based drivers.
                   properties:
@@ -254,7 +263,7 @@ spec:
                     checksum:
                       description: |-
                         Checksum is the checksum for the image. Required for all formats
-                        except for "live-iso".
+                        except for "live-iso" and OCI images (oci://).
                       type: string
                     checksumType:
                       description: |-
@@ -279,12 +288,28 @@ spec:
                         - vmdk
                         - live-iso
                       type: string
+                    ociAuthSecretName:
+                      description: |-
+                        OCIAuthSecretName optionally names a Docker-config secret containing
+                        registry credentials for oci:// images. Must be in the same namespace
+                        as the BareMetalHost. Allowed types: kubernetes.io/dockerconfigjson|dockercfg.
+                        Only used when Image.URL has the oci:// scheme.
+                      type: string
                     url:
                       description: URL is a location of an image to deploy.
                       type: string
                   required:
                     - url
                   type: object
+                inspectionMode:
+                  description: |-
+                    Specifies the mode for host inspection.
+                    "disabled" - no inspection will be performed
+                    "agent" - normal agent-based inspection will run
+                  enum:
+                    - disabled
+                    - agent
+                  type: string
                 metaData:
                   description: |-
                     MetaData holds the reference to the Secret containing host metadata
@@ -563,9 +588,7 @@ spec:
                         description: Required. The taint key to be applied to a node.
                         type: string
                       timeAdded:
-                        description: |-
-                          TimeAdded represents the time at which the taint was added.
-                          It is only written for NoExecute taints.
+                        description: TimeAdded represents the time at which the taint was added.
                         format: date-time
                         type: string
                       value:
@@ -597,6 +620,66 @@ spec:
             status:
               description: BareMetalHostStatus defines the observed state of BareMetalHost.
               properties:
+                conditions:
+                  description: Conditions defines current service state of the BareMetalHost.
+                  items:
+                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  maxItems: 32
+                  type: array
+                  x-kubernetes-list-map-keys:
+                    - type
+                  x-kubernetes-list-type: map
                 errorCount:
                   default: 0
                   description: ErrorCount records how many times the host has encoutered an error since the last successful operation
@@ -678,6 +761,7 @@ spec:
                           type: object
                       type: object
                     hostname:
+                      description: Name of the host at the inspection time.
                       type: string
                     nics:
                       description: List of network interfaces for the host.
@@ -690,6 +774,19 @@ spec:
                               if one is present.  If both IPv4 and IPv6 addresses are present in a
                               dual-stack environment, two nics will be output, one with each IP.
                             type: string
+                          lldp:
+                            description: LLDP data for this interface
+                            properties:
+                              portID:
+                                description: The switch port ID from LLDP
+                                type: string
+                              switchID:
+                                description: The switch chassis ID from LLDP
+                                type: string
+                              switchSystemName:
+                                description: The switch system name from LLDP
+                                type: string
+                            type: object
                           mac:
                             description: The device MAC address
                             pattern: '[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}'
@@ -699,6 +796,9 @@ spec:
                             type: string
                           name:
                             description: The name of the network interface, e.g. "en0"
+                            type: string
+                          pciAddress:
+                            description: The NIC PCI address
                             type: string
                           pxe:
                             description: Whether the NIC is PXE Bootable
@@ -948,7 +1048,7 @@ spec:
                         checksum:
                           description: |-
                             Checksum is the checksum for the image. Required for all formats
-                            except for "live-iso".
+                            except for "live-iso" and OCI images (oci://).
                           type: string
                         checksumType:
                           description: |-
@@ -972,6 +1072,13 @@ spec:
                             - vdi
                             - vmdk
                             - live-iso
+                          type: string
+                        ociAuthSecretName:
+                          description: |-
+                            OCIAuthSecretName optionally names a Docker-config secret containing
+                            registry credentials for oci:// images. Must be in the same namespace
+                            as the BareMetalHost. Allowed types: kubernetes.io/dockerconfigjson|dockercfg.
+                            Only used when Image.URL has the oci:// scheme.
                           type: string
                         url:
                           description: URL is a location of an image to deploy.

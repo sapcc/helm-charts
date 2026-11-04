@@ -1,26 +1,20 @@
-{{- $serviceaccount := lookup "v1" "ServiceAccount" .Release.Namespace .Release.Name -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ironic-db-migration
+  # Name changes with imageVersion / etc-configmap / secrets content, so Helm
+  # deletes the old completed Job and creates a new one on any relevant change.
+  name: {{ tuple . "db-migration" | include "job_name" }}
   labels:
     system: openstack
     type: job
     component: ironic
-  annotations:
-    "helm.sh/hook": "post-install,pre-upgrade"
-    "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
-    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
-    ccloud/support-group: foundation
-    ccloud/service: ironic
 spec:
   template:
     metadata:
       annotations:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
-      {{- if $serviceaccount }}
+      {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
       {{- end }}
       initContainers:

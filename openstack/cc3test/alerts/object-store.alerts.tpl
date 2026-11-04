@@ -11,7 +11,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Swift API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/swift/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -28,7 +27,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Swift API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/swift/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -45,14 +43,13 @@ groups:
       support_group: storage
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
-      meta: "Openstack Ceph API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      meta: "Ceph API is down on st1-{​{ .Values.global.region }}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/operation/storage/ceph/ceph-alert/ceph-api-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "Openstack Ceph API is down."
-      summary: "Openstack Ceph API is down."
+      description: "Ceph API is down on st1-{​{ .Values.global.region }}"
+      summary: "Ceph API is down on st1-{​{ .Values.global.region }}"
 
   - alert: OpenstackCephApiFlapping
     expr: |
@@ -63,14 +60,13 @@ groups:
       support_group: storage
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
-      meta: "Openstack Ceph API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
+      meta: "Ceph API is flapping on st1-{​{ .Values.global.region }}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/operation/storage/ceph/ceph-alert/ceph-api-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
-      description: "Openstack Ceph API is flapping"
-      summary: "Openstack Ceph API is flapping"
+      description: "Ceph API is flapping on st1-{​{ .Values.global.region }}"
+      summary: "Ceph API is flapping on st1-{​{ .Values.global.region }}"
 
   - alert: OpenstackCephCreateContainerFailed
     expr: cc3test_status{service="ceph", name=~"TestContainer_create_container", phase="call"} == 0
@@ -81,7 +77,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Ceph Container Create: {{`{{ $labels.name }}`}} Failed, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/operation/storage/ceph/ceph-alert/cluster_running_full/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -99,7 +94,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Ceph S3 API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/operation/storage/ceph/ceph-alert/ceph-api-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -116,7 +110,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Ceph S3 API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/operation/storage/ceph/ceph-alert/ceph-api-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -133,7 +126,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Ceph S3 Bucket Create: {{`{{ $labels.name }}`}} Failed, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:

@@ -32,3 +32,39 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ipam-capi-remote-webhook-injector
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ipam-capi-remote-webhook-injector
+rules:
+- verbs:
+  - get
+  - list
+  - watch
+  - patch
+  apiGroups:
+  - resources.gardener.cloud
+  resources:
+  - managedresources
+- verbs:
+  - get
+  - update
+  - patch
+  apiGroups:
+  - ""
+  resources:
+  - secrets
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ipam-capi-remote-webhook-injector
+subjects:
+- kind: ServiceAccount
+  name: ipam-capi-remote-webhook-injector
+  namespace: '{{ .Release.Namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ipam-capi-remote-webhook-injector

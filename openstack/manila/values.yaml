@@ -649,6 +649,7 @@ quota:
   share_group_snapshots: 0
   share_replicas: 0
   replica_gigabytes: 0
+  share_server_replicas: 0
 
 db_name: manila
 
@@ -768,6 +769,8 @@ seeds:
     enabled: false
     username: manilabackup
     password: null
+  integration_test_user:
+    enabled: true
 
 share_ensure:
   enabled: true
@@ -780,6 +783,7 @@ share_type_extra_specs:
   replication_type: "readable"
   revert_to_snapshot_support: "True"
   capabilities:netapp_is_home: "True"
+  netapp:force_delete_time_minutes: "120" # 2 hours
   netapp:hide_snapdir: "True"
   netapp:max_files_multiplier: "4.813"  # 33.6925 / 7 -> roughly 1 inode per 7 KB
   netapp:snapshot_policy: "none"
@@ -806,15 +810,16 @@ share_types:
       provisioning:max_share_extend_size: "65536" # keep this in sync with castellum
   hypervisor_storage_hana_qa:
     enabled: false
-    extra_specs:
+    extra_specs:  # is a flexgroup share type, where capability 'netapp_is_home' is not reported
+      capabilities:netapp_is_home: "__skip__"  # opt-out sentinel: filtered out at render time
       provisioning:min_share_size: "2048"
       provisioning:max_share_size: "40960"
   hypervisor_storage:
     enabled: false
   hypervisor_storage_hanalytics:
-    enabeld: false
+    enabled: false
   hypervisor_storage_vim:
-    enabeld: false
+    enabled: false
   btp_backup:
     enabled: false
 
@@ -908,4 +913,4 @@ vpa:
 
 statsd:
   image: 'shared-app-images/statsd-exporter'
-  imageTag: '0.28.0-latest'
+  imageTag: '0.31.0-latest'

@@ -46,7 +46,6 @@ groups:
       support_group: observability
       tier: os
       playbook: docs/operation/monitor/opensearch_query
-      dashboard: "health-opensearch?var-cluster={{`{{ $labels.elastic_cluster }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster={{`{{ $labels.elastic_cluster }}`}}"
     annotations:
       description: "cluster *{{`{{ $labels.elastic_cluster }}`}}* opensearch-logs-query-exporter in {{`{{ $labels.region }}`}} is missing."

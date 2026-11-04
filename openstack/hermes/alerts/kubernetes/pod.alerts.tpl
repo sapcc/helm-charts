@@ -13,7 +13,6 @@ groups:
           service: hermes
           severity: info
           context: cpu
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
         annotations:
@@ -21,7 +20,7 @@ groups:
           description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is being CPU-throttled constantly. This is probably impacting performance, so check if we can increase the number of replicas or the resource requests/limits."
 
       - alert: OpenstackHermesPodSchedulingInsufficientMemory
-        expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"hermes-.+"}[30m])) by (pod_name) > 0
+        expr: sum(rate(kube_pod_failed_scheduling_memory_total{namespace="hermes",pod_name!~"keep-image-pulled-.*"}[30m])) by (pod_name) > 0
         for: 15m
         labels:
           severity: warning
@@ -29,7 +28,6 @@ groups:
           tier: os
           service: hermes
           context: memory
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
@@ -38,21 +36,37 @@ groups:
           description: "The pod {{`{{ $labels.pod_name }}`}} failed to be scheduled. Insufficient memory!"
 
       - alert: OpenstackHermesPodOOMKilled
-        expr: sum(rate(klog_pod_oomkill{pod_name=~"hermes-.+"}[30m])) by (pod_name) > 0
+        expr: sum(rate(klog_pod_oomkill{namespace="hermes",pod_name!~"keep-image-pulled-.*"}[30m])) by (pod_name) > 0
         for: 5m
         labels:
           support_group: observability
           tier: os
           service: hermes
-          severity: info
+          severity: warning
           context: memory
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
         annotations:
           summary: Pod was oomkilled
           description: "The pod {{`{{ $labels.pod_name }}`}} was oomkilled recently"
+
+      - alert: OpenstackHermesPodNotRunning
+        expr: |
+          kube_pod_container_status_waiting_reason{namespace="hermes", reason=~"CrashLoopBackOff|Error|CreateContainerConfigError|OOMKilled|RunContainerError|PostStartHookError", pod!~"keep-image-pulled-.*"} == 1
+        for: 15m
+        labels:
+          support_group: observability
+          tier: os
+          service: hermes
+          severity: critical
+          context: pod
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
+          meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is {{`{{ $labels.reason }}`}}"
+          no_alert_on_absence: "true" # metric only exists when a pod is in a waiting state
+        annotations:
+          summary: Pod is not running
+          description: "The container {{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}} is in {{`{{ $labels.reason }}`}} state for more than 15 minutes."
 
       - alert: OpenstackHermesPodOOMExceedingLimits
         # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
@@ -64,9 +78,45 @@ groups:
           service: hermes
           severity: info
           context: memory
-          dashboard: hermes-overview
           persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
           meta: "{{`{{ $labels.pod_name }}`}}"
         annotations:
           summary: Exceeding memory limits in 8h
           description: "The pod {{`{{ $labels.pod_name }}`}} will exceed its memory limit in 8h."
+
+{{- if .Values.logRouter.enabled }}
+      # the WAL is a bbolt file that only shrinks when log-router compacts it at
+      # startup, so between restarts this tracks the high-water mark, not the
+      # current backlog. thresholds are high on purpose.
+      - alert: OpenstackHermesLogRouterWALVolumeFilling
+        expr: max by (persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"} / kubelet_volume_stats_capacity_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"}) > 0.8
+        for: 30m
+        labels:
+          severity: warning
+          support_group: observability
+          tier: os
+          service: hermes
+          context: log-router
+          dashboard: hermes-log-router
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+          meta: "{{`{{ $labels.persistentvolumeclaim }}`}}"
+        annotations:
+          summary: Log Router WAL volume over 80%
+          description: "WAL volume {{`{{ $labels.persistentvolumeclaim }}`}} is over 80% full. Either flushes are failing and the backlog is growing (check OpenstackHermesLogRouterFlushFailing), or the file grew during an earlier outage; log-router compacts it on startup, so a restart gives the space back once the backlog has drained."
+
+      - alert: OpenstackHermesLogRouterWALVolumeAlmostFull
+        expr: max by (persistentvolumeclaim) (kubelet_volume_stats_used_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"} / kubelet_volume_stats_capacity_bytes{namespace="hermes",persistentvolumeclaim=~"log-router-wal-.*"}) > 0.9
+        for: 10m
+        labels:
+          severity: critical
+          support_group: observability
+          tier: os
+          service: hermes
+          context: log-router
+          dashboard: hermes-log-router
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+          meta: "{{`{{ $labels.persistentvolumeclaim }}`}}"
+        annotations:
+          summary: Log Router WAL volume over 90%
+          description: "WAL volume {{`{{ $labels.persistentvolumeclaim }}`}} is over 90% full. When it fills, log-router can't persist new events. Fix the storage problem behind the flush errors, restart log-router to compact the WAL if the backlog has already drained, or expand the PVC."
+{{- end }}

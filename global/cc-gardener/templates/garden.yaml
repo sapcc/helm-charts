@@ -33,6 +33,7 @@ data:
 {{- end }}
 {{- end }}
 ---
+{{- if .Values.garden.enabled }}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Garden
 metadata:
@@ -93,13 +94,20 @@ spec:
       {{- toYaml .Values.garden.runtimeCluster.zones | nindent 6 }}
     settings:
       verticalPodAutoscaler:
-        enabled: false
+        enabled: true
+        {{- with dig "runtimeCluster" "verticalPodAutoscaler" "maxAllowed" nil .Values.garden }}
+        maxAllowed: {{ toYaml . | nindent 10 }}
+        {{- end }}
       topologyAwareRouting:
         enabled: false
 {{- if .Values.garden.runtimeCluster.loadBalancerServices }}
       loadBalancerServices: {{ toYaml .Values.garden.runtimeCluster.loadBalancerServices | nindent 8 }}
 {{- end }}
   virtualCluster:
+{{- if .Values.garden.virtualCluster.highAvailability }}
+    controlPlane:
+      highAvailability: {}
+{{- end }}
     dns:
       domains:
       {{- if .Values.garden.domainOverride }}
@@ -156,6 +164,10 @@ spec:
     gardener:
       clusterIdentity: {{ .Values.global.clusterIdentity | default .Values.global.cluster }}
       gardenerAPIServer:
+        {{- with .Values.garden.gardenerAPIServer.featureGates }}
+        featureGates:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         admissionPlugins:
         - name: ShootVPAEnabledByDefault
           disabled: true
@@ -181,6 +193,10 @@ spec:
             name: gardener-dashboard-oidc
           sessionLifetime: 12h0m0s
 {{- end }}
+{{- if not (empty .Values.garden.dashboard.frontendConfig) }}
+        frontendConfigMapRef:
+          name: gardener-dashboard-frontend-config
+{{- end }}
 {{- end }}
 {{- end }}
       gardenerDiscoveryServer: {}
@@ -188,9 +204,14 @@ spec:
       gardenerResourceManager:
         additionalTargetNamespaces: {{- toYaml .Values.garden.virtualCluster.gardenerResourceManager.additionalTargetNamespaces | nindent 8 }}
 {{- end }}
+{{- if and .Values.garden.virtualCluster.gardenerScheduler .Values.garden.virtualCluster.gardenerScheduler.strategy }}
+      gardenerScheduler:
+        strategy: {{ .Values.garden.virtualCluster.gardenerScheduler.strategy }}
+{{- end }}
     maintenance:
       timeWindow:
         begin: 130000+0100
         end: 140000+0100
     networking:
       {{- toYaml .Values.garden.virtualCluster.networking | nindent 6 }}
+{{- end }}

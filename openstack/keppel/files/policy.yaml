@@ -1,4 +1,3 @@
-cloud_scope:  project_name:cloud_admin and project_domain_name:ccadmin
 cloud_admin:  role:cloud_registry_admin
 cloud_viewer: role:cloud_registry_viewer or rule:cloud_admin
 
@@ -6,18 +5,17 @@ project_admin:  role:registry_admin
 project_pusher: role:registry_pusher or rule:project_admin
 project_viewer: role:registry_viewer or rule:project_pusher
 
-any_admin:  rule:cloud_admin  or rule:project_admin
-any_pusher: rule:cloud_admin  or rule:project_pusher
-any_viewer: rule:cloud_viewer or rule:project_viewer
+any_admin:       rule:cloud_admin  or (rule:project_admin  and project_id:%(target.project.id)s)
+any_pusher:      rule:cloud_admin  or (rule:project_pusher and project_id:%(target.project.id)s)
+any_viewer:      rule:cloud_viewer or (rule:project_viewer and project_id:%(target.project.id)s)
+unscoped_viewer: rule:cloud_viewer or rule:project_viewer
 
-matches_scope: rule:cloud_scope or project_id:%(target.project.id)s
+account:list:   rule:unscoped_viewer # this rule may not reference %(target.project.id)s; cf. docu for AuthDriver "keystone" in Keppel
+account:show:   rule:any_viewer
+account:pull:   rule:any_viewer
+account:push:   rule:any_pusher
+account:delete: rule:any_pusher
+account:edit:   rule:any_admin
 
-account:list:   rule:any_viewer or  role:resource_service
-account:show:   rule:any_viewer and rule:matches_scope
-account:pull:   rule:any_viewer and rule:matches_scope
-account:push:   rule:any_pusher and rule:matches_scope
-account:delete: rule:any_pusher and rule:matches_scope
-account:edit:   rule:any_admin  and rule:matches_scope
-
-quota:show: role:resource_service or (rule:any_viewer and rule:matches_scope)
+quota:show: role:resource_service or rule:any_viewer
 quota:edit: role:resource_service

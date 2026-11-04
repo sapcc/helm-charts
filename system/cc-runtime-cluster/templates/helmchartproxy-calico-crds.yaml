@@ -1,11 +1,14 @@
+{{- range $cluster := .Values.clusters }}
+---
 apiVersion: addons.cluster.x-k8s.io/v1alpha1
 kind: HelmChartProxy
 metadata:
   name: calico-crds
+  namespace: {{ $cluster.namespace }}
 spec:
   clusterSelector:
     matchLabels:
-      cluster.x-k8s.io/cluster-name: rt-{{ .Values.global.region }}
+      cluster.x-k8s.io/cluster-name: {{ $cluster.name }}
   repoURL: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
   chartName: calico-crds
   releaseName: calico-crds
@@ -18,3 +21,4 @@ spec:
     skipCRDs: true
   valuesTemplate: |
     installCRDs: true
+{{- end }}

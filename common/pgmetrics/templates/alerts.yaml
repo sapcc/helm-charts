@@ -2,16 +2,17 @@
 {{- $service := $.Values.alerts.service | default $.Release.Name }}
 
 {{- range $dbName := keys .Values.databases | sortAlpha }}
+{{- $sanitizedDbName := include "pgmetrics.sanitizeName" $dbName }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}-alerts
+  name: {{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }}-alerts
   labels:
-    prometheus: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
+    prometheus: {{ tpl $.Values.alerts.prometheus $ | quote }}
 spec:
   groups:
-  - name: pg-database-{{ $dbName }}.alerts
+  - name: pg-database-{{ $sanitizedDbName }}.alerts
     rules:
     - alert: {{ title $service }}StuckTransactions
       expr: max(pg_stat_activity_max_tx_duration{datname="{{ $dbName }}"}) > 600
@@ -32,7 +33,7 @@ spec:
           `SELECT * FROM pg_stat_activity WHERE state = 'idle in transaction' AND backend_start < NOW() - interval '1 minute'`.
 
     - alert: {{ title $service }}PostgresMetricsEvalErrors
-      expr: max(pg_exporter_last_scrape_error{kubernetes_namespace="{{ $.Release.Namespace }}",name="{{ $.Release.Name }}-pgmetrics-{{ $dbName }}"}) > 0
+      expr: max(pg_exporter_last_scrape_error{kubernetes_namespace="{{ $.Release.Namespace }}",name="{{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }}"}) > 0
       for: 5m
       labels:
         context: database
@@ -44,11 +45,11 @@ spec:
       annotations:
         summary: Evaluation error in Postgres DB metrics
         description: >
-          Some of the custom metrics in the postgres-exporter configuration cannot be evaluated. Check the {{ $.Release.Name }}-pgmetrics-{{ $dbName }} pod log for errors.
+          Some of the custom metrics in the postgres-exporter configuration cannot be evaluated. Check the {{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }} pod log for errors.
 
     - alert: {{ title $service }}PostgresMetricsSlowCollection
       # slow-moving to avoid flapping during maintenance events etc.
-      expr: max(avg_over_time(scrape_duration_seconds{kubernetes_namespace="{{ $.Release.Namespace }}",name="{{ $.Release.Name }}-pgmetrics-{{ $dbName }}"}[30m])) > {{ $.Values.alerts.scrape_duration_threshold }}
+      expr: max(avg_over_time(scrape_duration_seconds{kubernetes_namespace="{{ $.Release.Namespace }}",name="{{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }}"}[30m])) > {{ $.Values.alerts.scrape_duration_threshold }}
       for: 5m
       labels:
         context: database
@@ -60,6 +61,6 @@ spec:
       annotations:
         summary: Slow metrics collection in postgres-exporter
         description: >
-          The {{ $.Release.Name }}-pgmetrics-{{ $dbName }} pod is taking a long time to gather metrics. Check for throttling in the pgmetrics pod. If that's not a problem, this alert can be an early indication that the PostgreSQL server performance is degrading.
+          The {{ $.Release.Name }}-pgmetrics-{{ $sanitizedDbName }} pod is taking a long time to gather metrics. Check for throttling in the pgmetrics pod. If that's not a problem, this alert can be an early indication that the PostgreSQL server performance is degrading.
 {{- end }}
 {{- end }}

@@ -1,0 +1,34 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: metal-onboarding-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metal-onboarding-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: metal-onboarding-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metal-onboarding-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: metal-onboarding-operator
+subjects:
+  - kind: ServiceAccount
+    name: metal-onboarding-operator
+    namespace: {{ .Release.Namespace }}
+{{- end }}

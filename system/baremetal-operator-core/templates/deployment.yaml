@@ -79,10 +79,16 @@ spec:
         - mountPath: /opt/metal3/auth/ironic
           name: ironic-credentials
           readOnly: true
+      nodeSelector: {{- toYaml .Values.baremetalOperatorControllerManager.nodeSelector
+        | nindent 8 }}
       securityContext: {{- toYaml .Values.baremetalOperatorControllerManager.podSecurityContext
         | nindent 8 }}
-      serviceAccountName: {{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-controller-manager
+      serviceAccountName: {{ include "baremetal-operator-core.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
+      tolerations: {{- toYaml .Values.baremetalOperatorControllerManager.tolerations |
+        nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.baremetalOperatorControllerManager.topologySpreadConstraints
+        | nindent 8 }}
       volumes:
       - name: cert
         secret:

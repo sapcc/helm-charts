@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "archer.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
+  name: {{ include "archer.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" | replace "." "-" }}
   labels:
     {{- include "archer.labels" . | nindent 4 }}
 spec:
@@ -44,7 +44,7 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-pguser-archer
+                  name: {{ include "archer.pgUserSecretName" . }}
                   key: postgres-password
           volumeMounts:
             - name: etc-archer

@@ -9,16 +9,21 @@ metadata:
 
 data:
   # repo configs
+{{- $targets := include "content-repo.targets" . | fromYaml }}
 {{- range $repo, $config := .Values.repos }}
 {{- if not $config.disabled }}
-  {{$repo}}.yaml: |
+{{- range $targetName, $targetCfg := $targets }}
+{{- if or (not $config.only_target) (eq $targetName $config.only_target) }}
+{{- $suffix := include "content-repo.target_suffix" $targetName }}
+  {{$repo}}{{$suffix}}.yaml: |
     swift:
-      auth_url: {{$.Values.auth_url}}
-      user_name: repo
-      user_domain_name: Default
-      project_name: master
-      project_domain_name: ccadmin
-      password: { fromEnv: TARGET_AUTH_PASSWORD }
+      auth_url: {{ $targetCfg.auth_url | default $.Values.auth_url }}
+      user_name:           {{ $targetCfg.user_name }}
+      user_domain_name:    {{ $targetCfg.user_domain_name }}
+      project_name:        {{ $targetCfg.project_name }}
+      project_domain_name: {{ $targetCfg.project_domain_name }}
+      password: { fromEnv: {{ include "content-repo.target_env" $targetName }} }
+      service_type: {{ $targetCfg.service_type | quote }}
 
     gpg:
       cache_container_name: repo-gpg-cache
@@ -28,7 +33,7 @@ data:
     statsd:
       hostname: {{$.Values.statsd_hostname}}
       port:     9125
-      prefix:   repo.{{$repo}}
+      prefix:   repo.{{$repo}}{{$suffix}}
     {{ if $config.transfer_workers }}
     workers:
       transfer: {{$config.transfer_workers}}
@@ -66,13 +71,13 @@ data:
           object_prefix:       {{ $job.from.object_prefix | default "''" }}
           {{- end }}
         to:
-          container: {{$job.to.container}}
+          container: {{ $targetCfg.container | default $job.to.container }}
           object_prefix: {{$job.to.object_prefix}}
         {{- if $job.segmenting }}
         segmenting:
           min_bytes:     {{ $job.segmenting.min_bytes | printf "%0.f" }}
           segment_bytes: {{ $job.segmenting.segment_bytes | printf "%0.f" }}
-          container:     {{ $job.segmenting.container }}
+          container:     {{ $targetCfg.container_segments | default $job.segmenting.container }}
         {{- end }}
         {{- if $job.expiration }}
         expiration:
@@ -101,5 +106,7 @@ data:
         immutable: {{ coalesce $job.immutable $config.immutable }}
         {{- end }}
       {{- end }}
+{{ end }}
+{{ end }}
 {{ end }}
 {{ end }}

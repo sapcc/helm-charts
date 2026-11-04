@@ -35,12 +35,19 @@ serviceAccount:
   # Name of the service account to use (if create is false, this must be an existing service account)
   name: disco-controller-manager
 
-# Cert-manager resources for webhook TLS certificates
+# Cert-manager resources for webhook TLS certificates.
+# The disco binary always starts a webhook server and requires TLS certificates
+# at startup. Keep this enabled unless you are providing your own TLS secret
+# named tls-disco-webhook-service.
 certManager:
   # Create cert-manager Issuer and Certificate resources
   enabled: true
 
-# Webhook configuration for Record validation
+# Webhook admission configuration for Record validation.
+# Controls whether the MutatingWebhookConfiguration and webhook Service are
+# created, making the webhook active for admission. Can be set to false to run
+# disco without intercepting Record creates/updates (e.g. remote deployments),
+# while still starting the webhook server with TLS certs from cert-manager.
 webhooks:
   # Create webhook service and MutatingWebhookConfiguration
   enabled: true

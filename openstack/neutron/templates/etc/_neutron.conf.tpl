@@ -10,7 +10,7 @@ api_paste_config = /etc/neutron/api-paste.ini
 
 pagination_max_limit = 500
 max_allowed_address_pair = {{.Values.max_allowed_address_pair | default 50}}
-max_routes = {{.Values.max_routes | default 256}}
+max_routes = {{.Values.max_routes }}
 
 allow_overlapping_ips = true
 core_plugin = ml2
@@ -60,8 +60,8 @@ service_provider = VPN:cisco_ipsec:asr1k_neutron_l3.neutron.services.service_dri
 {{- end }}
 
 [oslo_policy]
-enforce_scope = False
-enforce_new_defaults = False
+enforce_scope = {{ .Values.oslo_policy.enforce_scope }}
+enforce_new_defaults = {{ .Values.oslo_policy.enforce_new_defaults }}
 
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
@@ -182,6 +182,9 @@ disconnected_subnets_mode = true
 
 [customdns]
 enabled = true
+{{- if .Values.customdns.matches }}
+config_file = /etc/neutron/customdns.yaml
+{{- else }}
 {{- if .Values.customdns.upstream_dns_servers }}
 upstream_dns_servers = {{ join "," .Values.customdns.upstream_dns_servers }}
 {{- end }}
@@ -190,5 +193,6 @@ project_ids = {{ join "," .Values.customdns.project_ids }}
 {{- end }}
 {{- if .Values.customdns.domain_name_prefixes }}
 domain_name_prefixes = {{ join "," .Values.customdns.domain_name_prefixes }}
+{{- end }}
 {{- end }}
 {{- end }}

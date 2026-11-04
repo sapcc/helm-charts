@@ -42,7 +42,9 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: archer-network-agent
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") $ | sha256sum }}
-        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{ $agent.network_interface | default $.Values.cp_network_interface }}" }]'
+        checksum/neutron-linuxbridge-etc: {{ include (print $.Template.BasePath "/configmap-neutron-linuxbridge.yaml") $ | sha256sum }}
+        checksum/neutron-linuxbridge-secret: {{ include (print $.Template.BasePath "/neutron-secret.yaml") $ | sha256sum }}
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "namespace": "{{ default $.Release.Namespace $.Values.global.keystoneNamespace }}", "interface":"{{ $agent.network_interface | default $.Values.cp_network_interface }}" }]'
         {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
         config.linkerd.io/skip-inbound-ports: "1-65535"
         config.linkerd.io/skip-outbound-ports: "1-65535"
@@ -54,6 +56,9 @@ spec:
         name: {{ $name }}
     spec:
       serviceAccountName: {{ include "archer.serviceAccountName" $ }}
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -96,7 +101,20 @@ spec:
       containers:
         - name: archer-network-agent
           securityContext:
-            privileged: true
+            privileged: false
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN        # veth create/delete, LinkSetUp, AddrAdd, LinkSetNsFd
+                - SYS_ADMIN        # unshare(CLONE_NEWNET), setns, /var/run/netns bind-mount
+                - SYS_CHROOT       # HAProxy chroot in isolated namespace
+                - SETUID           # HAProxy drops to unprivileged uid
+                - SETGID           # HAProxy drops to unprivileged gid
+                - NET_BIND_SERVICE # HAProxy binds :::<service-port>, ports may be <1024
+                - KILL             # signal HAProxy processes across uid boundary
           image: "{{ $.Values.global.registry }}/archer:{{ $.Values.image.tag }}"
           command: ["/usr/bin/archer-ni-agent"]
           args: ["--config-file=/etc/archer/archer.ini"]
@@ -124,12 +142,12 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-pguser-archer
+                  name: {{ include "archer.pgUserSecretName" $ }}
                   key: postgres-password
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: archer-secret
+                  name: {{ include "archer.secretName" $ }}
                   key: service_user_password
           ports:
             - name: metrics
@@ -141,86 +159,26 @@ spec:
             - name: etc-archer
               mountPath: /etc/archer
               readOnly: true
-        - name: neutron-linuxbridge-agent
-          image: "{{ $.Values.global.registry }}/loci-neutron:{{ $.Values.image.neutron_version | default "latest" }}"
-          imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
-          env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
-            - name: PYTHONWARNINGS
-              value: "ignore:Unverified HTTPS request"
-            - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
-              value: {{ $cp }}:{{ required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
-            - name: OS_GLOBAL__HOST
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-          readinessProbe:
-            exec:
-              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "-agent-type", "Linux bridge agent"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 10
-          securityContext:
-            capabilities:
-              add:
-                - NET_ADMIN
-                - SYS_ADMIN
-                - DAC_OVERRIDE
-                - DAC_READ_SEARCH
-                - SYS_PTRACE
-          resources:
-            {{- toYaml $.Values.resources.linuxbridge_agent | nindent 12 }}
-          volumeMounts:
-            - mountPath: /lib/modules
-              name: modules
-              readOnly: true
-            - name: etc-neutron-linuxbridge-agent
-              mountPath: /etc/neutron
-              readOnly: true
-            - name: neutron-etc
-              mountPath: /etc/sudoers
-              subPath: sudoers
-              readOnly: true
+        {{- $lbExtraEnv := concat ($.Values.linuxbridge_agent.extraEnv | default (list)) (list (dict "name" "OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS" "value" (printf "%s:%s" $cp (required ".Values.cp_network_interface required" $.Values.cp_network_interface)))) }}
+        {{- $lbValues := dict
+            "secretName" (include "archer.neutronSecretName" $)
+            "imageVersion" ($.Values.linuxbridge_agent.imageVersion | default $.Values.image.neutron_version)
+            "extraEnv" $lbExtraEnv
+            "resources" $.Values.resources.linuxbridge_agent
+            "extraConfigs" ($.Values.linuxbridge_agent.extraConfigs | default (list))
+            "extraConfigDirs" ($.Values.linuxbridge_agent.extraConfigDirs | default (list))
+            "extraVolumeMounts" ($.Values.linuxbridge_agent.extraVolumeMounts | default (list))
+            "extraVolumes" ($.Values.linuxbridge_agent.extraVolumes | default (list))
+        }}
+        {{- include "archer.neutron-linuxbridge-agent.container" (dict "root" $ "values" $lbValues) | nindent 8 }}
       volumes:
-        - name: modules
-          hostPath:
-            path: /lib/modules
-        - name: neutron-etc
-          configMap:
-            name: neutron-etc
-        - name: etc-neutron-linuxbridge-agent
-          projected:
-            defaultMode: 420
-            sources:
-            - configMap:
-                name: neutron-etc
-                items:
-                  - key: neutron.conf
-                    path: neutron.conf
-                  - key: logging.conf
-                    path: logging.conf
-                  - key: rootwrap.conf
-                    path: rootwrap.conf
-                  - key: ml2-conf.ini
-                    path: ml2-conf.ini
-                  - key: linux-bridge.ini
-                    path: linux-bridge.ini
-            - secret:
-                name: neutron-common-secrets
-                items:
-                  - key: neutron-common-secrets.conf
-                    path: secrets/neutron-common-secrets.conf
+        {{- include "archer.neutron-linuxbridge-agent.volumes" (dict "root" $ "values" $lbValues) | nindent 8 }}
         - name: etc-archer
           projected:
             defaultMode: 420
             sources:
               - configMap:
-                  name: archer-etc
+                  name: {{ include "archer.fullname" $ }}-etc
                   items:
                     - key: archer.ini
                       path: archer.ini

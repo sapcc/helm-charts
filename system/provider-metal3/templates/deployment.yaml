@@ -7,6 +7,10 @@ metadata:
     control-plane: controller-manager
     controller-tools.k8s.io: "1.0"
   {{- include "provider-metal3.labels" . | nindent 4 }}
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: ${CAPM3_DIAGNOSTICS_ADDRESS:=:8443}
+    prometheus.io/scrape: "true"
 spec:
   selector:
     matchLabels:
@@ -27,10 +31,6 @@ spec:
         command:
         - /manager
         env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
         envFrom:
@@ -66,15 +66,14 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+      nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
-      serviceAccountName: {{ include "provider-metal3.fullname" . }}-manager
+      serviceAccountName: {{ include "provider-metal3.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
-      tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
+      tolerations: {{- toYaml .Values.controllerManager.tolerations | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.controllerManager.topologySpreadConstraints
+        | nindent 8 }}
       volumes:
       - name: cert
         secret:

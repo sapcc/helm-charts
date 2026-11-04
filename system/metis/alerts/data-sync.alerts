@@ -7,9 +7,20 @@ groups:
     labels:
       service: "metis"
       severity: info
-      support_group: observability
+      support_group: containers
     annotations:
       summary: "VM Details have not been synced successfully in 24h"
+      description: "Please check deploy/metis logs for errors"
+
+  - alert: MetisVCenterNotAccessible
+    expr: metis_vcenter_host_status{vcenter=~"vc-.*", status = "LOGIN_FAILED"}
+    for: 120m
+    labels:
+      service: "metis"
+      severity: info
+      support_group: containers
+    annotations:
+      summary: "Metis is not able to access vCenter {{ $labels.vcenter }}"
       description: "Please check deploy/metis logs for errors"
 
   - alert: MetisVCenterNotSynced
@@ -18,7 +29,7 @@ groups:
     labels:
       service: "metis"
       severity: info
-      support_group: observability
+      support_group: containers
     annotations:
       summary: "VM Details have not been synced"
       description: "Please check deploy/metis logs for errors"
@@ -29,7 +40,9 @@ groups:
     labels:
       service: "metis"
       severity: info
-      support_group: observability
+      support_group: containers
     annotations:
       summary: "Billing masterdata have not been synced successfully in 24h"
       description: "Please check deploy/metis logs for errors"
+  
+
