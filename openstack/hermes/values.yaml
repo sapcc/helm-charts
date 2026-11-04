@@ -41,7 +41,10 @@ hermes:
   #    objectstore_admin in the project when it isn't effective there yet
   #    (iaas- domains; the Keystone seed grants it inherited on every other
   #    domain wherever logRouter.enabled). Projects in iaas- domains that were
-  #    enabled before need one re-enable before step 2.
+  #    enabled before need, before step 2, one re-enable by a project admin
+  #    (same body, current target_bucket) or a cloud admin grant per domain:
+  #    openstack role add --user hermes --user-domain Default
+  #      --domain <iaas-domain> --inherited objectstore_admin
   # 2. dataplane_project_scoped_writes: log-router writes customer audit objects
   #    with a token scoped to the customer project, so Ceph makes that project
   #    the owner of every object. A project without the role has its events
@@ -376,7 +379,9 @@ logRouter:
     # Project log-router's main token is scoped to. With
     # hermes.dataplane_project_scoped_writes on, customer objects are written
     # with a token scoped to the customer project instead, and this scope is
-    # only used for the fallback container and readiness. The defaults keep the
+    # only used for the fallback container, readiness, the check that tells a
+    # missing writer role apart from a broken main login, and
+    # migrate-dataplane-acl. The defaults keep the
     # cloud_objectstore_admin scope. Switch to hermes-dataplane / Default
     # (objectstore_admin) only after the log-router and hermez images with
     # customer-owned bucket support are deployed and `migrate-dataplane-acl --apply`
