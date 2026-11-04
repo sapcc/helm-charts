@@ -1,19 +1,11 @@
 [uwsgi]
-need-app = true
+{{- if not (hasKey .Values.uwsgi "http-socket") }}
 http-socket = :{{ .Values.global.placementApiPortInternal }}
-uid = placement
-gid = placement
-lazy-apps = true
-add-header = Connection: close
-buffer-size = 65535
-hook-master-start = unix_signal:15	# gracefully_kill_them_all
-thunder-lock = true
-enable-threads = true
-worker-reload-mercy = 90
-exit-on-reload = false
-die-on-term = true
-master = true
-memory-report = true
-processes = {{ .Values.uwsgi.processes }}
-wsgi-file = {{ .Values.uwsgi.wsgi_file }}
+{{- end }}
+{{- range $key := keys .Values.uwsgi | sortAlpha }}
+{{- $value := index $.Values.uwsgi $key }}
+{{- if and (ne $value nil) (ne (toString $value) "") }}
+{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
 
