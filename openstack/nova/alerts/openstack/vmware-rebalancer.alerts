@@ -1,7 +1,7 @@
 groups:
   - name: vmware-rebalancer.alerts
     rules:
-      - alert: LowNumberOfPlaceableHanaVms
+      - alert: LowNumberOfPlaceable8TbHanaVms
         expr: |      
           wm_vmware_rebalancer_placeable_vms_per_az_for_domain{flavor="hana_c480_m7680_v2", region!~"qa-.*"} < 3
         for: 3h
@@ -20,7 +20,7 @@ groups:
       - alert: LowNumberOfPlaceable4TbHanaVms
         expr: |      
           wm_vmware_rebalancer_placeable_vms_per_az_for_domain{flavor="hana_c240_m3840_v2", region!~"qa-.*"}
-          - on(az, domain_id) clamp_max(2 * wm_vmware_rebalancer_placeable_vms_per_az_for_domain{flavor="hana_c480_m7680_v2", region!~"qa-.*"}, 6) < 3
+          - on(az, domain_id) group_left clamp_max(2 * wm_vmware_rebalancer_placeable_vms_per_az_for_domain{flavor="hana_c480_m7680_v2", region!~"qa-.*"}, 6) < 3
         for: 3h
         labels:
           severity: warning
@@ -29,7 +29,7 @@ groups:
           tier: vmware
           playbook: docs/compute/playbooks/vcenter/#lownumberofplaceablehanavms
           context: "Availability Zone Capacity {{ $labels.az }}"
-          meta: "The availability zone *{{ $labels.az }}* is (almost) full and less than 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
+          meta: "The availability zone *{{ $labels.az }}* is (almost) full. After reserving capacity for 3 x 8TB HANA VMs (if possible), less than 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
         annotations:
-          description: "The availability zone *{{ $labels.az }}* is (almost) full and less than 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
-          summary: "The availability zone *{{ $labels.az }}* is (almost) full and less than 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
+          description: "The availability zone *{{ $labels.az }}* is (almost) full. After reserving capacity for 3 x 8TB HANA VMs (if possible), less than 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
+          summary: "The availability zone *{{ $labels.az }}* is (almost) full. After reserving capacity for 3 x 8TB HANA VMs (if possible), less than 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
