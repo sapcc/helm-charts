@@ -145,6 +145,10 @@ data:
        {{- end}}
 
   firewall.conf: |
+       {{- range $wait_limits := $.Values.unbound.wait_limits | default list }}
+       wait-limit-netblock: {{ $wait_limits.netblock }} {{ $wait_limits.limit }}
+       {{- end }}
+
        {{- range $blocklisted := .Values.unbound.blocklisted_zones }}
        local-zone: {{ tpl $blocklisted $ | quote }} always_nxdomain
        {{- end }}
