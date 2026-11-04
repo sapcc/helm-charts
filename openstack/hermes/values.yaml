@@ -36,14 +36,19 @@ hermes:
   # Required to enable dataplane for a project; the env is only rendered when set.
   dataplane_writer_user_id: ""
   dataplane_swift_service_type: "object-store-ceph"
-  # Project-owned audit objects. On: log-router writes customer audit objects
-  # with a token scoped to the customer project, so Ceph makes that project the
-  # owner of every object, and hermes-api gives hermes@Default objectstore_admin
-  # in a project on enable when it isn't effective there yet (iaas- domains;
-  # the Keystone seed grants it inherited on every other domain wherever
-  # logRouter.enabled). Off: log-router writes with its writerProject token and
-  # objects are owned by that project (cloud_admin). Objects written before
-  # need one bucket chown.
+  # Project-owned audit objects, two switches, turned on in this order:
+  # 1. dataplane_assign_writer_role: on enable, hermes-api gives hermes@Default
+  #    objectstore_admin in the project when it isn't effective there yet
+  #    (iaas- domains; the Keystone seed grants it inherited on every other
+  #    domain wherever logRouter.enabled). Projects in iaas- domains that were
+  #    enabled before need one re-enable before step 2.
+  # 2. dataplane_project_scoped_writes: log-router writes customer audit objects
+  #    with a token scoped to the customer project, so Ceph makes that project
+  #    the owner of every object. A project without the role has its events
+  #    dropped. Needs step 1 (the chart fails otherwise). Off: objects are owned
+  #    by the writerProject (cloud_admin). Objects written before need one
+  #    bucket chown.
+  dataplane_assign_writer_role: false
   dataplane_project_scoped_writes: false
 
   debug: 0
