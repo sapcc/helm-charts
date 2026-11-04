@@ -17,7 +17,7 @@ os_region_name = {{.Values.global.region}}
 public_endpoint = https://{{include "cinder_api_endpoint_host_public" .}}:{{.Values.cinderApiPortPublic}}
 
 default_availability_zone = {{.Values.global.default_availability_zone}}
-default_volume_type = vmware
++default_volume_type = {{ .Values.default_volume_type | default "vmware" }}
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "cinder" }}
 
