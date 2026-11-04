@@ -1,0 +1,55 @@
+image:
+  repository: ghcr.io/sapcc/disco
+  tag: v2.0.0
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  name: disco-controller-manager
+
+# These labels will be set on the disco controller manager
+controllerLabels: {}
+
+# Record which should be used. e.g.: 'ingress.domain.tld.'. Must be provided.
+record: ""
+
+# Credentials of the service user who creates the recordsets in OpenStack Designate.
+openstack: {}
+  # authURL:            DEFINED-IN-SECRETS
+  # regionName:         DEFINED-IN-SECRETS
+  # username:           DEFINED-IN-SECRETS
+  # userDomainName:     DEFINED-IN-SECRETS
+  # password:           DEFINED-IN-SECRETS
+  # projectName:        DEFINED-IN-SECRETS
+  # projectDomainName:  DEFINED-IN-SECRETS
+  # The name of the zone in which the record should be created
+  # zoneName:           DEFINED-IN-SECRETS
+
+# Namespace on the shoot cluster where the ServiceAccount, namespaced RBAC resources,
+# and leader election lease are created.
+shootNamespace: kube-system
+
+# API server host for the remote cluster (required)
+apiServerHost: ""
+
+# API server port for the remote cluster
+apiServerPort: "443"
+
+# The resources provide boundaries for the VPA, by which the actual resource requirements
+# are configured based on usage.
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 500Mi
+
+# Metrics service for Prometheus scraping
+metrics:
+  # Port to expose metrics on.
+  port: 8080
+
+# Only an ingress with this annotation will be considered.
+ingressAnnotation: disco
