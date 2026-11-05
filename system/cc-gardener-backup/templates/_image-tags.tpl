@@ -3,7 +3,7 @@
 {{/* -----BEGIN TAGS_JSON PAYLOAD----- */}}
 {
   "alpine-kubectl-tools": {
-    "latest": "latest-20261026103656"
+    "latest": "latest-20261105211811"
   }
 }
 {{/* -----END TAGS_JSON PAYLOAD----- */}}
