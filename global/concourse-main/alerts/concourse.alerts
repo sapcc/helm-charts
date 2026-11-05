@@ -164,6 +164,21 @@ groups:
       description: "Worker node `{{ $labels.node }}` workdir is most likely out of disk space in 2 days. Drain and terminate node to create a worker with empty workdir. Node creation and volume provisioning will happen automatically."
       summary: "Worker node workdir out of disk space in the near future"
 
+  - alert: ConcourseWebDown
+    expr: up{job=~".*concourse-web.*"} == 0
+    for: 5m
+    labels:
+      tier: ci
+      service: concourse
+      severity: critical
+      context: concourse
+      support_group: lifecycle-management
+      meta: "Concourse web {{ $labels.instance }} is down in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "The Concourse web target {{ $labels.instance }} in cluster {{ $labels.cluster }} has been down for more than 5 minutes. The UI, the API and build scheduling are affected. Check the web pods in the concourse namespace."
+      summary: Concourse web is down
+
   - alert: ConcourseAPIHighErrorRate
     expr: sum by (region, cluster) (rate(concourse_http_responses_duration_seconds_count{status=~"5.."}[5m])) / sum by (region, cluster) (rate(concourse_http_responses_duration_seconds_count[5m])) > 0.05
     for: 15m
@@ -193,6 +208,21 @@ groups:
     annotations:
       description: "More than 10% of resource checks in cluster {{ $labels.cluster }} are failing. This may indicate a network issue or a misconfigured resource type."
       summary: Concourse resource check error rate too high
+
+  - alert: ConcourseNoRunningWorkers
+    expr: sum by (region, cluster) (concourse_workers_registered{state="running"}) == 0
+    for: 5m
+    labels:
+      tier: ci
+      service: concourse
+      severity: critical
+      context: concourse
+      support_group: lifecycle-management
+      meta: "No running Concourse worker in {{ $labels.cluster }}"
+      persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
+    annotations:
+      description: "No Concourse worker in cluster {{ $labels.cluster }} has been in the running state for more than 5 minutes, so no build can run. Check the worker pods and the worker nodes."
+      summary: Concourse has no running workers
 
   - alert: ConcourseWorkerUnhealthyState
     expr: max by (region, cluster, state) (concourse_workers_registered{state=~"stalled|landing|landed"}) > 0
@@ -275,7 +305,7 @@ groups:
     labels:
       tier: ci
       service: concourse
-      severity: warning
+      severity: critical
       context: concourse
       support_group: lifecycle-management
       meta: "OOM kill detected in concourse pod {{ $labels.pod }} in {{ $labels.cluster }}"
