@@ -15,16 +15,22 @@ controllerLabels: {}
 record: ""
 
 # Credentials of the service user who creates the recordsets in OpenStack Designate.
-openstack: {}
-  # authURL:            DEFINED-IN-SECRETS
-  # regionName:         DEFINED-IN-SECRETS
-  # username:           DEFINED-IN-SECRETS
-  # userDomainName:     DEFINED-IN-SECRETS
-  # password:           DEFINED-IN-SECRETS
-  # projectName:        DEFINED-IN-SECRETS
-  # projectDomainName:  DEFINED-IN-SECRETS
-  # The name of the zone in which the record should be created
-  # zoneName:           DEFINED-IN-SECRETS
+# vault+kvv2 resolve directives use ${REGION} tokens — secrets-injector resolves them
+# in-cluster when it processes the disco-config Secret (mode=seed). The DDO CR template
+# in system/dual-deployment-operator substitutes ${REGION} from values.global.region at
+# render time before the string lands in the Secret. NEVER put vault refs in the DDO CR
+# values block (DualDeploymentOperator is not in the admin-k3s secrets-injector-validator
+# allowed kinds — only Secret and OpenstackSeed are). See also: argora credentials-secret.yaml.
+openstack:
+  authURL: "https://identity-3.${REGION}.cloud.sap/v3"
+  regionName: "${REGION}"  # substituted from .Values.global.region at DDO CR render time
+  username: disco
+  userDomainName: Default
+  password: "{{ resolve `vault+kvv2:///secrets/${REGION}/disco/keystone-user/service/password` }}"
+  projectName: cloud_admin
+  projectDomainName: ccadmin
+  # The name of the zone in which the record should be created.
+  zoneName: "${REGION}.cloud.sap."
 
 # Namespace on the shoot cluster where the ServiceAccount, namespaced RBAC resources,
 # and leader election lease are created.
