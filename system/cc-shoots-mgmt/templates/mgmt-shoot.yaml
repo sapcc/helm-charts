@@ -149,12 +149,19 @@ spec:
                   {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
                   {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
+                  {{- /* Block non-pod nodes from re-exporting mesh-learned /32 LB routes to eBGP TOR peers */}}
+                  {{- if $.Values.networking.overlay }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: In
+                    action: Reject
+                    source: RemotePeers
+                  {{- end }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
                   {{- end }}
-                  {{- if $.Values.networking.overlay }}        
+                  {{- if $.Values.networking.overlay }}
                   - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
                     matchOperator: In
                     action: Reject

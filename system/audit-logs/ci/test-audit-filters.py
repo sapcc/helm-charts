@@ -113,11 +113,12 @@ def run(command, *, include_stderr=False, **kwargs):
     return result.stdout + (result.stderr if include_stderr else "")
 
 
-def render(chart, key=None, template="templates/configmap.yaml"):
+def render(chart, key=None, template="templates/configmap.yaml", extra_args=()):
     document = run([
         "helm", "template", str(CHART / "vendor" / chart), "--show-only", template,
         "--set", "global.region=qa-de-1", "--set", "global.clusterType=admin", "--set", "global.cluster=review",
         "--set", "kubeAPIServer[0]=k-", "--set-json", "default_container_logs=[]", "--set", "alerts.enabled=true",
+        *extra_args,
     ])
     return run(["yq", f'.data."{key}"' if key else ".spec"], input=document)
 
@@ -129,13 +130,13 @@ def logstash_counter(output):
     return next(step["events"]["out"] for step in filters if step.get("id") == LOGSTASH_PLUGIN_ID)
 
 
-def fluent_counter(output):
+def fluent_counter(output, cluster):
     """Sum of the credential-removal counter scraped from Fluentd's Prometheus endpoint."""
     block = output.split("FLUENT_METRICS_BEGIN", 1)[1].split("FLUENT_METRICS_END", 1)[0]
     total = 0.0
     for line in block.splitlines():
         if line.startswith(FLUENT_METRIC + "{"):
-            assert 'cluster="k-qa-de-1"' in line, line
+            assert f'cluster="{cluster}"' in line, line
             total += float(line.rsplit(" ", 1)[1])
     return total
 
@@ -164,7 +165,7 @@ def verify(name, output, cases):
     for before, removed, marked in cases:
         event = actual[before["auditID"]]
         assert event.get("annotations") == ANNOTATIONS, (name, before["auditID"], "annotations")
-        marker = event.get(MARKER) if name == "fluentd" else event.get("sap", {}).get("cc", {}).get("audit", {}).get("credential_body_removed")
+        marker = event.get(MARKER) if name.startswith("fluentd") else event.get("sap", {}).get("cc", {}).get("audit", {}).get("credential_body_removed")
         assert marker is (True if marked else None), (name, before["auditID"], "marker must be a boolean")
         for key in ("requestObject", "responseObject"):
             if key in removed:
@@ -174,6 +175,34 @@ def verify(name, output, cases):
         for key in ("objectRef", "user", "verb", "stage", "requestReceivedTimestamp"):
             assert event.get(key) == before.get(key), (name, before["auditID"], key)
     print(f"{name}: {len(cases)} events passed; bodies and patch annotations removed, metadata preserved")
+
+
+def run_fluentd(root, base, fluent, source_id, filter_tag, n_filters, events_text, label, fluentd_image, cases, marked, cluster):
+    """Build a minimal Fluentd config from the rendered chart, run it, and verify credential removal."""
+    conf = label + ".conf"
+    events = label + "-events.log"
+    m = re.search(rf"<source>\n  @type tail\n  @id {re.escape(source_id)}\n.*?</source>", fluent, re.S)
+    assert m, f"{label}: source block '{source_id}' not found in rendered config"
+    source = m.group()
+    source = re.sub(r"  path [^\n]+", f"  path /review/{events}\n  read_from_head true\n  refresh_interval 1", source)
+    source = re.sub(r"  pos_file [^\n]+", f"  pos_file /tmp/{label}.pos", source)
+    filters = re.findall(rf"<filter {re.escape(filter_tag)}\.[^>]*>.*?</filter>", fluent, re.S)
+    assert len(filters) == n_filters, f"{label}: expected {n_filters} filters, got {len(filters)}"
+    metrics = '<source>\n  @type prometheus\n  bind 127.0.0.1\n  port 24231\n</source>\n'
+    (root / conf).write_text(
+        '<system>\n  log_level warn\n</system>\n' + source + '\n' + metrics + '\n'.join(filters)
+        + f'\n<match {filter_tag}.**>\n  @type stdout\n  <format>\n    @type json\n  </format>\n</match>\n'
+    )
+    (root / events).write_text(events_text)
+    output = run(base + ["--memory", "512m", "--entrypoint", "/bin/sh", fluentd_image, "-c",
+        f'fluentd --no-supervisor -c /review/{conf} & audit_pid=$!; sleep 8; '
+        'ruby -rnet/http -e \'puts "FLUENT_METRICS_BEGIN", Net::HTTP.get(URI("http://127.0.0.1:24231/metrics")), "FLUENT_METRICS_END"\'; '
+        'kill -TERM "$audit_pid"; wait "$audit_pid"'], timeout=60, include_stderr=True)
+    assert "[warn]" not in output and "[error]" not in output, output
+    verify(label, output, cases)
+    count = fluent_counter(output, cluster)
+    assert count == marked, (label + " counter", count, marked)
+    print(f"{label}: {FLUENT_METRIC} counted {marked} events")
 
 
 def main():
@@ -216,23 +245,27 @@ def main():
         print(f"logstash: the {LOGSTASH_PLUGIN_ID} step counted {marked} events")
 
         fluent = render("fluent-audit-container", "fluent.conf")
-        source = re.search(r"<source>\n  @type tail\n  @id k-kube-api\n.*?</source>", fluent, re.S).group()
-        source = re.sub(r"  path [^\n]+", "  path /review/events.log\n  read_from_head true\n  refresh_interval 1", source)
-        source = re.sub(r"  pos_file [^\n]+", "  pos_file /tmp/audit-review.pos", source)
-        filters = re.findall(r"<filter kubeapi\.[^>]*>.*?</filter>", fluent, re.S)
-        assert len(filters) == 6, "Expected cluster metadata, parser, credential, counter, counter cleanup and label filters"
-        metrics = '<source>\n  @type prometheus\n  bind 127.0.0.1\n  port 24231\n</source>\n'
-        (root / "fluent.conf").write_text('<system>\n  log_level warn\n</system>\n' + source + '\n' + metrics + '\n'.join(filters)
-            + '\n<match kubeapi.**>\n  @type stdout\n  <format>\n    @type json\n  </format>\n</match>\n')
-        (root / "events.log").write_text("".join(f"{STAMP} stdout F {json.dumps(event)}\n" for event, _, _ in cases))
-        fluent_output = run(base + ["--memory", "512m", "--entrypoint", "/bin/sh", args.fluentd_image, "-c",
-            'fluentd --no-supervisor -c /review/fluent.conf & audit_pid=$!; sleep 8; '
-            'ruby -rnet/http -e \'puts "FLUENT_METRICS_BEGIN", Net::HTTP.get(URI("http://127.0.0.1:24231/metrics")), "FLUENT_METRICS_END"\'; '
-            'kill -TERM "$audit_pid"; wait "$audit_pid"'], timeout=60, include_stderr=True)
-        assert "[warn]" not in fluent_output and "[error]" not in fluent_output, fluent_output
-        verify("fluentd", fluent_output, cases)
-        assert fluent_counter(fluent_output) == marked, ("fluentd counter", fluent_counter(fluent_output), marked)
-        print(f"fluentd: {FLUENT_METRIC} counted {marked} events")
+        # Kubernikus: kube-apiserver events via fluentd sidecar → container log format
+        run_fluentd(root, base, fluent, "k-kube-api", "kubeapi", 6,
+            "".join(f"{STAMP} stdout F {json.dumps(event)}\n" for event, _, _ in cases),
+            "fluentd", args.fluentd_image, cases, marked, cluster="k-qa-de-1")
+        # k3s: raw JSON file; audit policy caps credential resources at Metadata — no bodies.
+        k3s_cases = [({k: v for k, v in e.items() if k not in ("requestObject", "responseObject")}, set(), False) for e, _, _ in cases]
+        run_fluentd(root, base, fluent, "k3s-audit", "k3saudit", 3,
+            "".join(f"{json.dumps(event)}\n" for event, _, _ in k3s_cases),
+            "fluentd-k3s", args.fluentd_image, k3s_cases, 0, cluster="a-qa-de-1")
+        # k3s source must render even when no Kubernikus tenants are configured — bypass render()
+        # because Helm merges kubeAPIServer[0]=k- with kubeAPIServer=[] rather than replacing.
+        fluent_no_kubernikus = run(["yq", '.data."fluent.conf"'], input=run([
+            "helm", "template", str(CHART / "vendor" / "fluent-audit-container"),
+            "--show-only", "templates/configmap.yaml",
+            "--set", "global.region=qa-de-1", "--set", "global.clusterType=admin",
+            "--set", "global.cluster=review",
+            "--set-json", "kubeAPIServer=[]", "--set-json", "default_container_logs=[]",
+            "--set", "alerts.enabled=true",
+        ]))
+        assert "@id k3s-audit" in fluent_no_kubernikus, "k3s source absent when kubeAPIServer is empty"
+        assert "@id k-kube-api" not in fluent_no_kubernikus, "kubeapi source present when kubeAPIServer is empty"
 
         # The alert rules on these counters must be valid Prometheus rules.
         (root / "logstash.rules.yaml").write_text(render("logstash-audit-external", template="templates/prometheus-alerts.yaml"))

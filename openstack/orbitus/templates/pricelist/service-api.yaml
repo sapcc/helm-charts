@@ -1,0 +1,22 @@
+{{- range $name, $config := .Values.pricelist.apis }}
+{{- if not $config.skip }}
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: pricelist-{{ $name }}-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack | quote }}
+
+spec:
+  selector:
+    name: pricelist-{{ $name }}-api
+  ports:
+    - name: metrics
+      port: 80
+      protocol: TCP
+
+{{- end }}
+{{- end }}

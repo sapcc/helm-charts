@@ -8,7 +8,6 @@ groups:
       severity: warning
       service: cc3test
       context: "{{`{{ $labels.service }}`}}"
-      dashboard: cc3test-api-status
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status"
       meta: "cc3test {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}}/{{`{{ $labels.when }}`}} is not running for more than 30 minutes"
     annotations:
@@ -22,7 +21,6 @@ groups:
       severity: info
       service: cc3test
       context: "{{`{{ $labels.service }}`}}"
-      dashboard: cc3test-api-status
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status"
       meta: "cc3test {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}}/{{`{{ $labels.when }}`}} is not running for more than 30 minutes"
     annotations:
@@ -36,7 +34,6 @@ groups:
       severity: warning
       service: cc3test
       context: "{{`{{ $labels.service }}`}}"
-      dashboard: cc3test-datapath-status
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status"
       meta: "cc3test {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}}/{{`{{ $labels.when }}`}} is not running for more than 30 minutes"
     annotations:
@@ -50,7 +47,6 @@ groups:
       severity: info
       service: cc3test
       context: "{{`{{ $labels.service }}`}}"
-      dashboard: cc3test-datapath-status
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-datapath-status"
       meta: "cc3test {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}}/{{`{{ $labels.when }}`}} is not running for more than 30 minutes"
     annotations:
@@ -77,7 +73,6 @@ groups:
       severity: warning
       service: cc3test
       context: "{{`{{ $labels.service }}`}}"
-      dashboard: cc3test-certificate-status
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status"
       meta: "cc3test {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}}/{{`{{ $labels.when }}`}} is not running for more than 1 day"
     annotations:
@@ -96,7 +91,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "SAML cc3test tests for {{`{{ $labels.name }}`}} are not running for more than 30 minutes"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/keystone/alerts/saml-federation-alerts/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"

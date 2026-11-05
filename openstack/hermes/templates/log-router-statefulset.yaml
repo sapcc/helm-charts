@@ -83,11 +83,13 @@ spec:
               mountPath: /data/wal
             - name: log-router-secrets
               mountPath: /var/run/secrets/log-router
+          # startup compacts and recovers the WAL before the http server is up.
+          # after a long storage outage that can take well over 10m, so give it 30m.
           startupProbe:
             httpGet:
               path: /healthcheck
               port: http
-            failureThreshold: 60
+            failureThreshold: 180
             periodSeconds: 10
           livenessProbe:
             httpGet:

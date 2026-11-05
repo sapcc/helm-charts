@@ -13,6 +13,7 @@ data:
 {{- range $repo, $config := .Values.repos }}
 {{- if not $config.disabled }}
 {{- range $targetName, $targetCfg := $targets }}
+{{- if or (not $config.only_target) (eq $targetName $config.only_target) }}
 {{- $suffix := include "content-repo.target_suffix" $targetName }}
   {{$repo}}{{$suffix}}.yaml: |
     swift:
@@ -70,13 +71,13 @@ data:
           object_prefix:       {{ $job.from.object_prefix | default "''" }}
           {{- end }}
         to:
-          container: {{$job.to.container}}
+          container: {{ $targetCfg.container | default $job.to.container }}
           object_prefix: {{$job.to.object_prefix}}
         {{- if $job.segmenting }}
         segmenting:
           min_bytes:     {{ $job.segmenting.min_bytes | printf "%0.f" }}
           segment_bytes: {{ $job.segmenting.segment_bytes | printf "%0.f" }}
-          container:     {{ $job.segmenting.container }}
+          container:     {{ $targetCfg.container_segments | default $job.segmenting.container }}
         {{- end }}
         {{- if $job.expiration }}
         expiration:
@@ -105,6 +106,7 @@ data:
         immutable: {{ coalesce $job.immutable $config.immutable }}
         {{- end }}
       {{- end }}
+{{ end }}
 {{ end }}
 {{ end }}
 {{ end }}

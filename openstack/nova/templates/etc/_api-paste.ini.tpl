@@ -111,8 +111,7 @@ paste.filter_factory = nova.api.auth:NovaKeystoneContext.factory
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
 
 [filter:sentry]
-use = egg:raven#raven
-level = ERROR
+paste.filter_factory = sapcc_sentrylogger.paste:sapcc_sentry_filter_factory
 
 {{ if .Values.audit.enabled }}
 [filter:audit]

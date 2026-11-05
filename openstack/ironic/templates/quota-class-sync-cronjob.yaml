@@ -28,9 +28,15 @@ spec:
             - name: OS_AUTH_URL
               value: {{ .Values.global.keystone_api_endpoint_protocol_internal | default "http" }}://{{ include "keystone_api_endpoint_host_internal" . }}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
             - name: OS_USERNAME
-              value: {{ .Values.global.ironicServiceUser | include "resolve_secret" }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-quota-class-sync
+                  key: os_username
             - name: OS_PASSWORD
-              value: {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword | include "resolve_secret" }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-quota-class-sync
+                  key: os_password
             - name: OS_USER_DOMAIN_NAME
               value: {{ .Values.global.keystone_service_domain | default "Default" }}
             - name: OS_PROJECT_NAME

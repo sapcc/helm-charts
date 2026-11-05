@@ -1,0 +1,61 @@
+image:
+  repository: ghcr.io/sapcc/disco
+  tag: v2.0.0
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  name: disco-controller-manager
+
+# These labels will be set on the disco controller manager
+controllerLabels: {}
+
+# Record which should be used. e.g.: 'ingress.domain.tld.'. Must be provided.
+record: ""
+
+# Credentials of the service user who creates the recordsets in OpenStack Designate.
+# vault+kvv2 resolve directives use ${REGION} tokens — secrets-injector resolves them
+# in-cluster when it processes the disco-config Secret (mode=seed). The DDO CR template
+# in system/dual-deployment-operator substitutes ${REGION} from values.global.region at
+# render time before the string lands in the Secret. NEVER put vault refs in the DDO CR
+# values block (DualDeploymentOperator is not in the admin-k3s secrets-injector-validator
+# allowed kinds — only Secret and OpenstackSeed are). See also: argora credentials-secret.yaml.
+openstack:
+  authURL: "https://identity-3.${REGION}.cloud.sap/v3"
+  regionName: "${REGION}"  # substituted from .Values.global.region at DDO CR render time
+  username: disco
+  userDomainName: Default
+  password: "{{ resolve `vault+kvv2:///secrets/${REGION}/disco/keystone-user/service/password` }}"
+  projectName: cloud_admin
+  projectDomainName: ccadmin
+  # The name of the zone in which the record should be created.
+  zoneName: "${REGION}.cloud.sap."
+
+# Namespace on the shoot cluster where the ServiceAccount, namespaced RBAC resources,
+# and leader election lease are created.
+shootNamespace: kube-system
+
+# API server host for the remote cluster (required)
+apiServerHost: ""
+
+# API server port for the remote cluster
+apiServerPort: "443"
+
+# The resources provide boundaries for the VPA, by which the actual resource requirements
+# are configured based on usage.
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 500Mi
+
+# Metrics service for Prometheus scraping
+metrics:
+  # Port to expose metrics on.
+  port: 8080
+
+# Only an ingress with this annotation will be considered.
+ingressAnnotation: disco

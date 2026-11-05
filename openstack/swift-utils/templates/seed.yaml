@@ -23,12 +23,6 @@ spec:
   domains:
     - name: Default
       users:
-      - name: repo # used by content-repo (but seeded here since content-repo runs in scaleout)
-        description: Repo Service User
-        password: {{ .Values.content_repo.service_user_password }}
-        role_assignments:
-          - project: service
-            role: service
       - name: swift_caretaker
         description: 'Swift Account Caretaker'
         password: {{ $.Values.swift_account_caretaker.password }}
@@ -44,10 +38,8 @@ spec:
     - name: ccadmin
       projects:
         - name: master
-          role_assignments:
-            - user: repo@Default
-              role: objectstore_admin # required for repo sync (but seeded here because content-repo runs in scaleout)
           {{- if .Values.velero_backup_password }}
+          role_assignments:
             - user: velero_backup@Default
               role: service
           {{- end }}

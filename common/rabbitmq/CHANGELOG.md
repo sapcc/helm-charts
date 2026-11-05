@@ -2,6 +2,18 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.26.1 - 2026/10/26
+
+- RabbitMQ [4.3.7 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.7)
+- `rabbitmq-user-credential-updater` updated to `20261026084952` version
+- Chart version bumped
+
+## 0.26.0 - 2026/10/22
+
+- add `persesDashboard` label to alerts pointing to the Perses `rabbitmq` dashboard (Plutono is being shut down)
+- remove Plutono `dashboard` label from alerts (Plutono `rabbitmq` dashboard was removed)
+- Chart version bumped
+
 ## 0.25.10 - 2026/10/05
 
 - add `podAntiAffinity` ("", "preferred" or "required") to spread statefulset pods over nodes, off by default

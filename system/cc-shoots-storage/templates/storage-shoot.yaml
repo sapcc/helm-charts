@@ -18,7 +18,7 @@ spec:
     kind: CloudProfile
     name: ironcore-metal
   credentialsBindingName: metal-wi-{{ $region }}
-  seedName: mgmt-{{ $region }}
+  seedName: {{ default (printf "cp-%s" $region) $cluster.seedName }}
   region: {{ $region }}
   networking:
     pods: {{ default $.Values.networking.pods $cluster.networking.pods }}
@@ -136,6 +136,13 @@ spec:
                   {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
                   {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
+                  {{- /* Block non-pod nodes from re-exporting mesh-learned /32 LB routes to eBGP TOR peers */}}
+                  {{- if $.Values.networking.overlay }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: In
+                    action: Reject
+                    source: RemotePeers
+                  {{- end }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject

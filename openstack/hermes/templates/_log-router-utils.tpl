@@ -164,9 +164,9 @@
       name: log-router-secret
       key: OS_PASSWORD
 - name: OS_PROJECT_DOMAIN_NAME
-  value: 'ccadmin'
+  value: '{{ $.Values.logRouter.swift.writerProjectDomain }}'
 - name: OS_PROJECT_NAME
-  value: 'cloud_admin'
+  value: '{{ $.Values.logRouter.swift.writerProject }}'
 - name: OS_REGION_NAME
   value: {{ required ".Values.global.region must be set when logRouter.swift.enabled=true (used for Swift endpoint catalog lookup)" $.Values.global.region | quote }}
 - name: OS_USER_DOMAIN_NAME

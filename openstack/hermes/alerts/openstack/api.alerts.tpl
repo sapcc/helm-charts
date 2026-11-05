@@ -18,21 +18,6 @@ groups:
       description: "{{`{{ $labels.kubernetes_name }}`}} is producing HTTP responses with 5xx status codes."
       summary: "Server errors on {{`{{ $labels.kubernetes_name }}`}}"
 
-  - alert: OpenstackHermesKeystoneAvail
-    expr: sum(rate(hermes_logon_errors_count[10m])) > 0
-    for: 15m
-    labels:
-      context: availability
-      dashboard: hermes-api
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-api"
-      service: hermes
-      severity: warning
-      tier: os
-      support_group: observability
-    annotations:
-      description: Hermes API is affected by errors when accessing Keystone
-      summary: Hermes availability affected by Keystone issues
-
   - alert: OpenstackHermesElasticAvail
     expr: sum(rate(hermes_storage_errors_count[10m])) > 0
     for: 15m
@@ -57,7 +42,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 unacknowledged messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
       playbook: "docs/devops/alert/hermes/#{{`{{ $labels.check }}`}}"
@@ -76,7 +60,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 ready messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -96,7 +79,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 1,000,000 ready messages in {{`{{ $labels.kubernetes_name }}`}}. A queue is not draining and the RabbitMQ volume is at risk of filling."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -120,7 +102,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "Broker {{`{{ $labels.pod }}`}} has ready messages but ZERO consumers -- it is stranded and will fill the disk if not drained."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -142,7 +123,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "Broker {{`{{ $labels.pod }}`}} has been stranded (ready messages, ZERO consumers) for over an hour and will fill the disk."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -162,7 +142,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: rabbitmq
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       meta: "{{`{{ $labels.pod }}`}} has hit the RabbitMQ free-disk watermark and is now BLOCKING publishers. Audit ingestion is stopping on this broker."
       playbook: "docs/devops/alert/rabbitmq/#ready"
@@ -179,7 +158,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
       playbook: "docs/devops/alert/hermes"
@@ -197,7 +175,6 @@ groups:
       support_group: observability
       service: hermes
       no_alert_on_absence: "true" # kafka output is disabled by default; metric is absent when logstash.kafka.enabled=false
-      dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash Kafka output plugin is failing to deliver audit events"
       playbook: "docs/devops/alert/hermes"
@@ -214,7 +191,6 @@ groups:
       tier: os
       support_group: observability
       service: hermes
-      dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
       meta: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has failed enriching data with Metis"
       playbook: "docs/devops/alert/hermes"
@@ -275,20 +251,37 @@ groups:
       description: "Log Router flush retries have been exhausted and partitions are being routed to the DLQ. Audit events are not being written to the primary S3/Ceph bucket. Check S3 connectivity, bucket Object Lock configuration, and credentials."
       summary: "Log Router falling back to DLQ — data not reaching S3"
 
-  - alert: OpenstackHermesLogRouterAdminWriteErrors
-    expr: sum(rate(log_router_admin_write_errors_total[5m])) > 0
+  - alert: OpenstackHermesLogRouterAllWritesDenied
+    expr: sum(increase(log_router_events_dropped_total{reason="access_denied"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
     for: 5m
     labels:
       context: log-router
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: critical
+      severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router admin-tier write errors — compliance audit copies may be missing from the admin bucket"
+      meta: "Log Router: every write is denied by the object store, events are being dropped"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "Log Router is failing to write to the admin-tier storage. The admin tier provides unconditional compliance copies of all audit events. Sustained errors mean audit records are missing from the admin bucket."
-      summary: "Log Router admin-tier write errors — compliance data at risk"
+      description: "Log Router is dropping events as access_denied and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration). A lost storage role does not show up here, see OpenstackHermesLogRouterFlushFailing."
+      summary: "Log Router writes denied for all tenants"
+
+  - alert: OpenstackHermesLogRouterFlushFailing
+    expr: sum(increase(log_router_flush_errors_total[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
+    for: 5m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      meta: "Log Router cannot write to object storage, events are kept in the WAL"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router has had flush errors and flushed nothing for 15m, so it cannot write anywhere. Likely causes are a lost storage role (RGW answers 401), RGW or Keystone being down, or bad credentials. Events are kept in the WAL and retried, nothing is dropped yet, but the WAL grows until this is fixed."
+      summary: "Log Router cannot flush to object storage"
 {{- end }}

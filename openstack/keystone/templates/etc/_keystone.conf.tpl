@@ -146,7 +146,9 @@ disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inacti
 {{- end }}
 
 [oslo_middleware]
-enable_proxy_headers_parsing = true
+# When the pod terminates TLS directly there is no trusted proxy in front, so
+# Forwarded/X-Forwarded-* headers supplied by clients must not be trusted.
+enable_proxy_headers_parsing = {{ if include "keystone.tls.ingressActive" . }}true{{ else }}false{{ end }}
 
 [oslo_policy]
 # This option controls whether or not to enforce scope when evaluating
@@ -208,5 +210,8 @@ trusted_dashboard = http://localhost:4001/verify-auth-token
 trusted_dashboard = https://localhost:4001/verify-auth-token
 trusted_dashboard = http://127.0.0.1:4001/verify-auth-token
 trusted_dashboard = https://127.0.0.1:4001/verify-auth-token
+{{- end }}
+{{- range .Values.federation.additional_trusted_dashboards }}
+trusted_dashboard = {{ . }}
 {{- end }}
 {{- end }}

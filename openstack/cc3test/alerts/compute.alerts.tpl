@@ -12,7 +12,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Nova API is down"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -30,7 +29,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Nova API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -54,7 +52,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "VMWare vcenter API is down: {{`{{ $labels.name }}`}}"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-vcenter-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -75,7 +72,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "VMWare vcenter API is flapping"
-      dashboard: "cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-api-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-vcenter-api/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -93,7 +89,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-create-server-az/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -110,7 +105,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary is flapping for 2 hours, see last three reports for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-create-server-az/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -130,7 +124,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/{{`{{ $labels.service }}`}}/alerts/cc3test-alert-create-server-bb/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -147,7 +140,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary is flapping for 2 hours, see last three reports for more details"
-      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/{{`{{ $labels.service }}`}}/alerts/cc3test-alert-create-server-bb/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -167,7 +159,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-resize-server/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -184,7 +175,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary is flapping for 2 hours, see last three reports for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-resize-server/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -204,7 +194,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-start-stop-server/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -221,7 +210,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary is flapping for 2 hours, see last three reports for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-start-stop-server/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -241,7 +229,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary: {{`{{ $labels.name }}`}} is down, see report for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-create-server-userdata/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -258,7 +245,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "Openstack Compute Canary is flapping for 2 hours, see last three reports for more details"
-      dashboard: cc3test-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-create-server-userdata/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -276,7 +262,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "{{`{{ $labels.host }}`}}: nova-compute node is enabled but is down for 20 minutes.. see last three reports for more details"
-      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-openstack-agent-down/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
@@ -294,7 +279,6 @@ groups:
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
       meta: "{{`{{ $labels.host }}`}}: nova-compute host is disabled without reason. see last three reports for more details"
-      dashboard: cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-bb-vc-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/nova/alerts/cc3test-alert-openstack-service-disabled/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"

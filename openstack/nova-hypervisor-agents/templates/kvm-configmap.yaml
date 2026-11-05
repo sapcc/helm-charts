@@ -1,1 +1,8 @@
-{{ include "kvm_configmap" . }}
+{{- $hypervisors := .Values.hypervisors }}
+{{ include (print .Template.BasePath "/_kvm-configmap.yaml.tpl") . }}
+{{- range $name, $hv := $hypervisors }}
+{{- if dig "enabled" true $hv }}
+---
+{{ include (print $.Template.BasePath "/_hypervisor-instance-configmap.yaml.tpl") (tuple $ $name $hv) }}
+{{- end }}
+{{- end }}

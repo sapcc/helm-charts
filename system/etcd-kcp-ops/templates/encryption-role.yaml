@@ -13,7 +13,7 @@ rules:
     resources: ["secrets"]
     resourceNames: [{{ .Values.encryptionRotation.secretName | quote }}]
     verbs: ["get", "update", "patch"]
-  # Patch KubeadmControlPlane files[]
+  # Patch KubeadmControlPlane spec.rollout.after to trigger CP rollout
   - apiGroups: ["controlplane.cluster.x-k8s.io"]
     resources: ["kubeadmcontrolplanes"]
     resourceNames: [{{ .Values.encryptionRotation.kcpName | quote }}]
@@ -21,5 +21,9 @@ rules:
   # Check Machine rollout status
   - apiGroups: ["cluster.x-k8s.io"]
     resources: ["machines"]
+    verbs: ["list"]
+  # Check KubeadmConfig Secret resolution status
+  - apiGroups: ["bootstrap.cluster.x-k8s.io"]
+    resources: ["kubeadmconfigs"]
     verbs: ["list"]
 {{- end }}
