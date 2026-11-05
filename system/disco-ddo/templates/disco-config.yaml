@@ -1,0 +1,23 @@
+{{- if eq .Values.mode "seed" }}
+{{- $region := "" -}}
+{{- if .Values.global -}}{{- $region = .Values.global.region | default "" -}}{{- end -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: disco-config
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+type: Opaque
+stringData:
+  DEFAULT_DNS_RECORD: {{ required ".Values.record missing" .Values.record | replace "${REGION}" $region | quote }}
+  DEFAULT_DNS_ZONE_NAME: {{ required ".Values.openstack.zoneName missing" .Values.openstack.zoneName | replace "${REGION}" $region | quote }}
+  OS_AUTH_URL: {{ required ".Values.openstack.authURL missing" .Values.openstack.authURL | replace "${REGION}" $region | quote }}
+  OS_PASSWORD: {{ required ".Values.openstack.password missing" .Values.openstack.password | replace "${REGION}" $region | quote }}
+  OS_PROJECT_DOMAIN_NAME: {{ required ".Values.openstack.projectDomainName missing" .Values.openstack.projectDomainName | replace "${REGION}" $region | quote }}
+  OS_PROJECT_NAME: {{ required ".Values.openstack.projectName missing" .Values.openstack.projectName | replace "${REGION}" $region | quote }}
+  OS_REGION_NAME: {{ required ".Values.openstack.regionName missing" .Values.openstack.regionName | replace "${REGION}" $region | quote }}
+  OS_USER_DOMAIN_NAME: {{ required ".Values.openstack.userDomainName missing" .Values.openstack.userDomainName | replace "${REGION}" $region | quote }}
+  OS_USERNAME: {{ required ".Values.openstack.username missing" .Values.openstack.username | replace "${REGION}" $region | quote }}
+{{- end }}

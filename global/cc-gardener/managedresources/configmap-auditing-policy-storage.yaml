@@ -13,6 +13,16 @@ data:
     omitStages:
       - "RequestReceived"
     rules:
+      # Lease renewals and events are high-volume noise; their deletes are still logged.
+      - level: None
+        verbs: ["create", "update", "patch"]
+        resources:
+          - group: "coordination.k8s.io"
+            resources: ["leases"]
+          - group: ""
+            resources: ["events"]
+          - group: "events.k8s.io"
+            resources: ["events"]
       - level: Metadata
         verbs: ["create"]
         resources:
@@ -29,7 +39,7 @@ data:
         verbs: ["get", "list", "watch"]
         resources:
           - group: ""
-            resources: ["configmaps"]
+            resources: ["configmaps", "serviceaccounts"]
       - level: Metadata
         resources:
           - group: "apps"
@@ -37,6 +47,17 @@ data:
           - group: ""
             resources: ["pods"]
       - level: Metadata
+        resources:
+          - group: ""
+            resources:
+              - "pods/exec"
+              - "pods/attach"
+              - "pods/portforward"
+              - "pods/log"
+              - "pods/proxy"
+              - "services/proxy"
+              - "nodes/proxy"
+      - level: Request
         resources:
           - group: "rbac.authorization.k8s.io"
             resources:
@@ -49,5 +70,5 @@ data:
           - group: ""
             resources: ["nodes"]
       - level: Metadata
-        verbs: ["create", "update", "patch", "delete"]
+        verbs: ["create", "update", "patch", "delete", "deletecollection"]
 {{- end }}
