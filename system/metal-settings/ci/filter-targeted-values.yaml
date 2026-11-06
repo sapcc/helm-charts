@@ -14,40 +14,12 @@ CRDVersionControl:
 # Real, per-cluster override: restrict to sci-k8s-controlplane only (see values.yaml's "Machine
 # inventory" comment - a cluster override file defines its own top-level rollouts.Types to deploy
 # to a specific subset of the chart's known cluster types instead of the full default catalog).
-# Workflow must be inlined here (not aliased) since YAML anchors don't persist across separate
-# values files merged by Helm.
+# Workflow is already defined in the chart's own values.yaml, so it's referenced here by name
+# (tpl-evaluated against the fully-merged .Values tree at render time) 
 rollouts:
   Types:
     sci-k8s-controlplane:
-      workflow:
-        bmc-settings-initial:
-          order: 1
-          kind: BMCSettingsSet
-          settingsKey: bmc.settings.initialSettings
-          enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"
-        bmc-version:
-          order: 2
-          kind: BMCVersionSet
-          versionKey: bmc.versions.defaultVersion
-        bios-version:
-          order: 3
-          kind: BIOSVersionSet
-          versionKey: bios.versions.defaultVersion
-        bmc-settings:
-          order: 4
-          kind: BMCSettingsSet
-          versionKey: bmc.versions.defaultVersion
-          settingsKey: bmc.settings.defaultSettings
-        bios-settings:
-          order: 5
-          kind: BIOSSettingsSet
-          versionKey: bios.versions.defaultVersion
-          settingsKey: bios.settings.defaultSettings
-        firmware:
-          order: 6
-          kind: FirmwareUpdateSet
-          paramsKey: firmware.params.defaultVersion
-          enabled: false
+      - workflow: "{{ .Values.Workflow | toYaml }}"
 
 parameters:
   hpe:

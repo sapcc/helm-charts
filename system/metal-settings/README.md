@@ -734,6 +734,15 @@ rollouts:
 
 Only the cluster type(s) listed here get Settings resources generated — see [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) above for the full rule-list schema.
 
+**Referencing `Workflow`/`WorkflowSciSettings`/etc. from a separate cluster override file:** , reference it as a `tpl`-evaluated string — by render time `.Values` is the fully-merged tree across every values file, so `.Values.Workflow` resolves correctly without any duplication:
+
+```yaml
+rollouts:
+  Types:
+    sci-k8s-runtime:
+      - workflow: "{{ .Values.Workflow | toYaml }}"
+```
+
 ### UC3: Disable a Vendor Entirely
 
 ```yaml

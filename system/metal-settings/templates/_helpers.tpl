@@ -380,6 +380,9 @@ Usage:
 {{- $matchedRules := include "metal-settings.matchingWorkflowsForClusterType" (dict "model" $model "clusterType" $clusterType "root" $root) | fromYamlArray -}}
 {{- range $ruleIndex, $matchedRule := $matchedRules -}}
 {{- $workflow := $matchedRule.workflow -}}
+{{- if kindIs "string" $workflow -}}
+{{- $workflow = tpl $workflow $root | fromYaml -}}
+{{- end -}}
 {{- $ruleInclude := $matchedRule.include | default dict -}}
 {{- $ruleExclude := $matchedRule.exclude -}}
 {{- $includeResources := dig "resources" list $ruleInclude -}}
