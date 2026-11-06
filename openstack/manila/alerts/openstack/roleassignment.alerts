@@ -1,0 +1,31 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-manila-roleassignment.alerts
+  rules:
+
+  # allowed role assignments for the `cloud_sharedfilesystem_admin` role:
+  # - group administrators@Default           in domain Default and project admin@Default
+  # - user admin@Default                     in domain Default, project admin@Default, and project cloud_admin@ccadmin
+  # - manila service user                    in project service@Default
+  # - group CCADMIN_CLOUD_ADMINS@ccadmin     in project cloud_admin@ccadmin
+  # - user castellum@Default                 in project cloud_admin@ccadmin
+  # - user elektra@Default                   in project cloud_admin@ccadmin
+  # - user openstack_exporter@Default        in project cloud_admin@ccadmin
+  # - user limes@Default                     in project cloud_admin@ccadmin
+  # - integration test user                  in projects cloud_admin@ccadmin and manila@ccadmin
+  # - backup user                            in project cloud_admin@ccadmin
+  # - cc3test users                          in project cloud_admin@ccadmin
+  - alert: OpenstackManilaUnexpectedCloudAdminRoleAssignments
+    expr: max(openstack_assignments_per_role{role_name="cloud_sharedfilesystem_admin"}) > 16
+    for: 10m
+    labels:
+      support_group: compute-storage-api
+      tier: os
+      service: manila
+      severity: info
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/unexpected-role-assignments'
+      meta: 'Unexpected role assignments found for Keystone role "cloud_sharedfilesystem_admin"'
+    annotations:
+      summary: 'Unexpected role assignments'
+      description: 'The Keystone role "cloud_sharedfilesystem_admin" is assigned to more users/groups than expected.'
