@@ -12,6 +12,13 @@ scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_
 [filter_scheduler]
 # Needs to be same on hypervisor and scheduler
 track_instance_changes = {{ .Values.scheduler.track_instance_changes }}
+{{- if $hypervisor.compute }}
+
+[compute]
+{{- range $k, $v := $hypervisor.compute }}
+{{ $k }} = {{ $v }}
+{{- end }}
+{{- end }}
 
 [ironic]
 # keystoneV3 values

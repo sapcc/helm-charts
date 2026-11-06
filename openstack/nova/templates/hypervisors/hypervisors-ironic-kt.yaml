@@ -7,7 +7,8 @@ metadata:
 requirements:
 - name: ironic-baremetal-blocks
 template: |
-    {{- $hypervisor := dict "name" "ironic-{{block.name}}" "ironic" (dict "conductor_group" "{{block.name}}" "peer_list" "nova-compute-ironic-{{block.name}}")}}
+    {{- /* Not for hypervisors_ironic (e.g. testing): nodes passing through would keep their aggregates */}}
+    {{- $hypervisor := dict "name" "ironic-{{block.name}}" "ironic" (dict "conductor_group" "{{block.name}}" "peer_list" "nova-compute-ironic-{{block.name}}") "compute" (dict "sync_placement_aggregates" true)}}
     {{- $hypervisor := merge $hypervisor .Values.defaults.hypervisor.ironic .Values.defaults.hypervisor.common }}
     {%- for block in blocks %}
 {{ tuple . $hypervisor | include "ironic_deployment" | indent 4 }}
