@@ -76,3 +76,19 @@ groups:
     annotations:
       description: Repo {{ $labels.repo }} entitlement check failed. Check the logs
       summary: Repo {{ $labels.repo }} entitlement check failed
+
+  - alert: OpenstackContentRepoPayloadsCephQuotaAlmostExhausted
+    expr: limitas_project_resource_usage{project="content-repo-payloads",service="ceph",resource="region-premium"} / limitas_project_resource_quota{project="content-repo-payloads",service="ceph",resource="region-premium"} > 0.95
+    for: 10m
+    labels:
+      support_group: containers
+      tier: os
+      service: repo
+      severity: warning
+      context: repo
+      meta: content-repo-payloads project is almost out of Ceph quota
+    annotations:
+      summary: content-repo-payloads project is almost out of Ceph quota
+      description: |
+        The content-repo-payloads project has used more than 95% of its Ceph region-premium quota.
+        Add a commitment in the <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/v2/cluster?cluster_id=current#/storage/edit/ceph/region-premium?resource=region-premium|Cloud Resource Admin view in Elektra> to increase the quota.
