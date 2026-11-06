@@ -15,7 +15,12 @@ metadata:
 {{- $relevant_domain_names := list }}
 {{- range $role, $grants := $.Values.limes.external_role_assignments }}
   {{- range $grant := $grants }}
-    {{- $relevant_domain_names = append $relevant_domain_names $grant.user_domain_name }}
+    {{- if $grant.user_domain_name }}
+      {{- $relevant_domain_names = append $relevant_domain_names $grant.user_domain_name }}
+    {{- end }}
+    {{- if $grant.group_domain_name }}
+      {{- $relevant_domain_names = append $relevant_domain_names $grant.group_domain_name }}
+    {{- end }}
     {{- $relevant_domain_names = append $relevant_domain_names $grant.project_domain_name }}
   {{- end }}
 {{- end }}
@@ -55,8 +60,12 @@ spec:
           {{- range $role := sortAlpha (keys $.Values.limes.external_role_assignments) }}
           {{- range $grant := index $.Values.limes.external_role_assignments $role }}
           {{- if and (eq $grant.project_domain_name $domain_name) (eq $grant.project_name $project_name) }}
-            - user: {{ $grant.user_name }}@{{ $grant.user_domain_name }}
-              role: {{ $role }}
+            - role: {{ $role }}
+              {{- if $grant.group_name }}
+              group: {{ $grant.group_name }}@{{ $grant.group_domain_name }}
+              {{- else }}
+              user: {{ $grant.user_name }}@{{ $grant.user_domain_name }}
+              {{- end }}
           {{- end }}
           {{- end }}
           {{- end }}

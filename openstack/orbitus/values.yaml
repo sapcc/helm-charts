@@ -1,0 +1,61 @@
+global:
+  linkerd_requested: true
+
+  srs:
+    is_classic_region: false # may be set to true by CI
+
+linkerd-support:
+  annotate_namespace: true
+
+owner-info:
+  support-group: containers
+  service: orbitus
+  maintainers:
+    - Stefan Majewsky
+    - Daniel Wagner
+    - Stefan Voigt
+    - Sandro Jäckel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/orbitus/
+
+orbitus:
+  image_tag: null # filled by CI at install time
+
+pricelist:
+  dryrun: true
+  pricelist_data_image_tag: null # filled by CI at install time
+  apis:
+    editor:   { skip: false, cpu_request: 100m, memory_limit: 512Mi, replicas: 1, has_db: false }
+    consumer: { skip: false, cpu_request: 100m, memory_limit: 512Mi, replicas: 2, has_db: true }
+
+  # Whether to apply resource requests/limits to containers.
+  resources:
+    enabled: true
+
+postgresql:
+  postgresVersion: 18
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 50Gi
+  databases:
+    pricelist: {}
+  users:
+    pricelist: {}
+  config:
+    log_min_duration_statement: 250
+    max_connections: 128
+  sharedMemoryLimit: 128Mi
+  alerts:
+    support_group: containers
+
+pgbackup:
+  alerts:
+    support_group: containers
+
+pgmetrics:
+  alerts:
+    support_group: containers
+
+alerts:
+  prometheus:
+    openstack: openstack

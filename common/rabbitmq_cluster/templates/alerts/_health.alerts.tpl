@@ -7,7 +7,7 @@
       severity: critical
       context: availability
       service: {{ include "alerts.service" . }}
-      dashboard: rabbitmq
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/rabbitmq"
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       playbook: 'docs/devops/alert/rabbitmq/'
     annotations:

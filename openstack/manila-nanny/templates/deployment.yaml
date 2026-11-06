@@ -37,8 +37,18 @@ spec:
       {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
       {{- end }}
-      nodeSelector:
-        zone: farm
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: zone
+                    operator: In
+                    values:
+                      - farm
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/worker
+                    operator: Exists
       volumes:
         - name: manila-etc
           configMap:

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: managedcloudprofiles.cloudprofilesync.cobaltcore.dev
 spec:
   group: cloudprofilesync.cobaltcore.dev
@@ -60,7 +60,7 @@ spec:
                             description: Version of the machine image
                             type: string
                         required:
-                        - name
+                          - name
                         type: object
                       machineType:
                         description: MachineType contains the bastions machine type
@@ -70,13 +70,25 @@ spec:
                             description: Name of the machine type
                             type: string
                         required:
-                        - name
+                          - name
                         type: object
                     type: object
                   caBundle:
                     description: CABundle is a certificate bundle which will be installed
                       onto every host machine of shoot cluster targeting this profile.
                     type: string
+                  controlPlane:
+                    description: |-
+                      ControlPlane holds settings that control what control-plane-related features shoots
+                      using this CloudProfile may configure.
+                    properties:
+                      allowZonePinning:
+                        description: |-
+                          AllowZonePinning enables shoots to set spec.controlPlane.zones to explicitly pin
+                          their control plane to specific seed zones. Only set to true for providers where
+                          zone names are globally consistent across all users of the provider.
+                        type: boolean
+                    type: object
                   kubernetes:
                     description: Kubernetes contains constraints regarding allowed
                       values of the 'kubernetes' block in the Shoot specification.
@@ -124,14 +136,14 @@ spec:
                                     format: date-time
                                     type: string
                                 required:
-                                - classification
+                                  - classification
                                 type: object
                               type: array
                             version:
                               description: Version is the version identifier.
                               type: string
                           required:
-                          - version
+                            - version
                           type: object
                         type: array
                     type: object
@@ -166,8 +178,8 @@ spec:
                             type: string
                           type: array
                       required:
-                      - name
-                      - values
+                        - name
+                        - values
                       type: object
                     type: array
                   machineImages:
@@ -213,7 +225,7 @@ spec:
                               classification:
                                 description: |-
                                   Classification defines the state of a version (preview, supported, deprecated).
-
+                                  
                                   Deprecated: Is replaced by Lifecycle. mutually exclusive with it.
                                 type: string
                               cri:
@@ -241,7 +253,7 @@ spec:
                                               Runtime.
                                             type: string
                                         required:
-                                        - type
+                                          - type
                                         type: object
                                       type: array
                                     name:
@@ -249,13 +261,13 @@ spec:
                                         values are `containerd`.
                                       type: string
                                   required:
-                                  - name
+                                    - name
                                   type: object
                                 type: array
                               expirationDate:
                                 description: |-
                                   ExpirationDate defines the time at which this version expires.
-
+                                  
                                   Deprecated: Is replaced by Lifecycle; mutually exclusive with it.
                                 format: date-time
                                 type: string
@@ -275,7 +287,7 @@ spec:
                                       version.
                                     type: boolean
                                 required:
-                                - supported
+                                  - supported
                                 type: object
                               kubeletVersionConstraint:
                                 description: |-
@@ -308,19 +320,19 @@ spec:
                                       format: date-time
                                       type: string
                                   required:
-                                  - classification
+                                    - classification
                                   type: object
                                 type: array
                               version:
                                 description: Version is the version identifier.
                                 type: string
                             required:
-                            - version
+                              - version
                             type: object
                           type: array
                       required:
-                      - name
-                      - versions
+                        - name
+                        - versions
                       type: object
                     type: array
                   machineTypes:
@@ -347,16 +359,16 @@ spec:
                           type: object
                         cpu:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: CPU is the number of CPUs for this machine
                             type.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                         gpu:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: GPU is the number of GPUs for this machine
                             type.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
@@ -374,8 +386,8 @@ spec:
                           type: object
                         memory:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: Memory is the amount of memory for this machine
                             type.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
@@ -392,8 +404,8 @@ spec:
                               type: string
                             minSize:
                               anyOf:
-                              - type: integer
-                              - type: string
+                                - type: integer
+                                - type: string
                               description: |-
                                 MinSize is the minimal supported storage size.
                                 This overrides any other common minimum size configuration from `spec.volumeTypes[*].minSize`.
@@ -401,8 +413,8 @@ spec:
                               x-kubernetes-int-or-string: true
                             size:
                               anyOf:
-                              - type: integer
-                              - type: string
+                                - type: integer
+                                - type: string
                               description: StorageSize is the storage size.
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
@@ -410,18 +422,18 @@ spec:
                               description: Type is the type of the storage.
                               type: string
                           required:
-                          - class
-                          - type
+                            - class
+                            - type
                           type: object
                         usable:
                           description: Usable defines if the machine type can be used
                             for shoot clusters.
                           type: boolean
                       required:
-                      - cpu
-                      - gpu
-                      - memory
-                      - name
+                        - cpu
+                        - gpu
+                        - memory
+                        - name
                       type: object
                     type: array
                   providerConfig:
@@ -446,7 +458,7 @@ spec:
                                 description: Name is the name of the restriction.
                                 type: string
                             required:
-                            - name
+                              - name
                             type: object
                           type: array
                         labels:
@@ -483,11 +495,11 @@ spec:
                                   type: string
                                 type: array
                             required:
-                            - name
+                              - name
                             type: object
                           type: array
                       required:
-                      - name
+                        - name
                       type: object
                     type: array
                   seedSelector:
@@ -526,8 +538,8 @@ spec:
                               type: array
                               x-kubernetes-list-type: atomic
                           required:
-                          - key
-                          - operator
+                            - key
+                            - operator
                           type: object
                         type: array
                         x-kubernetes-list-type: atomic
@@ -564,8 +576,8 @@ spec:
                           type: string
                         minSize:
                           anyOf:
-                          - type: integer
-                          - type: string
+                            - type: integer
+                            - type: string
                           description: MinSize is the minimal supported storage size.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
@@ -577,13 +589,13 @@ spec:
                             for shoot clusters.
                           type: boolean
                       required:
-                      - class
-                      - name
+                        - class
+                        - name
                       type: object
                     type: array
                 required:
-                - kubernetes
-                - type
+                  - kubernetes
+                  - type
                 type: object
               garbageCollection:
                 description: GarbageCollection contains configuration for automated
@@ -598,8 +610,8 @@ spec:
                       now - MaxAge are eligible for deletion.
                     type: string
                     x-kubernetes-validations:
-                    - message: maxAge must not be negative
-                      rule: duration(self) >= duration('0s')
+                      - message: maxAge must not be negative
+                        rule: duration(self) >= duration('0s')
                 type: object
               kubernetesUpdate:
                 description: KubernetesUpdate contains the source and provider information
@@ -619,6 +631,30 @@ spec:
                         description: OCI contains configuration for the OCI component-descriptor
                           source.
                         properties:
+                          featureToCapabilityMap:
+                            additionalProperties:
+                              type: string
+                            description: |-
+                              FeatureToCapabilityMap maps raw feature_set annotation values (e.g. "_usidev")
+                              to boolean CloudProfile capability names (e.g. "usidev"). For each entry,
+                              presence of the key in the annotation produces CapabilityName: [true],
+                              absence produces CapabilityName: [false].
+                            type: object
+                          imageFilter:
+                            description: |-
+                              ImageFilter defines criteria for filtering source images before they are
+                              written into the CloudProfile. Only applies when this OCI source is used
+                              for machine image updates (not for Kubernetes version sources).
+                            properties:
+                              requiredFeatureSetValues:
+                                description: |-
+                                  RequiredFeatureSetValues lists exact values that must all be present in the
+                                  image's feature_set OCI annotation (e.g. "_usi", "scibase"). Images missing
+                                  any of these values are excluded from the CloudProfile entirely.
+                                items:
+                                  type: string
+                                type: array
+                            type: object
                           insecure:
                             description: Insecure disables TLS
                             type: boolean
@@ -636,9 +672,9 @@ spec:
                                 description: Namespace of a Secret.
                                 type: string
                             required:
-                            - key
-                            - name
-                            - namespace
+                              - key
+                              - name
+                              - namespace
                             type: object
                           registry:
                             description: Registry contains the hostname and port of
@@ -651,16 +687,16 @@ spec:
                             description: Username for authentication
                             type: string
                         required:
-                        - registry
-                        - repository
+                          - registry
+                          - repository
                         type: object
                       provider:
                         description: Provider is the provider name to select from
                           the kubernetes-version-data blob,
                         type: string
                     required:
-                    - oci
-                    - provider
+                      - oci
+                      - provider
                     type: object
                 type: object
               machineImageUpdates:
@@ -669,8 +705,12 @@ spec:
                 items:
                   properties:
                     imageName:
-                      description: ImagesName is the name of the image to maintain
+                      description: ImageName is the name of the image to maintain
                         automatically
+                      type: string
+                    minVersionForUpdate:
+                      description: MinVersionForUpdate specifies the minimum image version
+                        from which an in-place update to this version can be performed.
                       type: string
                     provider:
                       description: Provider contains configuration for a provider
@@ -689,8 +729,8 @@ spec:
                                 images
                               type: string
                           required:
-                          - registry
-                          - repository
+                            - registry
+                            - repository
                           type: object
                         openStack:
                           description: OpenStack contains configuration to update
@@ -709,6 +749,12 @@ spec:
                               description: AuthURLFormat is the Keystone endpoint
                                 format string with a single "%s" for the region.
                               type: string
+                            excludedSuffixes:
+                              description: ExcludedSuffixes is the list of version
+                                suffixes to skip when selecting images
+                              items:
+                                type: string
+                              type: array
                             keepLatest:
                               description: KeepLatest limits results to the newest
                                 N versions.
@@ -737,9 +783,9 @@ spec:
                                   description: Namespace of a Secret.
                                   type: string
                               required:
-                              - key
-                              - name
-                              - namespace
+                                - key
+                                - name
+                                - namespace
                               type: object
                             projectDomainName:
                               description: ProjectDomainName scopes the token domain.
@@ -760,18 +806,46 @@ spec:
                             username:
                               description: Username for authentication.
                               type: string
+                            versionOffset:
+                              description: VersionOffset controls how many newest
+                                GardenLinux versions to skip before applying KeepLatest.
+                              type: integer
                           required:
-                          - authURLFormat
-                          - passwordSecret
-                          - projectDomainName
-                          - projectName
-                          - regions
-                          - userDomainName
-                          - username
+                            - authURLFormat
+                            - passwordSecret
+                            - projectDomainName
+                            - projectName
+                            - regions
+                            - userDomainName
+                            - username
                           type: object
                         oci:
                           description: OCI contains configuration for an OCI source.
                           properties:
+                            featureToCapabilityMap:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                FeatureToCapabilityMap maps raw feature_set annotation values (e.g. "_usidev")
+                                to boolean CloudProfile capability names (e.g. "usidev"). For each entry,
+                                presence of the key in the annotation produces CapabilityName: [true],
+                                absence produces CapabilityName: [false].
+                              type: object
+                            imageFilter:
+                              description: |-
+                                ImageFilter defines criteria for filtering source images before they are
+                                written into the CloudProfile. Only applies when this OCI source is used
+                                for machine image updates (not for Kubernetes version sources).
+                              properties:
+                                requiredFeatureSetValues:
+                                  description: |-
+                                    RequiredFeatureSetValues lists exact values that must all be present in the
+                                    image's feature_set OCI annotation (e.g. "_usi", "scibase"). Images missing
+                                    any of these values are excluded from the CloudProfile entirely.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
                             insecure:
                               description: Insecure disables TLS
                               type: boolean
@@ -789,9 +863,9 @@ spec:
                                   description: Namespace of a Secret.
                                   type: string
                               required:
-                              - key
-                              - name
-                              - namespace
+                                - key
+                                - name
+                                - namespace
                               type: object
                             registry:
                               description: Registry contains the hostname and port
@@ -804,18 +878,24 @@ spec:
                               description: Username for authentication
                               type: string
                           required:
-                          - registry
-                          - repository
+                            - registry
+                            - repository
                           type: object
                       type: object
                   required:
-                  - imageName
-                  - provider
-                  - source
+                    - imageName
+                    - provider
+                    - source
                   type: object
                 type: array
+              machineImagesPaused:
+                description: |-
+                  MachineImagesPaused disables automatic machine image updates and keeps the
+                  existing CloudProfile machine images and provider config unchanged. Other
+                  updates (e.g. Kubernetes versions and base spec fields) still apply.
+                type: boolean
             required:
-            - cloudProfile
+              - cloudProfile
             type: object
           status:
             properties:
@@ -860,9 +940,9 @@ spec:
                     status:
                       description: status of the condition, one of True, False, Unknown.
                       enum:
-                      - "True"
-                      - "False"
-                      - Unknown
+                        - "True"
+                        - "False"
+                        - Unknown
                       type: string
                     type:
                       description: type of condition in CamelCase or in foo.example.com/CamelCase.
@@ -870,11 +950,11 @@ spec:
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
                   required:
-                  - lastTransitionTime
-                  - message
-                  - reason
-                  - status
-                  - type
+                    - lastTransitionTime
+                    - message
+                    - reason
+                    - status
+                    - type
                   type: object
                 type: array
               status:

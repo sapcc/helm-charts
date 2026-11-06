@@ -1,0 +1,23 @@
+{{- if and .Values.webhookInjector.metrics.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "ipam-capi-remote.fullname" . }}-webhook-injector
+  labels:
+    {{- include "ipam-capi-remote.labels" . | nindent 4 }}
+    plugin: kube-monitoring
+spec:
+  selector:
+    matchLabels:
+      {{- include "ipam-capi-remote.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: webhook-injector-metrics
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: metrics
+      interval: 60s
+      relabelings:
+        - targetLabel: job
+          replacement: ipam-capi-webhook-injector
+{{- end }}

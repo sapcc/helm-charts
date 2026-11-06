@@ -1,20 +1,61 @@
-{{- range $target := list "storage" "thanos-metal" }}
-{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.yaml" $target) }}
+{{- range $path, $bytes := $.Files.Glob "alerts/storage/*.yaml" }}
 {{- with $ }}
+{{- if .Values.podMonitor.enabled }}
+{{- range $az := required ".Values.global.availability_zones missing" .Values.global.availability_zones }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "netapp-harvest.fullname" . }}-{{ printf "%s" $path | trimSuffix ".yaml" | replace "/"  "-" }}
+  name: {{ printf "%s-%s" (include "netapp-harvest.fullname" $) (trimSuffix ".yaml" $path | replace "/" "-") }}-{{ $az }}
+  labels:
+    {{- include "netapp-harvest.labels" $ | nindent 4 }}
+    type: alerting-rules
+    prometheus: {{ printf "storage-metrics-product-%s" $az }}
+spec:
+  {{ printf "%s" $bytes | nindent 2 }}
+---
+{{- end }}
+{{- else }}
+{{- $spec := fromYaml (printf "%s" $bytes) }}
+{{- if contains "alerts/storage/maia.yaml" $path }}
+{{- $centralSpec := fromYaml ($.Files.Get "alerts/thanos-regional/manila-maia.yaml") }}
+{{- $rules := concat (index $spec.groups 0).rules (index $centralSpec.groups 0).rules }}
+{{- $_ := set (index $spec.groups 0) "rules" $rules }}
+{{- end }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}-{{ printf "%s" $path | trimSuffix ".yaml" | replace "/" "-" }}
   labels:
     {{- include "netapp-harvest.labels" . | nindent 4 }}
     type: alerting-rules
-    {{- if eq (first (splitList "-" $target)) "thanos" }}
-    thanos-ruler: {{ trimPrefix "thanos-" $target }}
+    prometheus: storage
+spec:
+  {{- toYaml $spec | nindent 2 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- range $path, $bytes := $.Files.Glob "alerts/thanos-regional/*.yaml" }}
+{{- with $ }}
+{{- $isExistingMetalAlert := contains "netapp.yaml" $path }}
+{{- $isPerAZAlert := contains "manila-maia.yaml" $path }}
+{{- if or .Values.podMonitor.enabled (not $isPerAZAlert) }}
+{{- $ruleTarget := ternary "thanos-metal" "thanos-regional" $isExistingMetalAlert }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}-{{ $path | replace "thanos-regional" $ruleTarget | trimSuffix ".yaml" | replace "/" "-" }}
+  labels:
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+    type: alerting-rules
+    {{- if .Values.podMonitor.enabled }}
+    thanos-ruler: regional
+    {{- else }}
+    thanos-ruler: metal
+    {{- end }}
     # Disable absent-metrics-operator (AMO) for Thanos-Ruler alerts.
     absent-metrics-operator/disable: "true"
-    {{- else }}
-    prometheus: {{ $target }}
-    {{- end }}
 spec:
   {{ printf "%s" $bytes | nindent 2 }}
 ---

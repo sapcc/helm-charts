@@ -15,7 +15,7 @@ controllerManager:
       kubernetesServiceHost: apiserver-url
     image:
       repository: controller
-      tag: v1.1.1-rc.0
+      tag: v1.1.1
     resources:
       limits:
         cpu: 500m
@@ -33,7 +33,11 @@ controllerManager:
   replicas: 1
   strategy:
     type: Recreate
-  tolerations: []
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
   topologySpreadConstraints: []
   serviceAccountName: ipam-capi-remote-webhook-injector
 kubernetesClusterDomain: cluster.local
@@ -56,3 +60,7 @@ webhook:
 webhookInjector:
   repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector
   tag: latest
+  metrics:
+    enabled: true
+    # support_group label attached to all alerts.
+    alertSupportGroup: network-api

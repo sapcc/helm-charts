@@ -1,0 +1,23 @@
+{{- if and .Values.webhookInjector.metrics.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "chart.fullname" . }}-webhook-injector
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    plugin: kube-monitoring
+spec:
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: webhook-injector-metrics
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: metrics
+      interval: 60s
+      relabelings:
+        - targetLabel: job
+          replacement: metal-operator-webhook-injector
+{{- end }}

@@ -1,0 +1,30 @@
+{{- if and (eq .Values.mode "seed") .Values.certManager.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: disco-selfsigned-issuer
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: disco-serving-cert
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  dnsNames:
+  - disco-webhook-service.{{ .Release.Namespace }}.svc
+  - disco-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: disco-selfsigned-issuer
+  secretName: tls-disco-webhook-service
+{{- end }}

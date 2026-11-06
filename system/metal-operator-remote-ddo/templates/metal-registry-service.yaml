@@ -1,0 +1,18 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart.fullname" . }}-metal-registry-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  type: {{ .Values.metalRegistryService.type }}
+  selector:
+    control-plane: controller-manager
+    {{- include "chart.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.metalRegistryService.ports | toYaml | nindent 2 }}
+{{- end }}

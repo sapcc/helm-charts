@@ -53,3 +53,19 @@ spec:
   vxlanMode: Never
 {{- end -}}
 {{- end -}}
+
+{{- range .Values.bgp.serviceLoadBalancerIPs }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: IPPool
+metadata:
+  name: ippool-{{ .cidr | replace "." "-" | replace "/" "-" }}
+spec:
+  allowedUses:
+    - LoadBalancer
+  assignmentMode: Manual
+  blockSize: {{ .cidr | splitList "/" | last }}
+  cidr: {{ .cidr }}
+  disabled: false
+  natOutgoing: true
+{{- end }}

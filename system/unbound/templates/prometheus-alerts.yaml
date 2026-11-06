@@ -61,6 +61,70 @@ spec:
         description: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting {{ "{{" }} $value | humanizePercentage {{ "}}" }} of the usual traffic.'
         summary: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting {{ "{{" }} $value | humanizePercentage {{ "}}" }} of the usual traffic compared to the 24h avegrage.'
 
+    - alert: Dns{{ $.Values.unbound.name | title }}ImbalancedPodTraffic
+      expr: >
+        sum by (pod) (rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))
+        / ignoring(pod) group_left()
+        sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))
+        > {{ add 50 (.Values.unbound.tolerable_pod_traffic_distribution_deviation | default 10) }}/100
+        or
+        sum by (pod) (rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))
+        / ignoring(pod) group_left()
+        sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))
+        < {{ sub 50 (.Values.unbound.tolerable_pod_traffic_distribution_deviation | default 10) }}/100
+      for: 5m
+      labels:
+        context: unbound
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
+        meta: {{ $.Values.unbound.name }}
+        service: unbound
+        severity: warning
+        support_group: coredns
+        tier: os
+        playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+      annotations:
+        summary: '{{ "{{" }} $labels.pod {{ "}}" }} in {{ $.Values.global.region }} is getting a disproportionate amount of traffic.'
+        description: '{{ "{{" }} $labels.pod {{ "}}" }} in {{ $.Values.global.region }}
+          has been getting a disproportionate amount of traffic in the past 5 minutes.
+          Expected between
+          {{ sub 50 ($.Values.unbound.tolerable_traffic_distribution_deviation | default 10) }}%
+          and
+          {{ add 50 ($.Values.unbound.tolerable_traffic_distribution_deviation | default 10) }}%
+          of the total traffic, ideally as close to 50% as possible.
+          Currently getting {{ "{{" }} $value | humanizePercentage {{ "}}" }}.'
+
+    - alert: Dns{{ $.Values.unbound.name | title }}ImbalancedPodSERVFAILs
+      expr: >
+        sum by (pod) (rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        / ignoring(pod) group_left()
+        sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        > {{ add 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
+        or
+        sum by (pod) (rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        / ignoring(pod) group_left()
+        sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        < {{ sub 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
+      for: 5m
+      labels:
+        context: unbound
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
+        meta: {{ $.Values.unbound.name }}
+        service: unbound
+        severity: warning
+        support_group: coredns
+        tier: os
+        playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+      annotations:
+        description: '{{ "{{" }} $labels.pod {{ "}}" }} in {{ $.Values.global.region }} is getting a disproportionate amount of SERVFAIL errors.'
+        summary: '{{ "{{" }} $labels.pod {{ "}}" }} in {{ $.Values.global.region }}
+          has been getting a disproportionate amount of SERVFAIL errors in the past 5 minutes.
+          Expected between
+          {{ sub 50 ($.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}%
+          and
+          {{ add 50 ($.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}%
+          of the total amount of SERVFAIL errors, ideally as close to 50% as possible.
+          Currently getting {{ "{{" }} $value | humanizePercentage {{ "}}" }}.'
+
 {{- if .Values.unbound.balancedTrafficExpected }}
     - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfTraffic
       expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))/sum(rate(unbound_queries_total{namespace="{{ $.Release.Namespace }}"}[5m]))

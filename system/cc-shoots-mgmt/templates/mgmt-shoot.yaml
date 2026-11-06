@@ -33,7 +33,9 @@ spec:
       {{- if not $.Values.networking.overlay }}
       backend: bird
       {{- end }}
-      {{- if $.Values.networking.overlay }}
+      {{- if $cluster.networking.vethMTU }}
+      vethMTU: {{ $cluster.networking.vethMTU | quote }}
+      {{- else if $.Values.networking.overlay }}
       vethMTU: "8930"
       {{- else }}
       vethMTU: "8950"
@@ -132,10 +134,10 @@ spec:
               assignmentMode: {{ default "Automatic" .assignmentMode }}
             {{- end }}
           calicoBgpConfig:
-            asNumber: {{ $cluster.networking.asNumber }}
+            asNumber: {{ include "asNumber" $cluster.networking.asNumber }}
             bgpPeer:
             {{- range $cluster.networking.bgpPeers }}
-            - asNumber: {{ printf "%.0f" (default $cluster.networking.asNumber .asNumber) }}
+            - asNumber: {{ include "asNumber" (default $cluster.networking.asNumber .asNumber) }}
               nodeSelector: {{ .nodeSelector }}
               peerIP: {{ .peerIP }}
               filters:
@@ -147,12 +149,19 @@ spec:
                   {{- /* Skip /32 and /128 host routes - these are anycast VIPs that must be advertised via BGP */}}
                   {{- range $cluster.networking.externalServices }}
                   {{- if not (or (hasSuffix "/32" .cidr) (hasSuffix "/128" .cidr)) }}
+                  {{- /* Block non-pod nodes from re-exporting mesh-learned /32 LB routes to eBGP TOR peers */}}
+                  {{- if $.Values.networking.overlay }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: In
+                    action: Reject
+                    source: RemotePeers
+                  {{- end }}
                   - cidr: {{ .cidr }}
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
                   {{- end }}
-                  {{- if $.Values.networking.overlay }}        
+                  {{- if $.Values.networking.overlay }}
                   - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
                     matchOperator: In
                     action: Reject

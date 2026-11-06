@@ -58,11 +58,16 @@ prometheus-node-exporter:
 
   kubeRBACProxy:
     enabled: true
+    tls:
+      enabled: true
     proxyEndpointsPort: 8889
     image:
       registry: keppel.global.cloud.sap
       repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
       tag: v0.22.1
+
+  tlsSecret:
+    enabled: true
 
   extraArgs:
     - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
@@ -98,9 +103,6 @@ prober-static-alt-region:
   prometheusName: kubernetes
 
 http-keep-alive-monitor:
-  alert:
-    ignore_ingress_names:
-      - cfm
   image:
     repository: keppel.global.cloud.sap/ccloud/http-keep-alive-monitor
 
@@ -125,6 +127,11 @@ falco:
   falcoctl:
     image:
       registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+    artifact:
+      install:
+        enabled: false
+      follow:
+        enabled: false
 
   tolerations:
     - operator: Exists
@@ -135,6 +142,12 @@ falco:
       - --unbuffered
       - -o
       - json_output=true
+    initContainers:
+      - name: set-bpf-sysctl
+        image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco:0.45.2-debian
+        securityContext:
+          privileged: true
+        command: ["sh", "-c", "echo 1 > /proc/sys/kernel/unprivileged_bpf_disabled"]
 
   falco:
     rules_files:

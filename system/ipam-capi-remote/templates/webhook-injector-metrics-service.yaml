@@ -1,0 +1,18 @@
+{{- if .Values.webhookInjector.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ipam-capi-remote.fullname" . }}-webhook-injector-metrics
+  labels:
+    {{- include "ipam-capi-remote.labels" . | nindent 4 }}
+    app.kubernetes.io/component: webhook-injector-metrics
+spec:
+  ports:
+    - name: metrics
+      port: 8082
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "ipam-capi-remote.selectorLabels" . | nindent 4 }}
+    control-plane: controller-manager
+{{- end }}

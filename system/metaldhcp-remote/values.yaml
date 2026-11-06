@@ -1,0 +1,60 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/metaldhcp-remote
+
+# managedResourceNamespace is the shoot control plane namespace where ManagedResource
+# objects are created so Gardener reconciles CRDs and RBAC to the m-cluster.
+# Example: shoot--cp--m-qa-de-100
+managedResourceNamespace: ""
+
+metaldhcp:
+  namespace: ""  # defaults to .Release.Namespace (Gardener-managed)
+  createNamespace: false
+
+  image:
+    repository: ghcr.io/sap-cloud-infrastructure/metaldhcp
+    tag: "sha-9a1ce20"
+
+  networkInit:
+    image:
+      repository: ghcr.io/sap-cloud-infrastructure/metaldhcp-network-init
+      tag: "sha-9a1ce20"
+
+  podLabels:
+    networking.gardener.cloud/to-dns: allowed
+    networking.gardener.cloud/to-private-networks: allowed
+    networking.gardener.cloud/to-public-networks: allowed
+    networking.gardener.cloud/to-runtime-apiserver: allowed
+    networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+    networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+
+  rbac:
+    create: false  # RBAC for dhcpleases/oobsubnets is delivered to the m-cluster via ManagedResource
+
+  # remoteAPIServer is the m-cluster kube-apiserver address (host:port). Required.
+  # Gardener injects the token/CA into the <release-name>-remote-kubeconfig Secret via token-requestor.
+  remoteAPIServer: ""
+
+  externalIP: ""
+
+  server:
+    leaseTime: 3600s
+    logLevel: info
+    healthAddr: ":8080"
+
+  oob:
+    # namespace is omitted: metaldhcp-remote reads from the m-cluster API server (remoteAPIServer)
+    subnetLabels:
+      - key: dhcp
+        value: "true"
+    staticLeases: []
+    dnsServers: []
+    domain: ""
+    ntpServers: []
+
+  tftp:
+    enabled: false
+
+  debug:
+    enabled: false
+    image: nicolaka/netshoot

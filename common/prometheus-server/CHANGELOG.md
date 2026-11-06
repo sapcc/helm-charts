@@ -1,3 +1,11 @@
+## 8.3.0
+
+* bump Thanos sidecar to v0.42.5; prometheus-operator enables delayed compaction (blocks merged after upload) only for Thanos >= v0.42.0
+
+## 8.2.9
+
+* remove `disableCompaction` workaround; the Thanos sidecar path mismatch is fixed in prometheus-operator v0.94.0 (prometheus-operator/prometheus-operator#8763)
+
 ## 8.2.6
 
 * disable absent-metrics-operator for Thanos-Ruler alerts 

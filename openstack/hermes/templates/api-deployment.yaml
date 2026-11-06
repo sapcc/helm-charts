@@ -88,6 +88,18 @@ spec:
                 secretKeyRef:
                   name: hermes-audit-rabbitmq
                   key: password
+            {{- if .Values.hermes.dataplane_writer_user_id }}
+            {{- if not (kindIs "string" .Values.hermes.dataplane_writer_user_id) }}
+            {{- fail "hermes.dataplane_writer_user_id must be a quoted string" }}
+            {{- end }}
+            # Dataplane enable: the Keystone user id of hermes@Default (differs per region)
+            # that writes customer buckets.
+            - name: HERMES_DATAPLANE_WRITER_USER_ID
+              value: {{ .Values.hermes.dataplane_writer_user_id | quote }}
+            {{- end }}
+            # Catalog type of the Swift endpoint used for dataplane.
+            - name: HERMES_DATAPLANE_SWIFT_SERVICE_TYPE
+              value: {{ .Values.hermes.dataplane_swift_service_type | quote }}
           volumeMounts:
             - mountPath: "/etc/hermes"
               name: config

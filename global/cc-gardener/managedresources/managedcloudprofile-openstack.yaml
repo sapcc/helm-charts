@@ -22,11 +22,18 @@ spec:
     {{- end }}
     machineImages:
       {{- toYaml .Values.extensions.openstack.machineImages | nindent 6 }}
+    {{- if .Values.extensions.openstack.machineCapabilities }}
+    machineCapabilities: {{ toYaml .Values.extensions.openstack.machineCapabilities | nindent 4 }}
+    {{- end }}
     providerConfig:
       apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
       kind: CloudProfileConfig
       {{- if .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
       rescanBlockStorageOnResize: {{ .Values.extensions.openstack.providerConfig.rescanBlockStorageOnResize }}
+      {{- end }}
+      {{- if .Values.extensions.openstack.providerConfig.storageClasses }}
+      storageClasses:
+        {{- toYaml .Values.extensions.openstack.providerConfig.storageClasses | nindent 8 }}
       {{- end }}
       keystoneURLs:
       {{- range $region := .Values.extensions.openstack.regions }}
@@ -54,6 +61,8 @@ spec:
         - name: FloatingIP*
           region: eu-de-2
         - name: FloatingIP*
+          region: eu-de-3
+        - name: FloatingIP*
           region: eu-nl-1
         - name: FloatingIP*
           region: la-br-1
@@ -65,6 +74,8 @@ spec:
           region: na-us-2
         - name: FloatingIP*
           region: na-us-3
+        - name: FloatingIP*
+          region: qa-de-1
           # from cloudprofile converged-cloud-cis
         - name: cis-ciea-*
           region: ap-ae-1
@@ -85,6 +96,8 @@ spec:
         - name: cis-ciea-*
           region: eu-de-2
         - name: cis-ciea-*
+          region: eu-de-3
+        - name: cis-ciea-*
           region: eu-nl-1
         - name: cis-ciea-*
           region: la-br-1
@@ -115,6 +128,8 @@ spec:
         - name: cis-gmp-*
           region: eu-de-2
         - name: cis-gmp-*
+          region: eu-de-3
+        - name: cis-gmp-*
           region: eu-nl-1
         - name: cis-gmp-*
           region: la-br-1
@@ -130,6 +145,8 @@ spec:
           region: eu-de-1
         - name: cis-sni-*
           region: eu-de-2
+        - name: cis-sni-*
+          region: eu-de-3
           # from cloudprofile converged-cloud-neo
         - name: neo-*
           region: eu-de-1
@@ -152,6 +169,8 @@ spec:
         - name: neo-gmp-*
           region: eu-de-2
         - name: neo-gmp-*
+          region: eu-de-3
+        - name: neo-gmp-*
           region: eu-nl-1
         - name: neo-gmp-*
           region: la-br-1
@@ -182,6 +201,8 @@ spec:
         - name: gmp-*
           region: eu-de-2
         - name: gmp-*
+          region: eu-de-3
+        - name: gmp-*
           region: eu-nl-1
         - name: gmp-*
           region: la-br-1
@@ -200,6 +221,7 @@ spec:
   {{- if .Values.extensions.kubernetesVersionUpdate }}
   kubernetesUpdate: {{ toYaml .Values.extensions.kubernetesVersionUpdate | nindent 4 }}
   {{- end }}
+  machineImagesPaused: {{ .Values.extensions.openstack.machineImagesPaused }}
   machineImageUpdates:
   - imageName: gardenlinux
     source:
@@ -211,6 +233,13 @@ spec:
         {{- end }}
         namePrefix: {{ .Values.extensions.openstack.glance.namePrefix | quote }}
         keepLatest: {{ .Values.extensions.openstack.glance.keepLatest }}
+        versionOffset: {{ .Values.extensions.openstack.glance.versionOffset }}
+        {{- with .Values.extensions.openstack.excludedSuffixes }}
+        excludedSuffixes:
+          {{- range . }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
         projectName: {{ .Values.extensions.openstack.glance.projectName | quote }}
         projectDomainName: {{ .Values.extensions.openstack.glance.projectDomainName | quote }}
         username: {{ .Values.extensions.openstack.glance.username | quote }}

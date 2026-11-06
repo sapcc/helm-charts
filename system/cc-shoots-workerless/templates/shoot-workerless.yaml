@@ -3,6 +3,7 @@
 {{- $clusterType := include "cc-shoots-workerless.clusterType" $ }}
 {{- $supportGroup := include "cc-shoots-workerless.supportGroup" $ }}
 {{- $clusterKubernetes := get $cluster "kubernetes" | default dict }}
+{{- $controlPlaneZones := get $cluster "controlPlaneZones" | default list }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
@@ -34,10 +35,41 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: {{ printf "%s-auth-%s" $clusterType $regionName }}
+      {{- if $.Values.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: {{ required "auditing.auditPolicyConfigMapName is required" $.Values.auditing.auditPolicyConfigMapName }}
+      {{- end }}
       encryptionConfig:
         resources:
         - configmaps
         provider:
           type: aescbc
+  {{- if $controlPlaneZones }}
+  controlPlane:
+    zones:
+    {{- range $controlPlaneZones }}
+      - {{ . }}
+    {{- end }}
+  {{- end }}
   seedName: {{ include "cc-shoots-workerless.seedName" (dict "clusterName" $clusterName "cluster" $cluster "regionName" $regionName "seedType" $.Values.cluster.seedType) }}
+  {{- if $.Values.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ required "auditing.url is required" $.Values.auditing.url }}
+          tls:
+            secretReferenceName: {{ required "auditing.mtlsSecretName is required" $.Values.auditing.mtlsSecretName }}
+  resources:
+  - name: {{ required "auditing.mtlsSecretName is required" $.Values.auditing.mtlsSecretName }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: {{ required "auditing.mtlsSecretName is required" $.Values.auditing.mtlsSecretName }}
+  {{- end }}
 {{- end }}

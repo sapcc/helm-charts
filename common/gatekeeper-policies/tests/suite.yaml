@@ -466,6 +466,15 @@ tests:
     object: fixtures/GkPodSecurityV2/image-repo-parsing.yaml
     assertions:
     - violations: no
+  - name: pod-security-v2-allow-version-suffix-in-repo
+    object: fixtures/GkPodSecurityV2/image-repo-version-suffix-allow.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-reject-version-suffix-in-repo
+    object: fixtures/GkPodSecurityV2/image-repo-version-suffix-reject.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true \(image = "test-app/unprivileged-v1_34_8"\)$'
   - name: pod-security-v2-reject-security-nightmare
     object: fixtures/GkPodSecurityV2/invalid.yaml
     assertions:
