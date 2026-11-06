@@ -91,6 +91,16 @@
       name: log-router-etc
       key: LOG_ROUTER_MAX_BUFFER_MEMORY_MB
       optional: true
+- name: LOG_ROUTER_HOLD_MAX_BYTES_PER_TENANT
+  valueFrom:
+    configMapKeyRef:
+      name: log-router-etc
+      key: LOG_ROUTER_HOLD_MAX_BYTES_PER_TENANT
+- name: LOG_ROUTER_HOLD_MAX_BYTES
+  valueFrom:
+    configMapKeyRef:
+      name: log-router-etc
+      key: LOG_ROUTER_HOLD_MAX_BYTES
 - name: LOG_ROUTER_RABBITMQ_QUEUE
   valueFrom:
     configMapKeyRef:
@@ -202,5 +212,5 @@
       name: '{{ $.Release.Name }}-pguser-{{ $.Values.logRouter.hermesDb.user }}'
       key: postgres-password
 - name: LOG_ROUTER_DB_URL
-  value: "postgres://{{ $.Values.logRouter.hermesDb.user }}:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/hermes?sslmode=disable"
+  value: "postgres://{{ $.Values.logRouter.hermesDb.user }}:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/hermes?sslmode=disable&connect_timeout=5"
 {{- end -}}

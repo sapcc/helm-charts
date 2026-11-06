@@ -392,7 +392,15 @@ logRouter:
     writerProject: "cloud_admin"
     writerProjectDomain: "ccadmin"
 
+  # hold budgets in GiB per pod (own WAL each, fractions ok). held events take up to ~1.4x their size in the WAL file,
+  # so 5 GiB held is ~7 GiB of the 10Gi volume (WAL alert at 80%). bigger volume: total ~50% of it (25 for 50Gi), per tenant <= total.
+  hold_max_gib_per_tenant: 2
+  hold_max_gib: 5
+
   wal:
+    # immutable on a running StatefulSet, helm upgrade fails. resize: check allowVolumeExpansion on the storage class
+    # of the log-router-wal-log-router-N PVCs, expand them, `kubectl -n hermes delete statefulset log-router --cascade=orphan`,
+    # deploy the new size and budgets, then `kubectl -n hermes rollout restart statefulset log-router`.
     storage: 10Gi
 
   resources:
