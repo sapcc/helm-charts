@@ -1,69 +1,79 @@
-# Test combination filtering - targeted deployment
-# This tests multiple filters combined (vendor + model + clusterType)
-biosSettings:
-  enabled: true
-  filters:
-    vendors:
-      included:
-        - dell
-      excluded: []
-    models:
-      included:
-        - poweredge-r7615
-      excluded: []
-    clusterTypes:
-      included:
-        - sci-k8s-controlplane
-      excluded: []
-    versions:
-      included: []
-      excluded: []
+# Test a targeted rollout - deploy only Dell PowerEdge R7615, sci-k8s-controlplane only
+# This tests combining parameters.<vendor/model>.enabled with a rollouts.Types override
+CRDVersionControl:
+  features:
+    biosSettings:
+      enabled: true
+    biosVersions:
+      enabled: true
+    bmcVersions:
+      enabled: true
+    bmcSettings:
+      enabled: true
 
-biosVersions:
-  enabled: true
-  filters:
-    vendors:
-      included:
-        - dell
-      excluded: []
-    models:
-      included:
-        - poweredge-r7615
-      excluded: []
-    versions:
-      included: []
-      excluded: []
+# Real, per-cluster override: restrict to sci-k8s-controlplane only (see values.yaml's "Machine
+# inventory" comment - a cluster override file defines its own top-level rollouts.Types to deploy
+# to a specific subset of the chart's known cluster types instead of the full default catalog).
+# Workflow must be inlined here (not aliased) since YAML anchors don't persist across separate
+# values files merged by Helm.
+rollouts:
+  Types:
+    sci-k8s-controlplane:
+      workflow:
+        bmc-settings-initial:
+          order: 1
+          kind: BMCSettingsSet
+          settingsKey: bmc.settings.initialSettings
+          enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"
+        bmc-version:
+          order: 2
+          kind: BMCVersionSet
+          versionKey: bmc.versions.defaultVersion
+        bios-version:
+          order: 3
+          kind: BIOSVersionSet
+          versionKey: bios.versions.defaultVersion
+        bmc-settings:
+          order: 4
+          kind: BMCSettingsSet
+          versionKey: bmc.versions.defaultVersion
+          settingsKey: bmc.settings.defaultSettings
+        bios-settings:
+          order: 5
+          kind: BIOSSettingsSet
+          versionKey: bios.versions.defaultVersion
+          settingsKey: bios.settings.defaultSettings
+        firmware:
+          order: 6
+          kind: FirmwareUpdateSet
+          paramsKey: firmware.params.defaultVersion
+          enabled: false
 
-bmcVersions:
-  enabled: true
-  filters:
-    vendors:
-      included:
-        - dell
-      excluded: []
-    models:
-      included:
-        - poweredge-r7615
-      excluded: []
-    versions:
-      included: []
-      excluded: []
-
-bmcSettings:
-  enabled: true
-  filters:
-    vendors:
-      included:
-        - dell
-      excluded: []
-    models:
-      included:
-        - poweredge-r660
-      excluded: []
-    clusterTypes:
-      included:
-        - sci-k8s-controlplane
-      excluded: []
-    versions:
-      included: []
-      excluded: []
+parameters:
+  hpe:
+    enabled: false
+  lenovo:
+    enabled: false
+  dell:
+    poweredge-r640:
+      enabled: false
+    poweredge-r660:
+      enabled: false
+    poweredge-r6715:
+      enabled: false
+    poweredge-r740:
+      enabled: false
+    poweredge-r740xd:
+      enabled: false
+    poweredge-r760:
+      enabled: false
+    poweredge-r770:
+      enabled: false
+    poweredge-r7715:
+      enabled: false
+    poweredge-r840:
+      enabled: false
+    poweredge-r860:
+      enabled: false
+    poweredge-xe9680:
+      enabled: false
