@@ -46,13 +46,13 @@ tests:
           path: spec.serverSelector.matchLabels["kubernetes.metal.cloud.sap/type"]
           value: poweredge-r7615
 
-  # These tests pin machines.dell.models.poweredge-r7615.chain.bios-version.params.imagePath
+  # These tests pin parameters.dell.poweredge-r7615.bios.versions.defaultVersion.imagePath
   # to a synthetic value via `set`, so they only assert the URI composition logic
   # (scheme + host/region/tld + imagePath) and stay stable if the real
   # firmware version/path in values.yaml changes.
   - it: should build image URI from firmwareRepo.host + global.region + global.tld + imagePath
     set:
-      machines.dell.models.poweredge-r7615.chain.bios-version.params.imagePath: /test-fw.EXE
+      parameters.dell.poweredge-r7615.bios.versions.defaultVersion.imagePath: /test-fw.EXE
     documentSelector:
       path: metadata.name
       value: dell-poweredge-r7615
@@ -64,7 +64,7 @@ tests:
   - it: should build image URI using overridden global.region
     set:
       global.region: qa-de-1
-      machines.dell.models.poweredge-r7615.chain.bios-version.params.imagePath: /test-fw.EXE
+      parameters.dell.poweredge-r7615.bios.versions.defaultVersion.imagePath: /test-fw.EXE
     documentSelector:
       path: metadata.name
       value: dell-poweredge-r7615
@@ -76,7 +76,7 @@ tests:
   - it: should use firmwareRepo.hostOverride instead of host+region+tld composition when set
     set:
       firmwareRepo.hostOverride: custom-repo.example.com
-      machines.dell.models.poweredge-r7615.chain.bios-version.params.imagePath: /test-fw.EXE
+      parameters.dell.poweredge-r7615.bios.versions.defaultVersion.imagePath: /test-fw.EXE
     documentSelector:
       path: metadata.name
       value: dell-poweredge-r7615
@@ -88,7 +88,7 @@ tests:
   - it: should build image URI using overridden firmwareRepo.scheme
     set:
       firmwareRepo.scheme: http
-      machines.dell.models.poweredge-r7615.chain.bios-version.params.imagePath: /test-fw.EXE
+      parameters.dell.poweredge-r7615.bios.versions.defaultVersion.imagePath: /test-fw.EXE
     documentSelector:
       path: metadata.name
       value: dell-poweredge-r7615
@@ -99,8 +99,8 @@ tests:
 
   - it: should use imageURI directly when set (legacy fallback)
     set:
-      machines.dell.models.poweredge-r7615.chain.bios-version.params.imageURI: http://repo.eu-de-1.cloud.sap/firmware/bios-legacy.exe
-      machines.dell.models.poweredge-r7615.chain.bios-version.params.imagePath: /test-fw.EXE
+      parameters.dell.poweredge-r7615.bios.versions.defaultVersion.imageURI: http://repo.eu-de-1.cloud.sap/firmware/bios-legacy.exe
+      parameters.dell.poweredge-r7615.bios.versions.defaultVersion.imagePath: /test-fw.EXE
     documentSelector:
       path: metadata.name
       value: dell-poweredge-r7615
@@ -119,18 +119,23 @@ tests:
           value: OwnerApproval
 
   #############################################################################
-  # FILTERING TESTS
+  # ENABLED TESTS
   #############################################################################
 
-  # UC1: Filter by vendor
-  - it: should only render Dell resources when vendors.included is set
+  # UC1: Disable a vendor
+  - it: should skip a vendor when parameters.<vendor>.enabled is false
     set:
-      biosVersions.filters.vendors.included: [dell]
+      parameters.hpe.enabled: false
     asserts:
       - containsDocument:
           kind: BIOSVersionSet
           apiVersion: metal.ironcore.dev/v1alpha1
           name: dell-poweredge-r7615
+          any: true
+      - containsDocument:
+          kind: BIOSVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: lenovo-thinksystem-sr850p
           any: true
       - not: true
         containsDocument:
@@ -138,35 +143,40 @@ tests:
           apiVersion: metal.ironcore.dev/v1alpha1
           name: hpe-proliant-dl560-gen11
           any: true
+
+  # UC2: Disable a specific model
+  - it: should skip a model when parameters.<vendor>.<model>.enabled is false
+    set:
+      parameters.dell.poweredge-r7615.enabled: false
+    asserts:
       - not: true
         containsDocument:
-          kind: BIOSVersionSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: lenovo-thinksystem-sr850p
-          any: true
-
-  # UC2: Filter by model
-  - it: should only render specific model when models.included is set
-    set:
-      biosVersions.filters.models.included: [poweredge-r7615]
-    asserts:
-      - containsDocument:
           kind: BIOSVersionSet
           apiVersion: metal.ironcore.dev/v1alpha1
           name: dell-poweredge-r7615
           any: true
-      - not: true
-        containsDocument:
+      - containsDocument:
           kind: BIOSVersionSet
           apiVersion: metal.ironcore.dev/v1alpha1
           name: dell-poweredge-r660
           any: true
 
-  # UC3: Combination filter
-  - it: should filter by vendor and model combination
+  # UC3: Combination of vendor/model disables
+  - it: should combine vendor and model disables down to a single resource
     set:
-      biosVersions.filters.vendors.included: [dell]
-      biosVersions.filters.models.included: [poweredge-r7615]
+      parameters.hpe.enabled: false
+      parameters.lenovo.enabled: false
+      parameters.dell.poweredge-r640.enabled: false
+      parameters.dell.poweredge-r660.enabled: false
+      parameters.dell.poweredge-r6715.enabled: false
+      parameters.dell.poweredge-r740.enabled: false
+      parameters.dell.poweredge-r740xd.enabled: false
+      parameters.dell.poweredge-r760.enabled: false
+      parameters.dell.poweredge-r770.enabled: false
+      parameters.dell.poweredge-r7715.enabled: false
+      parameters.dell.poweredge-r840.enabled: false
+      parameters.dell.poweredge-r860.enabled: false
+      parameters.dell.poweredge-xe9680.enabled: false
     asserts:
       - hasDocuments:
           count: 1
@@ -179,16 +189,15 @@ tests:
   # UC4: Disable entirely
   - it: should render no resources when enabled is false
     set:
-      biosVersions.enabled: false
+      CRDVersionControl.features.biosVersions.enabled: false
     asserts:
       - hasDocuments:
           count: 0
 
-  # UC5: Exclude model
-  - it: should exclude specific model when models.excluded is set
+  # UC5: Disable a domain (bios) for one model
+  - it: should skip just the bios domain when parameters.<vendor>.<model>.bios.enabled is false
     set:
-      biosVersions.filters.vendors.included: [dell]
-      biosVersions.filters.models.excluded: [poweredge-r7615]
+      parameters.dell.poweredge-r7615.bios.enabled: false
     asserts:
       - not: true
         containsDocument:
@@ -202,36 +211,28 @@ tests:
           name: dell-poweredge-r660
           any: true
 
-  # UC6: Exclude vendor
-  - it: should exclude vendor when vendors.excluded is set
+  # UC6: Disable a specific version variant
+  - it: should skip a model when its bios.versions.defaultVersion.enabled is false
     set:
-      biosVersions.filters.vendors.excluded: [hpe]
+      parameters.dell.poweredge-r7615.bios.versions.defaultVersion.enabled: false
     asserts:
-      - containsDocument:
-          kind: BIOSVersionSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: dell-poweredge-r7615
-          any: true
       - not: true
         containsDocument:
           kind: BIOSVersionSet
           apiVersion: metal.ironcore.dev/v1alpha1
-          name: hpe-proliant-dl560-gen11
+          name: dell-poweredge-r7615
           any: true
 
   #############################################################################
   # DUPLICATION TESTS
   #
-  # Models are sometimes split into multiple `machines.<vendor>.models.<key>`
-  # entries (one per clusterType, e.g. proliant-dl560-gen11-kvm /
-  # proliant-dl560-gen11-sci). VersionSets are generated per model+version and
-  # ignore clusterType, so ALL entries sharing a model resolve to the exact
-  # same default resource name ("<vendor>-<model>"). If any two such entries
-  # (for ANY vendor/model/key - not just a specific example) also carry
-  # different bios.version/imagePath, the template would otherwise silently
-  # emit two documents with the same metadata.name. The template now guards
-  # against this generically by failing the render whenever a name collision
-  # is detected, regardless of which keys/models are involved.
+  # BIOSVersionSets are generated per model+version and named "<vendor>-<model>",
+  # so two DIFFERENT models can only collide if one explicitly overrides
+  # params.setMetadataName onto another model's name. If two such colliding
+  # entries also carry different bios.version/imagePath, the template would
+  # otherwise silently emit two documents with the same metadata.name. The
+  # template guards against this generically by failing the render whenever a
+  # name collision is detected, regardless of which models are involved.
   #############################################################################
 
   - it: should render exactly one BIOSVersionSet for the real proliant-dl560-gen11 clusterType split
@@ -243,23 +244,96 @@ tests:
           count: 1
           filterAware: true
 
-  - it: should fail to render if ANY two entries (any vendor/model/key) produce a BIOSVersionSet with the same name but different versions
+  # setMetadataName now lives EXCLUSIVELY on the Workflow step (see values.yaml's "Machine
+  # inventory" comment) - there's no per-model parameters.<vendor>.<model>.rollouts.Types override
+  # anymore, so forcing a generic collision requires a top-level rollouts.Types override. Setting
+  # ANY top-level rollouts.Types key replaces the WHOLE catalog (see values.yaml comment), so the
+  # full 6-cluster-type catalog is replicated here with poweredge-r660 split into its own rule
+  # whose bios-version step carries setMetadataName onto poweredge-r640's name, with a different
+  # bios-version version/imageURI - proving the guard is generic and not hardcoded to one known
+  # duplicate. Every other step/model keeps resolving normally via the unmodified *Workflow/
+  # *WorkflowSciSettings variants (identical to values.yaml's real ones).
+  - it: should fail to render if ANY two entries (any vendor/model) produce a BIOSVersionSet with the same name but different versions
     set:
-      # Synthesize a generic collision unrelated to proliant-dl560-gen11: alias
-      # an arbitrary second entry (poweredge-r660) onto an existing model
-      # (poweredge-r640) with a different bios-version version/imageURI. This proves
-      # the guard is generic and not hardcoded to one known duplicate.
-      machines.dell.models.poweredge-r660.model: poweredge-r640
-      machines.dell.models.poweredge-r660.chain.bios-version.params.version: "9.9.9-test"
-      machines.dell.models.poweredge-r660.chain.bios-version.params.imageURI: "https://example.invalid/test.EXE"
+      rollouts.Types:
+        cc-kvm-compute:
+          - filter: { exclude: { models: [poweredge-r660] } }
+            workflow: &Workflow
+              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+              firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
+          - filter: { include: { models: [poweredge-r660] } }
+            workflow: &WorkflowR660Collision
+              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion, setMetadataName: dell-poweredge-r640}
+              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+              firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
+        sci-k8s-controlplane: &perClusterRules
+          - filter: { exclude: { models: [proliant-dl560-gen11, poweredge-r660] } }
+            workflow: *Workflow
+          - filter: { include: { models: [proliant-dl560-gen11] } }
+            workflow:
+              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"}
+              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.sciSettings}
+              firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
+          - filter: { include: { models: [poweredge-r660] } }
+            workflow: *WorkflowR660Collision
+        sci-k8s-management: *perClusterRules
+        sci-k8s-runtime: *perClusterRules
+        sci-k8s-storage: *perClusterRules
+        cc-ironcore: *perClusterRules
+      parameters.dell.poweredge-r660.bios.versions.defaultVersion.version: "9.9.9-test"
+      parameters.dell.poweredge-r660.bios.versions.defaultVersion.imageURI: "https://example.invalid/test.EXE"
     asserts:
       - failedTemplate:
           errorPattern: "duplicate BIOSVersionSet name"
 
   - it: should not fail when a colliding entry's bios-version step is removed (duplication resolved)
     set:
-      machines.dell.models.poweredge-r660.model: poweredge-r640
-      machines.dell.models.poweredge-r660.chain.bios-version: null
+      rollouts.Types:
+        cc-kvm-compute:
+          - filter: { exclude: { models: [poweredge-r660] } }
+            workflow: &Workflow2
+              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+              firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
+          - filter: { include: { models: [poweredge-r660] } }
+            workflow: &WorkflowR660Collision2
+              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion, setMetadataName: dell-poweredge-r640}
+              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+              firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
+        sci-k8s-controlplane: &perClusterRules2
+          - filter: { exclude: { models: [proliant-dl560-gen11, poweredge-r660] } }
+            workflow: *Workflow2
+          - filter: { include: { models: [proliant-dl560-gen11] } }
+            workflow:
+              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"}
+              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.sciSettings}
+              firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
+          - filter: { include: { models: [poweredge-r660] } }
+            workflow: *WorkflowR660Collision2
+        sci-k8s-management: *perClusterRules2
+        sci-k8s-runtime: *perClusterRules2
+        sci-k8s-storage: *perClusterRules2
+        cc-ironcore: *perClusterRules2
+      parameters.dell.poweredge-r660.bios.versions.defaultVersion.enabled: false
     asserts:
       - hasDocuments:
           count: 25

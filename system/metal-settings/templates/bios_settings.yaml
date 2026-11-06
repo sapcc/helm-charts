@@ -1,37 +1,41 @@
-{{- if .Values.biosSettings.enabled }}
+{{- if .Values.CRDVersionControl.features.biosSettings.enabled }}
+{{- include "metal-settings.rejectLegacyMachinesKey" . }}
 {{- $gatesEnabled := .Values.CRDVersionControl.features.readinessGates.enabled }}
 {{- if $gatesEnabled }}
 {{- include "metal-settings.requireChainCapableAPI" . }}
 {{- end }}
 {{- $usedNames := dict }}
-{{- range $vendor, $vendorConfig := .Values.machines }}
-{{- if $vendorConfig }}
-
-{{/* Vendor filtering */}}
-{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.biosSettings.filters.vendors) }}
-{{- range $entryName, $entry := $vendorConfig.models }}
-{{- include "metal-settings.rejectLegacyBiosBmcKeys" (dict "vendor" $vendor "entryName" $entryName "entry" $entry) }}
-{{- if $entry.chain }}
-{{- $model := $entry.model }}
+{{- $knownKinds := include "metal-settings.knownKinds" . | fromYamlArray }}
+{{- $effectiveTypes := include "metal-settings.effectiveRolloutTypes" $ | fromYaml }}
+{{- $reservedVendorKeys := list "enabled" "rollouts" }}
+{{- range $vendor, $vendorParams := .Values.parameters }}
+{{- range $modelKey, $modelParams := $vendorParams }}
+{{- if not (has $modelKey $reservedVendorKeys) }}
+{{- $model := $modelKey }}
+{{- range $clusterType, $_ := $effectiveTypes }}
+{{- $chainsByRule := include "metal-settings.computedChain" (dict "vendor" $vendor "model" $model "clusterType" $clusterType "root" $) | fromYaml }}
+{{- range $ruleIndex, $chain := $chainsByRule }}
+{{- if $chain }}
 
 {{/*
-machines.<vendor>.models.<name>.chain is a map of stepName -> {kind, order, params}. Map
-iteration in Go templates is key-sorted (not insertion order), so steps are re-sorted here by
-their explicit "order" field to guarantee correct sequencing.
+parameters.<vendor>.<model> is computed (via metal-settings.computedChain), for THIS cluster
+type, into a map of stepName -> {kind, order, params}. Map iteration in Go templates is
+key-sorted (not insertion order), so steps are re-sorted here by their explicit "order" field to
+guarantee correct sequencing.
 */}}
 {{- $orderedSteps := dict }}
-{{- range $stepName, $step := $entry.chain }}
+{{- range $stepName, $step := $chain }}
 {{- if not $step.kind }}
-{{- fail (printf "metal-settings: chain step %q for machines.%s.models.%s has no kind" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q for parameters.%s.%s has no kind" $stepName $vendor $model) }}
 {{- end }}
 {{- if not $step.order }}
-{{- fail (printf "metal-settings: chain step %q for machines.%s.models.%s has no order" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q for parameters.%s.%s has no order" $stepName $vendor $model) }}
 {{- end }}
 {{- $orderKey := printf "%04d" (int $step.order) }}
 {{- if hasKey $orderedSteps $orderKey }}
-{{- fail (printf "metal-settings: machines.%s.models.%s has two chain steps with order %d" $vendor $entryName (int $step.order)) }}
+{{- fail (printf "metal-settings: parameters.%s.%s has two chain steps with order %d" $vendor $model (int $step.order)) }}
 {{- end }}
-{{- $_ := set $orderedSteps $orderKey (dict "stepName" $stepName "kind" $step.kind "params" ($step.params | default dict)) }}
+{{- $_ := set $orderedSteps $orderKey (dict "stepName" $stepName "kind" $step.kind "enabled" $step.enabled "params" ($step.params | default dict)) }}
 {{- end }}
 
 {{- $stepIndex := 0 }}
@@ -43,26 +47,24 @@ their explicit "order" field to guarantee correct sequencing.
 {{- $settingsFileName := $params.settingsFileName }}
 {{- $settingsContent := $params.settingsContent }}
 {{- if not (or $settingsFileName $settingsContent) }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) is a BIOSSettingsSet step but defines neither params.settingsFileName nor params.settingsContent" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) is a BIOSSettingsSet step but defines neither params.settingsFileName nor params.settingsContent" $stepName $vendor $model) }}
 {{- end }}
 {{- $version := $params.version }}
-{{- if and $entry.clusterTypes (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.biosSettings.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.biosSettings.filters.versions)) }}
+{{- if include "metal-settings.stepEnabled" (dict "step" $s "root" $) }}
 {{- if $gatesEnabled }}
 {{- if not $params.completionConditionType }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- if and (gt $stepIndex 1) (not $params.readinessGates) }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- end }}
 {{- $serverFilters := $params.serverFilter | default (dict "included" (list) "excluded" (list)) }}
-{{/* params.setMetadataName: see values.yaml machines inventory comment block for naming/tpl rules. */}}
+{{/* params.setMetadataName: see values.yaml's "Machine inventory" comment for naming/tpl rules. */}}
 {{- $explicitName := "" }}
 {{- if $params.setMetadataName }}
 {{- $explicitName = tpl $params.setMetadataName $ }}
 {{- end }}
-{{- range $clusterType := $entry.clusterTypes }}
-{{- if include "metal-settings.shouldInclude" (dict "item" $clusterType "filters" $.Values.biosSettings.filters.clusterTypes) }}
 {{- $defaultName := printf "%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) }}
 {{- if $gatesEnabled }}
 {{- $defaultName = printf "%s-%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) $stepName }}
@@ -70,7 +72,7 @@ their explicit "order" field to guarantee correct sequencing.
 {{- $withCluster := printf "%s-%s" $explicitName (lower $clusterType) }}
 {{- $resourceName := ternary $withCluster $defaultName (ne $explicitName "") }}
 {{- if hasKey $usedNames $resourceName }}
-{{- fail (printf "metal-settings: duplicate BIOSSettingsSet name %q (entry %q, model %q, clusterType %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $entryName $model $clusterType) }}
+{{- fail (printf "metal-settings: duplicate BIOSSettingsSet name %q (model %q, clusterType %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $model $clusterType) }}
 {{- end }}
 {{- $_ := set $usedNames $resourceName true }}
 apiVersion: {{ $.Values.CRDVersionControl.apiVersions.biosSettingsSet }}
@@ -87,8 +89,8 @@ spec:
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   biosSettingsTemplate:
-    serverMaintenancePolicy: OwnerApproval
-{{- with $.Values.biosSettings.retryPolicy }}
+    serverMaintenancePolicy: {{ $.Values.CRDVersionControl.features.biosSettings.serverMaintenancePolicy }}
+{{- with $.Values.CRDVersionControl.features.biosSettings.retryPolicy }}
     retryPolicy:
 {{ toYaml . | indent 6 }}
 {{- end }}
@@ -109,10 +111,9 @@ spec:
 {{- end }}
 ---
 {{- end }}
+{{- else if not (has $s.kind $knownKinds) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has unknown kind %q (expected one of %v)" $stepName $vendor $model $s.kind $knownKinds) }}
 {{- end }}
-{{- end }}
-{{- else if not (has $s.kind (list "BMCSettingsSet" "BMCVersionSet" "BIOSVersionSet")) }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has unknown kind %q (expected BMCSettingsSet, BMCVersionSet, BIOSVersionSet, or BIOSSettingsSet)" $stepName $vendor $entryName $s.kind) }}
 {{- end }}
 {{- end }}
 {{- end }}
