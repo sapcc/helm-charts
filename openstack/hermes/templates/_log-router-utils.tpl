@@ -141,6 +141,11 @@
     configMapKeyRef:
       name: log-router-etc
       key: LOG_ROUTER_SWIFT_SERVICE_TYPE
+- name: LOG_ROUTER_SWIFT_PROJECT_SCOPED
+  valueFrom:
+    configMapKeyRef:
+      name: log-router-etc
+      key: LOG_ROUTER_SWIFT_PROJECT_SCOPED
 {{- if .Values.logRouter.swift.enabled }}
 # Keystone credentials for Swift/Ceph RGW authentication (hermes service account).
 # Authenticates as ccadmin/cloud_admin — cloud_objectstore_admin role grants cross-account
