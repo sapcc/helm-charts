@@ -125,6 +125,10 @@ spec:
               mountPath: /run/dhcp-agent
             - name: metadata-proxy
               mountPath: /run/metadata_proxy
+{{- if $.Values.dnstap.enabled }}
+            - name: dnstap-socket
+              mountPath: {{ $.Values.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
+{{- end }}
             - name: modules
               mountPath: /lib/modules
               readOnly: true
@@ -151,6 +155,12 @@ spec:
               mountPath: /etc/neutron/dnsmasq.conf
               subPath: dnsmasq.conf
               readOnly: true
+{{- if $.Values.unbound.enabled }}
+            - name: neutron-etc
+              mountPath: /etc/neutron/unbound.common.conf
+              subPath: unbound.common.conf
+              readOnly: true
+{{- end }}
             - name: neutron-etc
               mountPath: /etc/neutron/logging.conf
               subPath: logging.conf
@@ -177,6 +187,10 @@ spec:
           env:
             - name: METRIC_PREFIX
               value: openstack_neutron_agent_check
+{{- if $.Values.unbound.enabled }}
+            - name: UNBOUND_METRICS_ENABLED
+              value: "True"
+{{- end }}
           ports:
             - name: metrics-export
               containerPort: 9116
@@ -192,6 +206,45 @@ spec:
           volumeMounts:
             - name: network-status
               mountPath: /run/dhcp-agent
+{{- if $.Values.dnstap.enabled }}
+        - name: dnstap
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.dnstap.image}}:{{ .Values.dnstap.imageTag | default "latest" }}
+          imagePullPolicy: {{ .Values.dnstap.imagePullPolicy | default "IfNotPresent" }}
+          resources:
+{{ toYaml $.Values.pod.resources.dnstap | indent 12 }}
+          args:
+            - -u
+            - {{ $.Values.dnstap.socket_path | default "/run/dnstap/dnstap.sock" }}
+{{- if and $.Values.dnstap.hec_splunk_url $.Values.dnstap.hec_splunk_token }}
+            - -H
+            - "$(HEC_SPLUNK_URL)"
+            - -token
+            - "$(HEC_SPLUNK_TOKEN)"
+{{- if $.Values.dnstap.hec_splunk_server_uuid }}
+            - -server_uuid
+            - {{ $.Values.dnstap.hec_splunk_server_uuid }}
+{{- end }}
+{{- end }}
+{{- if $.Values.dnstap.additional_cmdline_args }}
+{{ toYaml $.Values.dnstap.additional_cmdline_args | indent 12 }}
+{{- end }}
+{{- if and $.Values.dnstap.hec_splunk_url $.Values.dnstap.hec_splunk_token }}
+          env:
+          - name: HEC_SPLUNK_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{.Release.Name}}-hec-secrets
+                key: hec_splunk_url
+          - name: HEC_SPLUNK_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{.Release.Name}}-hec-secrets
+                key: hec_splunk_token
+{{- end }}
+          volumeMounts:
+            - name: dnstap-socket
+              mountPath: {{ $.Values.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
+{{- end }}
 {{- if $.Values.agent.neutron_l3 | default false }}
         - name: neutron-l3-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentL3 | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentL3 or similar"}}
@@ -307,6 +360,11 @@ spec:
         - name: metadata-proxy
           hostPath:
             path: /run/metadata-proxy
+{{- if $.Values.dnstap.enabled }}
+        - name: dnstap-socket
+          emptyDir:
+            medium: Memory
+{{- end }}
         - name : modules
           hostPath:
             path: /lib/modules
