@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+  - ../additions/shoot
+  # Provider v1.1.1, resolved to its immutable commit (not the mutable tag).
+  # Written scheme-less (no https://) ON PURPOSE: this is a git-DIRECTORY ref,
+  # and krusty (kustomize) does an HTTP GET-file FIRST for any http(s):// URL,
+  # falling back to git only on a non-2xx. An https:// git-dir URL would be
+  # fetched as a file, so the ?ref=<sha> pin would never be consulted. The
+  # scheme-less github.com/... form forces the git loader, where the SHA is
+  # actually checked out. Do NOT add https:// here or the pin becomes a no-op.
+  - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/crd?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
+  - core-crds
+  - rbac.yaml
+  - webhooks.yaml
+  - metrics-service.yaml
+patches:
+  - path: patches/conversion-globalinclusterippools.yaml
+  - path: patches/conversion-globalinclusterprefixpools.yaml
+  - path: patches/conversion-inclusterippools.yaml
+  - path: patches/conversion-inclusterprefixpools.yaml
