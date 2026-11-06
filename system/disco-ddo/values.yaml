@@ -59,3 +59,23 @@ metrics:
 
 # Only an ingress with this annotation will be considered.
 ingressAnnotation: disco
+
+# cert-manager Issuer + Certificate for webhook TLS.
+# Enabled by default: the seed-rbac.yaml template grants the DDO operator's own
+# controller-manager SA a namespace-scoped Role for cert-manager.io (issuers,
+# certificates), since the operator's own ClusterRole (system/dual-deployment-operator)
+# does not cover that API group. This self-escalation is valid because the operator's
+# ClusterRole already holds create/bind/escalate on rbac.authorization.k8s.io roles.
+certManager:
+  enabled: true
+  # Identity that applies this chart's seed render — the DDO operator's own
+  # controller-manager ServiceAccount, granted the cert-manager Role above.
+  # Standard kubebuilder SA name from the operator's own chart release
+  # "dual-deployment-operator" + subchart alias "controller".
+  operatorServiceAccountName: dual-deployment-operator-controller-controller-manager
+
+# MutatingWebhookConfiguration + webhook Service.
+# Enabled by default — the webhook runs on the seed alongside the controller and
+# cert-manager stack above; disable only for standalone/legacy deployments without it.
+webhook:
+  enabled: true

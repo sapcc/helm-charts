@@ -9,4 +9,59 @@ metadata:
     {{- include "chart.labels" . | nindent 4 }}
   annotations:
     {{- include "chart.additionsAnnotations" . | nindent 4 }}
+{{- if .Values.certManager.enabled }}
+---
+# Grants the DDO operator's OWN controller-manager identity permission to manage
+# cert-manager.io Issuer/Certificate in this release namespace.
+#
+# The dual-deployment-operator chart's ClusterRole (shipped by system/dual-deployment-operator,
+# not this chart) does not cover cert-manager.io — applying the Issuer/Certificate below
+# otherwise fails with "cannot patch resource certificates" (seen on disco-ddo 0.1.1).
+#
+# This is safe self-escalation: the operator's ClusterRole already has create/bind/escalate
+# on rbac.authorization.k8s.io roles/rolebindings, which is exactly the verb k8s RBAC
+# requires to grant a permission the grantor doesn't itself hold. Scoped to a Role (not
+# ClusterRole) in .Release.Namespace to keep the grant minimal.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: disco-cert-manager-role
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+rules:
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - issuers
+  - certificates
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: disco-cert-manager-rolebinding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: disco-cert-manager-role
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.certManager.operatorServiceAccountName }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- end }}
