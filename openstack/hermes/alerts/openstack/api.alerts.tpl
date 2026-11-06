@@ -252,7 +252,8 @@ groups:
       summary: "Log Router falling back to DLQ — data not reaching S3"
 
   - alert: OpenstackHermesLogRouterAllWritesDenied
-    expr: sum(increase(log_router_events_dropped_total{reason=~"access_denied|writer_not_authorized"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
+    # writer_not_authorized: newer log-router keeps those events and counts log_router_writer_not_authorized_total; older ones dropped them.
+    expr: (sum(increase(log_router_events_dropped_total{reason=~"access_denied|writer_not_authorized"}[15m])) > 0 or sum(increase(log_router_writer_not_authorized_total[15m])) > 0) and sum(increase(log_router_events_flushed_total[15m])) == 0
     for: 5m
     labels:
       context: log-router
@@ -262,27 +263,28 @@ groups:
       severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router: every write is denied by the object store, events are being dropped"
+      meta: "Log Router: every write is denied, nothing has been flushed for 15m"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "Log Router is dropping events as access_denied or writer_not_authorized and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration), or, with project-scoped writes, the writer user lost objectstore_admin in every project. A lost role on the main scope (cloud_objectstore_admin) does not show up here, see OpenstackHermesLogRouterFlushFailing."
+      description: "Log Router is denied on every write (access_denied drops, or writer_not_authorized refusals whose events are held back) and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration), or, with project-scoped writes, the writer user lost objectstore_admin in every project. A lost role on the main scope (cloud_objectstore_admin) does not show up here, see OpenstackHermesLogRouterFlushFailing."
       summary: "Log Router writes denied for all tenants"
 
   - alert: OpenstackHermesLogRouterWriterNotAuthorized
-    # 1h: a partition flushes from minute 15 of its hour on, so drops come in bursts.
-    expr: sum by (tenant) (increase(log_router_events_dropped_total{reason="writer_not_authorized"}[1h])) > 0
+    # Newer log-router keeps the events and counts every refused login (once per 5m per replica);
+    # older ones dropped them (1h: drops come in bursts from minute 15 of the hour on).
+    expr: sum by (tenant) (increase(log_router_writer_not_authorized_total[15m])) > 0 or sum by (tenant) (increase(log_router_events_dropped_total{reason="writer_not_authorized"}[1h])) > 0
     labels:
       context: log-router
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: info
+      severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router drops audit events of project {{`{{ $labels.tenant }}`}}: the writer user has no objectstore_admin there"
+      meta: "Log Router cannot write audit events of project {{`{{ $labels.tenant }}`}}: the writer user has no objectstore_admin there"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "With project-scoped writes on, Keystone refuses the writer user (hermes@Default) a token for project {{`{{ $labels.tenant }}`}}, so its audit events are dropped. Usually an iaas- project that was enabled before hermes.dataplane_assign_writer_role was on and was never re-enabled. Fix: a project admin re-enables dataplane through hermez with the current config (including target_bucket), or a cloud admin runs openstack role add --user hermes --user-domain Default --project {{`{{ $labels.tenant }}`}} objectstore_admin."
+      description: "With project-scoped writes on, Keystone refuses the writer user (hermes@Default) a token for project {{`{{ $labels.tenant }}`}}, so its audit events are held back and retried (older log-router versions drop them; held events fill the buffer memory and then delay every tenant). Usually an iaas- project that was enabled before hermes.dataplane_assign_writer_role was on and was never re-enabled. Fix: a project admin re-enables dataplane through hermez with the current config (including target_bucket), or a cloud admin runs openstack role add --user hermes --user-domain Default --project {{`{{ $labels.tenant }}`}} objectstore_admin."
       summary: "Log Router writer has no role in project {{`{{ $labels.tenant }}`}}"
 
   - alert: OpenstackHermesLogRouterFlushFailing
