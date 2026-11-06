@@ -306,9 +306,11 @@ spec:
                     Specifies the mode for host inspection.
                     "disabled" - no inspection will be performed
                     "agent" - normal agent-based inspection will run
+                    "fast" - out-of-band inspection via BMC (Redfish), no ramdisk boot
                   enum:
                     - disabled
                     - agent
+                    - fast
                   type: string
                 metaData:
                   description: |-
@@ -338,6 +340,68 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                networkInterfaces:
+                  description: |-
+                    NetworkInterfaces defines the network configuration for each interface.
+                    This will be used to configure switch ports for the host.  Interface
+                    names must correspond to actual NICs discovered during inspection
+                    (see HardwareData resource).  They are referenced by either the name
+                    or MAC address of the NIC.
+                  items:
+                    description: NetworkInterface defines the network configuration for a specific interface.
+                    properties:
+                      hostNetworkAttachment:
+                        description: HostNetworkAttachment references the HostNetworkAttachment for this interface
+                        properties:
+                          name:
+                            description: Name of the HostNetworkAttachment resource
+                            maxLength: 253
+                            type: string
+                          namespace:
+                            description: Namespace of the HostNetworkAttachment (defaults to BMH namespace)
+                            maxLength: 63
+                            type: string
+                        type: object
+                      macAddress:
+                        description: |-
+                          MAC address of the network interface.  This must match the MAC address
+                          of a NIC discovered during inspection (see HardwareData resource).
+                          Mutually exclusive with Name.
+                        pattern: ^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$
+                        type: string
+                      name:
+                        description: |-
+                          Name of the network interface (e.g., "eth0", "ens1f0")
+                          This must match the name of a NIC discovered during inspection
+                          (see HardwareData resource).
+                          Mutually exclusive with MACAddress.
+                        pattern: ^[a-zA-Z0-9._-]+$
+                        type: string
+                      switchPort:
+                        description: |-
+                          SwitchPort defines the switch port on which this interface is attached.
+                          This is intended to be a replacement for LLDP information if
+                          LLDP is not enabled on the neighboring switches or if inspection is not
+                          used on the BMH.  If LLDP information is acquired during inspection and
+                          this field is provided then it will override the LLDP provided
+                          information; therefore, caution must be exercised when supplying this
+                          value.
+                        properties:
+                          portID:
+                            description: |-
+                              PortID is expected to be the configuration name of the port in the
+                              switch management system.
+                            type: string
+                          switchID:
+                            description: SwitchID is expected to be the management MAC address of the switch
+                            pattern: ^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$
+                            type: string
+                        required:
+                          - portID
+                          - switchID
+                        type: object
+                    type: object
+                  type: array
                 online:
                   description: |-
                     Should the host be powered on? If the host is currently in a stable
@@ -500,6 +564,12 @@ spec:
                               type: object
                             minItems: 2
                             type: array
+                          rootVolume:
+                            default: false
+                            description: |-
+                              Setting this to true, causes installer to consider this volume as root device for installation.
+                              This can only be set for one of the volumes.
+                            type: boolean
                           sizeGibibytes:
                             description: |-
                               Size of the logical disk to be created in GiB.
@@ -571,8 +641,9 @@ spec:
                 taints:
                   description: |-
                     Taints is the full, authoritative list of taints to apply to
-                    the corresponding Machine. This list will overwrite any
-                    modifications made to the Machine on an ongoing basis.
+                    the corresponding Machine.
+
+                    Deprecated: the Taints field was never actually implemented.
                   items:
                     description: |-
                       The node this Taint is attached to has the "effect" on
@@ -908,6 +979,53 @@ spec:
                     The name of the profile matching the hardware details.
                     Hardware profiles are deprecated and should not be relied on.
                   type: string
+                lastAttemptedImage:
+                  description: |-
+                    LastAttemptedImage stores the full image spec of the last provisioning
+                    attempt, used to detect user-initiated image changes (URL, checksum,
+                    format, etc.) that should reset the provisioning retry limit counter.
+                  properties:
+                    checksum:
+                      description: |-
+                        Checksum is the checksum for the image. Required for all formats
+                        except for "live-iso" and OCI images (oci://).
+                      type: string
+                    checksumType:
+                      description: |-
+                        ChecksumType is the checksum algorithm for the image, e.g md5, sha256 or sha512.
+                        The special value "auto" can be used to detect the algorithm from the checksum.
+                        If missing, MD5 is used. If in doubt, use "auto".
+                      enum:
+                        - md5
+                        - sha256
+                        - sha512
+                        - auto
+                      type: string
+                    format:
+                      description: |-
+                        Format contains the format of the image (raw, qcow2, ...).
+                        When set to "live-iso", an ISO 9660 image referenced by the url will
+                        be live-booted and not deployed to disk.
+                      enum:
+                        - raw
+                        - qcow2
+                        - vdi
+                        - vmdk
+                        - live-iso
+                      type: string
+                    ociAuthSecretName:
+                      description: |-
+                        OCIAuthSecretName optionally names a Docker-config secret containing
+                        registry credentials for oci:// images. Must be in the same namespace
+                        as the BareMetalHost. Allowed types: kubernetes.io/dockerconfigjson|dockercfg.
+                        Only used when Image.URL has the oci:// scheme.
+                      type: string
+                    url:
+                      description: URL is a location of an image to deploy.
+                      type: string
+                  required:
+                    - url
+                  type: object
                 lastUpdated:
                   description: LastUpdated identifies when this status was last observed.
                   format: date-time
@@ -1230,6 +1348,12 @@ spec:
                                   type: object
                                 minItems: 2
                                 type: array
+                              rootVolume:
+                                default: false
+                                description: |-
+                                  Setting this to true, causes installer to consider this volume as root device for installation.
+                                  This can only be set for one of the volumes.
+                                type: boolean
                               sizeGibibytes:
                                 description: |-
                                   Size of the logical disk to be created in GiB.
@@ -1302,6 +1426,14 @@ spec:
                     - ID
                     - state
                   type: object
+                provisioningFailCount:
+                  default: 0
+                  description: |-
+                    ProvisioningFailCount records how many times provisioning has failed
+                    consecutively for the current image. Unlike ErrorCount, it is not reset
+                    on deprovisioning and is only cleared on successful provisioning or when
+                    a new image is specified.
+                  type: integer
                 triedCredentials:
                   description: The last credentials we sent to the provisioning backend.
                   properties:
@@ -1327,6 +1459,7 @@ spec:
                 - operationalStatus
                 - poweredOn
                 - provisioning
+                - provisioningFailCount
               type: object
           type: object
       served: true

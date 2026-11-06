@@ -9,7 +9,6 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
-  - v1beta
   clientConfig:
     service:
       name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-webhook-service'
@@ -30,7 +29,6 @@ webhooks:
   sideEffects: None
 - admissionReviewVersions:
   - v1
-  - v1beta
   clientConfig:
     service:
       name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-webhook-service'
@@ -48,4 +46,85 @@ webhooks:
     - UPDATE
     resources:
     - bmceventsubscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-metal3-io-v1alpha1-dataimage
+  failurePolicy: Fail
+  name: dataimage.metal3.io
+  rules:
+  - apiGroups:
+    - metal3.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - dataimages
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-metal3-io-v1alpha1-hostclaim
+  failurePolicy: Fail
+  name: hostclaim.metal3.io
+  rules:
+  - apiGroups:
+    - metal3.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hostclaims
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-metal3-io-v1alpha1-hostfirmwarecomponents
+  failurePolicy: Fail
+  name: hostfirmwarecomponents.metal3.io
+  rules:
+  - apiGroups:
+    - metal3.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - hostfirmwarecomponents
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-metal3-io-v1alpha1-hostnetworkattachment
+  failurePolicy: Fail
+  name: hostnetworkattachment.metal3.io
+  rules:
+  - apiGroups:
+    - metal3.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - hostnetworkattachments
   sideEffects: None
