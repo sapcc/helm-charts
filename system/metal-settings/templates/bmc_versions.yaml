@@ -1,6 +1,6 @@
-{{- if .Values.CRDVersionControl.features.bmcVersions.enabled }}
+{{- if .Values.crdVersionControl.features.bmcVersions.enabled }}
 {{- include "metal-settings.rejectLegacyMachinesKey" . }}
-{{- $gatesEnabled := .Values.CRDVersionControl.features.readinessGates.enabled }}
+{{- $gatesEnabled := .Values.crdVersionControl.features.readinessGates.enabled }}
 {{- if $gatesEnabled }}
 {{- include "metal-settings.requireChainCapableAPI" . }}
 {{- end }}
@@ -30,7 +30,7 @@ version-kind definitions is a misconfiguration and fails fast here with a clear 
 {{- if hasKey $versionSteps $stepName }}
 {{- $existing := index $versionSteps $stepName }}
 {{- if not (deepEqual $existing.step $step) }}
-{{- fail (printf "metal-settings: parameters.%s.%s step %q (BMCVersionSet) resolves differently for cluster type %q (rule %d) than for cluster type %q (rule %d) - version-kind steps must be identical across every cluster type/rule a model has (check rollouts.Types)" $vendor $model $stepName $clusterType $ruleIndex $existing.clusterType $existing.ruleIndex) }}
+{{- fail (printf "metal-settings: parameters.%s.%s step %q (BMCVersionSet) resolves differently for cluster type %q (rule %d) than for cluster type %q (rule %d) - version-kind steps must be identical across every cluster type/rule a model has (check rollouts.types)" $vendor $model $stepName $clusterType $ruleIndex $existing.clusterType $existing.ruleIndex) }}
 {{- end }}
 {{- else }}
 {{- $_ := set $versionSteps $stepName (dict "clusterType" $clusterType "ruleIndex" $ruleIndex "step" $step) }}
@@ -78,10 +78,10 @@ by their explicit "order" field to guarantee correct sequencing.
 {{- if include "metal-settings.stepEnabled" (dict "step" $s "root" $) }}
 {{- if $gatesEnabled }}
 {{- if not $params.completionConditionType }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- if and (gt $stepIndex 1) (not $params.readinessGates) }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- end }}
 {{- $serverFilters := $params.serverFilter | default (dict "included" (list) "excluded" (list)) }}
@@ -98,7 +98,7 @@ by their explicit "order" field to guarantee correct sequencing.
 {{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (model %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $model) }}
 {{- end }}
 {{- $_ := set $usedNames $resourceName true }}
-apiVersion: {{ $.Values.CRDVersionControl.apiVersions.bmcVersionSet }}
+apiVersion: {{ $.Values.crdVersionControl.apiVersions.bmcVersionSet }}
 kind: BMCVersionSet
 metadata:
   name: {{ $resourceName }}
@@ -111,12 +111,12 @@ spec:
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   bmcVersionTemplate:
-    serverMaintenancePolicy: {{ $.Values.CRDVersionControl.features.bmcVersions.serverMaintenancePolicy }}
+    serverMaintenancePolicy: {{ $.Values.crdVersionControl.features.bmcVersions.serverMaintenancePolicy }}
     version: {{ $version | quote }}
     image:
       URI: {{ if $imageURI }}{{ $imageURI | quote }}{{ else }}{{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $imagePath | quote }}{{ end }}
       transferProtocol: {{ upper $.Values.firmwareRepo.scheme | quote }}
-{{- with $.Values.CRDVersionControl.features.bmcVersions.retryPolicy }}
+{{- with $.Values.crdVersionControl.features.bmcVersions.retryPolicy }}
     retryPolicy:
 {{ toYaml . | indent 6 }}
 {{- end }}

@@ -8,7 +8,7 @@ tests:
 
   - it: should render BMCSettingsSet resources when enabled
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
     asserts:
       - hasDocuments:
           count: 154
@@ -17,7 +17,7 @@ tests:
 
   - it: should render Dell resources
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
     asserts:
       - containsDocument:
           kind: BMCSettingsSet
@@ -27,7 +27,7 @@ tests:
 
   - it: should render HPE resources
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
     asserts:
       - containsDocument:
           kind: BMCSettingsSet
@@ -37,7 +37,7 @@ tests:
 
   - it: should render Lenovo resources
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
     asserts:
       - containsDocument:
           kind: BMCSettingsSet
@@ -47,7 +47,7 @@ tests:
 
   - it: should set correct bmcSelector labels including cluster-type
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
     documentSelector:
       path: metadata.name
       value: dell-poweredge-r660-sci-k8s-controlplane
@@ -61,7 +61,7 @@ tests:
 
   - it: should set serverMaintenancePolicy to OwnerApproval
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
     documentSelector:
       path: metadata.name
       value: dell-poweredge-r660-sci-k8s-controlplane
@@ -77,7 +77,7 @@ tests:
   # UC1: Disable a vendor
   - it: should skip a vendor when parameters.<vendor>.enabled is false
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
       parameters.hpe.enabled: false
     asserts:
       - containsDocument:
@@ -100,7 +100,7 @@ tests:
   # UC2: Disable a specific model
   - it: should skip a model when parameters.<vendor>.<model>.enabled is false
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
       parameters.dell.poweredge-r660.enabled: false
     asserts:
       - not: true
@@ -123,11 +123,11 @@ tests:
   # UC3: Narrow cluster types for the whole cluster
   - it: should only render the real cluster's clusterTypes when clusterTypes is set
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
-      rollouts.Types:
+      crdVersionControl.features.bmcSettings.enabled: true
+      rollouts.types:
         sci-k8s-controlplane:
           - workflow:
-              bmc-settings:
+              bmcSettings:
                 order: 1
                 kind: BMCSettingsSet
                 versionKey: bmc.versions.defaultVersion
@@ -154,7 +154,7 @@ tests:
   # UC4: Combination - disable other vendors/models and narrow clusterTypes
   - it: should combine vendor/model disable with a clusterTypes override
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
       parameters.hpe.enabled: false
       parameters.lenovo.enabled: false
       parameters.dell.poweredge-r640.enabled: false
@@ -168,10 +168,10 @@ tests:
       parameters.dell.poweredge-r840.enabled: false
       parameters.dell.poweredge-r860.enabled: false
       parameters.dell.poweredge-xe9680.enabled: false
-      rollouts.Types:
+      rollouts.types:
         sci-k8s-controlplane:
           - workflow:
-              bmc-settings:
+              bmcSettings:
                 order: 1
                 kind: BMCSettingsSet
                 versionKey: bmc.versions.defaultVersion
@@ -188,7 +188,7 @@ tests:
   # UC5: Disable entirely
   - it: should render no resources when enabled is false
     set:
-      CRDVersionControl.features.bmcSettings.enabled: false
+      crdVersionControl.features.bmcSettings.enabled: false
     asserts:
       - hasDocuments:
           count: 0
@@ -196,7 +196,7 @@ tests:
   # UC6: Disable a domain (bmc) for one model
   - it: should skip just the bmc domain when parameters.<vendor>.<model>.bmc.enabled is false
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
       parameters.dell.poweredge-r660.bmc.enabled: false
     asserts:
       - not: true
@@ -214,7 +214,7 @@ tests:
   # UC7: Disable a vendor (inverse direction of UC1)
   - it: should keep other vendors when one vendor is disabled
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
       parameters.hpe.enabled: false
     asserts:
       - containsDocument:
@@ -234,14 +234,14 @@ tests:
           name: hpe-proliant-dl380-gen11-sci-k8s-controlplane
           any: true
 
-  # UC8: rollouts.Types override narrows to the remaining types (equivalent to excluding one)
+  # UC8: rollouts.types override narrows to the remaining types (equivalent to excluding one)
   - it: should exclude a single cluster type by omitting it from clusterTypes
     set:
-      CRDVersionControl.features.bmcSettings.enabled: true
-      rollouts.Types:
+      crdVersionControl.features.bmcSettings.enabled: true
+      rollouts.types:
         sci-k8s-controlplane: &bmcSettingsOnlyWorkflow
           - workflow:
-              bmc-settings:
+              bmcSettings:
                 order: 1
                 kind: BMCSettingsSet
                 versionKey: bmc.versions.defaultVersion

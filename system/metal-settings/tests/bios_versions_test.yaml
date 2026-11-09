@@ -189,7 +189,7 @@ tests:
   # UC4: Disable entirely
   - it: should render no resources when enabled is false
     set:
-      CRDVersionControl.features.biosVersions.enabled: false
+      crdVersionControl.features.biosVersions.enabled: false
     asserts:
       - hasDocuments:
           count: 0
@@ -245,44 +245,44 @@ tests:
           filterAware: true
 
   # setMetadataName now lives EXCLUSIVELY on the Workflow step (see values.yaml's "Machine
-  # inventory" comment) - there's no per-model parameters.<vendor>.<model>.rollouts.Types override
-  # anymore, so forcing a generic collision requires a top-level rollouts.Types override. Setting
-  # ANY top-level rollouts.Types key replaces the WHOLE catalog (see values.yaml comment), so the
+  # inventory" comment) - there's no per-model parameters.<vendor>.<model>.rollouts.types override
+  # anymore, so forcing a generic collision requires a top-level rollouts.types override. Setting
+  # ANY top-level rollouts.types key replaces the WHOLE catalog (see values.yaml comment), so the
   # full 6-cluster-type catalog is replicated here with poweredge-r660 split into its own rule
   # whose bios-version step carries setMetadataName onto poweredge-r640's name, with a different
   # bios-version version/imageURI - proving the guard is generic and not hardcoded to one known
-  # duplicate. Every other step/model keeps resolving normally via the unmodified *Workflow/
-  # *WorkflowSciSettings variants (identical to values.yaml's real ones).
+  # duplicate. Every other step/model keeps resolving normally via the unmodified *workflow/
+  # *workflowSciSettings variants (identical to values.yaml's real ones).
   - it: should fail to render if ANY two entries (any vendor/model) produce a BIOSVersionSet with the same name but different versions
     set:
-      rollouts.Types:
+      rollouts.types:
         cc-kvm-compute:
           - filter: { exclude: { models: [poweredge-r660] } }
-            workflow: &Workflow
-              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
-              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
-              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
-              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
-              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+            workflow: &workflow
+              bmcSettingsInitial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmcVersion: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              biosVersion: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmcSettings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              biosSettings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
               firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
           - filter: { include: { models: [poweredge-r660] } }
             workflow: &WorkflowR660Collision
-              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
-              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
-              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion, setMetadataName: dell-poweredge-r640}
-              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
-              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+              bmcSettingsInitial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmcVersion: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              biosVersion: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion, setMetadataName: dell-poweredge-r640}
+              bmcSettings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              biosSettings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
               firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
         sci-k8s-controlplane: &perClusterRules
           - filter: { exclude: { models: [proliant-dl560-gen11, poweredge-r660] } }
-            workflow: *Workflow
+            workflow: *workflow
           - filter: { include: { models: [proliant-dl560-gen11] } }
             workflow:
-              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"}
-              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
-              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
-              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
-              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.sciSettings}
+              bmcSettingsInitial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: "{{ .Values.crdVersionControl.features.readinessGates.enabled }}"}
+              bmcVersion: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              biosVersion: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmcSettings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              biosSettings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.sciSettings}
               firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
           - filter: { include: { models: [poweredge-r660] } }
             workflow: *WorkflowR660Collision
@@ -298,34 +298,34 @@ tests:
 
   - it: should not fail when a colliding entry's bios-version step is removed (duplication resolved)
     set:
-      rollouts.Types:
+      rollouts.types:
         cc-kvm-compute:
           - filter: { exclude: { models: [poweredge-r660] } }
             workflow: &Workflow2
-              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
-              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
-              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
-              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
-              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+              bmcSettingsInitial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmcVersion: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              biosVersion: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmcSettings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              biosSettings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
               firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
           - filter: { include: { models: [poweredge-r660] } }
             workflow: &WorkflowR660Collision2
-              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
-              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
-              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion, setMetadataName: dell-poweredge-r640}
-              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
-              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
+              bmcSettingsInitial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: false}
+              bmcVersion: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              biosVersion: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion, setMetadataName: dell-poweredge-r640}
+              bmcSettings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              biosSettings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.defaultSettings}
               firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
         sci-k8s-controlplane: &perClusterRules2
           - filter: { exclude: { models: [proliant-dl560-gen11, poweredge-r660] } }
             workflow: *Workflow2
           - filter: { include: { models: [proliant-dl560-gen11] } }
             workflow:
-              bmc-settings-initial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"}
-              bmc-version: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
-              bios-version: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
-              bmc-settings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
-              bios-settings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.sciSettings}
+              bmcSettingsInitial: {order: 1, kind: BMCSettingsSet, settingsKey: bmc.settings.initialSettings, enabled: "{{ .Values.crdVersionControl.features.readinessGates.enabled }}"}
+              bmcVersion: {order: 2, kind: BMCVersionSet, versionKey: bmc.versions.defaultVersion}
+              biosVersion: {order: 3, kind: BIOSVersionSet, versionKey: bios.versions.defaultVersion}
+              bmcSettings: {order: 4, kind: BMCSettingsSet, versionKey: bmc.versions.defaultVersion, settingsKey: bmc.settings.defaultSettings}
+              biosSettings: {order: 5, kind: BIOSSettingsSet, versionKey: bios.versions.defaultVersion, settingsKey: bios.settings.sciSettings}
               firmware: {order: 6, kind: FirmwareUpdateSet, paramsKey: firmware.params.defaultVersion}
           - filter: { include: { models: [poweredge-r660] } }
             workflow: *WorkflowR660Collision2

@@ -1,6 +1,6 @@
-{{- if .Values.CRDVersionControl.features.bmcSettings.enabled }}
+{{- if .Values.crdVersionControl.features.bmcSettings.enabled }}
 {{- include "metal-settings.rejectLegacyMachinesKey" . }}
-{{- $gatesEnabled := .Values.CRDVersionControl.features.readinessGates.enabled }}
+{{- $gatesEnabled := .Values.crdVersionControl.features.readinessGates.enabled }}
 {{- if $gatesEnabled }}
 {{- include "metal-settings.requireChainCapableAPI" . }}
 {{- end }}
@@ -53,10 +53,10 @@ guarantee correct sequencing.
 {{- if include "metal-settings.stepEnabled" (dict "step" $s "root" $) }}
 {{- if $gatesEnabled }}
 {{- if not $params.completionConditionType }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- if and (gt $stepIndex 1) (not $params.readinessGates) }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- end }}
 {{- $serverFilters := $params.serverFilter | default (dict "included" (list) "excluded" (list)) }}
@@ -75,7 +75,7 @@ guarantee correct sequencing.
 {{- fail (printf "metal-settings: duplicate BMCSettingsSet name %q (model %q, clusterType %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $model $clusterType) }}
 {{- end }}
 {{- $_ := set $usedNames $resourceName true }}
-apiVersion: {{ $.Values.CRDVersionControl.apiVersions.bmcSettingsSet }}
+apiVersion: {{ $.Values.crdVersionControl.apiVersions.bmcSettingsSet }}
 kind: BMCSettingsSet
 metadata:
   name: {{ $resourceName }}
@@ -89,7 +89,7 @@ spec:
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   bmcSettingsTemplate:
-    serverMaintenancePolicy: {{ $.Values.CRDVersionControl.features.bmcSettings.serverMaintenancePolicy }}
+    serverMaintenancePolicy: {{ $.Values.crdVersionControl.features.bmcSettings.serverMaintenancePolicy }}
 {{- if $version }}
     version: {{ $version | quote }}
 {{- end }}
@@ -98,7 +98,7 @@ spec:
 {{- else }}
 {{ tpl ($.Files.Get (printf "bmc_settings/%s" $settingsFileName)) $ | trim | indent 4 }}
 {{- end }}
-{{- with $.Values.CRDVersionControl.features.bmcSettings.retryPolicy }}
+{{- with $.Values.crdVersionControl.features.bmcSettings.retryPolicy }}
     retryPolicy:
 {{ toYaml . | indent 6 }}
 {{- end }}

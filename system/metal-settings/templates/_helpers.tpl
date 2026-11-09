@@ -62,7 +62,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Fail fast if CRDVersionControl.features.readinessGates.enabled=true but CRDVersionControl.apiVersions
+Fail fast if crdVersionControl.features.readinessGates.enabled=true but crdVersionControl.apiVersions
 still point at the plain metal-operator group ("metal.ironcore.dev/v1alpha1"), which has no
 readinessGates/completionConditionType fields. The readiness-gate chain requires
 metal-maintenance-operator's group-qualified apiVersions ("baseboard.metal.ironcore.dev/v1alpha1"
@@ -73,15 +73,15 @@ Usage:
   {{- include "metal-settings.requireChainCapableAPI" . }}
 */}}
 {{- define "metal-settings.requireChainCapableAPI" -}}
-{{- $av := .Values.CRDVersionControl.apiVersions -}}
+{{- $av := .Values.crdVersionControl.apiVersions -}}
 {{- if or (eq $av.bmcSettingsSet "metal.ironcore.dev/v1alpha1") (eq $av.bmcVersionSet "metal.ironcore.dev/v1alpha1") (eq $av.biosSettingsSet "metal.ironcore.dev/v1alpha1") (eq $av.biosVersionSet "metal.ironcore.dev/v1alpha1") -}}
-{{- fail "metal-settings: CRDVersionControl.features.readinessGates.enabled=true requires CRDVersionControl.apiVersions.* to point at metal-maintenance-operator's groups (baseboard.metal.ironcore.dev/v1alpha1, system.metal.ironcore.dev/v1alpha1) — the metal-operator group (metal.ironcore.dev/v1alpha1) has no readinessGates/completionConditionType fields." -}}
+{{- fail "metal-settings: crdVersionControl.features.readinessGates.enabled=true requires crdVersionControl.apiVersions.* to point at metal-maintenance-operator's groups (baseboard.metal.ironcore.dev/v1alpha1, system.metal.ironcore.dev/v1alpha1) — the metal-operator group (metal.ironcore.dev/v1alpha1) has no readinessGates/completionConditionType fields." -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
 Fail fast if a top-level machines: key is still defined. The old machines:/model:/stepsOnly:
-selection schema was replaced entirely by parameters:/rollouts.Types: (see values.yaml's
+selection schema was replaced entirely by parameters:/rollouts.types: (see values.yaml's
 "Machine inventory" comment) - this catches a values file (chart default or cluster override)
 still carrying the removed schema instead of silently ignoring it.
 
@@ -90,7 +90,7 @@ Usage:
 */}}
 {{- define "metal-settings.rejectLegacyMachinesKey" -}}
 {{- if .Values.machines -}}
-{{- fail "metal-settings: top-level machines: is no longer supported - it was replaced by parameters:/rollouts.Types: (see values.yaml's \"Machine inventory\" comment). Migrate any machines.<vendor>.models.<name> entries (clusterTypes/model/stepsOnly) into parameters.<vendor>.<model> plus rollouts.Types overrides, then remove machines: entirely." -}}
+{{- fail "metal-settings: top-level machines: is no longer supported - it was replaced by parameters:/rollouts.types: (see values.yaml's \"Machine inventory\" comment). Migrate any machines.<vendor>.models.<name> entries (clusterTypes/model/stepsOnly) into parameters.<vendor>.<model> plus rollouts.types overrides, then remove machines: entirely." -}}
 {{- end -}}
 {{- end -}}
 
@@ -99,7 +99,7 @@ Single shared source of truth for every CRD kind this chart knows how to render 
 step templates (bios_settings.yaml/bmc_settings.yaml/bios_versions.yaml/bmc_versions.yaml/
 firmware_updates.yaml) consults this ONE list for its "unknown kind" fail-fast check, instead of
 each maintaining its own hardcoded enum. Adding support for a new kind only requires adding it
-here (plus a CRDVersionControl.apiVersions.<kind> entry and a new step template file) - domain
+here (plus a crdVersionControl.apiVersions.<kind> entry and a new step template file) - domain
 derivation in metal-settings.computedChain is already generic (derived from each Workflow step's
 own settingsKey/versionKey prefix, not from kind), so no other hardcoding is needed.
 
@@ -146,9 +146,9 @@ matchExpressions:
 {{- end -}}
 
 {{/*
-Returns the EFFECTIVE top-level rollouts.Types map for this cluster: .Values.rollouts.Types if
+Returns the EFFECTIVE top-level rollouts.types map for this cluster: .Values.rollouts.types if
 that key is set and non-empty (the REAL, per-cluster override - set via the cluster's own
-kube-secrets/foundation-deployment values file), else .Values.Defaultrollouts.Types (the chart's
+kube-secrets/foundation-deployment values file), else .Values.defaultRollouts.types (the chart's
 default catalog - every cluster type this chart knows about). Its keys ARE the effective cluster
 types for this cluster - no separate intersection step is needed, since a cluster override
 replaces the whole catalog outright rather than merging with it (the chart itself never defines a
@@ -165,17 +165,17 @@ Usage:
 */}}
 {{- define "metal-settings.effectiveRolloutTypes" -}}
 {{- $override := .Values.rollouts | default dict -}}
-{{- $overrideTypes := $override.Types | default dict -}}
+{{- $overrideTypes := $override.types | default dict -}}
 {{- if gt (len $overrideTypes) 0 -}}
 {{- toYaml $overrideTypes -}}
 {{- else -}}
-{{- toYaml .Values.Defaultrollouts.Types -}}
+{{- toYaml .Values.defaultRollouts.types -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
 Resolves which Workflow(s) apply for a given (model, clusterType): the effective top-level
-rollouts.Types.<clusterType> (see metal-settings.effectiveRolloutTypes above) is a LIST of rules,
+rollouts.types.<clusterType> (see metal-settings.effectiveRolloutTypes above) is a LIST of rules,
 each shaped {filter?: {include?: {models?, resources?, servers?}, exclude?: {models?, resources?,
 servers?}}, workflow}.
 
@@ -204,10 +204,10 @@ together covering every server of X without overlap (see values.yaml's "Machine 
 and README's UC12/UC13). Fails fast if NO rule matches (misconfigured include/exclude, or the
 cluster type has no rules at all).
 
-rollouts.Types is the ONLY place workflow/server routing is expressed - there is no separate
+rollouts.types is the ONLY place workflow/server routing is expressed - there is no separate
 vendor/model-level override anymore (parameters: has no "rollouts" key at all); scoping a workflow
 variant and/or a server subset to one model is done entirely via a rule's include/exclude, directly
-in rollouts.Types.
+in rollouts.types.
 
 Output must be piped through `fromYamlArray` by the caller (a YAML list of {workflow, include,
 exclude}).
@@ -243,7 +243,7 @@ Usage:
 {{- end -}}
 {{- end -}}
 {{- if eq (len $matched) 0 -}}
-{{- fail (printf "metal-settings: no workflow resolves for model %q at cluster type %q - check rollouts.Types (cluster override/Defaultrollouts) rule list for this cluster type: either it has no rules, or every rule's include/exclude excludes this model" $model $clusterType) -}}
+{{- fail (printf "metal-settings: no workflow resolves for model %q at cluster type %q - check rollouts.types (cluster override/defaultRollouts) rule list for this cluster type: either it has no rules, or every rule's include/exclude excludes this model" $model $clusterType) -}}
 {{- end -}}
 {{- toYaml $matched -}}
 {{- end -}}
@@ -251,7 +251,7 @@ Usage:
 {{/*
 Resolve a chain step's optional "enabled" field (default true when unset). Accepts either a
 literal boolean, or a template string tied to another values field (e.g.
-"{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"), rendered via tpl against the
+"{{ .Values.crdVersionControl.features.readinessGates.enabled }}"), rendered via tpl against the
 root context and parsed as a bool.
 
 Usage:
@@ -271,14 +271,21 @@ true
 {{- end -}}
 
 {{/*
+Converts a lowerCamelCase values key into the kebab-case form used in Kubernetes names and condition types.
+*/}}
+{{- define "metal-settings.kebabCase" -}}
+{{- regexReplaceAll "([a-z0-9])([A-Z])" . "${1}-${2}" | lower -}}
+{{- end -}}
+
+{{/*
 Computes the chain(s) for a parameters.<vendor>.<model> model at ONE specific cluster type:
 ruleIndex -> stepName -> {kind, order, enabled, params} - the exact shape the step templates
 consume, one inner map per Workflow matched by "metal-settings.matchingWorkflowsForClusterType"
 (structure/field-map, a map keyed by step name - see below) + parameters.<vendor>.<model> (user
-input) + CRDVersionControl.features.readinessGates.enabled (feature toggle - only affects whether
+input) + crdVersionControl.features.readinessGates.enabled (feature toggle - only affects whether
 completionConditionType/readinessGates get computed at all).
 
-rollouts.Types.<clusterType> is a LIST of rules, and ALL rules whose include/exclude match this
+rollouts.types.<clusterType> is a LIST of rules, and ALL rules whose include/exclude match this
 model are resolved independently (see matchingWorkflowsForClusterType) - this is what lets one
 model have two genuinely different resources for the same cluster type (e.g. a broad rule's
 exclude.servers carves a specific server out of a Workflow variant, a second, narrower rule's
@@ -376,7 +383,7 @@ Usage:
 {{- end -}}
 {{- $result := dict -}}
 {{- if and $vendorEnabled $modelEnabled -}}
-{{- $gatesEnabled := $root.Values.CRDVersionControl.features.readinessGates.enabled -}}
+{{- $gatesEnabled := $root.Values.crdVersionControl.features.readinessGates.enabled -}}
 {{- $matchedRules := include "metal-settings.matchingWorkflowsForClusterType" (dict "model" $model "clusterType" $clusterType "root" $root) | fromYamlArray -}}
 {{- range $ruleIndex, $matchedRule := $matchedRules -}}
 {{- $workflow := $matchedRule.workflow -}}
@@ -399,6 +406,9 @@ Usage:
 {{- $prevConditionType := "" -}}
 {{- $orderedWorkflow := dict -}}
 {{- range $stepName, $stepDef := $workflow -}}
+{{- if not (regexMatch "^[a-z][A-Za-z0-9]*$" $stepName) -}}
+{{- fail (printf "metal-settings: Workflow step key %q must be lowerCamelCase" $stepName) -}}
+{{- end -}}
 {{- if not $stepDef.order -}}
 {{- fail (printf "metal-settings: Workflow step %q has no order" $stepName) -}}
 {{- end -}}
@@ -410,6 +420,7 @@ Usage:
 {{- end -}}
 {{- range $orderKey, $workflowEntry := $orderedWorkflow -}}
 {{- $name := $workflowEntry.name -}}
+{{- $renderName := include "metal-settings.kebabCase" $name -}}
 {{- $stepDef := $workflowEntry.stepDef -}}
 {{- $order := int $stepDef.order -}}
 {{- $kind := $stepDef.kind -}}
@@ -524,7 +535,7 @@ owns just those servers for this model+kind).
 {{- $versionKeyPresent := or (not $versionKey) $versionExists -}}
 {{- $paramsKeyPresent := or (not $paramsKey) $rawParamsExists -}}
 {{- $hasData := and (gt (len $data) 0) $domainEnabled $settingsEnabled $versionEnabled $rawParamsEnabled $settingsKeyPresent $versionKeyPresent $paramsKeyPresent -}}
-{{- $conditionType := printf "metal.cloud.sap/step%d-%s-done" $order $name -}}
+{{- $conditionType := printf "metal.cloud.sap/step%d-%s-done" $order $renderName -}}
 {{/*
 Per-step manual overrides (completionConditionTypeOverride/readinessGatesOverride/setMetadataName)
 live EXCLUSIVELY on the Workflow step definition ($stepDef) - never in parameters: (which is pure
@@ -532,12 +543,12 @@ vendor/model firmware/settings data, nothing else - see the "Machine inventory" 
 auto-computation (order+name / nearest-preceding-step, generated default name) stays the default
 for every step that doesn't set these. A stepDef-level override is scoped to every model using that
 Workflow (or Workflow variant) - to scope it to ONE model/cluster type only, define a new named
-Workflow variant with the override baked into its step (same pattern WorkflowSciSettings already
-uses for settingsKey customization) and assign it via a rollouts.Types rule (see (3) below), rather
+Workflow variant with the override baked into its step (same pattern workflowSciSettings already
+uses for settingsKey customization) and assign it via a rollouts.types rule (see (3) below), rather
 than editing the shared Workflow.
 
 serverFilter is NOT one of these - it's never read from $stepDef at all. Its ONLY source is the
-matched rollouts.Types rule's own filter.include.servers/filter.exclude.servers (see
+matched rollouts.types rule's own filter.include.servers/filter.exclude.servers (see
 metal-settings.matchingWorkflowsForClusterType above), computed per step above as
 $stepServerFilter. A step needing a genuinely different server subset than its siblings in the
 same rule gets its own rule (with its own filter.include/filter.exclude) pointing at a Workflow
@@ -590,7 +601,10 @@ anything it could express a second rule already covers.
 {{- if hasKey $stepDef "enabled" -}}
 {{- $_ := set $step "enabled" $stepDef.enabled -}}
 {{- end -}}
-{{- $_ := set $ruleResult $name $step -}}
+{{- if hasKey $ruleResult $renderName -}}
+{{- fail (printf "metal-settings: Workflow has multiple step keys that normalize to %q" $renderName) -}}
+{{- end -}}
+{{- $_ := set $ruleResult $renderName $step -}}
 {{- $prevConditionType = $finalConditionType -}}
 {{- end -}}
 {{- $_ := set $result (toString $ruleIndex) $ruleResult -}}

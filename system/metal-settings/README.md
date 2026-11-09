@@ -7,9 +7,9 @@ This Helm chart deploys BIOS/BMC firmware versions and settings for bare-metal s
 Every vendor/model is configured through two separate, single-purpose places in `values.yaml`:
 
 1. **`parameters:`** — USER INPUT. Per vendor/model firmware/settings data (version, imagePath/imageURI, settingsFileName/settingsContent), `enabled` toggles, and an optional `rollouts:` override (see below). The only place that changes when bumping a firmware version, a settings file, or turning a vendor/model/domain/variant on or off.
-2. **`Workflow:` / `rollouts.Types:`** — WORKFLOW. `Workflow:` is the static, vendor/model-agnostic definition of the 6-step chain shape (stepName/kind, in order). `rollouts.Types:` maps every known cluster type to a LIST OF RULES (each optionally filtered by model/server) that select which `Workflow` applies — see [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below.
+2. **`Workflow:` / `rollouts.types:`** — WORKFLOW. `Workflow:` is the static, vendor/model-agnostic definition of the 6-step chain shape (stepName/kind, in order). `rollouts.types:` maps every known cluster type to a LIST OF RULES (each optionally filtered by model/server) that select which `Workflow` applies — see [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below.
 
-`_helpers.tpl`'s `metal-settings.computedChain` combines both (plus the `CRDVersionControl.features.readinessGates.enabled` feature flag) into the final ordered chain for a given model + cluster type, which the 5 step templates render into Kubernetes custom resources:
+`_helpers.tpl`'s `metal-settings.computedChain` combines both (plus the `crdVersionControl.features.readinessGates.enabled` feature flag) into the final ordered chain for a given model + cluster type, which the 5 step templates render into Kubernetes custom resources:
 
 | Kind | Rendered | Purpose |
 |------|----------|---------|
@@ -23,45 +23,45 @@ Additionally, when `bmcSettings.enabled` is true and the corresponding name is s
 - A `ConfigMap` (`clusterConfig.configMapName`) holding cluster-level values (e.g. syslog server).
 - A `Secret` (`clusterConfig.hpeLicenseSecretName`) holding the HPE iLO license key.
 
-Settings content is stored as flat YAML files under `bios_settings/` and `bmc_settings/`, referenced by filename via `settingsFileName` (or inlined via `settingsContent`). See [Parameters](#parameters-parameters--user-input), [Workflow](#workflow--the-static-workflow-shape), and [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below for the full schema, [CRDVersionControl](#crdversioncontrol) for per-kind toggles and ordered/gated rollouts, and [setMetadataName](#setmetadataname-custom--dynamic-resource-names) for custom/dynamic resource naming.
+Settings content is stored as flat YAML files under `bios_settings/` and `bmc_settings/`, referenced by filename via `settingsFileName` (or inlined via `settingsContent`). See [Parameters](#parameters-parameters--user-input), [Workflow](#workflow--the-static-workflow-shape), and [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below for the full schema, [crdVersionControl](#crdversioncontrol) for per-kind toggles and ordered/gated rollouts, and [setMetadataName](#setmetadataname-custom--dynamic-resource-names) for custom/dynamic resource naming.
 
 ## From `values.yaml` to Rendered Resource
 
 One real, complete worked example — Dell PowerEdge R7615, `cc-kvm-compute` cluster type, default (non-gated) rendering — showing exactly where every field in each kind of rendered Custom Resource comes from.
 
-`Workflow:` + `rollouts.Types:` decide the SHAPE of each step (`order`/`kind`/`versionKey`/`settingsKey`) and which cluster type(s) get a resource at all - `parameters:` only ever supplies the leaf data a step's `versionKey`/`settingsKey`/`paramsKey` points at. `poweredge-r7615` doesn't override either, so it resolves to the chart's single default rule for every cluster type (see [Workflow](#workflow--the-static-workflow-shape) / [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) above):
+`Workflow:` + `rollouts.types:` decide the SHAPE of each step (`order`/`kind`/`versionKey`/`settingsKey`) and which cluster type(s) get a resource at all - `parameters:` only ever supplies the leaf data a step's `versionKey`/`settingsKey`/`paramsKey` points at. `poweredge-r7615` doesn't override either, so it resolves to the chart's single default rule for every cluster type (see [Workflow](#workflow--the-static-workflow-shape) / [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) above):
 
 ```yaml
-Defaultrollouts:
-  Types:
+defaultRollouts:
+  types:
     cc-kvm-compute:
-      - workflow: *Workflow   # one rule, no filter -> matches every model, including poweredge-r7615
+      - workflow: *workflow   # one rule, no filter -> matches every model, including poweredge-r7615
 
-Workflow: &Workflow
-  bmc-settings-initial:
+workflow: &workflow
+  bmcSettingsInitial:
     order: 1
     kind: BMCSettingsSet
     settingsKey: bmc.settings.initialSettings
-    enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"
-    # CRDVersionControl.features.readinessGates.enabled defaults to false -> this step's "enabled"
+    enabled: "{{ .Values.crdVersionControl.features.readinessGates.enabled }}"
+    # crdVersionControl.features.readinessGates.enabled defaults to false -> this step's "enabled"
     # resolves to false -> no BMCSettingsSet is rendered for bmc-settings-initial at all (see
     # metal-settings.stepEnabled in _helpers.tpl). Set that flag true to turn this step on instead.
-  bmc-version:
+  bmcVersion:
     order: 2
     kind: BMCVersionSet
     versionKey: bmc.versions.defaultVersion   # -> reads parameters.dell.poweredge-r7615.bmc.versions.defaultVersion
-  bios-version:
+  biosVersion:
     order: 3
     kind: BIOSVersionSet
     versionKey: bios.versions.defaultVersion   # -> reads parameters.dell.poweredge-r7615.bios.versions.defaultVersion
-  bios-settings:
+  biosSettings:
     order: 5
     kind: BIOSSettingsSet
     versionKey: bios.versions.defaultVersion
     settingsKey: bios.settings.defaultSettings  # -> reads parameters.dell.poweredge-r7615.bios.settings.defaultSettings
     # Optional per-step overrides (none set here, so every rendered resource below uses the
     # auto-computed defaults): setMetadataName (custom name), completionConditionTypeOverride /
-    # readinessGatesOverride (only meaningful once CRDVersionControl.features.readinessGates.enabled
+    # readinessGatesOverride (only meaningful once crdVersionControl.features.readinessGates.enabled
     # is true - see "Readiness-Gate Chaining" below).
   firmware:
     order: 6
@@ -81,7 +81,7 @@ firmwareRepo:
 global:
   region: eu-de-1
   tld: cloud.sap
-CRDVersionControl:
+crdVersionControl:
   apiVersions:
     biosSettingsSet: metal.ironcore.dev/v1alpha1
     bmcSettingsSet: metal.ironcore.dev/v1alpha1
@@ -119,7 +119,7 @@ parameters:
 ### → `BIOSSettingsSet`
 
 ```yaml
-apiVersion: metal.ironcore.dev/v1alpha1        # CRDVersionControl.apiVersions.biosSettingsSet
+apiVersion: metal.ironcore.dev/v1alpha1        # crdVersionControl.apiVersions.biosSettingsSet
 kind: BIOSSettingsSet
 metadata:
   name: dell-poweredge-r7615-cc-kvm-compute    # auto-computed: "<vendor>-<model>-<clusterType>" (lower-cased)
@@ -129,7 +129,7 @@ spec:
     matchLabels:
       kubernetes.metal.cloud.sap/type: poweredge-r7615          # labelKeys.type: <model> (the parameters.dell.<model> map key)
       kubernetes.metal.cloud.sap/cluster-type: cc-kvm-compute   # labelKeys.clusterType: <clusterType> currently being rendered
-    # No matchExpressions block: no matching rollouts.Types rule set an include.servers/
+    # No matchExpressions block: no matching rollouts.types rule set an include.servers/
     # exclude.servers -> targets every server matching the labels above. If the matched rule DID
     # set e.g. filter.include.servers: [node003-bb086], this would instead render:
     #   matchExpressions:
@@ -139,9 +139,9 @@ spec:
     # (operator: NotIn when the servers came from "exclude" instead of "include" - see
     # metal-settings.serverMatchExpressions in _helpers.tpl).
   biosSettingsTemplate:
-    serverMaintenancePolicy: OwnerApproval       # CRDVersionControl.features.biosSettings.serverMaintenancePolicy
+    serverMaintenancePolicy: OwnerApproval       # crdVersionControl.features.biosSettings.serverMaintenancePolicy
     retryPolicy:
-      maxAttempts: 5                             # CRDVersionControl.features.biosSettings.retryPolicy
+      maxAttempts: 5                             # crdVersionControl.features.biosSettings.retryPolicy
     settingsFlow:                                 # content of bios_settings/dell-r7615.yaml (parameters.dell.poweredge-r7615.bios.settings.defaultSettings),
     - name: enableIntegratedNIC                   # loaded via $.Files.Get and inlined verbatim (not rendered via tpl, unlike BMC settings below)
       priority: 10
@@ -154,7 +154,7 @@ spec:
 ### → `BIOSVersionSet` (rendered once per model, not per cluster type)
 
 ```yaml
-apiVersion: metal.ironcore.dev/v1alpha1        # CRDVersionControl.apiVersions.biosVersionSet
+apiVersion: metal.ironcore.dev/v1alpha1        # crdVersionControl.apiVersions.biosVersionSet
 kind: BIOSVersionSet
 metadata:
   name: dell-poweredge-r7615                    # auto-computed: "<vendor>-<model>" - no clusterType suffix (Version-kind steps render once per model)
@@ -164,7 +164,7 @@ spec:
     matchLabels:
       kubernetes.metal.cloud.sap/type: poweredge-r7615   # labelKeys.type: <model> - no clusterType label (applies regardless of cluster type)
   biosVersionTemplate:
-    serverMaintenancePolicy: OwnerApproval       # CRDVersionControl.features.biosVersions.serverMaintenancePolicy
+    serverMaintenancePolicy: OwnerApproval       # crdVersionControl.features.biosVersions.serverMaintenancePolicy
     version: "1.11.2"                            # parameters.dell.poweredge-r7615.bios.versions.defaultVersion.version
     image:
       # firmwareRepo.scheme + "://" + firmwareRepo.host + "." + global.region + "." + global.tld + imagePath
@@ -174,13 +174,13 @@ spec:
       URI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/BIOS_5MVJG_WN64_1.11.2.EXE"
       transferProtocol: "HTTPS"                  # upper(firmwareRepo.scheme) - follows the same host/scheme config as the URI above.
     retryPolicy:
-      maxAttempts: 5                             # CRDVersionControl.features.biosVersions.retryPolicy
+      maxAttempts: 5                             # crdVersionControl.features.biosVersions.retryPolicy
 ```
 
 ### → `BMCVersionSet` (rendered once per model, mirrors `BIOSVersionSet`)
 
 ```yaml
-apiVersion: metal.ironcore.dev/v1alpha1        # CRDVersionControl.apiVersions.bmcVersionSet
+apiVersion: metal.ironcore.dev/v1alpha1        # crdVersionControl.apiVersions.bmcVersionSet
 kind: BMCVersionSet
 metadata:
   name: dell-poweredge-r7615
@@ -189,24 +189,24 @@ spec:
     matchLabels:
       kubernetes.metal.cloud.sap/type: poweredge-r7615
   bmcVersionTemplate:
-    serverMaintenancePolicy: OwnerApproval       # CRDVersionControl.features.bmcVersions.serverMaintenancePolicy
+    serverMaintenancePolicy: OwnerApproval       # crdVersionControl.features.bmcVersions.serverMaintenancePolicy
     version: "7.20.60.50"                       # parameters.dell.poweredge-r7615.bmc.versions.defaultVersion.version
     image:
       # Same composition + override rules as BIOSVersionSet above (firmwareRepo.hostOverride / versions.<key>.imageURI)
       URI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
       transferProtocol: "HTTPS"                  # upper(firmwareRepo.scheme), same as BIOSVersionSet above
     retryPolicy:
-      maxAttempts: 5                             # CRDVersionControl.features.bmcVersions.retryPolicy
+      maxAttempts: 5                             # crdVersionControl.features.bmcVersions.retryPolicy
 ```
 
-### → `BMCSettingsSet` (disabled by default — requires `clusterConfig` + `CRDVersionControl.features.bmcSettings.enabled: true`)
+### → `BMCSettingsSet` (disabled by default — requires `clusterConfig` + `crdVersionControl.features.bmcSettings.enabled: true`)
 
 ```yaml
-CRDVersionControl:
+crdVersionControl:
   features:
     bmcSettings:
       enabled: false   # the chart's actual default - with this (unchanged), bmc_settings.yaml's top-level
-                       # {{- if .Values.CRDVersionControl.features.bmcSettings.enabled }} is false, so NO
+                       # {{- if .Values.crdVersionControl.features.bmcSettings.enabled }} is false, so NO
                        # BMCSettingsSet is rendered for ANY model/cluster type - not even an empty list, the
                        # whole template produces no output. Set true (and clusterConfig.configMapName/
                        # syslogServer) to render the resource shown below.
@@ -224,7 +224,7 @@ spec:
       kubernetes.metal.cloud.sap/cluster-type: cc-kvm-compute
     # Same serverFilter -> matchExpressions behavior as BIOSSettingsSet above.
   bmcSettingsTemplate:
-    serverMaintenancePolicy: OwnerApproval       # CRDVersionControl.features.bmcSettings.serverMaintenancePolicy
+    serverMaintenancePolicy: OwnerApproval       # crdVersionControl.features.bmcSettings.serverMaintenancePolicy
     version: "7.20.60.50"                       # parameters.dell.poweredge-r7615.bmc.versions.defaultVersion.version
     # Content of bmc_settings/dell-default.yaml (parameters.dell.poweredge-r7615.bmc.settings.defaultSettings), loaded via
     # $.Files.Get and rendered via `tpl` (unlike BIOS settings) - so it can reference clusterConfig.* Helm values directly:
@@ -244,10 +244,10 @@ spec:
       # ...NodeName/BB/Region variables (objectFieldRef against BMC labels) - see bmc_settings/dell-default.yaml...
 ```
 
-### → `FirmwareUpdateSet` (disabled by default — requires `CRDVersionControl.features.firmware.enabled: true`)
+### → `FirmwareUpdateSet` (disabled by default — requires `crdVersionControl.features.firmware.enabled: true`)
 
 ```yaml
-apiVersion: system.metal.ironcore.dev/v1alpha1  # CRDVersionControl.apiVersions.firmwareUpdateSet
+apiVersion: system.metal.ironcore.dev/v1alpha1  # crdVersionControl.apiVersions.firmwareUpdateSet
 kind: FirmwareUpdateSet
 metadata:
   name: dell-poweredge-r7615-cc-kvm-compute
@@ -272,13 +272,13 @@ spec:
       rebootNeeded: true                          # ...params.defaultVersion.rebootNeeded
     progressDeadlineSeconds: 3600                  # ...params.defaultVersion.progressDeadlineSeconds (passed through verbatim - see firmware.params.<key>'s "generic escape hatch" in values.yaml)
     retryPolicy:
-      maxAttempts: 5                               # CRDVersionControl.features.firmware.retryPolicy
-    serverMaintenancePolicy: OwnerApproval         # CRDVersionControl.features.firmware.serverMaintenancePolicy
+      maxAttempts: 5                               # crdVersionControl.features.firmware.retryPolicy
+    serverMaintenancePolicy: OwnerApproval         # crdVersionControl.features.firmware.serverMaintenancePolicy
 ```
 
 ## Cluster-Type Scoping and enabled Toggles
 
-- **`rollouts.Types:`** (top-level, optional) — the REAL cluster type(s) present on the cluster this release is deployed to, set via the cluster's own kube-secrets/foundation-deployment values override. — this lets user restrict deployment to a SUBSET of the chart's known cluster types. If left unset (the default), it falls back to `Defaultrollouts.Types` (the full catalog). See [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below for the full rule-list schema.
+- **`rollouts.types:`** (top-level, optional) — the REAL cluster type(s) present on the cluster this release is deployed to, set via the cluster's own kube-secrets/foundation-deployment values override. — this lets user restrict deployment to a SUBSET of the chart's known cluster types. If left unset (the default), it falls back to `defaultRollouts.types` (the full catalog). See [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below for the full rule-list schema.
 - **`enabled` toggles** cascade top-down through five independent, optional levels (all default `true` when unset — a disabled level skips every step under it regardless of its children's own `enabled` values): 
   - `parameters.<vendor>.enabled` (vendor), 
   - `parameters.<vendor>.<model>.enabled` (model), 
@@ -308,14 +308,14 @@ clusterConfig:
   managedNamespace: "metal-servers"   # Namespace where the ConfigMap/Secret above are deployed
 ```
 
-## CRDVersionControl
+## crdVersionControl
 
 One top-level values key controlling both per-kind enable/retryPolicy toggles and optional ordered/gated rollout chaining.
 
 ### Per-kind enable toggles
 
 ```yaml
-CRDVersionControl:
+crdVersionControl:
   features:
     biosSettings:
       enabled: true                    # Enable/disable all BIOSSettingsSet resources
@@ -348,7 +348,7 @@ CRDVersionControl:
 
 `serverMaintenancePolicy` (`OwnerApproval` by default, for every kind) is passed straight through to each kind's own `<kind>Template.serverMaintenancePolicy` field - override per-kind to change who/what must approve maintenance on affected Servers.
 
-All vendor/model entries are defined under `parameters:` in `values.yaml` (see below) — there's no separate filter configuration anymore; use `rollouts.Types` and `enabled` toggles instead.
+All vendor/model entries are defined under `parameters:` in `values.yaml` (see below) — there's no separate filter configuration anymore; use `rollouts.types` and `enabled` toggles instead.
 
 ### BMCSettingsSet specifics
 
@@ -361,7 +361,7 @@ Dynamic per-BMC values (hostname, region, building-block) are resolved at reconc
 #### Enabling BMCSettings for Dell
 
 ```yaml
-CRDVersionControl:
+crdVersionControl:
   features:
     bmcSettings:
       enabled: true
@@ -374,7 +374,7 @@ clusterConfig:
 #### Enabling BMCSettings for HPE (with license key)
 
 ```yaml
-CRDVersionControl:
+crdVersionControl:
   features:
     bmcSettings:
       enabled: true
@@ -387,7 +387,7 @@ clusterConfig:
 ### Readiness-Gate Chaining (apiVersions / readinessGates)
 
 ```yaml
-CRDVersionControl:
+crdVersionControl:
   apiVersions:
     biosSettingsSet: "metal.ironcore.dev/v1alpha1"
     bmcSettingsSet: "metal.ironcore.dev/v1alpha1"
@@ -404,7 +404,7 @@ CRDVersionControl:
   - `false` (default): each chain step renders as an independent resource with no `readinessGates`/`completionConditionType` fields — compatible with the plain metal-operator apiVersions.
   - `true`: each model's chain steps render as an ORDERED sequence of resources. A step only starts once the previous step's `completionConditionType` has been patched (`status: True`) onto the related Server(s) — mirroring metal-maintenance-operator's e2e chain test. Every rendered step must then set `completionConditionType`, and every non-first step must set `readinessGates` (the chart computes both generically; it fails fast if either is missing).
 
-**Precondition**: enabling `readinessGates` requires `CRDVersionControl.apiVersions.*` to already point at metal-maintenance-operator's groups — the plain metal-operator group has no `readinessGates`/`completionConditionType` fields at all. The chart fails fast if this precondition isn't met.
+**Precondition**: enabling `readinessGates` requires `crdVersionControl.apiVersions.*` to already point at metal-maintenance-operator's groups — the plain metal-operator group has no `readinessGates`/`completionConditionType` fields at all. The chart fails fast if this precondition isn't met.
 
 Naming convention used throughout the chart: `metal.cloud.sap/step<order>-<stepName>-done`, e.g. `metal.cloud.sap/step1-bmc-settings-initial-done`. `readinessGatesOverride` (set on a `Workflow` step definition — see [Workflow](#workflow--the-static-workflow-shape) below) replaces the auto-computed `readinessGates` outright — only needed for a step that must gate on something other than "the nearest preceding step this model has data for" (e.g. a one-off entry gating on a different model's step).
 
@@ -432,9 +432,9 @@ parameters:
             enabled: bool?
 ```
 
-`parameters:` has no `rollouts` key at all (vendor or model level) - every workflow/server routing decision lives in `rollouts.Types` instead, keyed off a model's name in a rule's `include`/`exclude` (see [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below).
+`parameters:` has no `rollouts` key at all (vendor or model level) - every workflow/server routing decision lives in `rollouts.types` instead, keyed off a model's name in a rule's `include`/`exclude` (see [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below).
 
- `setMetadataName`/`completionConditionTypeOverride`/`readinessGatesOverride` are entirely rendering/selection control, so they are controlled exclusively on the `Workflow` step definition itself — see [Workflow](#workflow--the-static-workflow-shape) below. `serverFilter` is also pure rendering/selection control, but lives on `rollouts.Types` rules instead (see [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below) - none of these 4 fields are ever set under `parameters:`.
+ `setMetadataName`/`completionConditionTypeOverride`/`readinessGatesOverride` are entirely rendering/selection control, so they are controlled exclusively on the `Workflow` step definition itself — see [Workflow](#workflow--the-static-workflow-shape) below. `serverFilter` is also pure rendering/selection control, but lives on `rollouts.types` rules instead (see [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below) - none of these 4 fields are ever set under `parameters:`.
 
 `enabled` defaults to `true` at every level and cascades down: a disabled vendor/model/domain skips every step under it regardless of its children's own `enabled` values.
 
@@ -459,31 +459,31 @@ parameters:
             enabled: false          # settings.<key> level -> skips just bmc-settings-initial
 ```
 
-A model that needs different settings for different groups of cluster types (e.g. `proliant-dl560-gen11` — KVM cluster types use one BIOS settings file, Kubernetes cluster types use another) expresses that via `rollouts.Types` rules keyed off its model name — see `Defaultrollouts.Types` in `values.yaml` for the real `proliant-dl560-gen11` example — rather than a separate `parameters` entry. ALL of a model's data lives in exactly one `parameters.<vendor>.<model>` block.
+A model that needs different settings for different groups of cluster types (e.g. `proliant-dl560-gen11` — KVM cluster types use one BIOS settings file, Kubernetes cluster types use another) expresses that via `rollouts.types` rules keyed off its model name — see `defaultRollouts.types` in `values.yaml` for the real `proliant-dl560-gen11` example — rather than a separate `parameters` entry. ALL of a model's data lives in exactly one `parameters.<vendor>.<model>` block.
 
 ### Workflow — the static workflow shape
 
 ```yaml
-Workflow: &Workflow
-  bmc-settings-initial:
+workflow: &workflow
+  bmcSettingsInitial:
     order: 1
     kind: BMCSettingsSet
     settingsKey: bmc.settings.initialSettings
-    enabled: "{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"
-  bmc-version:
+    enabled: "{{ .Values.crdVersionControl.features.readinessGates.enabled }}"
+  bmcVersion:
     order: 2
     kind: BMCVersionSet
     versionKey: bmc.versions.defaultVersion
-  bios-version:
+  biosVersion:
     order: 3
     kind: BIOSVersionSet
     versionKey: bios.versions.defaultVersion
-  bmc-settings:
+  bmcSettings:
     order: 4
     kind: BMCSettingsSet
     versionKey: bmc.versions.defaultVersion
     settingsKey: bmc.settings.defaultSettings
-  bios-settings:
+  biosSettings:
     order: 5
     kind: BIOSSettingsSet
     versionKey: bios.versions.defaultVersion
@@ -498,22 +498,22 @@ This is the static, vendor/model-agnostic chain shape — order is explicit (the
 
 A step's `versionKey`/`settingsKey` is a fully-qualified relative path `"<domain>.settings.<key>"` / `"<domain>.versions.<key>"` (e.g. `"bmc.settings.initialSettings"` reads `bmc.settings.initialSettings` for whichever vendor/model is currently being rendered). `<domain>` must match the domain implied by the step's own `kind` (`BMC*` -> `bmc`, `BIOS*` -> `bios`) — a mismatch fails the render fast with a clear error, so a copy-paste mistake can't silently resolve the wrong data.
 
-A step's `enabled` field (e.g. `bmc-settings-initial` has one) may instead be a quoted template string tied to another values path (e.g. `"{{ .Values.CRDVersionControl.features.readinessGates.enabled }}"`), re-evaluated via `tpl` at render time — a reusable pattern for any future step whose presence should depend on a values field other than `parameters:` data.
+A step's `enabled` field (e.g. `bmc-settings-initial` has one) may instead be a quoted template string tied to another values path (e.g. `"{{ .Values.crdVersionControl.features.readinessGates.enabled }}"`), re-evaluated via `tpl` at render time — a reusable pattern for any future step whose presence should depend on a values field other than `parameters:` data.
 
-A model needing a genuinely different step shape for some of its cluster types (extra/fewer steps, different `versionKey`/`settingsKey` wiring) defines its own named `Workflow` variant (e.g. `WorkflowSciSettings` in `values.yaml`) and references it from `rollouts.Types` — see below. **Version-kind steps** (`bmc-version`/`bios-version`) have no cluster-type dimension — every `Workflow` variant a given model uses must define them identically; the chart fails fast at render time if they ever diverge across that model's cluster types.
+A model needing a genuinely different step shape for some of its cluster types (extra/fewer steps, different `versionKey`/`settingsKey` wiring) defines its own named `Workflow` variant (e.g. `workflowSciSettings` in `values.yaml`) and references it from `rollouts.types` — see below. **Version-kind steps** (`bmc-version`/`bios-version`) have no cluster-type dimension — every `Workflow` variant a given model uses must define them identically; the chart fails fast at render time if they ever diverge across that model's cluster types.
 
 A step definition may additionally set these 3 OPTIONAL manual-override fields — all pure rendering/selection control, never data, which is why they live here and nowhere under `parameters:` (see [Parameters](#parameters-parameters--user-input) above):
 
 | Field | Effect |
 |-------|--------|
-| `setMetadataName` | Replaces the auto-computed `<vendor>-<model>(-<clusterType>)` resource name outright. A literal string applies identically to every model that resolves this exact `Workflow` (or variant), so a per-model custom name needs its own named `Workflow` variant referenced via a `rollouts.Types` rule scoped to that one model (not a change to the shared `Workflow`). See [setMetadataName](#setmetadataname-custom--dynamic-resource-names) below. |
+| `setMetadataName` | Replaces the auto-computed `<vendor>-<model>(-<clusterType>)` resource name outright. A literal string applies identically to every model that resolves this exact `Workflow` (or variant), so a per-model custom name needs its own named `Workflow` variant referenced via a `rollouts.types` rule scoped to that one model (not a change to the shared `Workflow`). See [setMetadataName](#setmetadataname-custom--dynamic-resource-names) below. |
 | `completionConditionTypeOverride` | Replaces the auto-computed `metal.cloud.sap/step{order}-{name}-done` `completionConditionType` outright. |
 | `readinessGatesOverride` | Replaces the auto-computed `readinessGates` outright — only needed for a step that must gate on something other than "the nearest preceding step this model has data for". |
 
 ```yaml
-WorkflowSciSettings: &WorkflowSciSettings
+workflowSciSettings: &workflowSciSettings
   # ...other steps unchanged...
-  bios-settings:
+  biosSettings:
     order: 5
     kind: BIOSSettingsSet
     versionKey: bios.versions.defaultVersion
@@ -524,29 +524,29 @@ WorkflowSciSettings: &WorkflowSciSettings
     #     requiredStatus: "True"
 ```
 
-### rollouts.Types — workflow/server selection, keyed by cluster type
+### rollouts.types — workflow/server selection, keyed by cluster type
 
-`rollouts.Types` maps every known cluster type to a LIST OF RULES, each shaped `{ filter?: { include?: { models?, resources?, servers? }, exclude?: { models?, resources?, servers? } }, workflow }`:
+`rollouts.types` maps every known cluster type to a LIST OF RULES, each shaped `{ filter?: { include?: { models?, resources?, servers? }, exclude?: { models?, resources?, servers? } }, workflow }`:
 
 ```yaml
 # Chart default catalog - every cluster type this chart knows about.
-Defaultrollouts:
-  Types:
+defaultRollouts:
+  types:
     cc-kvm-compute:
-      - workflow: *Workflow
+      - workflow: *workflow
     sci-k8s-controlplane:
-      - workflow: *Workflow
+      - workflow: *workflow
     sci-k8s-management:
-      - workflow: *Workflow
+      - workflow: *workflow
     sci-k8s-runtime:
-      - workflow: *Workflow
+      - workflow: *workflow
     sci-k8s-storage:
-      - workflow: *Workflow
+      - workflow: *workflow
     cc-ironcore:
-      - workflow: *Workflow
+      - workflow: *workflow
 ```
 
-A cluster override file sets its own top-level `rollouts.Types` (not nested under `Defaultrollouts`) - this wins over `Defaultrollouts` entirely (the chart itself never defines a top-level `rollouts:` key, so there's nothing for the override to merge against), which is what lets a single override restrict deployment to a subset of the chart's known cluster types.
+A cluster override file sets its own top-level `rollouts.types` (not nested under `defaultRollouts`) - this wins over `defaultRollouts` entirely (the chart itself never defines a top-level `rollouts:` key, so there's nothing for the override to merge against), which is what lets a single override restrict deployment to a subset of the chart's known cluster types.
 
 A rule's `filter` is optional - omitted (or empty) matches every model/kind/server.
 
@@ -560,20 +560,20 @@ A rule's `filter` is optional - omitted (or empty) matches every model/kind/serv
 
 `exclude`/`include` never flow into the rendered resource themselves (chart-internal only, except `include.servers`/`exclude.servers` which compose into the rendered `serverFilter`) and never affect how a rule's `Workflow` steps are computed (the `readinessGates`/`completionConditionType` cascade stays based on the full, unmodified `Workflow`).
 
-**ALL rules that match a given model are used - not first-match-wins** - so one broad rule with `exclude: { models: [X] }` plus a second rule with `include: { models: [X] }` correctly produce two independent resources for X; similarly one broad rule with `exclude: { models: [X], servers: [nodeA] }` plus a second, narrower rule with `include: { models: [X], servers: [nodeA] }` correctly produce two independent resources that together cover every server of X without overlap, with no separate `parameters` entry needed for the second rule - see [UC13](#uc13-different-settings-for-one-specific-server-within-a-model) below. There is no separate vendor/model-level override cascade - `parameters:` has no `rollouts` key at all; ALL workflow/server routing for a given model happens via a `rollouts.Types` rule's `include`/`exclude`.
+**ALL rules that match a given model are used - not first-match-wins** - so one broad rule with `exclude: { models: [X] }` plus a second rule with `include: { models: [X] }` correctly produce two independent resources for X; similarly one broad rule with `exclude: { models: [X], servers: [nodeA] }` plus a second, narrower rule with `include: { models: [X], servers: [nodeA] }` correctly produce two independent resources that together cover every server of X without overlap, with no separate `parameters` entry needed for the second rule - see [UC13](#uc13-different-settings-for-one-specific-server-within-a-model) below. There is no separate vendor/model-level override cascade - `parameters:` has no `rollouts` key at all; ALL workflow/server routing for a given model happens via a `rollouts.types` rule's `include`/`exclude`.
 
-For a given `parameters.<vendor>.<model>` and a given effective cluster type (a key of whichever `rollouts.Types` is in effect), each matching rule's resolved workflow's Settings-kind steps (`BMCSettingsSet`/`BIOSSettingsSet`) render once per (cluster type, matching rule); Version-kind steps (`BMCVersionSet`/`BIOSVersionSet`) render once per model regardless of cluster type/rule - every matching rule's resolved workflow, across every cluster type, must define identical version-kind steps for a given model.
+For a given `parameters.<vendor>.<model>` and a given effective cluster type (a key of whichever `rollouts.types` is in effect), each matching rule's resolved workflow's Settings-kind steps (`BMCSettingsSet`/`BIOSSettingsSet`) render once per (cluster type, matching rule); Version-kind steps (`BMCVersionSet`/`BIOSVersionSet`) render once per model regardless of cluster type/rule - every matching rule's resolved workflow, across every cluster type, must define identical version-kind steps for a given model.
 
-**Worked example** — `proliant-dl560-gen11` uses the global default `Workflow` (and `bios.settings.defaultSettings`) for `cc-kvm-compute` (one rule, matches every model), but `sci-k8s-controlplane`/`sci-k8s-management`/`sci-k8s-runtime`/`sci-k8s-storage`/`cc-ironcore` each have TWO rules routing just `proliant-dl560-gen11` to a `WorkflowSciSettings` variant (pointing `bios-settings.settingsKey` at `bios.settings.sciSettings` instead) and every other model to the default `Workflow` (this is the real, bundled `Defaultrollouts.Types` in `values.yaml` - shown here as a cluster override would set it, via the top-level `rollouts.Types`):
+**Worked example** — `proliant-dl560-gen11` uses the global default `Workflow` (and `bios.settings.defaultSettings`) for `cc-kvm-compute` (one rule, matches every model), but `sci-k8s-controlplane`/`sci-k8s-management`/`sci-k8s-runtime`/`sci-k8s-storage`/`cc-ironcore` each have TWO rules routing just `proliant-dl560-gen11` to a `workflowSciSettings` variant (pointing `bios-settings.settingsKey` at `bios.settings.sciSettings` instead) and every other model to the default `Workflow` (this is the real, bundled `defaultRollouts.types` in `values.yaml` - shown here as a cluster override would set it, via the top-level `rollouts.types`):
 
 ```yaml
 rollouts:
-  Types:
+  types:
     sci-k8s-controlplane:
       - filter: { exclude: { models: [proliant-dl560-gen11] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
     # ...sci-k8s-management/sci-k8s-runtime/sci-k8s-storage/cc-ironcore follow the same pattern...
 
 parameters:
@@ -599,7 +599,7 @@ setMetadataName: "abc-123"                                 # -> abc-123(-<cluste
 setMetadataName: "abc-{{ .Values.clusterConfig.region }}"  # -> abc-<region>(-<clusterType>)
 ```
 
-Because `setMetadataName` lives on the shared step definition, a literal string applies identically to every model resolving that `Workflow` (or variant). A per-model custom name therefore needs its own named `Workflow` variant (with `setMetadataName` set on the relevant step) assigned via a `rollouts.Types` rule scoped to just that one model — see [UC11](#uc11-give-a-resource-a-custom--dynamic-name) below for a worked example.
+Because `setMetadataName` lives on the shared step definition, a literal string applies identically to every model resolving that `Workflow` (or variant). A per-model custom name therefore needs its own named `Workflow` variant (with `setMetadataName` set on the relevant step) assigned via a `rollouts.types` rule scoped to just that one model — see [UC11](#uc11-give-a-resource-a-custom--dynamic-name) below for a worked example.
 
 Resource names must be unique across the whole chart — a duplicate name (after any `-<clusterType>` suffix) fails the render with an error naming the conflicting entry/model/clusterType.
 
@@ -689,14 +689,14 @@ parameters:
           defaultSettings:
             settingsContent: *myCustomSettings   # Use inline content instead of settingsFileName
 
-# Scope this model's resources to specific nodes via a rollouts.Types rule (cluster override shown
-# here - this could also live in Defaultrollouts.Types in values.yaml):
+# Scope this model's resources to specific nodes via a rollouts.types rule (cluster override shown
+# here - this could also live in defaultRollouts.types in values.yaml):
 rollouts:
-  Types:
+  types:
     cc-kvm-compute:
       - filter:
           include: { models: [poweredge-r860-custom], servers: [node003-bb086, node009-bb086] }
-        workflow: *Workflow
+        workflow: *workflow
 ```
 
 
@@ -714,11 +714,11 @@ Deploy all resources, for every cluster type in the catalog, to all regions:
 
 ```yaml
 # values.yaml (default)
-CRDVersionControl:
+crdVersionControl:
   features:
     biosSettings:
       enabled: true
-# no top-level rollouts: override -> falls back to Defaultrollouts.Types (the full catalog)
+# no top-level rollouts: override -> falls back to defaultRollouts.types (the full catalog)
 ```
 
 ### UC2: Scope to the Real Cluster Type(s) (recommended per-cluster override)
@@ -727,20 +727,20 @@ Set this in the cluster's own kube-secrets/foundation-deployment values override
 
 ```yaml
 rollouts:
-  Types:
+  types:
     sci-k8s-runtime:
-      - workflow: *Workflow
+      - workflow: *workflow
 ```
 
-Only the cluster type(s) listed here get Settings resources generated — see [rollouts.Types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) above for the full rule-list schema.
+Only the cluster type(s) listed here get Settings resources generated — see [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) above for the full rule-list schema.
 
-**Referencing `Workflow`/`WorkflowSciSettings`/etc. from a separate cluster override file:** , reference it as a `tpl`-evaluated string — by render time `.Values` is the fully-merged tree across every values file, so `.Values.Workflow` resolves correctly without any duplication:
+**Referencing `Workflow`/`workflowSciSettings`/etc. from a separate cluster override file:** , reference it as a `tpl`-evaluated string — by render time `.Values` is the fully-merged tree across every values file, so `.Values.workflow` resolves correctly without any duplication:
 
 ```yaml
 rollouts:
-  Types:
+  types:
     sci-k8s-runtime:
-      - workflow: "{{ .Values.Workflow | toYaml }}"
+      - workflow: "{{ .Values.workflow | toYaml }}"
 ```
 
 ### UC3: Disable a Vendor Entirely
@@ -797,15 +797,15 @@ parameters:
     enabled: false
   # ... disable every other Dell model too
 rollouts:
-  Types:
+  types:
     sci-k8s-controlplane:
-      - workflow: *Workflow
+      - workflow: *workflow
 ```
 
 ### UC8: Disable a Resource Type Entirely
 
 ```yaml
-CRDVersionControl:
+crdVersionControl:
   features:
     biosSettings:
       enabled: false
@@ -838,7 +838,7 @@ _bmcSettingsContent:
       settings:
         SnmpCommunity: "public"
 
-CRDVersionControl:
+crdVersionControl:
   features:
     bmcSettings:
       enabled: true
@@ -870,19 +870,19 @@ To additionally scope this model's resources to specific nodes, add `filter.incl
 
 ```yaml
 rollouts:
-  Types:
+  types:
     cc-kvm-compute:
       - filter:
           include: { servers: [node001-bb001, node002-bb001] }
-        workflow: *Workflow
+        workflow: *workflow
 ```
 
 ### UC10: Enable Readiness-Gate Chaining
 
-Chain each model's steps so they run strictly in order, gated on the previous step's completion. Requires `CRDVersionControl.apiVersions.*` to already point at metal-maintenance-operator's groups:
+Chain each model's steps so they run strictly in order, gated on the previous step's completion. Requires `crdVersionControl.apiVersions.*` to already point at metal-maintenance-operator's groups:
 
 ```yaml
-CRDVersionControl:
+crdVersionControl:
   apiVersions:
     biosSettingsSet: "system.metal.ironcore.dev/v1alpha1"
     bmcSettingsSet: "baseboard.metal.ironcore.dev/v1alpha1"
@@ -893,7 +893,7 @@ CRDVersionControl:
       enabled: true
 ```
 
-See [CRDVersionControl](#crdversioncontrol--readiness-gate-chaining) above for the full behavior.
+See [crdVersionControl](#crdversioncontrol--readiness-gate-chaining) above for the full behavior.
 
 ### UC11: Give a Resource a Custom / Dynamic Name
 
@@ -910,20 +910,20 @@ parameters:
           defaultSettings: dell-r770-nic-slot10.yaml
 ```
 
-`setMetadataName` lives on the `Workflow` step definition, not under `parameters:`, so a custom name for just this model's `bios-settings` step needs its own named `Workflow` variant, assigned via a `rollouts.Types` rule scoped to just this model:
+`setMetadataName` lives on the `Workflow` step definition, not under `parameters:`, so a custom name for just this model's `bios-settings` step needs its own named `Workflow` variant, assigned via a `rollouts.types` rule scoped to just this model:
 
 ```yaml
 rollouts:
-  Types:
+  types:
     cc-kvm-compute:
       - filter: { exclude: { models: [poweredge-r770-nic-slot10] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [poweredge-r770-nic-slot10] } }
-        workflow: *WorkflowR770NicSlot10
+        workflow: *workflowR770NicSlot10
 
-WorkflowR770NicSlot10: &WorkflowR770NicSlot10
+workflowR770NicSlot10: &workflowR770NicSlot10
   # ...other steps unchanged (copy from Workflow)...
-  bios-settings:
+  biosSettings:
     order: 5
     kind: BIOSSettingsSet
     versionKey: bios.versions.defaultVersion
@@ -935,21 +935,21 @@ See [setMetadataName](#setmetadataname-custom--dynamic-resource-names) above for
 
 ### UC12: Different Settings Per Cluster-Type Group For One Model
 
-Different BIOS tuning per cluster type for the same physical model (this is the real, bundled `Defaultrollouts.Types` in `values.yaml` for `proliant-dl560-gen11` - shown here as a cluster override would set it):
+Different BIOS tuning per cluster type for the same physical model (this is the real, bundled `defaultRollouts.types` in `values.yaml` for `proliant-dl560-gen11` - shown here as a cluster override would set it):
 
 ```yaml
 rollouts:
-  Types:
+  types:
     sci-k8s-controlplane:
       - filter: { exclude: { models: [proliant-dl560-gen11] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
     sci-k8s-management:
       - filter: { exclude: { models: [proliant-dl560-gen11] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
 
 parameters:
   hpe:
@@ -974,27 +974,27 @@ parameters:
           nicSlot10Settings: dell-r770-nic-slot10.yaml
 ```
 
-Splitting only `bios-settings` by server, while every other step (`bmc-settings`/`bmc-version`/`bios-version`/`firmware`) stays uniform across every `poweredge-r770` server, takes just **two** rules — one broad rule covering everything for `poweredge-r770` (its `exclude.servers` carves `node004-bb098` out of just its `BIOSSettingsSet` step, leaving every other step, and every other server's `BIOSSettingsSet`, untouched), plus one narrow rule covering only `node004-bb098`'s `BIOSSettingsSet`. Both rules reference the exact same, completely unmodified `*Workflow` for everything except the split step - no disabled/omitted-step Workflow variant is needed for the broad rule, which matters because a disabled or omitted step still participates in the `readinessGates` cascade if it's present in a Workflow at all (its absence shifts what "the nearest preceding step" means for the steps after it) - `exclude` sidesteps this by narrowing only the matched step's own `serverFilter`, never touching cascade/`completionConditionType` computation:
+Splitting only `bios-settings` by server, while every other step (`bmc-settings`/`bmc-version`/`bios-version`/`firmware`) stays uniform across every `poweredge-r770` server, takes just **two** rules — one broad rule covering everything for `poweredge-r770` (its `exclude.servers` carves `node004-bb098` out of just its `BIOSSettingsSet` step, leaving every other step, and every other server's `BIOSSettingsSet`, untouched), plus one narrow rule covering only `node004-bb098`'s `BIOSSettingsSet`. Both rules reference the exact same, completely unmodified `*workflow` for everything except the split step - no disabled/omitted-step Workflow variant is needed for the broad rule, which matters because a disabled or omitted step still participates in the `readinessGates` cascade if it's present in a Workflow at all (its absence shifts what "the nearest preceding step" means for the steps after it) - `exclude` sidesteps this by narrowing only the matched step's own `serverFilter`, never touching cascade/`completionConditionType` computation:
 
 ```yaml
 rollouts:
-  Types:
+  types:
     cc-ironcore:
       - filter:
           exclude:
             models: [poweredge-r770]
             resources: [BIOSSettingsSet]
             servers: [node004-bb098]
-        workflow: *Workflow
+        workflow: *workflow
       - filter:
           include:
             models: [poweredge-r770]
             resources: [BIOSSettingsSet]
             servers: [node004-bb098]
-        workflow: *WorkflowR770NicSlot10
+        workflow: *workflowR770NicSlot10
 
-WorkflowR770NicSlot10: &WorkflowR770NicSlot10
-  bios-settings:
+workflowR770NicSlot10: &workflowR770NicSlot10
+  biosSettings:
     order: 5
     kind: BIOSSettingsSet
     versionKey: bios.versions.defaultVersion
@@ -1007,12 +1007,12 @@ WorkflowR770NicSlot10: &WorkflowR770NicSlot10
 
 Both rules' `include`/`exclude` only match `poweredge-r770` - every other model is unaffected. The first rule renders `bmc-settings`/`bmc-version`/`bios-version`/`firmware` uniformly for every R770 server, AND renders `BIOSSettingsSet` for every R770 server except `node004-bb098` (its `serverSelector.matchExpressions` end up `NotIn [node004-bb098]`) - all from one continuous, single cascade pass, so `bios-settings`' `readinessGates` auto-computes correctly against this same rule's own `bios-version` step with no override needed on the broad rule. The second rule renders ONLY `BIOSSettingsSet`, scoped to just `node004-bb098` (`In [node004-bb098]`) - since its `Workflow` is a standalone, sparse one-step chain (no preceding `bios-version` of its own), its `readinessGates` needs the explicit `readinessGatesOverride` shown above, matching what the broad rule's auto-cascade computes for the same step name/order.
 
-In practice, this is the standard pattern for "one specific server within a model needs a different variant of just one step": a broad rule whose `exclude.servers` carves the split kind away from one server for the model, plus a narrow `include`-scoped rule (or more, for more servers) covering just that server with its own Workflow variant for that one step - no separate Workflow variant is needed for the broad rule's role, since `exclude` only narrows its existing `*Workflow` reference in place.
+In practice, this is the standard pattern for "one specific server within a model needs a different variant of just one step": a broad rule whose `exclude.servers` carves the split kind away from one server for the model, plus a narrow `include`-scoped rule (or more, for more servers) covering just that server with its own Workflow variant for that one step - no separate Workflow variant is needed for the broad rule's role, since `exclude` only narrows its existing `*workflow` reference in place.
 
 
 ## Available Cluster Types
 
-`Defaultrollouts.Types` (in `values.yaml`) is the full catalog:
+`defaultRollouts.types` (in `values.yaml`) is the full catalog:
 
 - `cc-kvm-compute`
 - `sci-k8s-controlplane`
@@ -1021,7 +1021,7 @@ In practice, this is the standard pattern for "one specific server within a mode
 - `sci-k8s-storage`
 - `cc-ironcore`
 
-The top-level `rollouts.Types:` (unset by default) is where a real cluster's actual type(s) should be set — see [Cluster-Type Scoping](#cluster-type-scoping-and-enabled-toggles) above. See `parameters:` in `values.yaml` for the full, current vendor/model inventory — static copies here tend to drift out of date as models are added/retired.
+The top-level `rollouts.types:` (unset by default) is where a real cluster's actual type(s) should be set — see [Cluster-Type Scoping](#cluster-type-scoping-and-enabled-toggles) above. See `parameters:` in `values.yaml` for the full, current vendor/model inventory — static copies here tend to drift out of date as models are added/retired.
 
 ## Settings Files
 
@@ -1061,7 +1061,7 @@ The chart includes CI test values in the `ci/` directory for automated testing:
 
 These files are used by [chart-testing](https://github.com/helm/chart-testing) in the CI pipeline to validate:
 - Helm chart linting
-- Template rendering with different `enabled`/`rollouts.Types` configurations
+- Template rendering with different `enabled`/`rollouts.types` configurations
 
 ## Testing
 
@@ -1075,9 +1075,9 @@ Unit test files are located in `tests/`:
 
 | File | Description |
 |------|--------------|
-| `bios_settings_test.yaml` | Tests BIOSSettingsSet rendering, `enabled` cascading, and `rollouts.Types` scoping |
+| `bios_settings_test.yaml` | Tests BIOSSettingsSet rendering, `enabled` cascading, and `rollouts.types` scoping |
 | `bios_versions_test.yaml` | Tests BIOSVersionSet rendering and `enabled` cascading |
-| `bmc_settings_test.yaml` | Tests BMCSettingsSet rendering, `enabled` cascading, and `rollouts.Types` scoping |
+| `bmc_settings_test.yaml` | Tests BMCSettingsSet rendering, `enabled` cascading, and `rollouts.types` scoping |
 | `bmc_versions_test.yaml` | Tests BMCVersionSet rendering and `enabled` cascading |
 
 ## Verifying Rendered Resources
@@ -1092,7 +1092,7 @@ helm template . | grep -c 'kind: BIOSSettingsSet'
 helm template . --set parameters.hpe.enabled=false --set parameters.lenovo.enabled=false \
   | grep -c 'kind: BIOSSettingsSet'
 
-# Preview resources scoped to a single real cluster type (requires a full rollouts.Types
+# Preview resources scoped to a single real cluster type (requires a full rollouts.types
 # override file - see ci/filter-targeted-values.yaml for a worked example)
 helm template . -f ci/filter-targeted-values.yaml
 ```

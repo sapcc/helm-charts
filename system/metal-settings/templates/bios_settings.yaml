@@ -1,6 +1,6 @@
-{{- if .Values.CRDVersionControl.features.biosSettings.enabled }}
+{{- if .Values.crdVersionControl.features.biosSettings.enabled }}
 {{- include "metal-settings.rejectLegacyMachinesKey" . }}
-{{- $gatesEnabled := .Values.CRDVersionControl.features.readinessGates.enabled }}
+{{- $gatesEnabled := .Values.crdVersionControl.features.readinessGates.enabled }}
 {{- if $gatesEnabled }}
 {{- include "metal-settings.requireChainCapableAPI" . }}
 {{- end }}
@@ -53,10 +53,10 @@ guarantee correct sequencing.
 {{- if include "metal-settings.stepEnabled" (dict "step" $s "root" $) }}
 {{- if $gatesEnabled }}
 {{- if not $params.completionConditionType }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- if and (gt $stepIndex 1) (not $params.readinessGates) }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- end }}
 {{- $serverFilters := $params.serverFilter | default (dict "included" (list) "excluded" (list)) }}
@@ -75,7 +75,7 @@ guarantee correct sequencing.
 {{- fail (printf "metal-settings: duplicate BIOSSettingsSet name %q (model %q, clusterType %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $model $clusterType) }}
 {{- end }}
 {{- $_ := set $usedNames $resourceName true }}
-apiVersion: {{ $.Values.CRDVersionControl.apiVersions.biosSettingsSet }}
+apiVersion: {{ $.Values.crdVersionControl.apiVersions.biosSettingsSet }}
 kind: BIOSSettingsSet
 metadata:
   name: {{ $resourceName }}
@@ -89,8 +89,8 @@ spec:
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   biosSettingsTemplate:
-    serverMaintenancePolicy: {{ $.Values.CRDVersionControl.features.biosSettings.serverMaintenancePolicy }}
-{{- with $.Values.CRDVersionControl.features.biosSettings.retryPolicy }}
+    serverMaintenancePolicy: {{ $.Values.crdVersionControl.features.biosSettings.serverMaintenancePolicy }}
+{{- with $.Values.crdVersionControl.features.biosSettings.retryPolicy }}
     retryPolicy:
 {{ toYaml . | indent 6 }}
 {{- end }}

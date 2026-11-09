@@ -40,7 +40,7 @@ labelKeys:
 # metal-maintenance-operator.
 #
 # Every model under `parameters:` is configured via its own bmc:/bios: blocks plus an optional
-# rollouts: override (see the "Machine inventory" comment below). CRDVersionControl.features.
+# rollouts: override (see the "Machine inventory" comment below). crdVersionControl.features.
 # readinessGates.enabled (opt-in, disabled by default) only changes HOW a model's chain steps are
 # rendered, not where their data comes from:
 # - When false (default): each chain step is rendered as an independent resource (today's
@@ -52,14 +52,14 @@ labelKeys:
 #   related Server(s) — mirroring the readiness-gate pattern used by metal-maintenance-operator's
 #   e2e chain test.
 #
-# PRECONDITION: CRDVersionControl.features.readinessGates.enabled requires
-# CRDVersionControl.apiVersions.* above to point at metal-maintenance-operator's groups
+# PRECONDITION: crdVersionControl.features.readinessGates.enabled requires
+# crdVersionControl.apiVersions.* above to point at metal-maintenance-operator's groups
 # ("baseboard.metal.ironcore.dev/v1alpha1" for BMCSettingsSet/BMCVersionSet,
 # "system.metal.ironcore.dev/v1alpha1" for BIOSSettingsSet/BIOSVersionSet) — the plain
 # metal-operator group ("metal.ironcore.dev/v1alpha1") has no readinessGates/
 # completionConditionType fields at all. The chart fails fast (via `fail`) if this precondition
 # isn't met.
-CRDVersionControl:
+crdVersionControl:
   apiVersions:
     biosSettingsSet: "metal.ironcore.dev/v1alpha1"
     bmcSettingsSet: "metal.ironcore.dev/v1alpha1"
@@ -156,9 +156,9 @@ clusterConfig:
 #
 #    Map keys: use the hardware model name (e.g. poweredge-r640). A model that needs different
 #    settings for different groups of cluster types (e.g. proliant-dl560-gen11, see worked example
-#    below) expresses that via a rollouts.Types rule (see (3) below) keyed off its model name,
+#    below) expresses that via a rollouts.types rule (see (3) below) keyed off its model name,
 #    rather than a separate parameters entry or a rollouts: key under parameters itself (parameters
-#    has no "rollouts" key at all - ALL workflow routing/selection lives in rollouts.Types) - ALL of
+#    has no "rollouts" key at all - ALL workflow routing/selection lives in rollouts.types) - ALL of
 #    a model's data lives in exactly one parameters.<vendor>.<model> block.
 #
 # 2) Workflow: — WORKFLOW SHAPE. The one, global, vendor/model-agnostic definition of the 6-step
@@ -169,7 +169,7 @@ clusterConfig:
 #    makes each reference directly self-contained/greppable instead of relying on the reader
 #    already knowing the domain-from-kind convention.
 #    A step's "enabled" field (only bmc-settings-initial has one) may instead be a quoted template
-#    string tied to another values path (e.g. "{{ .Values.CRDVersionControl.features.
+#    string tied to another values path (e.g. "{{ .Values.crdVersionControl.features.
 #    readinessGates.enabled }}"), re-evaluated via tpl at render time - a reusable pattern for any
 #    future step whose presence should depend on a values field other than parameters: data.
 #    completionConditionType/readinessGates are NOT data —
@@ -177,13 +177,13 @@ clusterConfig:
 #    step's position in this list and from which steps a model has parameters: data for.
 #    A model needing a genuinely different step shape (extra/fewer steps, different
 #    versionKey/settingsKey wiring) for some of its cluster types defines its own named Workflow
-#    variant (e.g. WorkflowSciSettings below) and references it from a rollouts.Types rule (3).
+#    variant (e.g. workflowSciSettings below) and references it from a rollouts.types rule (3).
 #    A step definition may additionally set these 3 OPTIONAL manual-override fields - all pure
 #    rendering/selection control.
 #      setMetadataName: replaces the auto-computed "<vendor>-<model>" resource name outright - a
 #                        literal string applies identically to every model that resolves this exact
 #                        Workflow (or Workflow variant), so a per-model custom name needs its own
-#                        named Workflow variant referenced via a rollouts.Types rule scoped to that
+#                        named Workflow variant referenced via a rollouts.types rule scoped to that
 #                        one model (not a change to the shared Workflow).
 #      completionConditionTypeOverride: replaces the auto-computed
 #                        "metal.cloud.sap/step{order}-{name}-done" completionConditionType outright.
@@ -193,20 +193,20 @@ clusterConfig:
 #                        different step).
 #    serverFilter (restricting which individual servers a step's rendered resource targets) is
 #    never set here - it is NEVER read from a Workflow step at all. Its ONLY source is a
-#    rollouts.Types rule's filter.include.servers/filter.exclude.servers (3). A step needing a
+#    rollouts.types rule's filter.include.servers/filter.exclude.servers (3). A step needing a
 #    genuinely different server subset than its siblings gets its own rule (with its own
 #    filter.include/filter.exclude) pointing at a Workflow variant that only changes that one step
 #    - there is no separate step-level escape hatch. With no include.servers/exclude.servers from
 #    the matched rule, a step's auto-computed behavior is to target every server matching the
 #    resource's vendor/model/clusterType selector.
 #
-# 3) rollouts.Types: — WORKFLOW/SERVER SELECTION, keyed by cluster type. Maps every known cluster
+# 3) rollouts.types: — WORKFLOW/SERVER SELECTION, keyed by cluster type. Maps every known cluster
 #    type to a LIST OF RULES, each shaped
 #    { filter?: { include?: { models?, resources?, servers? }, exclude?: { models?, resources?, servers? } }, workflow }:
-#      Defaultrollouts.Types.<clusterType>  - chart default catalog (below) - every cluster type
+#      defaultRollouts.types.<clusterType>  - chart default catalog (below) - every cluster type
 #                                              this chart knows about, used whenever a cluster
 #                                              hasn't overridden rollouts:
-#      rollouts.Types.<clusterType>         - REAL, per-cluster override - set via the cluster's
+#      rollouts.types.<clusterType>         - REAL, per-cluster override - set via the cluster's
 #                                              own kube-secrets/foundation-deployment values file.
 #                                              This is a plain top-level map the chart itself never
 #                                              defines, so whatever a cluster's override file puts
@@ -214,7 +214,7 @@ clusterConfig:
 #                                              to THIS cluster (no merge-with-defaults - that's what
 #                                              makes it possible to deploy to a SUBSET of the known
 #                                              catalog with a single override). Falls back to
-#                                              Defaultrollouts.Types if this key is entirely absent.
+#                                              defaultRollouts.types if this key is entirely absent.
 #    For a given rule, "filter" is optional - omitted (or empty) matches every model/kind/server.
 #    "include" is the POSITIVE match: include.models/include.resources (lists of model names /
 #    kind names, e.g. BIOSSettingsSet) gate whether the rule applies at all - empty/absent means
@@ -241,50 +241,51 @@ clusterConfig:
 #    otherwise corrupt the readinessGates cascade - a disabled/omitted step still participates in
 #    order-based cascade computation if left present in the Workflow map) - see README's UC13.
 #    There is no separate vendor/model-level override cascade - parameters: has no "rollouts" key
-#    at all; ALL workflow/server routing for a given model happens via a rollouts.Types rule's
+#    at all; ALL workflow/server routing for a given model happens via a rollouts.types rule's
 #    include/exclude.
 #    For a given parameters.<vendor>.<model> and a given effective cluster type (a key of whichever
-#    rollouts.Types is in effect - the cluster override if set, else Defaultrollouts.Types), each
+#    rollouts.types is in effect - the cluster override if set, else defaultRollouts.types), each
 #    matching rule's resolved workflow's Settings-kind steps (BMCSettingsSet/BIOSSettingsSet) are
 #    rendered once per (cluster type, matching rule); Version-kind steps (BMCVersionSet/
 #    BIOSVersionSet) are rendered once per MODEL regardless of cluster type/rule - every matching
 #    rule's resolved workflow, across every cluster type, must define identical version-kind steps
 #    for a given model (the chart fails fast if they ever diverge).
 #
-# 4) CRDVersionControl.features.readinessGates.enabled — FEATURE ENABLEMENT. Toggles whether the
+# 4) crdVersionControl.features.readinessGates.enabled — FEATURE ENABLEMENT. Toggles whether the
 #    chain shape from (2)/(3) is even applied: false (default) renders each present step as an
 #    independent resource with no readinessGates/completionConditionType; true renders the full
 #    ordered, gated chain.
 #
-# See parameters.hpe.proliant-dl560-gen11 and the sci-*/cc-ironcore rules in Defaultrollouts.Types
+# See parameters.hpe.proliant-dl560-gen11 and the sci-*/cc-ironcore rules in defaultRollouts.types
 # below for a worked example of a model routed to a different Workflow for some cluster types via
-# a rollouts.Types rule's include.models (different bios settings for kvm vs. sci cluster types).
+# a rollouts.types rule's include.models (different bios settings for kvm vs. sci cluster types).
 
 # Workflow: the one static, vendor/model-agnostic 6-step chain shape. "order" is explicit (map
 # iteration in Go templates is key-sorted by step NAME, not insertion order, so each step declares
-# its own position). completionConditionType is always "metal.cloud.sap/step{order}-{name}-done";
+# its own position). Step keys are lowerCamelCase; the kebab-case form of the key is used in
+# generated Kubernetes identifiers. completionConditionType is always "metal.cloud.sap/step{order}-{name}-done";
 # readinessGates always gates on the nearest PRECEDING step (by this order) that the model has
 # parameters: data for - computed once, generically, in _helpers.tpl, never hand-authored per model.
-Workflow: &Workflow
-  bmc-settings-initial:
+workflow: &workflow
+  bmcSettingsInitial:
     order: 1
     kind: BMCSettingsSet
     settingsKey: bmc.settings.initialSettings
     enabled: false
-  bmc-version:
+  bmcVersion:
     order: 2
     kind: BMCVersionSet
     versionKey: bmc.versions.defaultVersion
-  bios-version:
+  biosVersion:
     order: 3
     kind: BIOSVersionSet
     versionKey: bios.versions.defaultVersion
-  bmc-settings:
+  bmcSettings:
     order: 4
     kind: BMCSettingsSet
     versionKey: bmc.versions.defaultVersion
     settingsKey: bmc.settings.defaultSettings
-  bios-settings:
+  biosSettings:
     order: 5
     kind: BIOSSettingsSet
     versionKey: bios.versions.defaultVersion
@@ -294,18 +295,18 @@ Workflow: &Workflow
     kind: FirmwareUpdateSet
     paramsKey: firmware.params.defaultVersion
 
-# WorkflowSciSettings: used by parameters.hpe.proliant-dl560-gen11's rollouts.Types override for
+# workflowSciSettings: used by parameters.hpe.proliant-dl560-gen11's rollouts.types override for
 # sci-*/cc-ironcore cluster types - its ONLY real difference from Workflow is bios-settings reading
 # bios.settings.sciSettings instead of bios.settings.defaultSettings, so it's a sparse,
-# single-step Workflow (same UC13 pattern as WorkflowR770NicSlot10 below) rather than a full
+# single-step Workflow (same UC13 pattern as workflowR770NicSlot10 below) rather than a full
 # duplicate of every step - bmc-settings/bmc-version/bios-version/firmware for this model are
-# covered uniformly by the shared *Workflow instead (see Defaultrollouts.Types' exclude.resources/
+# covered uniformly by the shared *workflow instead (see defaultRollouts.types' exclude.resources/
 # include.resources rule pair), so there's only ever ONE copy of those steps to keep in sync.
 # readinessGatesOverride matches what the full Workflow's cascade computes for this step (order 5,
 # nearest preceding step with data = bmc-settings at order 4) - this sparse Workflow has no
 # preceding step of its own to auto-cascade from.
-WorkflowSciSettings: &WorkflowSciSettings
-  bios-settings:
+workflowSciSettings: &workflowSciSettings
+  biosSettings:
     order: 5
     kind: BIOSSettingsSet
     versionKey: bios.versions.defaultVersion
@@ -319,57 +320,57 @@ WorkflowSciSettings: &WorkflowSciSettings
     paramsKey: firmware.params.defaultVersion
     
 
-# Defaultrollouts.Types: chart default catalog - every cluster type this chart knows about, mapped
+# defaultRollouts.types: chart default catalog - every cluster type this chart knows about, mapped
 # to a LIST of rules (see the "Machine inventory" comment above for the full filter/include/exclude
 # semantics). Applies whenever a cluster HASN'T overridden rollouts: - i.e. deploy to every known
 # cluster type, today's default behavior. A cluster override file sets its own top-level
-# rollouts.Types (not nested under Defaultrollouts) to deploy to a specific subset instead - e.g.
+# rollouts.types (not nested under defaultRollouts) to deploy to a specific subset instead - e.g.
 #   rollouts:
 #     Types:
 #       sci-k8s-management:
-#         - workflow: *Workflow
+#         - workflow: *workflow
 # deploys ONLY to sci-k8s-management on that cluster.
 #
 # sci-k8s-*/cc-ironcore each have TWO rules: the default Workflow covers every model uniformly
 # (including proliant-dl560-gen11's bmc-settings/bmc-version/bios-version/firmware), except its own
-# BIOSSettingsSet is excluded for just proliant-dl560-gen11 - WorkflowSciSettings (sparse,
+# BIOSSettingsSet is excluded for just proliant-dl560-gen11 - workflowSciSettings (sparse,
 # FastFaultTolerantADDDC bios-settings only) covers that one step instead - cc-kvm-compute uses the
 # default Workflow (AdvancedEcc bios settings) for every model, proliant-dl560-gen11 included, so it
 # only needs one rule.
-Defaultrollouts:
-  Types:
+defaultRollouts:
+  types:
     cc-kvm-compute:
-      - workflow: *Workflow
+      - workflow: *workflow
     sci-k8s-controlplane:
       - filter:
           exclude:
             models: [proliant-dl560-gen11]
             resources: [BIOSSettingsSet]
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
     sci-k8s-management:
       - filter: { exclude: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
     sci-k8s-runtime:
       - filter: { exclude: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
     sci-k8s-storage:
       - filter: { exclude: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
     cc-ironcore:
       - filter: { exclude: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *Workflow
+        workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
-        workflow: *WorkflowSciSettings
+        workflow: *workflowSciSettings
     sci-k8s-edmz:
-      - workflow: *Workflow
+      - workflow: *workflow
 
 parameters:
   dell:
@@ -674,7 +675,7 @@ parameters:
         settings:
           defaultSettings: hpe-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: hpe-default.yaml
       bios:
         versions:
@@ -685,9 +686,9 @@ parameters:
           defaultSettings: hpe-dl380-gen11-latest-kvm.yaml
     # Shared by all proliant-dl560-gen11 cluster types: cc-kvm-compute uses AdvancedEcc (global
     # default Workflow + bios.settings.defaultSettings); sci-k8s-*/cc-ironcore use
-    # FastFaultTolerantADDDC (routed via Defaultrollouts.Types' per-clusterType include.models rules
-    # above -> WorkflowSciSettings -> bios.settings.sciSettings). No rollouts: key needed here -
-    # parameters: has no "rollouts" field at all; the routing lives entirely in Defaultrollouts.Types.
+    # FastFaultTolerantADDDC (routed via defaultRollouts.types' per-clusterType include.models rules
+    # above -> workflowSciSettings -> bios.settings.sciSettings). No rollouts: key needed here -
+    # parameters: has no "rollouts" field at all; the routing lives entirely in defaultRollouts.types.
     proliant-dl560-gen11:
       bmc:
         versions:
@@ -697,7 +698,7 @@ parameters:
         settings:
           defaultSettings: hpe-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: hpe-default.yaml
       bios:
         versions:
@@ -749,7 +750,7 @@ parameters:
         settings:
           defaultSettings: hpe-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: hpe-default.yaml
       bios:
         versions:
@@ -779,7 +780,7 @@ parameters:
         settings:
           defaultSettings: lenovo-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: lenovo-default.yaml
       bios:
         versions:
@@ -797,7 +798,7 @@ parameters:
         settings:
           defaultSettings: lenovo-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: lenovo-default.yaml
       bios:
         versions:
@@ -815,7 +816,7 @@ parameters:
         settings:
           defaultSettings: lenovo-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: lenovo-default.yaml
       bios:
         versions:
@@ -833,7 +834,7 @@ parameters:
         settings:
           defaultSettings: lenovo-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: lenovo-default.yaml
       bios:
         versions:
@@ -851,7 +852,7 @@ parameters:
         settings:
           defaultSettings: lenovo-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: lenovo-default.yaml
       bios:
         versions:
@@ -869,7 +870,7 @@ parameters:
         settings:
           defaultSettings: lenovo-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: lenovo-default.yaml
       bios:
         versions:
@@ -887,7 +888,7 @@ parameters:
         settings:
           defaultSettings: lenovo-default.yaml
           initialSettings:
-            enabled: false # bmc-settings-initial: mock scaffold, not ready for this vendor yet
+            enabled: false # bmcSettingsInitial: mock scaffold, not ready for this vendor yet
             settingsFileName: lenovo-default.yaml
       bios:
         versions:

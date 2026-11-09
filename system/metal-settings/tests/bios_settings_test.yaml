@@ -127,10 +127,10 @@ tests:
   # per cluster so only the cluster types actually present get a Settings resource)
   - it: should only render the real cluster's clusterTypes when clusterTypes is set
     set:
-      rollouts.Types:
+      rollouts.types:
         sci-k8s-controlplane:
           - workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -169,10 +169,10 @@ tests:
       parameters.dell.poweredge-r840.enabled: false
       parameters.dell.poweredge-r860.enabled: false
       parameters.dell.poweredge-xe9680.enabled: false
-      rollouts.Types:
+      rollouts.types:
         sci-k8s-controlplane:
           - workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -189,7 +189,7 @@ tests:
   # UC6: Disable entirely
   - it: should render no resources when enabled is false
     set:
-      CRDVersionControl.features.biosSettings.enabled: false
+      crdVersionControl.features.biosSettings.enabled: false
     asserts:
       - hasDocuments:
           count: 0
@@ -197,10 +197,10 @@ tests:
   # UC7: clusterTypes override narrows to multiple remaining types (equivalent to excluding one)
   - it: should exclude a single cluster type by omitting it from clusterTypes
     set:
-      rollouts.Types:
+      rollouts.types:
         sci-k8s-controlplane: &biosSettingsOnlyWorkflow
           - workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -231,14 +231,14 @@ tests:
   # very same rule, no separate catch-all needed.
   - it: should skip BIOSSettingsSet when exclude matches model+kind with no servers
     set:
-      rollouts.Types:
+      rollouts.types:
         cc-ironcore:
           - filter:
               exclude:
                 models: [poweredge-r770]
                 resources: [BIOSSettingsSet]
             workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -259,11 +259,11 @@ tests:
   # A rule scoped via include.models+include.resources only matches that one model/kind.
   - it: should render BIOSSettingsSet when include matches it
     set:
-      rollouts.Types:
+      rollouts.types:
         cc-ironcore:
           - filter: { exclude: { models: [poweredge-r770] } }
             workflow: &minimalWorkflow
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -284,7 +284,7 @@ tests:
   # broad rule's exclude only narrows its OWN scope for the one model/kind it targets.
   - it: should split BIOSSettingsSet by server via complementary exclude/include servers
     set:
-      rollouts.Types:
+      rollouts.types:
         cc-ironcore:
           - filter:
               exclude:
@@ -292,7 +292,7 @@ tests:
                 resources: [BIOSSettingsSet]
                 servers: [node004-bb098]
             workflow: &sharedWorkflow
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -303,7 +303,7 @@ tests:
                 resources: [BIOSSettingsSet]
                 servers: [node004-bb098]
             workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -323,7 +323,7 @@ tests:
 
   - it: should exclude node004-bb098 from the default rule's matchExpressions
     set:
-      rollouts.Types:
+      rollouts.types:
         cc-ironcore:
           - filter:
               exclude:
@@ -331,7 +331,7 @@ tests:
                 resources: [BIOSSettingsSet]
                 servers: [node004-bb098]
             workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -349,7 +349,7 @@ tests:
 
   - it: should include only node004-bb098 in the nic-slot10 rule's matchExpressions
     set:
-      rollouts.Types:
+      rollouts.types:
         cc-ironcore:
           - filter:
               exclude:
@@ -357,7 +357,7 @@ tests:
                 resources: [BIOSSettingsSet]
                 servers: [node004-bb098]
             workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion
@@ -368,7 +368,7 @@ tests:
                 resources: [BIOSSettingsSet]
                 servers: [node004-bb098]
             workflow:
-              bios-settings:
+              biosSettings:
                 order: 1
                 kind: BIOSSettingsSet
                 versionKey: bios.versions.defaultVersion

@@ -1,6 +1,6 @@
-{{- if .Values.CRDVersionControl.features.firmware.enabled }}
+{{- if .Values.crdVersionControl.features.firmware.enabled }}
 {{- include "metal-settings.rejectLegacyMachinesKey" . }}
-{{- $gatesEnabled := .Values.CRDVersionControl.features.readinessGates.enabled }}
+{{- $gatesEnabled := .Values.crdVersionControl.features.readinessGates.enabled }}
 {{- if $gatesEnabled }}
 {{- include "metal-settings.requireChainCapableAPI" . }}
 {{- end }}
@@ -75,10 +75,10 @@ per-model exactly like imageURI overrides imagePath.
 {{- if include "metal-settings.stepEnabled" (dict "step" $s "root" $) }}
 {{- if $gatesEnabled }}
 {{- if not $params.completionConditionType }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- if and (gt $stepIndex 1) (not $params.readinessGates) }}
-{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- end }}
 {{- $serverFilters := $params.serverFilter | default (dict "included" (list) "excluded" (list)) }}
@@ -106,11 +106,11 @@ per-model exactly like imageURI overrides imagePath.
 {{- $_ := set $dellRepo "shareType" (upper $.Values.firmwareRepo.scheme) }}
 {{- end }}
 {{- $_ := set $templateFields "dellRepository" $dellRepo }}
-{{- $_ := set $templateFields "serverMaintenancePolicy" $.Values.CRDVersionControl.features.firmware.serverMaintenancePolicy }}
-{{- with $.Values.CRDVersionControl.features.firmware.retryPolicy }}
+{{- $_ := set $templateFields "serverMaintenancePolicy" $.Values.crdVersionControl.features.firmware.serverMaintenancePolicy }}
+{{- with $.Values.crdVersionControl.features.firmware.retryPolicy }}
 {{- $_ := set $templateFields "retryPolicy" . }}
 {{- end }}
-apiVersion: {{ $.Values.CRDVersionControl.apiVersions.firmwareUpdateSet }}
+apiVersion: {{ $.Values.crdVersionControl.apiVersions.firmwareUpdateSet }}
 kind: FirmwareUpdateSet
 metadata:
   name: {{ $resourceName }}
