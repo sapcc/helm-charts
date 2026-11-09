@@ -173,6 +173,7 @@ load_profile() {
   # Reset profile-optional fields so environment values cannot leak between profiles.
   PROTECT_MRS=""
   CRD_MRS=""
+  NO_CRDS=""
   # shellcheck source=/dev/null
   source "$profile_file"
   
@@ -185,9 +186,20 @@ load_profile() {
   [[ -n "${RELEASE:-}" ]]     || die "Profile missing RELEASE"
   [[ -n "${DDO_CR:-}" ]]      || die "Profile missing DDO_CR"
   [[ -n "${DEPLOY:-}" ]]      || die "Profile missing DEPLOY"
-  [[ -n "${CRD_GROUPS:-}" ]]  || die "Profile missing CRD_GROUPS"
   [[ -n "${NAMESPACE_CASCADE_GATE:-}" ]] || die "Profile missing NAMESPACE_CASCADE_GATE"
   [[ -n "${OWNED_BY_LABEL:-}" ]] || die "Profile missing OWNED_BY_LABEL"
+
+  # NO_CRDS=1: opt-in for operators with no CRDs (e.g. kube-state-metrics-remote).
+  # Disables all CRD-related gates while keeping every other gate fail-closed.
+  # When NO_CRDS=1, CRD_GROUPS and CRD_MRS must both be empty — any value is
+  # ambiguous (which CRDs are being skipped?) and is rejected immediately.
+  if [[ "${NO_CRDS:-}" == "1" ]]; then
+    [[ -z "${CRD_GROUPS:-}" ]] || die "NO_CRDS=1 but CRD_GROUPS is set — remove CRD_GROUPS or unset NO_CRDS"
+    [[ -z "${CRD_MRS:-}" ]]    || die "NO_CRDS=1 but CRD_MRS is set — remove CRD_MRS or unset NO_CRDS"
+  else
+    # With CRDs (default): CRD_GROUPS is required.
+    [[ -n "${CRD_GROUPS:-}" ]]  || die "Profile missing CRD_GROUPS (set NO_CRDS=1 for operators with no CRDs)"
+  fi
 
   # CRD_MRS (optional) names the CRD-protecting ManagedResources explicitly.
   # When set it is authoritative; when empty the CRD-MR set is derived from the
@@ -200,7 +212,8 @@ load_profile() {
   info "  RELEASE=$RELEASE"
   info "  DDO_CR=$DDO_CR"
   info "  DEPLOY=$DEPLOY"
-  info "  CRD_GROUPS=$CRD_GROUPS"
+  info "  CRD_GROUPS=${CRD_GROUPS:-}"
+  info "  NO_CRDS=${NO_CRDS:-}"
   info "  NAMESPACE_CASCADE_GATE=$NAMESPACE_CASCADE_GATE"
 }
 
@@ -294,6 +307,10 @@ preflight_target_connection() {
 
 # Gate 2: CRDs present on target
 preflight_crds_on_target() {
+  if [[ "${NO_CRDS:-}" == "1" ]]; then
+    info "CRD preflight: skipped (NO_CRDS=1 — operator owns no CRDs)"
+    return
+  fi
   step "Preflight: CRDs present on target"
   local group json
   json=$(kt get crd -o json) || die "Cannot list CRDs on target cluster"
@@ -311,6 +328,10 @@ preflight_crds_on_target() {
 # live MR, release-owned, keepObjects:true, not terminating — plus live CRD
 # inventory preservation. No second prefix-based selection loop lives here.
 preflight_mr_keepobjects() {
+  if [[ "${NO_CRDS:-}" == "1" ]]; then
+    info "CRD MR keepObjects gate: skipped (NO_CRDS=1 — operator owns no CRDs)"
+    return
+  fi
   step "Preflight: ManagedResource keepObjects check"
 
   local mr_list

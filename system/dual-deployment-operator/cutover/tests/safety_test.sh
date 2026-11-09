@@ -412,6 +412,142 @@ helm_output_flag_equals_form() {
 }
 
 test_case 'helm output flag uses =-joined form (survives u8s space-form bug)' helm_output_flag_equals_form
+
+# ============================================================================
+# NO_CRDS mode tests
+# ============================================================================
+
+# (a) NO_CRDS unset + empty CRD_GROUPS still dies (unchanged behaviour)
+no_crds_unset_empty_groups_dies() {
+  defaults
+  # Create a temp profile with empty CRD_GROUPS and NO_CRDS unset
+  local tdir; tdir=$(mktemp -d "$TMP/profile-a.XXXXXX")
+  cat > "$tdir/no-crds-unset.env" <<'ENVEOF'
+RELEASE=no-crds-unset; DDO_CR=no-crds-unset; LEGACY_CHART_DIR=system/test
+ROLLOUT_ORDER=99; DEPLOY=test-controller; CONTROLLER_POD_SELECTOR=app=test
+CRD_GROUPS=""; NAMESPACE_CASCADE_GATE=off; OWNED_BY_LABEL=dual-deployment-operator.cc.sap/owned-by
+ENVEOF
+  OPERATOR=no-crds-unset; PROFILES_DIR="$tdir"
+  reject load_profile
+}
+
+# (b1) NO_CRDS=1 + CRD_GROUPS set -> dies (ambiguity guard)
+no_crds_with_groups_set_dies() {
+  defaults
+  local tdir; tdir=$(mktemp -d "$TMP/profile-b1.XXXXXX")
+  cat > "$tdir/bad-no-crds.env" <<'ENVEOF'
+RELEASE=bad-no-crds; DDO_CR=bad-no-crds; LEGACY_CHART_DIR=system/test
+ROLLOUT_ORDER=99; DEPLOY=test-controller; CONTROLLER_POD_SELECTOR=app=test
+NO_CRDS=1; CRD_GROUPS="some.group.example.com"
+NAMESPACE_CASCADE_GATE=off; OWNED_BY_LABEL=dual-deployment-operator.cc.sap/owned-by
+ENVEOF
+  OPERATOR=bad-no-crds; PROFILES_DIR="$tdir"
+  reject load_profile
+}
+
+# (b2) NO_CRDS=1 + CRD_MRS set -> dies (ambiguity guard)
+no_crds_with_crd_mrs_set_dies() {
+  defaults
+  local tdir; tdir=$(mktemp -d "$TMP/profile-b2.XXXXXX")
+  cat > "$tdir/bad-no-crds2.env" <<'ENVEOF'
+RELEASE=bad-no-crds2; DDO_CR=bad-no-crds2; LEGACY_CHART_DIR=system/test
+ROLLOUT_ORDER=99; DEPLOY=test-controller; CONTROLLER_POD_SELECTOR=app=test
+NO_CRDS=1; CRD_GROUPS=""; CRD_MRS="mr-crd-something"
+NAMESPACE_CASCADE_GATE=off; OWNED_BY_LABEL=dual-deployment-operator.cc.sap/owned-by
+ENVEOF
+  OPERATOR=bad-no-crds2; PROFILES_DIR="$tdir"
+  reject load_profile
+}
+
+# (c1) check_mr_coverage is a no-op under NO_CRDS=1 (does not die on empty inventory)
+no_crds_check_mr_coverage_skipped() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  local live='{"apiVersion":"v1","kind":"List","items":[]}'
+  # Without NO_CRDS=1 this would die ("Legacy manifest has no required CRD MR inventory")
+  # because evidence/crd-mrs.txt is absent. With NO_CRDS=1 it must return 0.
+  check_mr_coverage "$live"
+}
+
+# (c2) capture_baselines under NO_CRDS=1 writes empty baseline-crds.json without
+#      querying kt for CRDs (no kt calls at all)
+no_crds_capture_baselines_no_crd_queries() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  BASELINE_SNAPSHOT_KINDS_CLUSTER=''; BASELINE_SNAPSHOT_KINDS_NS=''
+  local dir="$STATE_DIR/baselines-test"; mkdir -p "$dir"
+  local kt_called=0
+  kt() { kt_called=1; echo '{"apiVersion":"v1","kind":"List","items":[]}'; }
+  capture_baselines "$dir"
+  # Must have written an empty valid List
+  jq -e '.items | length == 0' "$dir/baseline-crds.json" >/dev/null || return 1
+  # kt must NOT have been called (no CRD queries)
+  [[ $kt_called -eq 0 ]]
+}
+
+# (c3) verify_baseline under NO_CRDS=1 with empty baseline-crds.json passes
+#      (no CRD uid checks, no Established checks)
+no_crds_verify_baseline_empty_crds_passes() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  BASELINE_SNAPSHOT_KINDS_CLUSTER=''; BASELINE_SNAPSHOT_KINDS_NS=''
+  NAMESPACE_CASCADE_GATE=off
+  run_identity > "$STATE_DIR/identity.json"
+  mkdir -p "$STATE_DIR/evidence"
+  cp "$STATE_DIR/identity.json" "$STATE_DIR/evidence/identity.json"
+  printf '{"apiVersion":"v1","kind":"List","items":[]}\n' > "$STATE_DIR/evidence/baseline-crds.json"
+  evidence seal "$STATE_DIR/evidence"
+  # kt must NOT be called for CRD checks — use a kt that fails to ensure no CRD reads
+  kt() { echo 'kt called unexpectedly' >&2; return 1; }
+  verify_baseline
+}
+
+# (c4) preflight_crds_on_target is skipped under NO_CRDS=1
+no_crds_preflight_crd_target_skipped() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  kt_called=0
+  kt() { kt_called=$((kt_called+1)); echo '{"apiVersion":"v1","kind":"List","items":[]}'; }
+  preflight_crds_on_target
+  # kt should NOT have been called to list CRDs
+  [[ $kt_called -eq 0 ]]
+}
+
+# (c5) preflight_mr_keepobjects is skipped under NO_CRDS=1
+no_crds_preflight_mr_keepobjects_skipped() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  local ks_called=0
+  ks() { ks_called=$((ks_called+1)); echo '{"apiVersion":"v1","kind":"List","items":[]}'; }
+  preflight_mr_keepobjects
+  # ks should NOT have been called for MR keepObjects check
+  [[ $ks_called -eq 0 ]]
+}
+
+# (c6) NO_CRDS=1 is bound into run identity string
+no_crds_in_identity_string() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  local id
+  id=$(run_identity)
+  # The profileContract field must contain NO_CRDS=1
+  echo "$id" | jq -e '.profileContract | contains("NO_CRDS=1")' >/dev/null
+}
+
+# (c7) NO_CRDS unset => identity string does not contain NO_CRDS=1
+no_crds_absent_in_identity_when_unset() {
+  defaults  # defaults sets CRD_GROUPS=ipam.cluster.x-k8s.io, NO_CRDS unset
+  NO_CRDS=''
+  local id
+  id=$(run_identity)
+  # profileContract must NOT claim NO_CRDS=1 (it should end with |NO_CRDS=)
+  echo "$id" | jq -e '.profileContract | contains("NO_CRDS=1") | not' >/dev/null
+}
+
+test_case 'NO_CRDS unset + empty CRD_GROUPS still fails closed' no_crds_unset_empty_groups_dies
+test_case 'NO_CRDS=1 + CRD_GROUPS set is rejected (ambiguity guard)' no_crds_with_groups_set_dies
+test_case 'NO_CRDS=1 + CRD_MRS set is rejected (ambiguity guard)' no_crds_with_crd_mrs_set_dies
+test_case 'check_mr_coverage is no-op under NO_CRDS=1' no_crds_check_mr_coverage_skipped
+test_case 'capture_baselines NO_CRDS=1 writes empty-List baseline-crds without CRD queries' no_crds_capture_baselines_no_crd_queries
+test_case 'verify_baseline NO_CRDS=1 passes with empty baseline-crds (no CRD uid/Established checks)' no_crds_verify_baseline_empty_crds_passes
+test_case 'preflight_crds_on_target is skipped under NO_CRDS=1' no_crds_preflight_crd_target_skipped
+test_case 'preflight_mr_keepobjects is skipped under NO_CRDS=1' no_crds_preflight_mr_keepobjects_skipped
+test_case 'NO_CRDS=1 is bound into run identity string' no_crds_in_identity_string
+test_case 'NO_CRDS absent when unset in run identity string' no_crds_absent_in_identity_when_unset
 test_case 'legacy release reappearance blocks final verification' reappeared_release
 test_case 'real obj_state distinguishes object absence from read/kind errors' real_object_classifier
 test_case 'complete valid mocked evidence capture is sealed and cannot repeat' valid_capture

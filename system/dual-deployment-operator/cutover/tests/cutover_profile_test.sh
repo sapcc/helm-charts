@@ -680,6 +680,60 @@ EOFP2
   setup
 }
 
+test_ksm_no_crds_skips_crd_preflight() {
+  local desc="kube-state-metrics-remote: NO_CRDS=1 skips CRD preflight (no kt get crd)"
+
+  # Clear the log
+  > "$U8S_LOG"
+
+  if ! run_profile_gate kube-state-metrics-remote preflight_crds_on_target >"$TMPDIR_TEST/gate-output" 2>&1; then
+    fail "$desc" "CRD preflight should be skipped (not fail) under NO_CRDS=1"
+    return
+  fi
+
+  # CRD preflight skip message must be present
+  if ! grep -q 'CRD preflight: skipped' "$TMPDIR_TEST/gate-output"; then
+    fail "$desc" "Expected skip message for CRD preflight gate"
+    return
+  fi
+
+  # kt must NOT have been called to list CRDs
+  if grep -q 'crd\b' "$U8S_LOG"; then
+    fail "$desc" "CRD queries found in u8s log — CRD preflight was not fully skipped"
+    echo "  Offending queries:"
+    grep 'crd' "$U8S_LOG" | head -5 | sed 's/^/    /'
+  else
+    pass "$desc"
+  fi
+}
+
+test_ksm_no_crds_skips_mr_keepobjects() {
+  local desc="kube-state-metrics-remote: NO_CRDS=1 skips MR keepObjects gate (no ks get managedresource for CRD check)"
+
+  # Clear the log
+  > "$U8S_LOG"
+
+  if ! run_profile_gate kube-state-metrics-remote preflight_mr_keepobjects >"$TMPDIR_TEST/gate-output" 2>&1; then
+    fail "$desc" "MR keepObjects gate should be skipped (not fail) under NO_CRDS=1"
+    return
+  fi
+
+  # MR gate skip message must be present
+  if ! grep -q 'CRD MR keepObjects gate: skipped' "$TMPDIR_TEST/gate-output"; then
+    fail "$desc" "Expected skip message for CRD MR keepObjects gate"
+    return
+  fi
+
+  # ks must NOT have been called for managedresource listing in this gate
+  if grep -q 'managedresource' "$U8S_LOG"; then
+    fail "$desc" "ManagedResource query found — MR keepObjects gate was not fully skipped"
+    echo "  Offending queries:"
+    grep 'managedresource' "$U8S_LOG" | head -5 | sed 's/^/    /'
+  else
+    pass "$desc"
+  fi
+}
+
 # ============================================================================
 # MAIN
 # ============================================================================
@@ -738,6 +792,14 @@ main() {
   echo ""
   echo "--- Test: P1#2 helm transport error not misread as absent ---"
   test_helm_transport_error_not_misread_as_absent
+
+  echo ""
+  echo "--- Test: kube-state-metrics-remote NO_CRDS skips CRD preflight ---"
+  test_ksm_no_crds_skips_crd_preflight
+
+  echo ""
+  echo "--- Test: kube-state-metrics-remote NO_CRDS skips MR keepObjects gate ---"
+  test_ksm_no_crds_skips_mr_keepobjects
 
   echo ""
   echo "=========================================="

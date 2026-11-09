@@ -39,7 +39,7 @@ u8s() { bounded_call u8s "$@"; }
 run_identity() {
   evidence identity "$OPERATOR" "$CLUSTER" "$TARGET_CTX" "$SEED_CTX" "$NAMESPACE" \
     "$RELEASE" "$DDO_CR" "$DEPLOY" "$((OUTAGE_BUDGET_MIN * 60))" \
-    "$CRD_GROUPS|$NAMESPACE_CASCADE_GATE|${PROTECT_MRS:-}|${BASELINE_SNAPSHOT_KINDS_CLUSTER:-}|${BASELINE_SNAPSHOT_KINDS_NS:-}|$OWNED_BY_LABEL|${FREEZE_KINDS_CLUSTER:-}|${FREEZE_KINDS_NS:-}|${FREEZE_SERVER_STATES:-0}|${CONTROLLER_POD_SELECTOR:-}|${VERIFY_SAMPLE:-}|${CRD_MRS:-}"
+    "$CRD_GROUPS|$NAMESPACE_CASCADE_GATE|${PROTECT_MRS:-}|${BASELINE_SNAPSHOT_KINDS_CLUSTER:-}|${BASELINE_SNAPSHOT_KINDS_NS:-}|$OWNED_BY_LABEL|${FREEZE_KINDS_CLUSTER:-}|${FREEZE_KINDS_NS:-}|${FREEZE_SERVER_STATES:-0}|${CONTROLLER_POD_SELECTOR:-}|${VERIFY_SAMPLE:-}|${CRD_MRS:-}|NO_CRDS=${NO_CRDS:-}"
 }
 
 release_lock() {
@@ -127,6 +127,13 @@ capture_baselines() {
       jq -e '.items | length > 0' "$dir/baseline-$kind.json" >/dev/null || die "Empty required adopted-data inventory: $kind"
     fi
   done
+  if [[ "${NO_CRDS:-}" == "1" ]]; then
+    # NO_CRDS: write an empty but valid baseline-crds inventory so that
+    # downstream consumers (verify_baseline) have a consistent evidence layout
+    # without any CRD names to assert. crd-mrs.txt is written by capture_evidence.
+    printf '{"apiVersion":"v1","kind":"List","items":[]}\n' > "$dir/baseline-crds.json"
+    return
+  fi
   capture_json "$dir/all-crds.json" kt get crd -o json
   local expected='[]'
   if [[ -f "$dir/legacy-crds.json" ]]; then
@@ -171,14 +178,26 @@ capture_evidence() {
   # Save/restore the noglob flag portably (bash 3.2 has no `local -`).
   local _had_noglob=0; [[ -o noglob ]] && _had_noglob=1
   set -f
-  evidence crd-mrs "$dir/legacy-manifest.json" ${CRD_MRS:-} > "$dir/crd-mrs.txt" || die "Cannot resolve CRD MR inventory"
-  [[ -s "$dir/crd-mrs.txt" ]] || die "Resolved CRD MR inventory is empty"
-  evidence embedded-crds "$dir/legacy-manifest.json" ${CRD_MRS:-} > "$dir/legacy-crds.yaml" || die "Cannot extract CRD inventory from installed legacy manifest"
+  if [[ "${NO_CRDS:-}" == "1" ]]; then
+    # NO_CRDS: no CRD ManagedResources, no embedded CRDs. Write empty inventories
+    # so downstream consumers (teardown barrier, verify_baseline) have a consistent
+    # evidence layout. The empty crd-mrs.txt is intentional; check_mr_coverage is
+    # skipped by its own NO_CRDS guard. The empty legacy-crds.json is a valid List.
+    printf '' > "$dir/crd-mrs.txt"
+    printf '{"apiVersion":"v1","kind":"List","items":[]}\n' > "$dir/legacy-crds.json"
+  else
+    evidence crd-mrs "$dir/legacy-manifest.json" ${CRD_MRS:-} > "$dir/crd-mrs.txt" || die "Cannot resolve CRD MR inventory"
+    [[ -s "$dir/crd-mrs.txt" ]] || die "Resolved CRD MR inventory is empty"
+    evidence embedded-crds "$dir/legacy-manifest.json" ${CRD_MRS:-} > "$dir/legacy-crds.yaml" || die "Cannot extract CRD inventory from installed legacy manifest"
+    [[ $_had_noglob -eq 1 ]] || set +f
+    kt create --dry-run=client --validate=false -f "$dir/legacy-crds.yaml" -o json > "$dir/crd-stream.json" || die "Cannot decode legacy CRDs"
+    evidence normalize "$dir/crd-stream.json" > "$dir/legacy-crds.json" || die "Invalid legacy CRD inventory"
+  fi
   [[ $_had_noglob -eq 1 ]] || set +f
-  kt create --dry-run=client --validate=false -f "$dir/legacy-crds.yaml" -o json > "$dir/crd-stream.json" || die "Cannot decode legacy CRDs"
-  evidence normalize "$dir/crd-stream.json" > "$dir/legacy-crds.json" || die "Invalid legacy CRD inventory"
   capture_baselines "$dir"
-  evidence crd-coverage "$dir/legacy-crds.json" "$dir/baseline-crds.json" || die "Incomplete live CRD inventory"
+  if [[ "${NO_CRDS:-}" != "1" ]]; then
+    evidence crd-coverage "$dir/legacy-crds.json" "$dir/baseline-crds.json" || die "Incomplete live CRD inventory"
+  fi
   capture_json "$dir/live-managedresources.json" ks get managedresource -o json
   if [[ "$NAMESPACE_CASCADE_GATE" != off ]]; then
     local gate_ns namespace_json
@@ -213,6 +232,9 @@ capture_evidence() {
 }
 
 check_mr_coverage() {
+  if [[ "${NO_CRDS:-}" == "1" ]]; then
+    return
+  fi
   local live=$1
   # Consume the sealed CRD-MR inventory resolved once at capture time (explicit
   # CRD_MRS authoritative; else mr-crd-* prefix). Fail closed on an empty list.

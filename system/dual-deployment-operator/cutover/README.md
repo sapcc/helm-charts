@@ -68,6 +68,7 @@ the outage externally during the activation gap and any manual recovery.
 | `argora` | argora-operator-remote | three protected data-CR MRs; DDO recovery retention requires separate proof |
 | `ipam-capi-remote` | ipam-capi-remote | two out-of-band pool UIDs on m-qa-de-200; Fail-policy webhook acceptance |
 | `disco-remote` | disco-remote | explicit `CRD_MRS=disco-remote-crd` (legacy chart hand-writes the CRD MR instead of the `mr-crd-*` convention); `records.disco.stable.sap.cc` freeze |
+| `kube-state-metrics-remote` | kube-state-metrics-remote | three RBAC-only shoot MRs (SA/ClusterRole/ClusterRoleBinding), no CRDs and no data CRs; `NO_CRDS=1` disables all CRD-related gates |
 
 IPAM real execution is blocked until installed DDO safe Git/HTTP fetching and
 published/installed admin `source.kustomize` CR rendering are demonstrated. Local
@@ -85,4 +86,6 @@ done
 
 The fixture suite covers routing, discovery, scan classification, profile behavior,
 capture failures, evidence immutability, preservation, readiness, recovery and
-deadline failures. It does not execute a live cutover.
+deadline failures. It includes `NO_CRDS=1` mode correctness (skip guards, ambiguity
+rejection, identity binding) for the `kube-state-metrics-remote` profile. It does
+not execute a live cutover.
