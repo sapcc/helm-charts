@@ -14,7 +14,7 @@
   {{- end -}}
 {{- end -}}
 
-{{/* Connection values, including credentials, remain literal strings. */}}
+{{/* Keep connection values as strings until the bootstrap document is serialized. */}}
 {{- $runtime := dict
   "url" ($root.Values.ldapUrl | toString)
   "user" ($root.Values.ldapUser | toString)

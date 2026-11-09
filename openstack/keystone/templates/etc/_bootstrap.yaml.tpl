@@ -6,6 +6,7 @@
 {{- $groups := list -}}
 {{- $memberships := list -}}
 {{- $assignments := list -}}
+{{- $secretRefs := dict -}}
 
 {{/* Flatten the baseline so the command consumes one domain-qualified format. */}}
 {{- range $seed.domains -}}
@@ -38,6 +39,14 @@
 {{- range .Values.keystoneBootstrap.domains -}}
   {{- $domain := deepCopy . -}}
   {{- $_ := set $domain "config" (include "keystone.bootstrap.ldapConfig" (dict "root" $ "domain" .name) | fromYaml) -}}
+  {{/* Keep deferred expressions out of toYaml so it cannot quote or escape them. */}}
+  {{- range $key, $value := $domain.config.ldap -}}
+    {{- if and (kindIs "string" $value) (hasPrefix "vault+kvv2:///" $value) -}}
+      {{- $placeholder := printf "KEYSTONE_BOOTSTRAP_SECRET_%s" (sha256sum $value) -}}
+      {{- $_ := set $secretRefs $placeholder $value -}}
+      {{- $_ := set $domain.config.ldap $key $placeholder -}}
+    {{- end -}}
+  {{- end -}}
   {{- $domains = append $domains $domain -}}
 {{- end -}}
 {{- $projects = concat $projects (.Values.keystoneBootstrap.projects | default list) -}}
@@ -55,4 +64,10 @@
 {{- $_ := set $bootstrap "groups" $groups -}}
 {{- $_ := set $bootstrap "group_memberships" $memberships -}}
 {{- $_ := set $bootstrap "role_assignments" $assignments -}}
-{{- toYaml $bootstrap -}}
+
+{{/* Escape literal delimiters; secrets-injector quotes resolved values as YAML-safe JSON strings. */}}
+{{- $yaml := toYaml $bootstrap | replace "{{" "{{ \"{{\" }}" -}}
+{{- range $placeholder, $reference := $secretRefs -}}
+  {{- $yaml = replace $placeholder (printf "{{ resolve %q | toJson }}" $reference) $yaml -}}
+{{- end -}}
+{{- $yaml -}}
