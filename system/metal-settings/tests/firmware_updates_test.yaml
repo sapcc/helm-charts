@@ -1,0 +1,454 @@
+suite: firmware_updates
+templates:
+  - firmware_updates.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS
+  #############################################################################
+
+  - it: should render nothing by default because the firmware feature is disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render FirmwareUpdateSet resources when enabled
+    set:
+      crdVersionControl.features.firmware.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 84
+      - isKind:
+          of: FirmwareUpdateSet
+      - isAPIVersion:
+          of: system.metal.ironcore.dev/v1alpha1
+
+  - it: should render one resource per Dell model and cluster type
+    set:
+      crdVersionControl.features.firmware.enabled: true
+    asserts:
+      - containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+      - containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-cc-kvm-compute
+          namespace: metal-servers
+          any: true
+
+  - it: should set the namespace from clusterConfig.managedNamespace
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      clusterConfig.managedNamespace: custom-namespace
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: custom-namespace
+
+  - it: should set correct serverSelector labels
+    set:
+      crdVersionControl.features.firmware.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.serverSelector.matchLabels["kubernetes.metal.cloud.sap/type"]
+          value: poweredge-r7615
+      - equal:
+          path: spec.serverSelector.matchLabels["kubernetes.metal.cloud.sap/cluster-type"]
+          value: sci-k8s-controlplane
+      - notExists:
+          path: spec.serverSelector.matchExpressions
+
+  - it: should apply serverMaintenancePolicy and retryPolicy from the firmware feature
+    set:
+      crdVersionControl.features.firmware.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.serverMaintenancePolicy
+          value: OwnerApproval
+      - equal:
+          path: spec.firmwareUpdateTemplate.retryPolicy.maxAttempts
+          value: 5
+
+  #############################################################################
+  # DELL REPOSITORY COMPOSITION
+  #############################################################################
+
+  # These tests pin shareName/catalogFile via `set` so they only assert the packing and host
+  # composition logic and stay stable when the real firmware repository in values.yaml changes.
+  - it: should pack flat Dell repository params into dellRepository
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.poweredge-r7615.firmware.params.defaultVersion.shareName: /test-share
+      parameters.dell.poweredge-r7615.firmware.params.defaultVersion.catalogFile: test-catalog.xml
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.shareName
+          value: /test-share
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.catalogFile
+          value: test-catalog.xml
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.certificateVerification
+          value: Ignore
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.rebootNeeded
+          value: true
+
+  - it: should not leave flat Dell repository fields at the template level
+    set:
+      crdVersionControl.features.firmware.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - notExists:
+          path: spec.firmwareUpdateTemplate.shareName
+      - notExists:
+          path: spec.firmwareUpdateTemplate.catalogFile
+      - notExists:
+          path: spec.firmwareUpdateTemplate.rebootNeeded
+      - notExists:
+          path: spec.firmwareUpdateTemplate.certificateVerification
+
+  - it: should pass non-repository params such as progressDeadlineSeconds through to the template
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.poweredge-r7615.firmware.params.defaultVersion.progressDeadlineSeconds: 7200
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.progressDeadlineSeconds
+          value: 7200
+
+  - it: should compose address from firmwareRepo.host + global.region + global.tld
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      global.region: qa-de-1
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.address
+          value: repo.qa-de-1.cloud.sap
+
+  - it: should use firmwareRepo.hostOverride as the address when set
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      firmwareRepo.hostOverride: custom-repo.example.com
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.address
+          value: custom-repo.example.com
+
+  - it: should derive shareType from the upper-cased firmwareRepo.scheme
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      firmwareRepo.scheme: http
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.shareType
+          value: HTTP
+
+  - it: should let a model override address and shareType explicitly
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.poweredge-r7615.firmware.params.defaultVersion.address: model-repo.example.com
+      parameters.dell.poweredge-r7615.firmware.params.defaultVersion.shareType: NFS
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.address
+          value: model-repo.example.com
+      - equal:
+          path: spec.firmwareUpdateTemplate.dellRepository.shareType
+          value: NFS
+
+  #############################################################################
+  # ENABLED / ROLLOUT TESTS
+  #############################################################################
+
+  - it: should skip a vendor when parameters.<vendor>.enabled is false
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should skip a model when parameters.<vendor>.<model>.enabled is false
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.poweredge-r7615.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 77
+      - not: true
+        containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+
+  - it: should skip a model when its firmware domain is disabled
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.poweredge-r7615.firmware.enabled: false
+    asserts:
+      - not: true
+        containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+      - containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+
+  - it: should skip a model when its firmware params variant is disabled
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.poweredge-r7615.firmware.params.defaultVersion.enabled: false
+    asserts:
+      - not: true
+        containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+
+  - it: should only render the cluster types set in rollouts.types
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      rollouts.types:
+        sci-k8s-controlplane:
+          - workflow:
+              firmware:
+                order: 1
+                kind: FirmwareUpdateSet
+                paramsKey: firmware.params.defaultVersion
+    asserts:
+      - hasDocuments:
+          count: 12
+      - containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+      - not: true
+        containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-storage
+          namespace: metal-servers
+          any: true
+
+  - it: should render nothing for models without firmware params
+    set:
+      crdVersionControl.features.firmware.enabled: true
+    asserts:
+      - not: true
+        containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl560-gen11-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+      - not: true
+        containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: lenovo-thinksystem-sr850p-sci-k8s-controlplane
+          namespace: metal-servers
+          any: true
+
+  #############################################################################
+  # SERVER FILTER / NAMING
+  #############################################################################
+
+  - it: should carve excluded servers out of a rule via matchExpressions NotIn
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      rollouts.types:
+        cc-ironcore:
+          - filter: { exclude: { models: [poweredge-r7615], servers: [node001-bb001] } }
+            workflow:
+              firmware:
+                order: 1
+                kind: FirmwareUpdateSet
+                paramsKey: firmware.params.defaultVersion
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-cc-ironcore
+    asserts:
+      - equal:
+          path: spec.serverSelector.matchExpressions
+          value:
+            - key: kubernetes.metal.cloud.sap/name
+              operator: NotIn
+              values:
+                - node001-bb001
+
+  - it: should limit a rule to included servers via matchExpressions In
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      rollouts.types:
+        cc-ironcore:
+          - filter: { include: { models: [poweredge-r7615], servers: [node001-bb001] } }
+            workflow: &includeServersWorkflow
+              firmware:
+                order: 1
+                kind: FirmwareUpdateSet
+                paramsKey: firmware.params.defaultVersion
+          - filter: { exclude: { models: [poweredge-r7615] } }
+            workflow: *includeServersWorkflow
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-cc-ironcore
+    asserts:
+      - equal:
+          path: spec.serverSelector.matchExpressions
+          value:
+            - key: kubernetes.metal.cloud.sap/name
+              operator: In
+              values:
+                - node001-bb001
+
+  - it: should use setMetadataName from the workflow step with the cluster type suffix
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      rollouts.types:
+        cc-ironcore:
+          - filter: { include: { models: [poweredge-r7615] } }
+            workflow:
+              firmware:
+                order: 1
+                kind: FirmwareUpdateSet
+                paramsKey: firmware.params.defaultVersion
+                setMetadataName: custom-firmware
+          - filter: { exclude: { models: [poweredge-r7615] } }
+            workflow:
+              firmware:
+                order: 1
+                kind: FirmwareUpdateSet
+                paramsKey: firmware.params.defaultVersion
+    asserts:
+      - hasDocuments:
+          count: 12
+      - containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: custom-firmware-cc-ironcore
+          namespace: metal-servers
+          any: true
+      - not: true
+        containsDocument:
+          kind: FirmwareUpdateSet
+          apiVersion: system.metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-cc-ironcore
+          namespace: metal-servers
+          any: true
+
+  #############################################################################
+  # READINESS GATES
+  #############################################################################
+
+  - it: should not render readiness gate fields when readinessGates is disabled
+    set:
+      crdVersionControl.features.firmware.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane
+    asserts:
+      - notExists:
+          path: spec.firmwareUpdateTemplate.readinessGates
+      - notExists:
+          path: spec.firmwareUpdateTemplate.completionConditionType
+
+  - it: should chain after bios settings and add the step name to the resource name when readinessGates is enabled
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      crdVersionControl.features.readinessGates.enabled: true
+      crdVersionControl.apiVersions.biosSettingsSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcSettingsSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.biosVersionSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcVersionSet: baseboard.metal.ironcore.dev/v1alpha1
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-sci-k8s-controlplane-firmware
+    asserts:
+      - equal:
+          path: spec.firmwareUpdateTemplate.completionConditionType
+          value: metal.cloud.sap/step6-firmware-done
+      - equal:
+          path: spec.firmwareUpdateTemplate.readinessGates
+          value:
+            - type: metal.cloud.sap/step5-bios-settings-done
+              requiredStatus: "True"
+
+  - it: should fail when readinessGates is enabled with the plain metal-operator apiVersions
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      crdVersionControl.features.readinessGates.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: "requires crdVersionControl.apiVersions"
+
+  #############################################################################
+  # VALIDATION
+  #############################################################################
+
+  - it: should fail when a firmware step has no Dell repository fields
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      parameters.dell.test-model.firmware.params.defaultVersion.progressDeadlineSeconds: 3600
+    asserts:
+      - failedTemplate:
+          errorPattern: "defines no Dell repository fields"
+
+  - it: should fail when two firmware steps resolve to the same resource name
+    set:
+      crdVersionControl.features.firmware.enabled: true
+      rollouts.types:
+        cc-ironcore:
+          - workflow:
+              firmware:
+                order: 1
+                kind: FirmwareUpdateSet
+                paramsKey: firmware.params.defaultVersion
+                setMetadataName: duplicate-name
+    asserts:
+      - failedTemplate:
+          errorPattern: "duplicate FirmwareUpdateSet name"
