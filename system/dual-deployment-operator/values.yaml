@@ -17,7 +17,7 @@ controller:
       # that cluster first; promote by moving the tag into the admin-k3s base. The value
       # here is only a fallback for renders without the kube-secrets layer.
       repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sap-cloud-infrastructure/dual-deployment-operator
-      tag: sha-f72fe3ff29e4f5ff40144a166f69a4713d4e284f
+      tag: sha-4c82fdf096661357c16d617d3a0956504d483455
       pullPolicy: IfNotPresent
     envOverrides:
       # main.go:213: webhook setup runs unless ENABLE_WEBHOOKS == "false".
@@ -33,6 +33,12 @@ controller:
     # enabled: true triggers the required{} checks at render time.
     serviceAccountName: dual-deployment-operator-shoot-applier
     serviceAccountNamespace: kube-system
+
+  # Operand apply-grants for the seed/shoot applier ClusterRoles. Populated per-region from
+  # kube-secrets. Each entry is an RBAC rule: {apiGroups: [...], resources: [...], verbs: [...]}.
+  extraRbac:
+    seedApplier: []
+    shootApplier: []
 
   metrics:
     # Secure metrics endpoint needs a cert; certManager is off → disable metrics.
