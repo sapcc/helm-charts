@@ -23,11 +23,231 @@ Additionally, when `bmcSettings.enabled` is true and the corresponding name is s
 - A `ConfigMap` (`clusterConfig.configMapName`) holding cluster-level values (e.g. syslog server).
 - A `Secret` (`clusterConfig.hpeLicenseSecretName`) holding the HPE iLO license key.
 
+```mermaid
+flowchart LR
+    subgraph input["values.yaml and cluster override"]
+        P["parameters:<br/>defines data for vendor, model, domain<br/>versions, settings, enabled/disabled"]
+        W["workflow:<br/> defines 6 ordered steps<br/>declares kind, versionKey, settingsKey"]
+        R["rollouts.types<br/>selects cluster type as needed<br/>defines filter and workflow for control"]
+        F["crdVersionControl<br/>defines apiVersions for CRD, features to enable,<br/>eg:readinessGates"]
+        CC["clusterConfig<br/>defines additional datas: configMapName, syslogServer,<br/>HPE license"]
+    end
+
+    subgraph files["Chart files"]
+        BIOSF["bios_settings/*.yaml"]
+        BMCF["bmc_settings/*.yaml"]
+    end
+
+    CH["_helpers.tpl<br/>metal-settings.computedChain<br/>per model and cluster type"]
+
+    subgraph out["Rendered resources"]
+        BMCS["BMCSettingsSet<br/>per cluster type defined by rollouts"]
+        BMCV["BMCVersionSet<br/>per model type defined by parameters"]
+        BIOSV["BIOSVersionSet<br/>per model type defined by parameters"]
+        BIOSS["BIOSSettingsSet<br/>per cluster type defined by rollouts"]
+        FW["FirmwareUpdateSet<br/>per cluster type defined by rollouts"]
+        CM["ConfigMap and Secret<br/>cluster-level values, when BMCSettings enabled in crdVersionControl"]
+    end
+
+    W -->|"referenced by"| R
+    R -->|"which workflow, cluster type, filters (model, servers)"| CH
+    P -->|"leaf data"| CH
+    F -->|"feature filters, apiVersions"| CH
+    BIOSF --> BIOSS
+    BMCF --> BMCS
+    CH --> BMCS
+    CH --> BMCV
+    CH --> BIOSV
+    CH --> BIOSS
+    CH --> FW
+    CC -->|"values are used to create resources"| CM
+    CC -->|"referenced in spec of CRD"| BMCS
+```
+
 Settings content is stored as flat YAML files under `bios_settings/` and `bmc_settings/`, referenced by filename via `settingsFileName` (or inlined via `settingsContent`). See [Parameters](#parameters-parameters--user-input), [Workflow](#workflow--the-static-workflow-shape), and [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) below for the full schema, [crdVersionControl](#crdversioncontrol) for per-kind toggles and ordered/gated rollouts, and [setMetadataName](#setmetadataname-custom--dynamic-resource-names) for custom/dynamic resource naming.
+
+## How the Resources Are Generated
+
+Two stages run for every model and cluster type: each step template drives the render and calls `computedChain`, which decides which steps the model gets and how they are wired together.
+
+### 1. Rendering each step (step templates)
+
+All five step templates (`bios_settings`, `bios_versions`, `bmc_settings`, `bmc_versions`, `firmware_updates`) follow this path; each renders only its own kind:
+
+```mermaid
+flowchart TD
+    START["helm template runs a step template"] --> T{"features.kind.enabled?"}
+    T -->|"false"| NONE["Nothing rendered"]
+    T -->|"true"| L{"legacy top-level machines key set?"}
+    L -->|"yes"| F1["FAIL: machines is no longer supported"]
+    L -->|"no"| G{"readinessGates.enabled?"}
+    G -->|"true"| API{"any apiVersion still on<br/>metal.ironcore.dev group?"}
+    API -->|"yes"| F2["FAIL: gates need maintenance-operator groups"]
+    API -->|"no"| LOOP
+    G -->|"false"| LOOP
+    LOOP["For each vendor and model in parameters<br/>reserved keys enabled, if false rollouts are skipped"] --> CT["For each effective cluster type"]
+    CT --> CC["computedChain (see below flowchart) returns the steps of every matched rule"]
+    CC --> SORT["Steps re-sorted by explicit order"]
+    SORT --> K{"Step kind?"}
+    K -->|"unknown kind"| F3["FAIL: unknown kind"]
+    K -->|"another template's CR kind"| SKIP["Rendered by that template"]
+    K -->|"this template's CR kind"| REQ{"Required data present? see below which fields/data are required/computed"}
+    REQ -->|"no"| F4["FAIL: missing required field"]
+    REQ -->|"yes"| EN{"Step enabled?<br/>bool or tpl string, default true"}
+    EN -->|"false"| OFF["Not rendered"]
+    EN -->|"true"| GC{"readinessGates.enabled?"}
+    GC -->|"true"| GR["Require completionConditionType<br/>and readinessGates on non-first steps"]
+    GC -->|"false"| NAME
+    GR --> NAME["Resolve metadata.name, see setMetadataName section"]
+    NAME --> BUILD["Build selector, template fields,<br/>serverMaintenancePolicy, retryPolicy"]
+    BUILD --> OUT["Rendered resource"]
+
+    VK["Version kinds: collected across every cluster type and rule<br/>FAIL if they differ, rendered once per model"] -.-> REQ
+```
+
+### 2. Resolving the chain (`computedChain`)
+
+What `computedChain` does for one model at one cluster type, before the template renders anything:
+
+```mermaid
+flowchart TD
+    IN["computedChain: vendor, model, clusterType"] --> EN{"vendor.enabled and model.enabled?"}
+    EN -->|"false"| EMPTY["Empty result"]
+    EN -->|"true"| M["Match rollouts.types rules, see rollouts flowchart"]
+    M -->|"no rule matches"| F1["FAIL: no workflow resolves"]
+    M --> R["For each matched rule, keyed by ruleIndex"]
+    R --> WF["Workflow may be a tpl string: rendered and parsed"]
+    WF --> VAL["Validate step keys: lowerCamelCase,<br/>order present and unique"]
+    VAL --> STEP["Walk steps in order"]
+    STEP --> DK["Domain is the first segment of settingsKey, versionKey or paramsKey<br/>exactly one per step, format domain.kind.key"]
+    DK -->|"bad format or wrong domain"| F2["FAIL"]
+    DK --> DATA["Read parameters.vendor.model.domain"]
+    DATA --> HAS{"Data present?<br/>domain, variant and key enabled, key exists"}
+    HAS -->|"no"| OMIT["Step omitted"]
+    HAS -->|"yes"| SUP{"Suppressed by the rule?<br/>include.resources, or exclude without servers"}
+    SUP -->|"yes"| OMIT
+    SUP -->|"no"| BUILD["Build params<br/>settings: settingsFileName, settingsContent<br/>versions: version, imagePath, imageURI<br/>params: object passed through minus reserved keys<br/>serverFilter from the rule's include and exclude servers<br/>setMetadataName from the step"]
+    BUILD --> GT{"readinessGates.enabled?"}
+    GT -->|"true"| GATES["completionConditionType: override or<br/>metal.cloud.sap/stepN-name-done<br/>readinessGates: override, else the previous rendered step<br/>first step has none"]
+    GT -->|"false"| ADD
+    GATES --> ADD["Add step to the rule result<br/>previous condition advances"]
+    ADD --> DUP{"Two step keys normalize to the same name?"}
+    DUP -->|"yes"| F3["FAIL"]
+    DUP -->|"no"| NEXT["Next step"]
+    OMIT --> NEXT
+```
+
+An omitted step does not advance the previous condition, so the next rendered step gates on the nearest earlier step that was rendered.
 
 ## From `values.yaml` to Rendered Resource
 
 One real, complete worked example — Dell PowerEdge R7615, `cc-kvm-compute` cluster type, default (non-gated) rendering — showing exactly where every field in each kind of rendered Custom Resource comes from.
+
+Every input and the field it ends up in on a rendered resource:
+
+```mermaid
+flowchart LR
+    subgraph in["Inputs in values.yaml"]
+        AVI["crdVersionControl.apiVersions.kind"]
+        FT["crdVersionControl.features.kind<br/>enabled, serverMaintenancePolicy, retryPolicy"]
+        RG["features.readinessGates.enabled"]
+        LK["labelKeys<br/>type, clusterType, serverName"]
+        FR["firmwareRepo: scheme, host, hostOverride<br/>global: region, tld"]
+        PV["parameters versions<br/>version, imagePath, imageURI"]
+        PS["parameters settings<br/>settingsFileName, settingsContent"]
+        PF["parameters firmware params<br/>shareName, catalogFile, rebootNeeded, ..."]
+        RT["rollouts.types rule<br/>include.servers, exclude.servers"]
+        WS["workflow step<br/>setMetadataName and overrides"]
+        CC["clusterConfig<br/>managedNamespace, configMapName,<br/>syslogServer, hpeLicenseSecretName, hpeLicenseKey"]
+    end
+
+    subgraph spec["Fields on a rendered resource"]
+        APIV["apiVersion"]
+        NAME["metadata.name"]
+        NS["metadata.namespace<br/>FirmwareUpdateSet only"]
+        SEL["selector.matchLabels"]
+        ME["selector.matchExpressions<br/>In or NotIn on the server name label"]
+        MP["template.serverMaintenancePolicy"]
+        RP["template.retryPolicy<br/>only when set"]
+        VER["template.version"]
+        IMG["template.image.URI<br/>and transferProtocol"]
+        SET["settings content"]
+        DR["template.dellRepository<br/>and passthrough fields"]
+        GATES["template.completionConditionType<br/>and readinessGates"]
+    end
+
+    subgraph aux["Auxiliary objects"]
+        CM["ConfigMap<br/>needs bmcSettings.enabled and configMapName"]
+        SEC["Secret<br/>needs bmcSettings.enabled and hpeLicenseSecretName"]
+    end
+
+    AVI --> APIV
+    FT --> MP
+    FT --> RP
+    RG --> GATES
+    RG -->|"adds step name suffix to generated names"| NAME
+    WS -->|"setMetadataName"| NAME
+    WS -->|"override fields"| GATES
+    LK --> SEL
+    LK -->|"serverName key"| ME
+    RT --> ME
+    PV --> VER
+    PV --> IMG
+    FR --> IMG
+    FR -->|"address, shareType defaults"| DR
+    PS --> SET
+    PF --> DR
+    CC --> NS
+    CC --> CM
+    CC --> SEC
+```
+
+How each CR's spec data is resolved. Every step reads its data from `parameters.<vendor>.<model>.<domain>`, at the path given by the step's `settingsKey`, `versionKey` or `paramsKey`:
+
+```mermaid
+flowchart TD
+    subgraph SETK["BIOSSettingsSet and BMCSettingsSet"]
+        S0["parameters.vendor.model.#lt;bios or bmc#gt;.settings.#lt;key#gt;"]
+        S0 --> S1{"Entry is a plain string or an object?"}
+        S1 -->|"string"| S2["settingsFileName = the string"]
+        S1 -->|"object"| S3["settingsFileName and or settingsContent<br/>plus optional enabled"]
+        S2 --> S4{"settingsContent set?"}
+        S3 --> S4
+        S4 -->|"yes"| S5["Inline content used as is<br/>wins over settingsFileName"]
+        S4 -->|"no"| S6{"Kind?"}
+        S6 -->|"BIOS"| S7["bios_settings file inlined verbatim"]
+        S6 -->|"BMC"| S8["bmc_settings file rendered with tpl<br/>so clusterConfig values can be used"]
+        S0 -->|"if the workflow step has a versionKey"| SV2["reads and sets the version field of that versions entry"]
+        S0 -->|"neither file nor content"| SX["FAIL"]
+    end
+
+    subgraph VERK["BIOSVersionSet and BMCVersionSet"]
+        V0["parameters.vendor.model.#lt;bios or bmc#gt;.versions.#lt;key#gt;<br/>fields: version, imagePath, imageURI"]
+        V0 --> VV["template.version = version<br/>FAIL when missing"]
+        V0 --> V1{"imageURI set?"}
+        V1 -->|"yes"| V2["image.URI = imageURI"]
+        V1 -->|"no"| V3{"firmwareRepo.hostOverride set?"}
+        V3 -->|"yes"| V4["host = hostOverride"]
+        V3 -->|"no"| V5["host = host.region.tld"]
+        V4 --> V6["image.URI = scheme://host + imagePath<br/>FAIL when imagePath is missing too"]
+        V5 --> V6
+        V2 --> V7["transferProtocol = upper-cased firmwareRepo.scheme"]
+        V6 --> V7
+    end
+
+    subgraph FWK["FirmwareUpdateSet"]
+        F0["parameters.vendor.model.firmware.params.#lt;key#gt;"]
+        F0 --> F1["Whole object taken as is<br/>except enabled and the override keys"]
+        F1 --> F2["Dell repository fields packed into dellRepository<br/>shareName, catalogFile, shareType, address, rebootNeeded, ...<br/>flat, or already nested under dellRepository"]
+        F1 --> F5["Every other field passed through to the CR spec<br/>e.g. progressDeadlineSeconds"]
+        F2 --> F6{"Any Dell repository field?"}
+        F6 -->|"no"| FX["FAIL"]
+        F6 -->|"yes"| F7{"address and shareType set per model?"}
+        F7 -->|"no"| F8["address from firmwareRepo host<br/>shareType = upper-cased scheme"]
+        F7 -->|"yes"| F9["Per-model values kept"]
+        F10["serverMaintenancePolicy and retryPolicy<br/>always from crdVersionControl.features.firmware"]
+    end
+```
 
 `Workflow:` + `rollouts.types:` decide the SHAPE of each step (`order`/`kind`/`versionKey`/`settingsKey`) and which cluster type(s) get a resource at all - `parameters:` only ever supplies the leaf data a step's `versionKey`/`settingsKey`/`paramsKey` points at. `poweredge-r7615` doesn't override either, so it resolves to the chart's single default rule for every cluster type (see [Workflow](#workflow--the-static-workflow-shape) / [rollouts.types](#rolloutstypes--workflowserver-selection-keyed-by-cluster-type) above):
 
@@ -358,6 +578,38 @@ When enabled, one `BMCSettingsSet` is generated per `bmc-settings` chain step (o
 
 Dynamic per-BMC values (hostname, region, building-block) are resolved at reconcile time via `objectFieldRef` — they are **not** Helm values and require no chart configuration.
 
+```mermaid
+flowchart LR
+    subgraph helm["Helm render time"]
+        GATE["crdVersionControl.features.bmcSettings.enabled"]
+        F["bmc_settings/dell-default.yaml<br/>settings and variables"]
+        V["values.yaml<br/>clusterConfig.syslogServer"]
+    end
+
+    subgraph k8s["Kubernetes objects"]
+        SS["BMCSettingsSet"]
+        CM["ConfigMap metal-bmc-settings<br/>data.syslogServer"]
+        BS["BMCSettings<br/>one per matched BMC"]
+        BMCO["BMC labels<br/>NodeName, BB, Region"]
+    end
+
+    subgraph op["Operator at reconcile time"]
+        RV["Resolve variables"]
+        AV["Substitute $(...) in settings"]
+        AP["Apply settings to the BMC"]
+    end
+
+    GATE -->|"true: render, false: nothing"| SS
+    F -->|"bmcSettingsTemplate"| SS
+    V -->|"tpl in settings file"| SS
+    V --> CM
+    SS -->|"bmcSelector"| BS
+    BS -->|"spec.variables"| RV
+    CM -->|"configMapKeyRef key syslogServer<br/>to variable SyslogServer"| RV
+    BMCO -->|"objectFieldRef"| RV
+    RV --> AV --> AP
+```
+
 #### Enabling BMCSettings for Dell
 
 ```yaml
@@ -406,7 +658,57 @@ crdVersionControl:
 
 **Precondition**: enabling `readinessGates` requires `crdVersionControl.apiVersions.*` to already point at metal-maintenance-operator's groups — the plain metal-operator group has no `readinessGates`/`completionConditionType` fields at all. The chart fails fast if this precondition isn't met.
 
+What changes between disabled and enabled:
+
+```mermaid
+flowchart LR
+    G{"features.readinessGates.enabled"}
+
+    subgraph OFF["false (default)"]
+        O1["Any apiVersions work, including metal.ironcore.dev"]
+        O2["No completionConditionType, no readinessGates"]
+        O3["Generated names have no step name suffix"]
+        O4["bmc-settings-initial is not rendered<br/>its enabled follows this flag"]
+        O5["Resources are independent of each other"]
+    end
+
+    subgraph ON["true"]
+        N1["apiVersions must use maintenance-operator groups<br/>otherwise the render FAILS"]
+        N2["Every step gets completionConditionType<br/>metal.cloud.sap/stepN-name-done<br/>or completionConditionTypeOverride"]
+        N3["Every non-first step gets readinessGates<br/>previous rendered step with requiredStatus True<br/>or readinessGatesOverride"]
+        N4["Generated names gain the step name suffix"]
+        N5["bmc-settings-initial is rendered<br/>when its data exists"]
+        N6["At runtime a step starts only after the previous<br/>condition is True on the Server"]
+    end
+
+    G -->|"false"| OFF
+    G -->|"true"| ON
+```
+
 Naming convention used throughout the chart: `metal.cloud.sap/step<order>-<stepName>-done`, e.g. `metal.cloud.sap/step1-bmc-settings-initial-done`. `readinessGatesOverride` (set on a `Workflow` step definition — see [Workflow](#workflow--the-static-workflow-shape) below) replaces the auto-computed `readinessGates` outright — only needed for a step that must gate on something other than "the nearest preceding step this model has data for" (e.g. a one-off entry gating on a different model's step).
+
+Chain order and gating when `features.readinessGates.enabled: true` (each completion condition is `metal.cloud.sap/<label>`):
+
+```mermaid
+flowchart LR
+    S1["1 bmc-settings-initial<br/>BMCSettingsSet<br/>only when readinessGates enabled"]
+    S2["2 bmc-version<br/>BMCVersionSet"]
+    S3["3 bios-version<br/>BIOSVersionSet"]
+    S4["4 bmc-settings<br/>BMCSettingsSet"]
+    S5["5 bios-settings<br/>BIOSSettingsSet"]
+    S6["6 firmware<br/>FirmwareUpdateSet"]
+
+    S1 -->|"step1-bmc-settings-initial-done"| S2
+    S2 -->|"step2-bmc-version-done"| S3
+    S3 -->|"step3-bios-version-done"| S4
+    S4 -->|"step4-bmc-settings-done"| S5
+    S3 -.->|"gate if the model has no step 4"| S5
+    S5 -->|"step5-bios-settings-done"| S6
+
+    OFF["readinessGates disabled:<br/>steps render independently,<br/>no gates, no completion conditions"]
+```
+
+A step starts only after the previous step's condition is patched as `status: True` on the Server. A step the model has no data for is skipped and the gate falls back to the nearest earlier step that is rendered.
 
 ### Parameters (`parameters`) — user input
 
@@ -564,6 +866,62 @@ A rule's `filter` is optional - omitted (or empty) matches every model/kind/serv
 
 For a given `parameters.<vendor>.<model>` and a given effective cluster type (a key of whichever `rollouts.types` is in effect), each matching rule's resolved workflow's Settings-kind steps (`BMCSettingsSet`/`BIOSSettingsSet`) render once per (cluster type, matching rule); Version-kind steps (`BMCVersionSet`/`BIOSVersionSet`) render once per model regardless of cluster type/rule - every matching rule's resolved workflow, across every cluster type, must define identical version-kind steps for a given model.
 
+How a model is resolved against `rollouts.types`:
+
+```mermaid
+flowchart TD
+    A["Model in parameters.vendor.model"] --> E{"enabled in (Paramters...) at vendor, model,<br/>domain and variant level?"}
+    E -->|"any level false"| X1["Skip: nothing rendered"]
+    E -->|"all true or unset"| CT["For each cluster type in the<br/>effective rollouts.types"]
+    CT --> RULE["For each rule/filter of that cluster type<br/>ALL matching rules/filter are used, not first match"]
+    RULE --> I{"include.models empty<br/>or contains the model?"}
+    I -->|"no"| X2["Rule/Filter does not match this model"]
+    I -->|"yes"| B{"exclude lists the model with<br/>no resources and no servers?"}
+    B -->|"yes, blanket exclusion"| X2
+    B -->|"no"| STEP["Walk the rule's workflow steps"]
+    STEP --> S{"step kind matches exclude<br/>for this model?"}
+    S -->|"no"| RENDER["Render step<br/>include.servers becomes serverFilter.included"]
+    S -->|"yes, exclude has no servers"| X3["Suppress this step for this model only"]
+    S -->|"yes, exclude has servers"| RENDER2["Render step<br/>exclude.servers added to serverFilter.excluded"]
+    RENDER --> K{"Step kind?"}
+    RENDER2 --> K
+    K -->|"Settings kinds"| PS["One resource per cluster type and matching rule"]
+    K -->|"Version kinds"| PV["One resource per model<br/>identical across all rules and cluster types"]
+```
+
+Cluster types, models and resource kinds are filtered by Helm at render time: they decide which CRs exist. Servers are different. The chart never enumerates real server names, so `include.servers`/`exclude.servers` are not evaluated by Helm; they are copied into the CR's selector as `matchExpressions` on the server-name label (`labelKeys.serverName`), and the operator applies the filter in the cluster. How a rule's servers become the resource's selector:
+
+```mermaid
+flowchart LR
+    subgraph helm["Helm render time: decides which CRs exist"]
+        H1["Cluster type: keys of rollouts.types"]
+        H2["Model: parameters plus<br/>include.models and exclude.models"]
+        H3["Kind: include.resources and exclude.resources"]
+        CR["One CR per model, cluster type and matching rule"]
+        SRV["include.servers and exclude.servers<br/>not evaluated by Helm, copied into the CR selector"]
+        H1 --> CR
+        H2 --> CR
+        H3 --> CR
+    end
+
+    subgraph sel["Rendered CR selector"]
+        ML["matchLabels<br/>labelKeys.type = model<br/>labelKeys.clusterType = cluster type<br/>version kinds: type label only"]
+        IN["matchExpressions: server name label In include.servers<br/>only when include.servers is set"]
+        NIN["matchExpressions: server name label NotIn exclude.servers<br/>only when exclude matches this model and kind and has servers"]
+    end
+
+    subgraph run["In the cluster, at runtime"]
+        OP["Operator matches the selector against the labels of Servers or BMCs<br/>only matching ones get the settings or update"]
+    end
+
+    CR --> ML
+    SRV --> IN
+    SRV --> NIN
+    ML --> OP
+    IN --> OP
+    NIN --> OP
+```
+
 **Worked example** — `proliant-dl560-gen11` uses the global default `Workflow` (and `bios.settings.defaultSettings`) for `cc-kvm-compute` (one rule, matches every model), but `sci-k8s-controlplane`/`sci-k8s-management`/`sci-k8s-runtime`/`sci-k8s-storage`/`cc-ironcore` each have TWO rules routing just `proliant-dl560-gen11` to a `workflowSciSettings` variant (pointing `bios-settings.settingsKey` at `bios.settings.sciSettings` instead) and every other model to the default `Workflow` (this is the real, bundled `defaultRollouts.types` in `values.yaml` - shown here as a cluster override would set it, via the top-level `rollouts.types`):
 
 ```yaml
@@ -602,6 +960,28 @@ setMetadataName: "abc-{{ .Values.clusterConfig.region }}"  # -> abc-<region>(-<c
 Because `setMetadataName` lives on the shared step definition, a literal string applies identically to every model resolving that `Workflow` (or variant). A per-model custom name therefore needs its own named `Workflow` variant (with `setMetadataName` set on the relevant step) assigned via a `rollouts.types` rule scoped to just that one model — see [UC11](#uc11-give-a-resource-a-custom--dynamic-name) below for a worked example.
 
 Resource names must be unique across the whole chart — a duplicate name (after any `-<clusterType>` suffix) fails the render with an error naming the conflicting entry/model/clusterType.
+
+How the final name is built. `setMetadataName` and `readinessGates` are independent inputs: an explicit name is never touched by `readinessGates`, which only affects generated names.
+
+```mermaid
+flowchart TD
+    A["Resource name"] --> B{"setMetadataName set on the step?"}
+    B -->|"yes"| C["Base = setMetadataName, rendered with tpl"]
+    B -->|"no"| D["Base = vendor-model, lower-cased"]
+    C --> K
+    D --> K{"Rendered per cluster type?<br/>Settings kinds and FirmwareUpdateSet"}
+    K -->|"yes"| E["Append -clusterType"]
+    K -->|"no, version kinds"| F["No cluster type suffix"]
+    E --> G
+    F --> G{"Generated base and<br/>readinessGates.enabled?"}
+    G -->|"yes"| H["Append -stepName"]
+    G -->|"no"| I["Name is final"]
+    H --> U
+    I --> U
+    U{"Name already used by this kind?"}
+    U -->|"yes"| X["FAIL: duplicate name, set a unique setMetadataName"]
+    U -->|"no"| OK["metadata.name"]
+```
 
 ### Firmware Repository (`firmwareRepo`)
 
