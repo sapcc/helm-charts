@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Shim: fetch only the Deployment from upstream config/manager.
+# Filters out Namespace (system) and the ConfigMap (manager-config from configMapGenerator)
+# because the overlay provides its own ipam-capi-manager-config.
+#
+# Provider v1.1.1, scheme-less git-dir ref (see shoot/kustomization.yaml lines 6-12).
+resources:
+  - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/manager?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
+transformers: []
+# Filter: keep only the Deployment, drop Namespace and ConfigMap.
+# kustomize does not have a built-in "keepKinds" transformer, but we can achieve this
+# with a patch that targets nothing and a components trick. Instead, use the
+# helmChartInflationGenerator approach... actually, the cleanest kustomize-native
+# approach is: use a strategicMergePatch to not-filter but keep our shim minimal,
+# then accept that Namespace+ConfigMap appear in the intermediate layer and get
+# overridden or duplicated upstream. We surface this as POC friction.
+#
+# FRICTION NOTE: kustomize v5 has no built-in "drop these kinds" transformer.
+# The DDO filterKinds transform handles Namespace/ConfigMap at deploy time.
+# In the POC test we simulate filterKinds to strip Namespace + upstream manager-config.

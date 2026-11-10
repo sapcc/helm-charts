@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+  - ../additions/shoot
+  # Provider v1.1.1, resolved to its immutable commit (not the mutable tag).
+  # Written scheme-less (no https://) ON PURPOSE: this is a git-DIRECTORY ref,
+  # and krusty (kustomize) does an HTTP GET-file FIRST for any http(s):// URL,
+  # falling back to git only on a non-2xx. An https:// git-dir URL would be
+  # fetched as a file, so the ?ref=<sha> pin would never be consulted. The
+  # scheme-less github.com/... form forces the git loader, where the SHA is
+  # actually checked out. Do NOT add https:// here or the pin becomes a no-op.
+  - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/crd?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
+  - core-crds
+  - rbac.yaml
+  # POC: fetch webhook manifests+service from upstream instead of hand-authored webhooks.yaml
+  # The upstream config/webhook dir ships manifests.yaml (MWC+VWC) and service.yaml.
+  # The Service kind gets DDO-filterKinds'd at deploy time; POC test simulates this.
+  - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/webhook?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
+  - metrics-service.yaml
+patches:
+  # CRD conversion patches (unchanged from shoot/)
+  - path: patches/conversion-globalinclusterippools.yaml
+  - path: patches/conversion-globalinclusterprefixpools.yaml
+  - path: patches/conversion-inclusterippools.yaml
+  - path: patches/conversion-inclusterprefixpools.yaml
+  # Rename upstream webhook configs to the SAP name and add injector label.
+  # JSON patch (RFC 6902) replaces the name in-place; strategic merge patch adds label.
+  - target:
+      kind: MutatingWebhookConfiguration
+      name: mutating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: ipam-capi-remote-mutating-webhook-configuration
+      - op: add
+        path: /metadata/labels
+        value:
+          dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote
+  - target:
+      kind: ValidatingWebhookConfiguration
+      name: validating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: ipam-capi-remote-validating-webhook-configuration
+      - op: add
+        path: /metadata/labels
+        value:
+          dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote
