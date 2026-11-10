@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# Test: shoot render + simulated DDO transforms produce url-form webhook configs
+# Test: shoot render + simulated DDO rewriteWebhookURL produces url-form webhook configs
 # matching the expected contract (8 webhooks, correct names, correct URLs, injector label).
 #
-# Background: after promotion, shoot/kustomization.yaml sources webhooks from the upstream
-# config/webhook directory (service-form clientConfig).  DDO applies two transforms at
-# deploy time:
+# Background: shoot/kustomization.yaml sources webhooks from the upstream config/webhook
+# directory (service-form clientConfig) and deletes the upstream webhook-service (Service)
+# via a targeted $patch:delete kustomize patch.  DDO applies one transform at deploy time:
 #   rewriteWebhookURL(urlPrefix=https://ipam-capi-remote-webhook-service:443)
 #     -> converts service{name,path} -> url = urlPrefix + path, deletes service block
-#   filterKinds([Service])
-#     -> drops the upstream webhook-service Service object
-# This test simulates those DDO transforms in-process (same logic as poc_webhook_transform_test.sh)
-# and then asserts the resulting webhook objects satisfy the full contract previously verified
-# against the hand-authored shoot/webhooks.yaml.
+# This test:
+#   (a) asserts the plain kustomize build has no webhook-service Service (overlay deleted it)
+#       AND retains the shoot metrics Service (guard against over-deletion)
+#   (b) simulates DDO rewriteWebhookURL and asserts the full 8-webhook contract
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,7 +22,7 @@ command -v python3 >/dev/null || { echo "FAIL: python3 not found in PATH"; exit 
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ipam-webhook-parity.XXXXXX")"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-echo "=== Webhook parity test (remote-sourced + simulated DDO transforms) ==="
+echo "=== Webhook parity test (remote-sourced + simulated DDO rewriteWebhookURL) ==="
 echo ""
 
 # Step 1: kustomize build shoot/
@@ -31,8 +30,8 @@ echo "[1/2] Building shoot overlay..."
 kustomize build "$OVERLAY_DIR/shoot" > "$WORK_DIR/shoot-raw.yaml"
 echo "      Done."
 
-# Step 2: simulate DDO rewriteWebhookURL + filterKinds, then assert full contract.
-echo "[2/2] Simulating DDO transforms and asserting webhook contract..."
+# Step 2: assert Service inventory on raw build, simulate rewriteWebhookURL, assert webhooks.
+echo "[2/2] Asserting Service inventory and webhook contract..."
 echo ""
 
 PYTHONDONTWRITEBYTECODE=1 python3 - "$WORK_DIR/shoot-raw.yaml" <<'PY'
@@ -41,6 +40,32 @@ import yaml
 
 raw_file = sys.argv[1]
 
+# ── Load raw shoot render ─────────────────────────────────────────────────────
+with open(raw_file) as f:
+    docs = list(yaml.safe_load_all(f))
+
+WEBHOOK_KINDS = {'MutatingWebhookConfiguration', 'ValidatingWebhookConfiguration'}
+failed = 0
+
+# ── Assert Service inventory on RAW build (before any simulation) ─────────────
+# The upstream webhook-service must be absent (deleted by overlay $patch:delete).
+# The shoot metrics Service must be present (guard against over-deletion).
+raw_services = {d['metadata']['name']: d for d in docs
+                if d and d.get('kind') == 'Service'}
+
+if 'webhook-service' not in raw_services:
+    print("PASS: upstream webhook-service (Service) absent from raw build — overlay deleted it")
+else:
+    print("FAIL: webhook-service (Service) still present in raw build — $patch:delete did not work")
+    failed += 1
+
+METRICS_SVC = 'ipam-capi-controller-manager-metrics-service'
+if METRICS_SVC in raw_services:
+    print(f"PASS: shoot metrics Service {METRICS_SVC} present — overlay delete did not over-delete")
+else:
+    print(f"FAIL: shoot metrics Service {METRICS_SVC} absent — over-deletion or missing metrics-service.yaml")
+    failed += 1
+
 # ── Simulate DDO rewriteWebhookURL ────────────────────────────────────────────
 # urlPrefix = https://ipam-capi-remote-webhook-service:443
 # For each MWC/VWC webhook clientConfig:
@@ -48,58 +73,43 @@ raw_file = sys.argv[1]
 #   else: url = urlPrefix + service.path, delete service block
 URL_PREFIX = "https://ipam-capi-remote-webhook-service:443"
 
-def rewrite_webhook_url(docs):
-    for d in docs:
-        if d is None:
-            continue
-        if d.get('kind') in ('MutatingWebhookConfiguration', 'ValidatingWebhookConfiguration'):
-            for wh in d.get('webhooks', []):
-                cc = wh.get('clientConfig', {})
-                if 'url' in cc:
-                    pass  # already url-form — no-op
-                elif 'service' in cc:
-                    svc = cc.pop('service')
-                    cc['url'] = URL_PREFIX + svc['path']
-    return docs
+sim_docs = [d for d in docs]  # shallow copy list; will mutate deeply
+import copy
+sim_docs = copy.deepcopy(docs)
 
-# ── Simulate DDO filterKinds ──────────────────────────────────────────────────
-FILTER_KINDS = {'Service'}
+for d in sim_docs:
+    if d is None:
+        continue
+    if d.get('kind') in WEBHOOK_KINDS:
+        for wh in d.get('webhooks', []):
+            cc = wh.get('clientConfig', {})
+            if 'url' in cc:
+                pass  # already url-form — no-op
+            elif 'service' in cc:
+                svc = cc.pop('service')
+                cc['url'] = URL_PREFIX + svc['path']
 
-def filter_kinds(docs):
-    return [d for d in docs if d is not None and d.get('kind') not in FILTER_KINDS]
-
-# ── Load raw shoot render ─────────────────────────────────────────────────────
-with open(raw_file) as f:
-    docs = list(yaml.safe_load_all(f))
-
-# Apply transforms
-docs = rewrite_webhook_url(docs)
-docs = filter_kinds(docs)
-
-# ── Assertions ────────────────────────────────────────────────────────────────
-WEBHOOK_KINDS = {'MutatingWebhookConfiguration', 'ValidatingWebhookConfiguration'}
-failed = 0
-
-mwc = next((d for d in docs if d and d.get('kind') == 'MutatingWebhookConfiguration'
+# ── Find webhook configs ──────────────────────────────────────────────────────
+mwc = next((d for d in sim_docs if d and d.get('kind') == 'MutatingWebhookConfiguration'
             and d['metadata']['name'] == 'ipam-capi-remote-mutating-webhook-configuration'), None)
-vwc = next((d for d in docs if d and d.get('kind') == 'ValidatingWebhookConfiguration'
+vwc = next((d for d in sim_docs if d and d.get('kind') == 'ValidatingWebhookConfiguration'
             and d['metadata']['name'] == 'ipam-capi-remote-validating-webhook-configuration'), None)
 
-# Test 1: MWC present
+# Test: MWC present
 if mwc:
     print("PASS: MutatingWebhookConfiguration ipam-capi-remote-mutating-webhook-configuration present")
 else:
     print("FAIL: MutatingWebhookConfiguration ipam-capi-remote-mutating-webhook-configuration missing")
     failed += 1
 
-# Test 2: VWC present
+# Test: VWC present
 if vwc:
     print("PASS: ValidatingWebhookConfiguration ipam-capi-remote-validating-webhook-configuration present")
 else:
     print("FAIL: ValidatingWebhookConfiguration ipam-capi-remote-validating-webhook-configuration missing")
     failed += 1
 
-# Test 3: webhook counts (4 MWC, 4 VWC)
+# Test: webhook counts (4 MWC, 4 VWC)
 if mwc:
     mc = len(mwc.get('webhooks', []))
     if mc == 4:
@@ -116,7 +126,7 @@ if vwc:
         print(f"FAIL: ValidatingWebhookConfiguration has {vc} webhooks (expected 4)")
         failed += 1
 
-# Test 4: mutating webhook names
+# Test: mutating webhook names
 expected_mutating_names = [
     "default.globalinclusterippool.ipam.cluster.x-k8s.io",
     "default.globalinclusterprefixpool.ipam.cluster.x-k8s.io",
@@ -132,7 +142,7 @@ if mwc:
             print(f"FAIL: Mutating webhook {name} missing")
             failed += 1
 
-# Test 5: validating webhook names
+# Test: validating webhook names
 expected_validating_names = [
     "validation.globalinclusterippool.ipam.cluster.x-k8s.io",
     "validation.globalinclusterprefixpool.ipam.cluster.x-k8s.io",
@@ -148,7 +158,7 @@ if vwc:
             print(f"FAIL: Validating webhook {name} missing")
             failed += 1
 
-# Test 6: mutating webhook URLs (after rewriteWebhookURL simulation)
+# Test: mutating webhook URLs (after rewriteWebhookURL simulation)
 expected_mutating_urls = [
     "https://ipam-capi-remote-webhook-service:443/mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool",
     "https://ipam-capi-remote-webhook-service:443/mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterprefixpool",
@@ -164,7 +174,7 @@ if mwc:
             print(f"FAIL: Mutating webhook URL {url} missing (got: {actual_urls})")
             failed += 1
 
-# Test 7: validating webhook URLs (after rewriteWebhookURL simulation)
+# Test: validating webhook URLs (after rewriteWebhookURL simulation)
 expected_validating_urls = [
     "https://ipam-capi-remote-webhook-service:443/validate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool",
     "https://ipam-capi-remote-webhook-service:443/validate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterprefixpool",
@@ -180,7 +190,7 @@ if vwc:
             print(f"FAIL: Validating webhook URL {url} missing (got: {actual_urls})")
             failed += 1
 
-# Test 8: all 8 webhooks have failurePolicy: Fail
+# Test: all 8 webhooks have failurePolicy: Fail
 mutating_fail_count = sum(1 for w in (mwc or {}).get('webhooks', []) if w.get('failurePolicy') == 'Fail')
 validating_fail_count = sum(1 for w in (vwc or {}).get('webhooks', []) if w.get('failurePolicy') == 'Fail')
 if mutating_fail_count == 4 and validating_fail_count == 4:
@@ -189,7 +199,7 @@ else:
     print(f"FAIL: Not all webhooks have failurePolicy: Fail (mutating: {mutating_fail_count}/4, validating: {validating_fail_count}/4)")
     failed += 1
 
-# Test 9: both configs carry injector label
+# Test: both configs carry injector label
 LABEL = 'dual-deployment-operator.cc.sap/webhook-injector'
 for obj in [mwc, vwc]:
     if obj and obj.get('metadata', {}).get('labels', {}).get(LABEL) == 'ipam-capi-remote':
@@ -198,18 +208,9 @@ for obj in [mwc, vwc]:
         print(f"FAIL: {obj['kind']} {obj['metadata']['name']} missing injector label")
         failed += 1
 
-# Test 10: upstream webhook-service (Service) was filtered out
-remaining_svc = [d for d in docs if d and d.get('kind') == 'Service'
-                 and d.get('metadata', {}).get('name') == 'webhook-service']
-if not remaining_svc:
-    print("PASS: upstream webhook-service (Service) correctly filtered by simulated filterKinds")
-else:
-    print("FAIL: webhook-service (Service) still present after simulated filterKinds")
-    failed += 1
-
-# Test 11: no service-based clientConfig remaining (all converted to url-form)
+# Test: no service-based clientConfig remaining after simulation (all converted to url-form)
 residual_svc_clients = []
-for d in docs:
+for d in sim_docs:
     if d and d.get('kind') in WEBHOOK_KINDS:
         for wh in d.get('webhooks', []):
             if 'service' in wh.get('clientConfig', {}):

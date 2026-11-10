@@ -31,15 +31,19 @@ assert default['target']=={'group':'apiextensions.k8s.io','version':'v1','kind':
 assert yaml.safe_load(default['patch'])==[{'op':'add','path':'/spec/conversion','value':{'strategy':'None'}}]
 pools=['globalinclusterippools','globalinclusterprefixpools','inclusterippools','inclusterprefixpools']
 label={'dual-deployment-operator.cc.sap/webhook-injector':'ipam-capi-remote'}
-# shoot patches: 4 pool-CRD conversion patches + 2 inline JSON patches for webhook rename+label
-assert len(shoot.get('patches',[]))==6, f'FAIL: expected 6 patches (4 pool CRD + 2 webhook), got {len(shoot.get("patches",[]))}'
+# shoot patches: 4 pool-CRD conversion patches + 1 Service delete patch + 2 webhook rename+label patches
+assert len(shoot.get('patches',[]))==7, f'FAIL: expected 7 patches (4 pool CRD + 1 svc-delete + 2 webhook rename), got {len(shoot.get("patches",[]))}'
 # First 4 are pool-CRD file patches
 assert shoot['patches'][:4]==[{'path':f'patches/conversion-{n}.yaml'} for n in pools], 'FAIL: pool CRD patches must be first 4'
-# Last 2 are inline webhook rename+label patches
-mwc_patch=shoot['patches'][4]
+# Index 4: upstream webhook-service (Service) targeted delete patch
+svc_del=shoot['patches'][4]
+assert svc_del.get('target')=={'kind':'Service','name':'webhook-service'}, 'FAIL: webhook-service delete patch target missing'
+assert '$patch: delete' in svc_del.get('patch',''), 'FAIL: webhook-service delete patch must use $patch: delete'
+# Indices 5-6: inline webhook rename+label patches
+mwc_patch=shoot['patches'][5]
 assert mwc_patch.get('target')=={'kind':'MutatingWebhookConfiguration','name':'mutating-webhook-configuration'}, 'FAIL: MWC rename patch target missing'
 assert yaml.safe_load(mwc_patch['patch'])[0]=={'op':'replace','path':'/metadata/name','value':'ipam-capi-remote-mutating-webhook-configuration'}, 'FAIL: MWC rename op missing'
-vwc_patch=shoot['patches'][5]
+vwc_patch=shoot['patches'][6]
 assert vwc_patch.get('target')=={'kind':'ValidatingWebhookConfiguration','name':'validating-webhook-configuration'}, 'FAIL: VWC rename patch target missing'
 assert yaml.safe_load(vwc_patch['patch'])[0]=={'op':'replace','path':'/metadata/name','value':'ipam-capi-remote-validating-webhook-configuration'}, 'FAIL: VWC rename op missing'
 for name in pools:
@@ -54,7 +58,7 @@ for name in pools:
     assert set(client)=={'service','url'}, 'FAIL: static CA or extra conversion client field'
 # Confirm webhooks.yaml does not exist as a local file (sourced remotely now)
 assert not (root/'shoot/webhooks.yaml').exists(), 'FAIL: shoot/webhooks.yaml still exists as local file (should be remote-sourced)'
-print('PASS: exact pinned Git base, SHA-pinned raw core CRD URLs, six dynamic-CA targets, webhook remote-sourcing')
+print('PASS: exact pinned Git base, SHA-pinned raw core CRD URLs, six dynamic-CA targets, webhook remote-sourcing, svc-delete patch')
 PY
 if [[ $# -eq 0 ]]; then
 python3 - "$DIR" <<'PY'
@@ -77,10 +81,15 @@ bad=copy.deepcopy(core); bad['resources']=['https://github.com/kubernetes-sigs/c
 cases.append(('full CAPI directory','shoot/core-crds/kustomization.yaml',bad))
 bad=copy.deepcopy(patch); bad['spec']['conversion']['webhook']['clientConfig']['service']={'name':'webhook-service'}
 cases.append(('service and URL coexist','shoot/patches/conversion-globalinclusterippools.yaml',bad))
-bad=copy.deepcopy(shoot); bad['patches']=bad['patches'][:4]
+# Drop only the two webhook-rename patches (indices 5-6); keep the svc-delete patch (index 4)
+bad=copy.deepcopy(shoot); bad['patches']=bad['patches'][:5]
 cases.append(('missing webhook rename patches','shoot/kustomization.yaml',bad))
+# Drop one pool-CRD patch (index 3)
 bad=copy.deepcopy(shoot); bad['patches']=bad['patches'][:3]+bad['patches'][4:]
 cases.append(('missing pool patch','shoot/kustomization.yaml',bad))
+# Drop the svc-delete patch (index 4)
+bad=copy.deepcopy(shoot); bad['patches']=bad['patches'][:4]+bad['patches'][5:]
+cases.append(('missing svc-delete patch','shoot/kustomization.yaml',bad))
 bad=copy.deepcopy(core); bad.pop('patches')
 cases.append(('missing explicit core default','shoot/core-crds/kustomization.yaml',bad))
 bad=copy.deepcopy(patch); bad['spec']['conversion']['webhook']['clientConfig']['caBundle']='captured'

@@ -79,13 +79,14 @@ DROPPED = {
               ('ClusterRoleBinding', 'ipam-capi-remote-leader-election-rolebinding')},
 }
 # Objects new in the overlay that have no counterpart in the legacy Helm render.
-# They appear in `kustomize build shoot/` but DDO drops them via filterKinds at
-# deploy time, so they are excluded from the migration-parity count/assertion.
-# webhook-service: upstream config/webhook ships a Service alongside MWC/VWC;
-#   DDO filterKinds[Service] drops it — not present in the legacy chart output.
+# They appear in `kustomize build shoot/` but are not compared in parity tests.
+# NOTE: after the fix that deletes webhook-service via $patch:delete in the overlay,
+# there are NO such objects — the upstream webhook-service (Service) is removed before
+# it reaches DDO or the render output.  This dict is kept as a named constant so the
+# filtering logic below remains explicit; both sets are empty.
 ADDED = {
     'seed': set(),
-    'shoot': {('Service', 'webhook-service')},
+    'shoot': set(),
 }
 
 
@@ -219,7 +220,8 @@ def historical_check(raw):
     for mode in ('seed', 'shoot'):
         restored = copy.deepcopy(raw[mode])
         restored = [d for d in restored if (d['kind'], d['metadata']['name']) not in RESTORED[mode]]
-        # Exclude ADDED objects (e.g. upstream webhook-service) that have no baseline entry.
+        # ADDED is empty after the $patch:delete fix (overlay removes webhook-service itself).
+        # The filter is kept for structural symmetry; it is a no-op.
         restored = [d for d in restored if (d['kind'], d['metadata']['name']) not in ADDED[mode]]
         for doc in restored:
             kind, name = doc['kind'], doc['metadata']['name']
