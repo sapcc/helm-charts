@@ -13,8 +13,6 @@ elif [ $status -ne 0 ]; then
   exit $status
 fi
 
-set -e
-
 echo "DB Version before migration:"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf db_version
 
