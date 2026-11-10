@@ -46,7 +46,7 @@ def render(namespace):
                     'allowPrivilegeEscalation': False, 'capabilities': {'drop': ['ALL']}}}},
             'webhookInjector': {
                 'repository': 'keppel.global.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector',
-                'tag': 'sha-f85df8e3d55165e3b6e1117f6b120624268d0976'},
+                'tag': 'sha-bb2f978ca889e1da27c33faba3fe78b1b1dfd221'},
         }
         values_path = Path(work) / 'values.yaml'
         values_path.write_text(yaml.safe_dump(values))

@@ -219,7 +219,7 @@ def compare(raw, legacy, namespace):
 
 def historical_check(raw):
     path = ROOT / 'tests/crd-baseline.json'
-    assert hashlib.sha256(path.read_bytes()).hexdigest() == 'aa6fa9b171f6c3e81e5c8ce8362e3f222ed1c6ae9178cb36c20311decfe7ef20', 'historical baseline changed'
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == 'bf7512e5525dae26f3fe1e0429a1c2596d72db0628e2d239beb49c31b93a0b50', 'historical baseline changed'
     baseline = json.loads(path.read_text())
     for mode in ('seed', 'shoot'):
         restored = copy.deepcopy(raw[mode])

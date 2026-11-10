@@ -58,7 +58,6 @@ system/kustomize/ipam-capi-remote-ddo/
       kustomization.yaml               # remote resources + explicit conversion default
     patches/conversion-*.yaml           # four SAP pool conversion shims
     rbac.yaml
-    webhooks.yaml
     metrics-service.yaml               # controller metrics Service (migration inventory)
   tests/
     crd-baseline.json                   # compact immutable render fingerprints
@@ -82,17 +81,24 @@ only three, so the whole directory must never be imported. See
 [core source provenance](shoot/core-crds/README.md) for the exact three URLs.
 Every remote ref MUST be a full 40-character commit SHA, never a mutable tag.
 
-The four pool patches preserve URL-only conversion to
-`https://ipam-capi-remote-webhook-service:443/convert` and review version `v1`.
-There is **no static CA**. `clientConfig.service: null` explicitly removes the
-upstream service reference. The three core sources omit `conversion`; a small
-patch restores the existing explicit `{strategy: None}` default. No upstream
-schema is changed. All four pools and both admission configurations carry
+The four pool CRD patches are **label-only** strategic-merge patches: each adds
+only the `dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote`
+label. The conversion block — `strategy: Webhook`,
+`clientConfig.service{name: webhook-service, namespace: system, path: /convert}`,
+and `conversionReviewVersions: [v1]` — is **inherited from the upstream
+`//config/crd` base** and is not repeated in the SAP patches. The final
+conversion URL (`https://ipam-capi-remote-webhook-service:443/convert`) is
+**computed at deploy time** by the DDO `rewriteWebhookURL` transform
+(`urlPrefix: https://ipam-capi-remote-webhook-service:443`); it does not exist
+as a static value in this repository. The same `rewriteWebhookURL` transform
+also produces the admission MWC/VWC URLs. The three core CRDs omit conversion;
+a small patch keeps the explicit `{strategy: None}` default. No upstream schema
+is changed. All four pools and both admission configurations carry
 `dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote`, matching
 exactly one injector `--target-label` argument. Core CRDs are not targeted.
 The injector owns CA dynamically; DDO must continue stripping only the CA leaf
-before SSA. The short URL and `--cert-sans=ipam-capi-remote-webhook-service`
-preserve the legacy topology; they do not prove that the endpoint is reachable.
+before SSA. `--cert-sans=ipam-capi-remote-webhook-service` preserves the legacy
+topology; it does not prove that the endpoint is reachable.
 
 Pool CRDs retain controller-gen v0.17.2 and the empty
 `clusterctl.cluster.x-k8s.io/move-hierarchy` label. Core CRDs retain v0.21.0 and
@@ -123,12 +129,15 @@ Helm values:
 
 - Controller: `registry.k8s.io/capi-ipam-ic/cluster-api-ipam-in-cluster-controller:v1.1.1`
   → `keppel.global.cloud.sap/ccloud-gcr-mirror/k8s-staging-capi-ipam-ic/cluster-api-ipam-in-cluster-controller:v1.1.1`.
-- Injector: `ghcr.io/sap-cloud-infrastructure/webhook-injector:sha-f85df8e3d55165e3b6e1117f6b120624268d0976`
+- Injector: `ghcr.io/sap-cloud-infrastructure/webhook-injector:sha-bb2f978ca889e1da27c33faba3fe78b1b1dfd221`
   → `keppel.global.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector` with the same tag.
 
 The shared seed kubeconfig and manager host retain neutral placeholders.
 Per-cluster kube-secrets CR transformations supply the actual kubeconfig server
-and `KUBERNETES_SERVICE_HOST`. All six target labels are already in source.
+and `KUBERNETES_SERVICE_HOST`. The CR must also carry a `rewriteWebhookURL`
+transform with `urlPrefix: https://ipam-capi-remote-webhook-service:443`, which
+produces both the admission MWC/VWC URLs and the four pool-CRD conversion URLs
+at deploy time. All six target labels are already in source.
 `shootAccess.server` configures DDO's client, not the operand's mounted kubeconfig.
 
 ## Maintenance and fidelity
@@ -154,7 +163,7 @@ the same images/security settings as the candidate. No live capture is needed; t
 Git commits must exist locally.
 
 The only guarded migration deltas are: core `conversion: {strategy: None}`;
-pool Service→exact URL plus dynamic-CA target label; admission target labels;
+pool deploy-time URL via `rewriteWebhookURL` plus dynamic-CA target label; admission target labels;
 exact old→target-only injector arguments and exact Pod origin annotation;
 the exact shoot injector rules; and the co-located ServiceMonitor's explicit
 namespaceSelector→implicit own namespace. The webhook-injector seed RBAC is a

@@ -9,6 +9,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TESTS_DIR="$(dirname "$SCRIPT_DIR")"
 CHART_DIR="$TESTS_DIR"
 
+# Per-run temp dir + cleanup trap (avoids races with parallel runs)
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/ipam-render.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
+
 # Ensure kustomize is available
 if ! command -v kustomize &> /dev/null; then
   echo "FAIL: kustomize not found in PATH"
@@ -35,25 +39,25 @@ assert() {
 failed=0
 
 # Test 1: seed overlay builds to exit 0
-if ! kustomize build "$CHART_DIR/seed" > /tmp/seed_render.yaml 2>&1; then
+if ! kustomize build "$CHART_DIR/seed" > $WORK/seed_render.yaml 2>&1; then
   echo "FAIL: kustomize build $CHART_DIR/seed exited non-zero"
-  cat /tmp/seed_render.yaml
+  cat $WORK/seed_render.yaml
   failed=1
 else
   echo "PASS: kustomize build $CHART_DIR/seed exits 0"
 fi
 
 # Test 2: shoot overlay builds to exit 0
-if ! kustomize build "$CHART_DIR/shoot" > /tmp/shoot_render.yaml 2>&1; then
+if ! kustomize build "$CHART_DIR/shoot" > $WORK/shoot_render.yaml 2>&1; then
   echo "FAIL: kustomize build $CHART_DIR/shoot exited non-zero"
-  cat /tmp/shoot_render.yaml
+  cat $WORK/shoot_render.yaml
   failed=1
 else
   echo "PASS: kustomize build $CHART_DIR/shoot exits 0"
 fi
 
 # Test 3: seed render contains Deployment ipam-capi-controller-manager
-if grep -q "^kind: Deployment$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-controller-manager" /tmp/seed_render.yaml; then
+if grep -q "^kind: Deployment$" $WORK/seed_render.yaml && grep -q "name: ipam-capi-controller-manager" $WORK/seed_render.yaml; then
   echo "PASS: seed render contains Deployment ipam-capi-controller-manager"
 else
   echo "FAIL: seed render should contain Deployment ipam-capi-controller-manager"
@@ -61,7 +65,7 @@ else
 fi
 
 # Test 4: shoot render contains all 7 vendored CRDs
-crd_count="$(grep -c '^kind: CustomResourceDefinition$' /tmp/shoot_render.yaml || true)"
+crd_count="$(grep -c '^kind: CustomResourceDefinition$' $WORK/shoot_render.yaml || true)"
 if [ "$crd_count" -ne 7 ]; then
   echo "FAIL: shoot render should contain 7 CRDs (found $crd_count)"
   failed=1
@@ -91,7 +95,7 @@ echo ""
 echo "=== Mode isolation gate: seed render ==="
 
 # Test 7: seed render contains Service ipam-capi-remote-webhook-service
-if grep -q "^kind: Service$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-service" /tmp/seed_render.yaml; then
+if grep -q "^kind: Service$" $WORK/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-service" $WORK/seed_render.yaml; then
   echo "PASS: seed render contains Service ipam-capi-remote-webhook-service"
 else
   echo "FAIL: seed render should contain Service ipam-capi-remote-webhook-service"
@@ -99,7 +103,7 @@ else
 fi
 
 # Test 8: seed render contains webhook-injector ServiceAccount
-if grep -q "^kind: ServiceAccount$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" /tmp/seed_render.yaml; then
+if grep -q "^kind: ServiceAccount$" $WORK/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" $WORK/seed_render.yaml; then
   echo "PASS: seed render contains ServiceAccount ipam-capi-remote-webhook-injector"
 else
   echo "FAIL: seed render should contain ServiceAccount ipam-capi-remote-webhook-injector"
@@ -107,7 +111,7 @@ else
 fi
 
 # Test 9: seed render contains webhook-injector Role
-if grep -q "^kind: Role$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" /tmp/seed_render.yaml; then
+if grep -q "^kind: Role$" $WORK/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" $WORK/seed_render.yaml; then
   echo "PASS: seed render contains Role ipam-capi-remote-webhook-injector"
 else
   echo "FAIL: seed render should contain webhook-injector Role"
@@ -115,7 +119,7 @@ else
 fi
 
 # Test 10: seed render contains webhook-injector RoleBinding
-if grep -q "^kind: RoleBinding$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" /tmp/seed_render.yaml; then
+if grep -q "^kind: RoleBinding$" $WORK/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" $WORK/seed_render.yaml; then
   echo "PASS: seed render contains RoleBinding ipam-capi-remote-webhook-injector"
 else
   echo "FAIL: seed render should contain webhook-injector RoleBinding"
@@ -123,7 +127,7 @@ else
 fi
 
 # Test 11: seed render contains ZERO webhook-injector ClusterRole (dropped; injector uses target kubeconfig)
-if grep -q "^kind: ClusterRole$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" /tmp/seed_render.yaml; then
+if grep -q "^kind: ClusterRole$" $WORK/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" $WORK/seed_render.yaml; then
   echo "FAIL: seed render should NOT contain ClusterRole ipam-capi-remote-webhook-injector"
   failed=1
 else
@@ -131,7 +135,7 @@ else
 fi
 
 # Test 12: seed render contains ZERO webhook-injector ClusterRoleBinding (dropped)
-if grep -q "^kind: ClusterRoleBinding$" /tmp/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" /tmp/seed_render.yaml; then
+if grep -q "^kind: ClusterRoleBinding$" $WORK/seed_render.yaml && grep -q "name: ipam-capi-remote-webhook-injector" $WORK/seed_render.yaml; then
   echo "FAIL: seed render should NOT contain ClusterRoleBinding ipam-capi-remote-webhook-injector"
   failed=1
 else
@@ -139,7 +143,7 @@ else
 fi
 
 # Test 13: seed render contains ZERO CustomResourceDefinitions
-seed_crd_count="$(grep -c '^kind: CustomResourceDefinition$' /tmp/seed_render.yaml || true)"
+seed_crd_count="$(grep -c '^kind: CustomResourceDefinition$' $WORK/seed_render.yaml || true)"
 if [ "$seed_crd_count" -ne 0 ]; then
   echo "FAIL: seed render should contain ZERO CRDs (found $seed_crd_count)"
   failed=1
@@ -148,7 +152,7 @@ else
 fi
 
 # Webhook configurations and controller RBAC belong only to shoot.
-if ! python3 - /tmp/seed_render.yaml <<'PY'
+if ! python3 - $WORK/seed_render.yaml <<'PY'
 import sys
 import yaml
 
@@ -186,7 +190,7 @@ required_crds=(
 )
 
 for crd_name in "${required_crds[@]}"; do
-  if grep -q "name: $crd_name$" /tmp/shoot_render.yaml; then
+  if grep -q "name: $crd_name$" $WORK/shoot_render.yaml; then
     echo "PASS: shoot render contains CRD $crd_name"
   else
     echo "FAIL: shoot render should contain CRD $crd_name"
@@ -195,7 +199,7 @@ for crd_name in "${required_crds[@]}"; do
 done
 
 # Test 15: shoot render contains controller ServiceAccount ipam-capi-controller-manager
-if grep -q "^kind: ServiceAccount$" /tmp/shoot_render.yaml && grep -q "name: ipam-capi-controller-manager" /tmp/shoot_render.yaml; then
+if grep -q "^kind: ServiceAccount$" $WORK/shoot_render.yaml && grep -q "name: ipam-capi-controller-manager" $WORK/shoot_render.yaml; then
   echo "PASS: shoot render contains ServiceAccount ipam-capi-controller-manager"
 else
   echo "FAIL: shoot render should contain ServiceAccount ipam-capi-controller-manager"
@@ -203,7 +207,7 @@ else
 fi
 
 # Test 16: shoot render contains controller manager ClusterRole
-if grep -q "^kind: ClusterRole$" /tmp/shoot_render.yaml && grep -q "name: ipam-capi-manager-role" /tmp/shoot_render.yaml; then
+if grep -q "^kind: ClusterRole$" $WORK/shoot_render.yaml && grep -q "name: ipam-capi-manager-role" $WORK/shoot_render.yaml; then
   echo "PASS: shoot render contains ClusterRole ipam-capi-manager-role"
 else
   echo "FAIL: shoot render should contain ClusterRole ipam-capi-manager-role"
@@ -211,7 +215,7 @@ else
 fi
 
 # Test 17: shoot render contains cross-operator metal ClusterRoleBinding
-if grep -q "^kind: ClusterRoleBinding$" /tmp/shoot_render.yaml && grep -q "name: ipam-capi-metal-rolebinding" /tmp/shoot_render.yaml; then
+if grep -q "^kind: ClusterRoleBinding$" $WORK/shoot_render.yaml && grep -q "name: ipam-capi-metal-rolebinding" $WORK/shoot_render.yaml; then
   echo "PASS: shoot render contains ClusterRoleBinding ipam-capi-metal-rolebinding (cross-operator)"
 else
   echo "FAIL: shoot render should contain cross-operator ClusterRoleBinding ipam-capi-metal-rolebinding"
@@ -219,7 +223,7 @@ else
 fi
 
 # Test 18: shoot render contains MutatingWebhookConfiguration
-if grep -q "^kind: MutatingWebhookConfiguration$" /tmp/shoot_render.yaml && grep -q "name: ipam-capi-remote-mutating-webhook-configuration" /tmp/shoot_render.yaml; then
+if grep -q "^kind: MutatingWebhookConfiguration$" $WORK/shoot_render.yaml && grep -q "name: ipam-capi-remote-mutating-webhook-configuration" $WORK/shoot_render.yaml; then
   echo "PASS: shoot render contains MutatingWebhookConfiguration ipam-capi-remote-mutating-webhook-configuration"
 else
   echo "FAIL: shoot render should contain MutatingWebhookConfiguration"
@@ -227,7 +231,7 @@ else
 fi
 
 # Test 19: shoot render contains ValidatingWebhookConfiguration
-if grep -q "^kind: ValidatingWebhookConfiguration$" /tmp/shoot_render.yaml && grep -q "name: ipam-capi-remote-validating-webhook-configuration" /tmp/shoot_render.yaml; then
+if grep -q "^kind: ValidatingWebhookConfiguration$" $WORK/shoot_render.yaml && grep -q "name: ipam-capi-remote-validating-webhook-configuration" $WORK/shoot_render.yaml; then
   echo "PASS: shoot render contains ValidatingWebhookConfiguration ipam-capi-remote-validating-webhook-configuration"
 else
   echo "FAIL: shoot render should contain ValidatingWebhookConfiguration"
@@ -235,7 +239,7 @@ else
 fi
 
 # Test 20: shoot render contains ZERO Deployment
-shoot_deployment_count="$(grep -c '^kind: Deployment$' /tmp/shoot_render.yaml || true)"
+shoot_deployment_count="$(grep -c '^kind: Deployment$' $WORK/shoot_render.yaml || true)"
 if [ "$shoot_deployment_count" -ne 0 ]; then
   echo "FAIL: shoot render should contain ZERO Deployments (found $shoot_deployment_count)"
   failed=1
@@ -244,7 +248,7 @@ else
 fi
 
 # Test 21: shoot render contains ZERO Service named ipam-capi-remote-webhook-service
-if grep -q "^kind: Service$" /tmp/shoot_render.yaml && grep -q "name: ipam-capi-remote-webhook-service" /tmp/shoot_render.yaml; then
+if grep -q "^kind: Service$" $WORK/shoot_render.yaml && grep -q "name: ipam-capi-remote-webhook-service" $WORK/shoot_render.yaml; then
   echo "FAIL: shoot render should NOT contain Service ipam-capi-remote-webhook-service"
   failed=1
 else
@@ -252,7 +256,7 @@ else
 fi
 
 # Test 22: shoot render contains ZERO leader-election RBAC (manager runs --leader-elect=false)
-if ! python3 - /tmp/shoot_render.yaml <<'PY'
+if ! python3 - $WORK/shoot_render.yaml <<'PY'
 import sys, yaml
 docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d]
 failed = False
@@ -272,7 +276,7 @@ then
 fi
 
 # Test 23: regression guard — shoot still has injector ClusterRole + metal bindings + core controller bindings
-if ! python3 - /tmp/shoot_render.yaml <<'PY'
+if ! python3 - $WORK/shoot_render.yaml <<'PY'
 import sys, yaml
 docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d]
 failed = False
@@ -299,7 +303,7 @@ fi
 # arg set, securityContext, gardener pod labels, webhook Service ports, the
 # token-requestor Secret, the origin annotation on every object, and the
 # namespaced-only injector RBAC (SA/Role/RoleBinding present; ClusterRole/
-# ClusterRoleBinding absent).  Reuses /tmp/seed_render.yaml from Test 1 (requires yq).
+# ClusterRoleBinding absent).  Reuses $WORK/seed_render.yaml from Test 1 (requires yq).
 # ============================================================================
 echo ""
 echo "=== Seed Deployment detail ==="
@@ -308,7 +312,7 @@ if ! command -v yq &> /dev/null; then
   echo "FAIL: yq not found in PATH (required for seed Deployment detail)"
   failed=1
 else
-  SEED=/tmp/seed_render.yaml
+  SEED=$WORK/seed_render.yaml
 
   # manager container image overridden to keppel ccloud-gcr-mirror path
   manager_image=$(yq eval 'select(.kind == "Deployment" and .metadata.name == "ipam-capi-controller-manager") | .spec.template.spec.containers[] | select(.name == "manager") | .image' "$SEED")
@@ -321,7 +325,7 @@ else
 
   # initContainer webhook-injector image overridden to keppel mirror
   injector_image=$(yq eval 'select(.kind == "Deployment" and .metadata.name == "ipam-capi-controller-manager") | .spec.template.spec.initContainers[] | select(.name == "webhook-injector") | .image' "$SEED")
-  if [[ "$injector_image" != "keppel.global.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector:sha-f85df8e3d55165e3b6e1117f6b120624268d0976" ]]; then
+  if [[ "$injector_image" != "keppel.global.cloud.sap/i-cant-believe-its-not-cloud-infrastructure-dev/webhook-injector:sha-bb2f978ca889e1da27c33faba3fe78b1b1dfd221" ]]; then
     echo "FAIL: webhook-injector image not transformed to keppel mirror (got: $injector_image)"
     failed=1
   else
@@ -451,13 +455,13 @@ fi
 # a-qa-de-200 carries no pools, so the shoot render must contain ZERO
 # GlobalInClusterIPPool objects.  The committed pools.example.yaml template must
 # stay well-formed (single spec:, correct kind/namespace/apiVersion).
-# Reuses /tmp/shoot_render.yaml from Test 2.
+# Reuses $WORK/shoot_render.yaml from Test 2.
 # ============================================================================
 echo ""
 echo "=== Pool absence + example structure ==="
 
 # shoot render contains ZERO GlobalInClusterIPPool objects
-pool_count="$(grep -c '^kind: GlobalInClusterIPPool$' /tmp/shoot_render.yaml || true)"
+pool_count="$(grep -c '^kind: GlobalInClusterIPPool$' $WORK/shoot_render.yaml || true)"
 if [ "$pool_count" -ne 0 ]; then
   echo "FAIL: shoot render should contain 0 GlobalInClusterIPPool objects (found $pool_count)"
   failed=1
