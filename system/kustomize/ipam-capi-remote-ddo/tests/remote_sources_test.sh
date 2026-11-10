@@ -48,14 +48,10 @@ assert vwc_patch.get('target')=={'kind':'ValidatingWebhookConfiguration','name':
 assert yaml.safe_load(vwc_patch['patch'])[0]=={'op':'replace','path':'/metadata/name','value':'ipam-capi-remote-validating-webhook-configuration'}, 'FAIL: VWC rename op missing'
 for name in pools:
     patch=yaml.safe_load((root/f'shoot/patches/conversion-{name}.yaml').read_text())
-    assert set(patch)=={'apiVersion','kind','metadata','spec'}
+    # Design B: label-only patch (no spec.conversion); DDO rewriteWebhookURL injects url at deploy.
+    assert set(patch)=={'apiVersion','kind','metadata'}, 'FAIL: SAP patch must be label-only (no spec); conversion inherited from upstream'
     assert patch['apiVersion']=='apiextensions.k8s.io/v1' and patch['kind']=='CustomResourceDefinition'
     assert patch['metadata']=={'name':f'{name}.ipam.cluster.x-k8s.io', 'labels':label}
-    assert set(patch['spec'])=={'conversion'}, 'FAIL: SAP patch contains copied schema'
-    conversion=patch['spec']['conversion']; client=conversion['webhook']['clientConfig']
-    assert conversion['strategy']=='Webhook' and conversion['webhook']['conversionReviewVersions']==['v1']
-    assert client['service'] is None and client['url']=='https://ipam-capi-remote-webhook-service:443/convert'
-    assert set(client)=={'service','url'}, 'FAIL: static CA or extra conversion client field'
 # Confirm webhooks.yaml does not exist as a local file (sourced remotely now)
 assert not (root/'shoot/webhooks.yaml').exists(), 'FAIL: shoot/webhooks.yaml still exists as local file (should be remote-sourced)'
 print('PASS: exact pinned Git base, SHA-pinned raw core CRD URLs, six dynamic-CA targets, webhook remote-sourcing, svc-delete patch')
@@ -79,8 +75,8 @@ bad=copy.deepcopy(core); bad['resources'][0]='https://raw.githubusercontent.com/
 cases.append(('mutable core tag','shoot/core-crds/kustomization.yaml',bad))
 bad=copy.deepcopy(core); bad['resources']=['https://github.com/kubernetes-sigs/cluster-api//core/config/crd?ref=5f7d58c9ad647f31bd342bf8de33092c27f7fc38']
 cases.append(('full CAPI directory','shoot/core-crds/kustomization.yaml',bad))
-bad=copy.deepcopy(patch); bad['spec']['conversion']['webhook']['clientConfig']['service']={'name':'webhook-service'}
-cases.append(('service and URL coexist','shoot/patches/conversion-globalinclusterippools.yaml',bad))
+bad=copy.deepcopy(patch); bad.setdefault('spec',{}).setdefault('conversion',{}).setdefault('webhook',{}).setdefault('clientConfig',{})['url']='https://ipam-capi-remote-webhook-service:443/convert'
+cases.append(('spec with url in label-only patch','shoot/patches/conversion-globalinclusterippools.yaml',bad))
 # Drop only the two webhook-rename patches (indices 5-6); keep the svc-delete patch (index 4)
 bad=copy.deepcopy(shoot); bad['patches']=bad['patches'][:5]
 cases.append(('missing webhook rename patches','shoot/kustomization.yaml',bad))
@@ -92,8 +88,8 @@ bad=copy.deepcopy(shoot); bad['patches']=bad['patches'][:4]+bad['patches'][5:]
 cases.append(('missing svc-delete patch','shoot/kustomization.yaml',bad))
 bad=copy.deepcopy(core); bad.pop('patches')
 cases.append(('missing explicit core default','shoot/core-crds/kustomization.yaml',bad))
-bad=copy.deepcopy(patch); bad['spec']['conversion']['webhook']['clientConfig']['caBundle']='captured'
-cases.append(('static pool CA',patch_path,bad))
+bad=copy.deepcopy(patch); bad.setdefault('spec',{}).setdefault('conversion',{}).setdefault('webhook',{}).setdefault('clientConfig',{})['caBundle']='captured'
+cases.append(('static pool CA in label-only patch',patch_path,bad))
 bad=copy.deepcopy(patch); bad['metadata']['labels']={}
 cases.append(('missing pool target label',patch_path,bad))
 for name,path,document in cases:

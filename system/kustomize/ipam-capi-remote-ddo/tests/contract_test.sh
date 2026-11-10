@@ -5,9 +5,9 @@
 #       baseline, and a ~139-case negative mutation battery.  This single gate already
 #       subsumes the former rbac_fidelity_test.sh (RBAC subset of compare()) and
 #       webhook_parity_test.sh (webhook contract subset of compare()+historical_check()).
-#   (2) crd_parity.py self-test — 9 synthetic cases exercising the fingerprint lib's
-#       fail-closed edge cases DIRECTLY (the contract consumes the lib but never tests
-#       its own edge behaviour).
+#   (2) semantic 7-CRD surface check + crd_parity.py self-test — 9 synthetic cases
+#       exercising the fingerprint lib's fail-closed edge cases DIRECTLY (the contract
+#       consumes the lib but never tests its own edge behaviour).
 #   (3) explicit 8-webhook URL contract — human-readable assertion of the exact mutate/
 #       validate URLs after a simulated DDO rewriteWebhookURL (carried over from the
 #       retired webhook_parity_test.sh for legible failure output).
@@ -25,8 +25,9 @@ PYTHONDONTWRITEBYTECODE=1 python3 "$DIR/migration_contract.py" "$WORK/shoot.yaml
 
 # ── (2a) semantic 7-CRD surface check ────────────────────────────────────────
 # Exact 7 CRDs by name, split controller-gen stamps (pool v0.17.2 / core v0.21.0),
-# pool move-hierarchy labels, and URL-only conversion (strategy Webhook, /convert
-# url, no caBundle/service, injector label).  Carried over from the retired crd_test.sh.
+# pool move-hierarchy labels, and injector label.  Build-time render is service-form
+# (DDO rewriteWebhookURL converts to url-form at deploy time); no url/service
+# assertions at build time — that is expected and correct for Design B.
 PYTHONDONTWRITEBYTECODE=1 python3 - "$WORK/shoot.yaml" <<'PY'
 import sys, yaml
 docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d and d['kind']=='CustomResourceDefinition']
@@ -39,14 +40,10 @@ for d in docs:
     labels=meta.get('labels',{})
     if pool:
         assert labels.get('clusterctl.cluster.x-k8s.io/move-hierarchy') == ''
-        conversion=d['spec']['conversion']; client=conversion['webhook']['clientConfig']
-        assert conversion['strategy']=='Webhook' and conversion['webhook']['conversionReviewVersions']==['v1']
-        assert client['url']=='https://ipam-capi-remote-webhook-service:443/convert'
-        assert 'caBundle' not in client and 'service' not in client
         assert labels['dual-deployment-operator.cc.sap/webhook-injector']=='ipam-capi-remote'
     else:
         assert 'clusterctl.cluster.x-k8s.io/move-hierarchy' not in labels
-print('PASS: exact seven CRDs, split stamps, labels and URL-only conversion')
+print('PASS: exact seven CRDs, split stamps, move-hierarchy labels, injector label (service-form conversion inherited from upstream)')
 PY
 
 # ── (2b) crd_parity.py self-test (10 synthetic cases) ────────────────────────

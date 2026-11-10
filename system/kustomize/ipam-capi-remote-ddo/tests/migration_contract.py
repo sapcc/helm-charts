@@ -21,8 +21,11 @@ CORE = ['clusters.cluster.x-k8s.io', 'ipaddresses.ipam.cluster.x-k8s.io',
 ADMISSION = {'MutatingWebhookConfiguration': 'ipam-capi-remote-mutating-webhook-configuration',
              'ValidatingWebhookConfiguration': 'ipam-capi-remote-validating-webhook-configuration'}
 URL = 'https://ipam-capi-remote-webhook-service:443/convert'
+URL_PREFIX = 'https://ipam-capi-remote-webhook-service:443'
+# Build-time service-form (Design B: DDO rewriteWebhookURL converts to url-form at deploy).
 NEW_CONVERSION = {'strategy': 'Webhook', 'webhook': {
-    'clientConfig': {'url': URL}, 'conversionReviewVersions': ['v1']}}
+    'clientConfig': {'service': {'name': 'webhook-service', 'namespace': 'system', 'path': '/convert'}},
+    'conversionReviewVersions': ['v1']}}
 OLD_CONVERSION = {'strategy': 'Webhook', 'webhook': {
     'clientConfig': {'service': {'name': 'webhook-service', 'namespace': 'kube-system', 'path': '/convert'}},
     'conversionReviewVersions': ['v1']}}
@@ -167,9 +170,10 @@ def compare(raw, legacy, namespace):
                 elif name in POOLS:
                     assert old['spec']['conversion'] == OLD_CONVERSION
                     assert new['spec']['conversion'] == NEW_CONVERSION
-                    # Keep strategy, review versions, schemas and all other leaves compared.
-                    del old['spec']['conversion']['webhook']['clientConfig']['service']
-                    del new['spec']['conversion']['webhook']['clientConfig']['url']
+                    # Both are service-form; strip service.namespace (kube-system vs system
+                    # is an expected upstream-vs-overlay difference) before diffing the rest.
+                    del old['spec']['conversion']['webhook']['clientConfig']['service']['namespace']
+                    del new['spec']['conversion']['webhook']['clientConfig']['service']['namespace']
                     remove_target(new, old)
             elif kind in ADMISSION:
                 assert name == ADMISSION[kind]
@@ -233,6 +237,10 @@ def historical_check(raw):
                 patch = yaml.safe_load(git_file(HISTORICAL, PREFIX + f'shoot/patches/conversion-{name.split(".")[0]}.yaml'))
                 client = patch['spec']['conversion']['webhook']['clientConfig']
                 assert client['service'] is None and client['url'] == URL and client['caBundle']
+                # Simulate DDO rewriteWebhookURL (service-form -> url-form) so the fingerprint
+                # matches the historical baseline, which was computed against url-form + caBundle.
+                svc = doc['spec']['conversion']['webhook']['clientConfig'].pop('service')
+                doc['spec']['conversion']['webhook']['clientConfig']['url'] = URL_PREFIX + svc['path']
                 doc['spec']['conversion']['webhook']['clientConfig']['caBundle'] = client['caBundle']
             if mode == 'shoot' and kind == 'ClusterRole' and name == INJECTOR:
                 assert doc['rules'] == NEW_RULES
