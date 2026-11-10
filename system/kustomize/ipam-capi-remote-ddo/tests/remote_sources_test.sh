@@ -11,7 +11,7 @@ crd_base=f'github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//conf
 webhook_base=f'github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/webhook?ref={provider}'
 shoot=yaml.safe_load((root/'shoot/kustomization.yaml').read_text())
 # Exact resource composition: both CRD and webhook remotes must be scheme-less SHA-pinned git refs.
-assert shoot['resources']==['../base','../additions/shoot',crd_base,'core-crds','rbac.yaml',webhook_base,'metrics-service.yaml'], 'FAIL: exact source composition missing'
+assert shoot['resources']==['../additions/shoot',crd_base,'core-crds','rbac.yaml',webhook_base,'metrics-service.yaml'], 'FAIL: exact source composition missing'
 # webhooks.yaml must NOT be a local file resource (it is now sourced remotely)
 assert 'webhooks.yaml' not in shoot['resources'], 'FAIL: hand-authored webhooks.yaml still listed as local resource'
 assert not list((root/'shoot/crds').glob('*.yaml')), 'FAIL: copied CRDs remain'
@@ -67,9 +67,9 @@ core=yaml.safe_load((root/'shoot/core-crds/kustomization.yaml').read_text())
 patch_path='shoot/patches/conversion-globalinclusterippools.yaml'
 patch=yaml.safe_load((root/patch_path).read_text())
 cases=[]
-bad=copy.deepcopy(shoot); bad['resources'][2]=bad['resources'][2].split('?')[0]+'?ref=v1.1.1'
+bad=copy.deepcopy(shoot); bad['resources'][1]=bad['resources'][1].split('?')[0]+'?ref=v1.1.1'
 cases.append(('mutable provider CRD tag','shoot/kustomization.yaml',bad))
-bad=copy.deepcopy(shoot); bad['resources'][5]=bad['resources'][5].split('?')[0]+'?ref=v1.1.1'
+bad=copy.deepcopy(shoot); bad['resources'][4]=bad['resources'][4].split('?')[0]+'?ref=v1.1.1'
 cases.append(('mutable provider webhook tag','shoot/kustomization.yaml',bad))
 bad=copy.deepcopy(core); bad['resources'][0]='https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/v1.14.2/core/config/crd/bases/cluster.x-k8s.io_clusters.yaml'
 cases.append(('mutable core tag','shoot/core-crds/kustomization.yaml',bad))

@@ -25,10 +25,9 @@ No live connectivity, upgrade or rotation safety is established by this suite.
 
 ## Structural mode contract
 
-There is no `mode` value. `seed/` composes `../base` and `../additions/seed`;
-`shoot/` composes `../base`, `../additions/shoot`, its remote CRD sources, RBAC,
-and webhook configurations. `base/` is currently empty; anything added there
-renders to **both** clusters. SAP-added resources carry:
+There is no `mode` value. `seed/` composes only `../additions/seed`;
+`shoot/` composes `../additions/shoot`, its remote CRD sources, RBAC,
+and webhook configurations. SAP-added resources carry:
 
 ```yaml
 dual-deployment-operator.cc.sap/origin: additions
@@ -38,7 +37,6 @@ dual-deployment-operator.cc.sap/origin: additions
 
 ```text
 system/kustomize/ipam-capi-remote-ddo/
-  base/kustomization.yaml
   additions/seed/
     deployment.yaml
     kustomization.yaml
