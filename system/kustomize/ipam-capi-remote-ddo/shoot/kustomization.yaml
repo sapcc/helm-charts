@@ -22,10 +22,17 @@ resources:
   - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/webhook?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
   - metrics-service.yaml
 patches:
-  - path: patches/conversion-globalinclusterippools.yaml
-  - path: patches/conversion-globalinclusterprefixpools.yaml
-  - path: patches/conversion-inclusterippools.yaml
-  - path: patches/conversion-inclusterprefixpools.yaml
+  # All four pool CRDs get the injector label (strategy:Webhook + service-form
+  # conversion inherited from upstream //config/crd; DDO rewriteWebhookURL adds
+  # the /convert URL at deploy). One regex-targeted patch replaces the four
+  # former per-pool label-only files.
+  - target:
+      kind: CustomResourceDefinition
+      name: "^(global)?incluster(ip|prefix)pools\\.ipam\\.cluster\\.x-k8s\\.io$"
+    patch: |-
+      - op: add
+        path: /metadata/labels/dual-deployment-operator.cc.sap~1webhook-injector
+        value: ipam-capi-remote
   # Delete the upstream webhook-service (Service) from the shoot render.
   # The upstream config/webhook dir ships this Service alongside MWC/VWC; we remove it
   # here via a targeted kustomize delete patch rather than a DDO filterKinds[Service],
