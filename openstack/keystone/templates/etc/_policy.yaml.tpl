@@ -40,10 +40,6 @@
   'cloud_dns_admin':%(target.role.name)s or
   'cloud_dns_viewer':%(target.role.name)s or
   'cloud_dns_backup':%(target.role.name)s or
-  'dns_admin':%(target.role.name)s or
-  'dns_hostmaster':%(target.role.name)s or
-  'dns_zonemaster':%(target.role.name)s or
-  'dns_mailmaster':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
   'cloud_compute_viewer':%(target.role.name)s or
@@ -544,7 +540,7 @@
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:revoke_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants"
+"identity:revoke_grant": "(rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants) and rule:dns_ops_role_grant_ok"
 
 # List all grants a specific user has on the system.
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles
