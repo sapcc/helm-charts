@@ -13,10 +13,40 @@ resources:
   - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/crd?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
   - core-crds
   - rbac.yaml
-  - webhooks.yaml
+  # Webhook manifests fetched from upstream config/webhook (same SHA pin as CRDs above).
+  # The upstream directory ships manifests.yaml (MWC+VWC in service-form) and service.yaml.
+  # DDO converts service-form -> url-form via rewriteWebhookURL and drops the Service via
+  # filterKinds at deploy time.  Plain `kustomize build shoot/` shows pre-transform (service)
+  # form — that is expected.  webhook_parity_test.sh simulates the DDO transforms to verify
+  # the post-transform output equals the previously-committed url-form.
+  - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/webhook?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
   - metrics-service.yaml
 patches:
   - path: patches/conversion-globalinclusterippools.yaml
   - path: patches/conversion-globalinclusterprefixpools.yaml
   - path: patches/conversion-inclusterippools.yaml
   - path: patches/conversion-inclusterprefixpools.yaml
+  # Rename upstream webhook configs to the SAP names and add the injector label.
+  # JSON patch (RFC 6902) replaces the name in-place and adds the label in one step.
+  - target:
+      kind: MutatingWebhookConfiguration
+      name: mutating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: ipam-capi-remote-mutating-webhook-configuration
+      - op: add
+        path: /metadata/labels
+        value:
+          dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote
+  - target:
+      kind: ValidatingWebhookConfiguration
+      name: validating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: ipam-capi-remote-validating-webhook-configuration
+      - op: add
+        path: /metadata/labels
+        value:
+          dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote

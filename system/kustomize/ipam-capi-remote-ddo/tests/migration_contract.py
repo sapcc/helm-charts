@@ -78,6 +78,15 @@ DROPPED = {
               ('ClusterRole', 'ipam-capi-remote-leader-election-role'),
               ('ClusterRoleBinding', 'ipam-capi-remote-leader-election-rolebinding')},
 }
+# Objects new in the overlay that have no counterpart in the legacy Helm render.
+# They appear in `kustomize build shoot/` but DDO drops them via filterKinds at
+# deploy time, so they are excluded from the migration-parity count/assertion.
+# webhook-service: upstream config/webhook ships a Service alongside MWC/VWC;
+#   DDO filterKinds[Service] drops it — not present in the legacy chart output.
+ADDED = {
+    'seed': set(),
+    'shoot': {('Service', 'webhook-service')},
+}
 
 
 def index(docs):
@@ -120,7 +129,8 @@ def compare(raw, legacy, namespace):
                       if LABEL in d['metadata'].get('labels', {})}
     assert actual_targets == target_names, 'exactly six injector targets required'
     for mode, count in (('seed', 13), ('shoot', 21)):
-        actual = index(candidate[mode])
+        actual = index(d for d in candidate[mode]
+                       if (d['kind'], d['metadata']['name']) not in ADDED[mode])
         expected = index(d for d in legacy[mode]
                          if (d['kind'], d['metadata']['name']) not in DROPPED[mode])
         assert len(expected) == count
@@ -166,6 +176,19 @@ def compare(raw, legacy, namespace):
                 assert len(new['webhooks']) == len(old['webhooks']) == 4
                 for webhook in new['webhooks'] + old['webhooks']:
                     assert 'caBundle' not in webhook['clientConfig']
+                # Normalize clientConfig: new overlay has service-form (pre-DDO rewriteWebhookURL);
+                # legacy had url-form.  Simulate rewriteWebhookURL here so the rest of each
+                # webhook entry can be compared field-by-field.
+                URL_PREFIX = 'https://ipam-capi-remote-webhook-service:443'
+                for webhook in new['webhooks']:
+                    cc = webhook['clientConfig']
+                    if 'service' in cc and 'url' not in cc:
+                        svc = cc.pop('service')
+                        cc['url'] = URL_PREFIX + svc['path']
+                for webhook in old['webhooks']:
+                    cc = webhook['clientConfig']
+                    if 'url' in cc:
+                        pass  # already url-form from legacy; keep as-is for comparison
             elif mode == 'shoot' and kind == 'ClusterRole' and name == INJECTOR:
                 assert old['rules'] == OLD_RULES
                 assert new['rules'] == NEW_RULES, 'target-only injector RBAC differs'
@@ -196,6 +219,8 @@ def historical_check(raw):
     for mode in ('seed', 'shoot'):
         restored = copy.deepcopy(raw[mode])
         restored = [d for d in restored if (d['kind'], d['metadata']['name']) not in RESTORED[mode]]
+        # Exclude ADDED objects (e.g. upstream webhook-service) that have no baseline entry.
+        restored = [d for d in restored if (d['kind'], d['metadata']['name']) not in ADDED[mode]]
         for doc in restored:
             kind, name = doc['kind'], doc['metadata']['name']
             if mode == 'shoot' and (name in POOLS or kind in ADMISSION):
@@ -210,6 +235,16 @@ def historical_check(raw):
             if mode == 'shoot' and kind == 'ClusterRole' and name == INJECTOR:
                 assert doc['rules'] == NEW_RULES
                 doc['rules'] = copy.deepcopy(OLD_RULES)
+            # Simulate DDO rewriteWebhookURL: overlay now sources webhooks in service-form;
+            # the historical baseline was computed against url-form.  Normalize here so
+            # the fingerprint is comparable to the baseline.
+            if kind in ADMISSION:
+                _URL_PREFIX = 'https://ipam-capi-remote-webhook-service:443'
+                for webhook in doc.get('webhooks', []):
+                    cc = webhook.get('clientConfig', {})
+                    if 'service' in cc and 'url' not in cc:
+                        svc = cc.pop('service')
+                        cc['url'] = _URL_PREFIX + svc['path']
         actual = fingerprints(restored)
         assert actual == baseline[mode], f'{mode}: historical fingerprints differ outside reviewed repair'
 
@@ -226,6 +261,10 @@ def negative_tests(raw, legacy, namespace):
         raise AssertionError(f'accepted mutation: {label}')
     for mode in ('seed', 'shoot'):
         for i, doc in enumerate(raw[mode]):
+            # Skip objects that are new in the overlay (not in legacy); their removal
+            # is not a parity violation (they're DDO-filtered at deploy time anyway).
+            if (doc['kind'], doc['metadata']['name']) in ADDED[mode]:
+                continue
             changed = copy.deepcopy(raw)
             changed[mode].pop(i)
             rejects(changed, f'removal {mode}/{doc["metadata"]["name"]}')
