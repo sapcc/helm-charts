@@ -15,7 +15,7 @@ max_routes = {{.Values.max_routes }}
 allow_overlapping_ips = true
 core_plugin = ml2
 
-service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}},flavors{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}{{- if .Values.vpnaas.enabled }},asr1k-vpnaas{{- end }}
+service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}},flavors{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}{{- if .Values.vpnaas.enabled }},asr1k-vpnaas{{- end }}{{- if .Values.bgpaas_sci.enabled }},bgpaas-sci{{- end }}
 
 default_router_type = {{required "A valid .Values.default_router_type required!" .Values.default_router_type}}
 router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver required!" .Values.router_scheduler_driver}}
@@ -57,6 +57,9 @@ owner_check_cache_expiration_time = {{ .Values.api.owner_check_cache_expiration_
 service_provider = L3_ROUTER_NAT:asr1k:asr1k_neutron_l3.neutron.services.service_providers.asr1k_router.ASR1KRouterDriver:default
 {{- if .Values.vpnaas.enabled }}
 service_provider = VPN:cisco_ipsec:asr1k_neutron_l3.neutron.services.service_drivers.asr1k.vpnaas_driver.ASR1KIPSecVPNaaSDriver:default
+{{- end }}
+{{- if .Values.bgpaas_sci.enabled }}
+service_provider = BGPAAS_SCI:asr1k:asr1k_neutron_l3.neutron.services.service_drivers.asr1k.bgpaas_sci_driver.ASR1KBGPaaSSCIDriver:default
 {{- end }}
 
 [oslo_policy]
