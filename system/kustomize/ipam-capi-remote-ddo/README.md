@@ -56,7 +56,6 @@ system/kustomize/ipam-capi-remote-ddo/
     kustomization.yaml                 # provider Git base + core-crds + local RBAC/webhooks
     core-crds/                         # three SHA-pinned raw CRD URLs + provenance README
       kustomization.yaml               # remote resources + explicit conversion default
-    patches/conversion-*.yaml           # four SAP pool conversion shims
     rbac.yaml
     metrics-service.yaml               # controller metrics Service (migration inventory)
   tests/
@@ -81,12 +80,14 @@ only three, so the whole directory must never be imported. See
 [core source provenance](shoot/core-crds/README.md) for the exact three URLs.
 Every remote ref MUST be a full 40-character commit SHA, never a mutable tag.
 
-The four pool CRD patches are **label-only** strategic-merge patches: each adds
-only the `dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote`
+The four pool CRDs are labelled by a **single regex-targeted JSON (RFC 6902)
+patch** in `shoot/kustomization.yaml` (matching
+`^(global)?incluster(ip|prefix)pools\.ipam\.cluster\.x-k8s\.io$`): it adds only
+the `dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote`
 label. The conversion block — `strategy: Webhook`,
 `clientConfig.service{name: webhook-service, namespace: system, path: /convert}`,
 and `conversionReviewVersions: [v1]` — is **inherited from the upstream
-`//config/crd` base** and is not repeated in the SAP patches. The final
+`//config/crd` base** and is not repeated in the SAP patch. The final
 conversion URL (`https://ipam-capi-remote-webhook-service:443/convert`) is
 **computed at deploy time** by the DDO `rewriteWebhookURL` transform
 (`urlPrefix: https://ipam-capi-remote-webhook-service:443`); it does not exist
@@ -145,7 +146,7 @@ at deploy time. All six target labels are already in source.
 1. Resolve a new upstream release tag to its **commit**, not its tag object.
 2. Review upstream schema, served/storage versions, conversion, RBAC and manager
    changes against the current pins. Update the Git directory and raw-file commit pins coherently.
-3. Review conversion patches and any necessary local RBAC/Deployment changes.
+3. Review the pool-CRD conversion label patch and any necessary local RBAC/Deployment changes.
    Image tags are maintained separately via `images:`.
 4. Run the complete suite. Intentional schema changes require explicit baseline
    review; never regenerate fingerprints automatically to hide a mismatch.
