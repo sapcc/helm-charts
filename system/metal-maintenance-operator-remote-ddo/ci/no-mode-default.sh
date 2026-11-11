@@ -6,7 +6,9 @@ chart_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Gate 1: values.yaml must not declare a default for mode (any form).
 # Uses yq has() so quoted, null, or empty forms are all caught — not just
 # the bare `mode: <value>` that a simple grep would miss.
-if [ "$(/opt/homebrew/bin/yq 'has("mode")' "$chart_dir/values.yaml")" = "true" ]; then
+# Resolve yq in a checked assignment so a missing binary aborts here (not silently skipped).
+has_mode="$(yq 'has("mode")' "$chart_dir/values.yaml")"
+if [ "$has_mode" = "true" ]; then
   echo "FAIL: values.yaml must not declare mode"
   exit 1
 fi
