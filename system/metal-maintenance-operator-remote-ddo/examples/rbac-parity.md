@@ -88,12 +88,19 @@ Live = `mr-*` ManagedResources authoritative set. Render = `helm template … --
 | `metal-maintenance-operator-vendorconsole-console-{admin,editor,viewer}-role` (×3) | ✗ | ✓ | **Accepted deviation — orphaned roles** (see §Accepted deviations D2) |
 
 **No genuine gaps in ClusterRoles.** All 36 live-only ClusterRoles are verified unbound
-orphans — proved by three independent axes from live capture (2026-11-11T13:10:12Z):
-(1) exhaustive CRB roleRef check (all 8 MMO-relevant CRBs resolved; none reference any of
-the 36), (2) exhaustive RoleBinding roleRef check (only `kube-system/metal-maintenance-token-rotate`
-targets an MMO Role; no RoleBinding references any of the 36), and (3) aggregation-label
-sweep across all 207 live ClusterRoles (zero MMO helper roles carry any `aggregate-to-*`
-label; the 5 standard k8s roles are the only aggregators). See §Accepted deviations D1/D2.
+and unaggregated orphans — proved by three independent axes from live capture
+(2026-11-11T13:10:12Z, evidence file `task-6-live-roleref-evidence.txt`):
+(1) **Exhaustive CRB roleRef check:** all 8 MMO-relevant CRBs resolved to their actual
+`roleRef.name`; none reference any of the 36.
+(2) **Exhaustive RoleBinding roleRef check:** only `kube-system/metal-maintenance-token-rotate`
+targets an MMO Role (in render); no RoleBinding references any of the 36.
+(3) **Complete aggregator enumeration (inverted check):** across all 207 live ClusterRoles,
+the ONLY 3 carrying an `aggregationRule` are `admin`, `edit`, and `view` (the standard k8s
+roles). Their `clusterRoleSelectors` reference exclusively the 3 standard keys
+`rbac.authorization.k8s.io/aggregate-to-{admin,edit,view}` — there are no `matchExpressions`
+and no custom label keys. None of the 36 orphan roles carry any of those keys. Therefore no
+aggregationRule, standard or custom, selects any of the 36, closing the transitive path
+completely. See §Accepted deviations D1/D2.
 
 ### ClusterRoleBindings
 
@@ -158,13 +165,16 @@ The upstream `mmo-core-0.1.0` subchart now uses the suffix `servermaintenance-*-
 producing `metal-maintenance-operator-servermaintenance-{admin,editor,viewer}-role` —
 the correct, shorter names. The DDO render delivers the correct canonical names.
 
-**Binding proof (live roleRef capture 2026-11-11T13:10:12Z):**
+**Binding proof (live roleRef capture 2026-11-11T13:10:12Z, evidence file `task-6-live-roleref-evidence.txt`):**
 (1) All 8 MMO-relevant CRBs were resolved to their actual `roleRef.name`; none reference
 any of these truncated names. (2) The only RoleBinding in kube-system referencing an MMO
-role targets `metal-maintenance-token-rotate` (in render). (3) Aggregation-label sweep
-across all 207 live ClusterRoles found zero MMO helper roles carrying any `aggregate-to-*`
-label. These 3 roles are definitively unreferenced and not aggregated — they deliver
-zero effective permissions.
+role targets `metal-maintenance-token-rotate` (in render). (3) **Complete aggregator
+enumeration:** across all 207 live ClusterRoles, the only 3 carrying an `aggregationRule`
+are `admin`, `edit`, and `view`. Their `clusterRoleSelectors` reference exclusively the 3
+standard keys `rbac.authorization.k8s.io/aggregate-to-{admin,edit,view}` — no
+`matchExpressions`, no custom label keys. None of these 3 truncated names carry any of those
+keys, so no aggregationRule (standard or custom) selects them. These 3 roles are
+definitively unreferenced and unaggregated — they deliver zero effective permissions.
 
 **Conclusion: ACCEPTED.** The DDO render delivers the functionally equivalent (and
 canonically named) replacement roles. The truncated names will be GC'd on cutover; no
@@ -184,14 +194,18 @@ subchart's `rbac.helpers.enable=true` only generates roles for three resource ty
 `bmcusers`, `consoles`, and `servermaintenances`. The extra 33 were never added to the
 upstream subchart templates.
 
-**Binding proof (live roleRef capture 2026-11-11T13:10:12Z):**
+**Binding proof (live roleRef capture 2026-11-11T13:10:12Z, evidence file `task-6-live-roleref-evidence.txt`):**
 Same three axes as D1: (1) all 8 MMO-relevant CRBs resolved to their actual `roleRef.name`
 — none reference any of these 33 extended helper roles; every active MMO grant points at a
 role the DDO render reproduces. (2) No RoleBinding references any of these names.
-(3) Aggregation-label sweep across all 207 live ClusterRoles: **zero** MMO helper roles
-(baseboard-\*/readiness-\*/system-bios\*/vendorconsole-\*) carry any `aggregate-to-*` label;
-only the 5 standard k8s roles aggregate. The 33 roles are definitively unreferenced and
-not aggregated — they deliver zero effective permissions to any principal.
+(3) **Complete aggregator enumeration (inverted check):** across all 207 live ClusterRoles,
+the ONLY 3 carrying an `aggregationRule` are `admin`, `edit`, and `view`. Their
+`clusterRoleSelectors` reference exclusively the 3 standard keys
+`rbac.authorization.k8s.io/aggregate-to-{admin,edit,view}` — there are no `matchExpressions`
+and no custom label keys anywhere. None of the 33 roles (baseboard-\*/readiness-\*/system-bios\*/vendorconsole-\*)
+carry any of those keys. Therefore no aggregationRule, standard or custom, selects any of
+the 33. The 33 roles are definitively unreferenced and unaggregated — they deliver zero
+effective permissions to any principal.
 
 **Conclusion: ACCEPTED.** No active permission regression on cutover. These orphaned helper
 roles will be garbage-collected by GRM when the legacy ManagedResources are deleted. If a
