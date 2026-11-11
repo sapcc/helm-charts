@@ -14,8 +14,8 @@ pinned Git directory base, the three core CRDs through SHA-pinned raw file
 URLs. Nothing is vendored. Do not relax DDO preflight. An online CLI build is
 not evidence of production cache/offline semantics.
 
-Before cutover: independently verify DDO integration, the required seed binding
-transformation below, current shoot credentials, initial CA stamping and rotation,
+Before cutover: independently verify DDO integration, the downstream CR
+transformation list below, current shoot credentials, initial CA stamping and rotation,
 and shoot-apiserver reachability/TLS to the legacy short webhook URL. Preserve
 the out-of-band pools and coordinate old/new injector ownership. Runtime target
 mode patches CA only; it does not create targets or repair their URLs. Publish
@@ -49,8 +49,7 @@ system/kustomize/ipam-capi-remote-ddo/
     networkpolicies.yaml               # three migration-inventory NetworkPolicies
     manager-config.yaml                # manager ConfigMap (migration inventory)
   additions/shoot/
-    kustomization.yaml
-    pools.example.yaml                 # unreferenced example
+    kustomization.yaml                 # empty (no SAP-added shoot resources)
   seed/kustomization.yaml
   shoot/
     kustomization.yaml                 # provider Git base + core-crds + local RBAC/webhooks
@@ -210,8 +209,7 @@ The two m-qa-de-200 pools remain out-of-band and are not rendered or adopted:
 - `globalinclusterippool-mgmt-qa-de-200`, UID `83614ed7-f367-4bd0-acdd-4fbd4de76eec`, one allocation.
 - `test`, UID `d7d99994-c27d-4116-835b-4d858069b7ea`.
 
-Preserve them during cutover. `additions/shoot/pools.example.yaml` remains
-unreferenced. Do not rename the controller Deployment/SA
+Preserve them during cutover. Do not rename the controller Deployment/SA
 `ipam-capi-controller-manager`, injector SA `ipam-capi-remote-webhook-injector`,
 Service `ipam-capi-remote-webhook-service`, or shoot webhook configurations
 `ipam-capi-remote-{mutating,validating}-webhook-configuration`. Shoot controller
@@ -219,7 +217,7 @@ SA lives in `kube-system`; DDO injects the seed object namespace at delivery.
 
 ## DDO CR contract
 
-The overlay root is unchanged, but a downstream binding patch **is required**.
+The overlay root is unchanged, and no downstream binding patch is required.
 The CR resides under admin-k3s base defaults and the
 qa-de-1/a-qa-de-200 instance in kube-secrets. The source URL includes `?ref=`;
 `seedPath` and `shootPath` are relative to its `//path` root:

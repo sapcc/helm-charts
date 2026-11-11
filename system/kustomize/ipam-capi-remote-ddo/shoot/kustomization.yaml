@@ -3,12 +3,12 @@ kind: Kustomization
 resources:
   - ../additions/shoot
   # Provider v1.1.1, resolved to its immutable commit (not the mutable tag).
-  # Written scheme-less (no https://) ON PURPOSE: this is a git-DIRECTORY ref,
-  # and krusty (kustomize) does an HTTP GET-file FIRST for any http(s):// URL,
-  # falling back to git only on a non-2xx. An https:// git-dir URL would be
-  # fetched as a file, so the ?ref=<sha> pin would never be consulted. The
-  # scheme-less github.com/... form forces the git loader, where the SHA is
-  # actually checked out. Do NOT add https:// here or the pin becomes a no-op.
+  # Written scheme-less (no https://) ON PURPOSE: this is a git-DIRECTORY ref.
+  # krusty (kustomize) tries an HTTP fetch for an https:// URL first; GitHub
+  # answers the directory URL with 404, so krusty falls back to the git loader
+  # and checks out the ?ref=<sha> commit. The scheme-less github.com/... form
+  # goes straight to the git loader. Either way the SHA pin IS enforced: a bogus
+  # ?ref= fails at `git fetch`, so the pin is not a no-op.
   - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/crd?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
   - core-crds
   - rbac.yaml

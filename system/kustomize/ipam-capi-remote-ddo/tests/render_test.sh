@@ -451,14 +451,13 @@ else
 fi
 
 # ============================================================================
-# POOL ABSENCE + EXAMPLE STRUCTURE (folded from retired no_pool_test.sh)
+# POOL ABSENCE (folded from retired no_pool_test.sh)
 # a-qa-de-200 carries no pools, so the shoot render must contain ZERO
-# GlobalInClusterIPPool objects.  The committed pools.example.yaml template must
-# stay well-formed (single spec:, correct kind/namespace/apiVersion).
+# GlobalInClusterIPPool objects.
 # Reuses $WORK/shoot_render.yaml from Test 2.
 # ============================================================================
 echo ""
-echo "=== Pool absence + example structure ==="
+echo "=== Pool absence ==="
 
 # shoot render contains ZERO GlobalInClusterIPPool objects
 pool_count="$(grep -c '^kind: GlobalInClusterIPPool$' $WORK/shoot_render.yaml || true)"
@@ -467,50 +466,6 @@ if [ "$pool_count" -ne 0 ]; then
   failed=1
 else
   echo "PASS: shoot render contains 0 GlobalInClusterIPPool objects"
-fi
-
-POOLS_EXAMPLE="$CHART_DIR/additions/shoot/pools.example.yaml"
-if [ ! -f "$POOLS_EXAMPLE" ]; then
-  echo "FAIL: pools.example.yaml does not exist"
-  failed=1
-else
-  echo "PASS: pools.example.yaml exists"
-
-  if ! python3 -c "import yaml; yaml.safe_load(open('$POOLS_EXAMPLE'))" 2>&1; then
-    echo "FAIL: pools.example.yaml is not valid YAML"
-    failed=1
-  else
-    echo "PASS: pools.example.yaml is valid YAML"
-
-    spec_count="$(grep -c '^spec:' "$POOLS_EXAMPLE" || true)"
-    if [ "$spec_count" -ne 1 ]; then
-      echo "FAIL: pools.example.yaml should have exactly 1 'spec:' key (found $spec_count) - regression on duplicate spec bug"
-      failed=1
-    else
-      echo "PASS: pools.example.yaml has exactly 1 'spec:' key (no duplicate bug)"
-    fi
-
-    if ! grep -q '^kind: GlobalInClusterIPPool$' "$POOLS_EXAMPLE"; then
-      echo "FAIL: pools.example.yaml should have kind: GlobalInClusterIPPool"
-      failed=1
-    else
-      echo "PASS: pools.example.yaml has kind: GlobalInClusterIPPool"
-    fi
-
-    if ! grep -q 'namespace: metal-servers' "$POOLS_EXAMPLE"; then
-      echo "FAIL: pools.example.yaml should have namespace: metal-servers"
-      failed=1
-    else
-      echo "PASS: pools.example.yaml has namespace: metal-servers"
-    fi
-
-    if ! grep -q 'apiVersion: ipam.cluster.x-k8s.io/v1alpha2' "$POOLS_EXAMPLE"; then
-      echo "FAIL: pools.example.yaml should have apiVersion: ipam.cluster.x-k8s.io/v1alpha2"
-      failed=1
-    else
-      echo "PASS: pools.example.yaml has apiVersion: ipam.cluster.x-k8s.io/v1alpha2"
-    fi
-  fi
 fi
 
 echo ""
