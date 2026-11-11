@@ -5,19 +5,18 @@ controller:
 
   manager:
     image:
-      # Pinned to the keppel mirror (in-cluster-pullable). Split repository + tag so the
-      # subchart appends the tag exactly once (manager.yaml:106). Do NOT put the ":tag" in
-      # repository — the subchart's guard only suppresses the appended tag for the "@sha256:"
-      # digest form, so a ":tag" in repository would be doubled.
+      # Pinned to the keppel mirror (in-cluster-pullable). Set repository WITHOUT a ":tag" —
+      # the subchart appends the tag itself (manager.yaml:106) and its guard only suppresses
+      # the appended tag for the "@sha256:" digest form, so a ":tag" in repository would be
+      # doubled.
       #
-      # PHASED ROLLOUT: the TAG is the rollout knob. It is overridden from kube-secrets —
-      #   base default:  values/helm/admin-k3s/dual-deployment-operator.yaml
-      #   per-cluster:   values/helm/admin-k3s/<region>/<cluster>/dual-deployment-operator.yaml
-      # A per-cluster overlay bumps controller.manager.image.tag to canary a new build on
-      # that cluster first; promote by moving the tag into the admin-k3s base. The value
-      # here is only a fallback for renders without the kube-secrets layer.
+      # TAG is intentionally NOT set here: the subchart defaults it to its own Chart.AppVersion,
+      # which is pinned by this wrapper's Chart.yaml dependency version (single source of truth
+      # for the fleet-default image). To canary a new build on one cluster, override
+      # controller.manager.image.tag in that cluster's kube-secrets per-cluster overlay
+      # (values/helm/admin-k3s/<region>/<cluster>/dual-deployment-operator.yaml); promote by
+      # bumping the Chart.yaml dependency version.
       repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sap-cloud-infrastructure/dual-deployment-operator
-      tag: sha-b46f1fe27c4038a0d1e90dc43c1744c9e83c61c5
       pullPolicy: IfNotPresent
     envOverrides:
       # main.go:213: webhook setup runs unless ENABLE_WEBHOOKS == "false".
