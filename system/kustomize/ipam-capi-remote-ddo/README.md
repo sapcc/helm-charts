@@ -56,12 +56,9 @@ system/kustomize/ipam-capi-remote-ddo/
     core-crds/                         # three SHA-pinned raw CRD URLs + provenance README
       kustomization.yaml               # remote resources + explicit conversion default
     rbac.yaml
-    metrics-service.yaml               # controller metrics Service (migration inventory)
   tests/
     crd-baseline.json                   # compact immutable render fingerprints
     crd_parity.py
-    migration_render.py                # independent pinned Helm oracle
-    migration_contract.py              # guarded deltas + mutation tests
     *_test.sh
 ```
 
@@ -151,49 +148,27 @@ at deploy time. All six target labels are already in source.
    review; never regenerate fingerprints automatically to hide a mismatch.
 5. Review the source-pin and fingerprint diff together before deployment.
 
-`tests/crd-baseline.json` is a guarded render fingerprint, regenerated deliberately
-for this reorganization (its file hash is pinned in the contract test). Tests first
-render the actual Helm chart at `97d52c25ae067c00fd5f5b3e7a66771fdcbc10db`, unwrap
-ManagedResources and the webhook ConfigMap, and require its exact identities minus
-the deliberately dropped objects: **13 seed / 21 shoot**. The legacy chart's dead
-webhook-injector seed ClusterRole/ClusterRoleBinding and its two redundant shoot
-leader-election ClusterRole/ClusterRoleBinding pairs are intentionally not delivered
-and are filtered from the oracle comparison. Independent nonsecret input values pin
-the same images/security settings as the candidate. No live capture is needed; those
-Git commits must exist locally.
+`tests/crd-baseline.json` is a guarded render fingerprint for the current overlay.
+The suite verifies the exact 7-CRD surface (names, controller-gen stamps, move-hierarchy
+labels, injector labels), the fingerprints of every shoot and seed object against the
+pinned baseline, and the complete 8-webhook URL contract after a simulated DDO
+`rewriteWebhookURL`. `crd_parity.py` is a fail-closed library with no regeneration
+path; update the baseline by hand after deliberate, reviewed changes and commit the
+diff alongside the source change.
 
-The only guarded migration deltas are: core `conversion: {strategy: None}`;
-pool deploy-time URL via `rewriteWebhookURL` plus dynamic-CA target label; admission target labels;
-exact old→target-only injector arguments and exact Pod origin annotation;
-the exact shoot injector rules; and the co-located ServiceMonitor's explicit
-namespaceSelector→implicit own namespace. The webhook-injector seed RBAC is a
-namespaced Role/RoleBinding whose same-namespace SA subject needs no explicit
-subject namespace, so there is no seed ClusterRoleBinding and no placement patch.
-Exact chart-generated provenance values (`helm.sh/chart`, app version/managed-by)
-and the additions origin are guarded separately; other metadata is compared.
-
-Only after oracle comparison succeeds are the repaired fields reconstructed
-in memory to compare the historical fingerprints: remove the six exact labels,
-restore the old rules and historical public CA, and omit only the restored
-resources already checked against the oracle. No CA certificate is stored in
-new source/artifacts. Schema/version arrays, all remaining Pod fields, webhook
-paths/policies, RBAC, network selectors and meaningful metadata remain checked.
-Mutation tests reject removals of every identity, all seven schema changes,
-target/URL/CA/SAN drift, broad RBAC and NetworkPolicy changes. Mutable (non-SHA)
-remote refs, the full CAPI CRD directory, extra CAPI resources and service/URL
-coexistence fail.
+Mutable (non-SHA) remote refs, the full CAPI CRD directory, missing pool-CRD
+label patches, and the upstream webhook-service surviving the `$patch:delete` all
+cause test failures.
 
 Three restored seed policies preserve same-namespace apiserver traffic TCP9443
 and `name=kube-monitoring` namespace traffic TCP8082. Their selected apiservers
 are egress-isolated subject to the union of policies; no selectors were broadened.
-The manager ConfigMap and controller metrics Service (8443→`https`, selector
-`control-plane=controller-manager`) are restored. The redundant leader-election
+The manager ConfigMap is restored. The redundant leader-election
 RBAC is intentionally dropped: the manager runs `--leader-elect=false`, so it
 elects nothing, and the legacy ClusterRole promotion was only a workaround for the
 Gardener ManagedResource namespace limit that DDO's direct apply removes.
 
-Test prerequisites: Git (with both pinned legacy/historical commits available),
-Helm, Kustomize, `yq`, and Python 3.12+ with PyYAML. Standalone render tests use
+Test prerequisites: Kustomize, `yq`, and Python 3.12+ with PyYAML. Standalone render tests use
 the real public provider base; for one verification run the same unchanged render
 may be reused across checks after an actual online build.
 

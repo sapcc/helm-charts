@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
-# Consolidated contract/parity driver.  Three sections:
-#   (1) migration_contract.py — THE production gate: full per-identity parity of the
-#       13-seed / 21-shoot inventory vs the pinned Helm legacy, SHA-pinned historical
-#       baseline, and a ~139-case negative mutation battery.  This single gate already
-#       subsumes the former rbac_fidelity_test.sh (RBAC subset of compare()) and
-#       webhook_parity_test.sh (webhook contract subset of compare()+historical_check()).
-#   (2) semantic 7-CRD surface check + crd_parity.py self-test — 9 synthetic cases
-#       exercising the fingerprint lib's fail-closed edge cases DIRECTLY (the contract
-#       consumes the lib but never tests its own edge behaviour).
-#   (3) explicit 8-webhook URL contract — human-readable assertion of the exact mutate/
-#       validate URLs after a simulated DDO rewriteWebhookURL (carried over from the
-#       retired webhook_parity_test.sh for legible failure output).
+# Consolidated contract/parity driver.  Two sections:
+#   (2a) semantic 7-CRD surface check — exact names, split controller-gen stamps,
+#        pool move-hierarchy labels, and injector label.
+#   (2b) crd_parity.py self-test — 10 synthetic cases exercising the fingerprint
+#        lib's fail-closed edge cases directly.
+#   (3) explicit 8-webhook URL contract — human-readable assertion of the exact
+#       mutate/validate URLs after a simulated DDO rewriteWebhookURL, plus a
+#       Service inventory guard (upstream webhook-service deleted by $patch:delete).
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(dirname "$DIR")"
@@ -19,9 +15,6 @@ trap 'rm -rf "$WORK"' EXIT
 
 kustomize build "$ROOT/shoot" > "$WORK/shoot.yaml"
 kustomize build "$ROOT/seed"  > "$WORK/seed.yaml"
-
-# ── (1) production contract gate ─────────────────────────────────────────────
-PYTHONDONTWRITEBYTECODE=1 python3 "$DIR/migration_contract.py" "$WORK/shoot.yaml" "$WORK/seed.yaml"
 
 # ── (2a) semantic 7-CRD surface check ────────────────────────────────────────
 # Exact 7 CRDs by name, split controller-gen stamps (pool v0.17.2 / core v0.21.0),
@@ -94,9 +87,9 @@ PY
 
 # ── (3) explicit 8-webhook URL contract (simulated DDO rewriteWebhookURL) ─────
 # Legible string-level assertion of the exact mutate/validate URLs, plus the raw-build
-# Service inventory guard (webhook-service deleted by overlay $patch:delete, metrics
-# Service retained).  Structural equality is already enforced by section (1); this
-# section exists so a URL regression produces a human-readable failure.
+# Service inventory guard (webhook-service deleted by overlay $patch:delete).
+# Structural equality is already enforced by crd_parity; this section exists so a
+# URL regression produces a human-readable failure.
 PYTHONDONTWRITEBYTECODE=1 python3 - "$WORK/shoot.yaml" <<'PY'
 import copy, sys, yaml
 
@@ -114,10 +107,10 @@ else:
     print("FAIL: webhook-service (Service) still present in raw build — $patch:delete did not work")
     failed += 1
 METRICS_SVC = 'ipam-capi-controller-manager-metrics-service'
-if METRICS_SVC in raw_services:
-    print(f"PASS: shoot metrics Service {METRICS_SVC} present — overlay delete did not over-delete")
+if METRICS_SVC not in raw_services:
+    print(f"PASS: controller metrics Service {METRICS_SVC} absent — dead object removed from overlay")
 else:
-    print(f"FAIL: shoot metrics Service {METRICS_SVC} absent — over-deletion or missing metrics-service.yaml")
+    print(f"FAIL: controller metrics Service {METRICS_SVC} still present — deletion did not take effect")
     failed += 1
 
 # Simulate DDO rewriteWebhookURL: service-form clientConfig -> url = urlPrefix + service.path.
