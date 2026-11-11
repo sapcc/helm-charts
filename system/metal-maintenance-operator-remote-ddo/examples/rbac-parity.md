@@ -18,7 +18,7 @@ used for this operand. The upstream templates use `.Release.Namespace` for the
 ServiceAccount and all namespaced RBAC subjects. `values.yaml` sets
 `mmo-core.fullnameOverride: metal-maintenance-operator`.
 
-**Live baseline source:** 62 per-CR ManagedResources (`mr-cr-*` / `mr-crb-*` / etc.)
+**Live baseline source:** 60 ManagedResources (`mr-cr-*` / `mr-crb-*` / etc.)
 on seed a-qa-de-200 ns `shoot--cp--m-qa-de-200`, captured 2026-11-11T13:01:00Z.
 The authoritative MMO-owned object set is the `mr-*` list, not the broad
 `get clusterrole,…` result (which may include other operators / core k8s objects).
@@ -87,8 +87,13 @@ Live = `mr-*` ManagedResources authoritative set. Render = `helm template … --
 | `metal-maintenance-operator-system-biosversionset-{admin,editor,viewer}-role` (×3) | ✗ | ✓ | **Accepted deviation — orphaned roles** (see §Accepted deviations D2) |
 | `metal-maintenance-operator-vendorconsole-console-{admin,editor,viewer}-role` (×3) | ✗ | ✓ | **Accepted deviation — orphaned roles** (see §Accepted deviations D2) |
 
-**No genuine gaps in ClusterRoles.** All 36 live-only ClusterRoles are unbound orphans
-(no `ClusterRoleBinding` in the live cluster references them); they grant no active permissions.
+**No genuine gaps in ClusterRoles.** All 36 live-only ClusterRoles are verified unbound
+orphans — proved by three independent axes from live capture (2026-11-11T13:10:12Z):
+(1) exhaustive CRB roleRef check (all 8 MMO-relevant CRBs resolved; none reference any of
+the 36), (2) exhaustive RoleBinding roleRef check (only `kube-system/metal-maintenance-token-rotate`
+targets an MMO Role; no RoleBinding references any of the 36), and (3) aggregation-label
+sweep across all 207 live ClusterRoles (zero MMO helper roles carry any `aggregate-to-*`
+label; the 5 standard k8s roles are the only aggregators). See §Accepted deviations D1/D2.
 
 ### ClusterRoleBindings
 
@@ -153,21 +158,25 @@ The upstream `mmo-core-0.1.0` subchart now uses the suffix `servermaintenance-*-
 producing `metal-maintenance-operator-servermaintenance-{admin,editor,viewer}-role` —
 the correct, shorter names. The DDO render delivers the correct canonical names.
 
-**Binding check:** No `ClusterRoleBinding` in the live cluster binds these truncated-name
-roles (confirmed from live-baseline.txt CRB list). They are orphaned objects delivering
-no active permissions.
+**Binding proof (live roleRef capture 2026-11-11T13:10:12Z):**
+(1) All 8 MMO-relevant CRBs were resolved to their actual `roleRef.name`; none reference
+any of these truncated names. (2) The only RoleBinding in kube-system referencing an MMO
+role targets `metal-maintenance-token-rotate` (in render). (3) Aggregation-label sweep
+across all 207 live ClusterRoles found zero MMO helper roles carrying any `aggregate-to-*`
+label. These 3 roles are definitively unreferenced and not aggregated — they deliver
+zero effective permissions.
 
 **Conclusion: ACCEPTED.** The DDO render delivers the functionally equivalent (and
 canonically named) replacement roles. The truncated names will be GC'd on cutover; no
 permission regression.
 
-### D2 — Extended helper ClusterRoles absent from subchart (36 roles, render-only-absent)
+### D2 — Extended helper ClusterRoles absent from subchart (33 roles, render-only-absent)
 
 **Groups:** `baseboard-bmcsettings` (×3), `baseboard-bmcsettingsset` (×3),
 `baseboard-bmcuser` (×3), `baseboard-bmcversion` (×3), `baseboard-bmcversionset` (×3),
 `readiness-serverwiring` (×3), `system-biossettings` (×3), `system-biossettingsset` (×3),
 `system-biosversion` (×3), `system-biosversionset` (×3), `vendorconsole-console` (×3)
-= 33 roles, plus the 3 truncated-name duplicates from D1 = total 36 live-only absent.
+= **33 roles** (D1 + D2 = 36 live-only total).
 
 **Origin:** The legacy `managedresources/rbac.yaml` hand-crafted these roles for expanded
 CRD coverage (baseboard, readiness, system, vendorconsole APIs). The upstream `mmo-core-0.1.0`
@@ -175,9 +184,14 @@ subchart's `rbac.helpers.enable=true` only generates roles for three resource ty
 `bmcusers`, `consoles`, and `servermaintenances`. The extra 33 were never added to the
 upstream subchart templates.
 
-**Binding check:** Verified from live-baseline.txt — **zero ClusterRoleBindings** reference
-any of these 33+ extended helper roles. They are completely unbound and grant no active
-permissions to any principal in the cluster.
+**Binding proof (live roleRef capture 2026-11-11T13:10:12Z):**
+Same three axes as D1: (1) all 8 MMO-relevant CRBs resolved to their actual `roleRef.name`
+— none reference any of these 33 extended helper roles; every active MMO grant points at a
+role the DDO render reproduces. (2) No RoleBinding references any of these names.
+(3) Aggregation-label sweep across all 207 live ClusterRoles: **zero** MMO helper roles
+(baseboard-\*/readiness-\*/system-bios\*/vendorconsole-\*) carry any `aggregate-to-*` label;
+only the 5 standard k8s roles aggregate. The 33 roles are definitively unreferenced and
+not aggregated — they deliver zero effective permissions to any principal.
 
 **Conclusion: ACCEPTED.** No active permission regression on cutover. These orphaned helper
 roles will be garbage-collected by GRM when the legacy ManagedResources are deleted. If a
@@ -193,9 +207,24 @@ include them in its shoot-side ManagedResources (leader election is a seed conce
 controller runs on the seed, not the shoot). They appear in the DDO shoot render because
 the subchart doesn't distinguish seed/shoot for this template.
 
-**Impact:** Harmless extras on the shoot side. The leader-election Role/RoleBinding are
-benign in the shoot namespace — they permit configmap/lease operations, which are idle
-in the shoot context (no controller running there). They do not expand any actual privilege.
+**Impact:** This is a **render-only permission addition** relative to the live baseline.
+The legacy chart did not deliver a leader-election Role to the shoot cluster (confirmed:
+`mr-r-*` list contains only `metal-maintenance-token-rotate`; the legacy manager likely
+ran with `--leader-elect=false` or obtained the role via seed-side delivery only).
+
+The rendered Role grants to the `metal-maintenance-operator-controller-manager` SA
+(in kube-system) — via the accompanying RoleBinding — standard leader-election permissions:
+`ConfigMap` get/list/watch/create/update/patch/delete, `coordination.k8s.io/leases` same
+CRUD, and `core/events` create/patch, all scoped to the `kube-system` namespace. Because
+the seed controller uses the shoot credentials to operate on the shoot cluster, these
+permissions **are effective** via the shoot API server.
+
+**Acceptance rationale:** The grant is standard, bounded, and namespace-scoped (kube-system
+only). It confers no access to CRs, cluster-wide resources, or data outside kube-system.
+If the DDO deployment enables leader election in the controller (which is the upstream
+default), this Role is required for correct operation. It represents a minor, intentional
+permission expansion over the legacy posture — accepted as a safe, standard pattern
+consistent with every other DDO-migrated operator.
 
 **Conclusion: ACCEPTED.** Render-extra, not missing-from-render. No functional regression.
 
