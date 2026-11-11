@@ -33,7 +33,8 @@ never set a default for `mode`.
 
 The seed additions consist of a single token-requestor Secret
 (`remote-kubeconfig.yaml`), which enables the DDO to mint a shoot-side
-kubeconfig. No webhook is present.
+kubeconfig. This Secret does not select any Deployment labels. No webhook is
+present.
 
 The shoot additions include:
 - Two `Namespace` objects (`metal-maintenance-operator-system`,
@@ -70,9 +71,9 @@ The `DualDeploymentOperator` `shootNamespace` must be `kube-system`; the
 upstream ServiceAccount and all RBAC binding subjects render into that release
 namespace.
 
-The seed additions select the upstream Deployment labels directly:
-`app.kubernetes.io/name: mmo-core` and `control-plane: controller-manager`.
-They intentionally do not use this wrapper chart's selector labels.
+The upstream telemetry Service (seed-side) uses the Deployment's labels as its
+selector: `app.kubernetes.io/name: mmo-core` and `control-plane: controller-manager`.
+The seed additions (token-requestor Secret) do not select any Deployment labels.
 
 See `examples/rbac-parity.md` for the full shoot-render inventory and accepted
 deviations from the legacy manifest.
@@ -93,8 +94,16 @@ Verifies that:
 selector is expected to match the Deployment's `matchLabels`. Mismatches would
 mean the telemetry pipeline is silently broken. This script renders with
 `--set mode=seed --set mmo-core.manager.enabled=true`, extracts both selectors
-via `yq -o=json`, sorts them with `jq -S`, and `diff`s them; it fails on
-mismatch or empty output.
+into variables via `yq` (checked commands — a yq/jq failure causes the script to
+fail, not silently pass), validates each is a non-empty JSON object with at least
+one key, then compares the sorted forms.
+
+> **Gate boundary:** Both the Deployment `matchLabels` and the telemetry Service
+> `selector` are produced by the **same upstream subchart helper**, so a PASS
+> establishes mutual **consistency** only — not correctness against legacy or live
+> cluster labels. Live label-correctness (comparing rendered selectors against the
+> labels actually running in the cluster) is deferred to **Task 6**. Do not rely
+> on this gate as evidence that the labels match what is currently deployed.
 
 Run either gate from the chart root:
 
