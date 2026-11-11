@@ -22,7 +22,15 @@ render="$(helm template "$chart_dir")"
 # Note: subchart baseline objects (RBAC, telemetry Service, etc.) have no mode guard and will
 # always appear in the no-mode render; that is BY DESIGN — DDO suppresses/drives them per-mode
 # via CR flags. They do NOT carry origin: additions and are NOT a gate failure.
-if echo "$render" | grep -q 'dual-deployment-operator.cc.sap/origin: additions'; then
+#
+# Implementation: use yq eval-all over the multi-document stream so the check is
+# quote-insensitive (catches both `origin: additions` and `origin: "additions"`).
+# Documents with null metadata/annotations are handled gracefully (yq returns null,
+# which does not equal "additions", so the select() produces no output).
+leak="$(printf '%s' "$render" | \
+  yq eval-all '[.metadata.annotations."dual-deployment-operator.cc.sap/origin"] | .[] | select(. == "additions")' - \
+  2>/dev/null | head -1)"
+if [ -n "$leak" ]; then
   echo "FAIL: no-mode render contains additions-origin objects — a mode guard is miswritten"
   exit 1
 fi
