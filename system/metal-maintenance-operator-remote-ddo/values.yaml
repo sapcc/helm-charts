@@ -1,0 +1,50 @@
+# =============================================================================
+# metal-maintenance-operator-remote-ddo values
+# =============================================================================
+#
+# MODE CONTRACT (DO NOT SET mode HERE):
+#   The dual-deployment-operator injects .Values.mode = "seed" | "shoot" at
+#   render time. The chart MUST NOT declare a default for `mode` — the operator
+#   rejects any render whose user values contain `mode`.
+#
+#   Per-mode subchart flags are supplied via the DualDeploymentOperator CR:
+#     spec.source.helm.seedValues
+#     spec.source.helm.shootValues
+#
+# =============================================================================
+
+# load-bearing: helm fullname template yields "metal-maintenance-operator" for all objects
+fullnameOverride: metal-maintenance-operator
+
+# ---------------------------------------------------------------------------
+# Upstream subchart (alias: mmo-core) — ALL flags OFF by default.
+# The CR's seedValues/shootValues drive these per mode (see MODE CONTRACT above).
+# NEVER set mmo-core.manager.enabled=true here — the CR drives it per mode.
+# ---------------------------------------------------------------------------
+mmo-core:
+  crd:
+    enable: false
+  rbac:
+    namespaced: false
+    helpers:
+      enable: false
+  serviceAccount:
+    enable: false
+  webhook:
+    enable: false
+  certManager:
+    enable: false
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+
+# ---------------------------------------------------------------------------
+# Global values — per-cluster, supplied via CR values
+# ---------------------------------------------------------------------------
+global:
+  region: ""
+  clusterType: ""
+  tld: ""
+  linkerd_enabled: false
+  linkerd_requested: false
