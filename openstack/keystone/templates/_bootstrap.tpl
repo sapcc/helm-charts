@@ -18,7 +18,7 @@
 {{- $runtime := dict
   "url" ($root.Values.ldapUrl | toString)
   "user" ($root.Values.ldapUser | toString)
-  "password" (required "A valid .Values.ldapPassword required!" $root.Values.ldapPassword | toString)
+  "password" (required "A valid .Values.keystoneBootstrap.ldapPassword required!" $root.Values.keystoneBootstrap.ldapPassword | toString)
   "suffix" ($root.Values.ldapSuffix | toString)
   "use_pool" $root.Values.ldapUsePool
   "use_auth_pool" $root.Values.ldapUseAuthPool
