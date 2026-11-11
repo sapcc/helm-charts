@@ -153,7 +153,7 @@ default_swift_reference = swift-global
 {{- if .Values.swift.store_large_object_size }}
 swift_store_large_object_size = {{.Values.swift.store_large_object_size}}
 {{- end }}
-swift_store_use_trusts=True
+swift_store_use_trusts = {{ .Values.swift.use_trusts }}
 {{- end }}
 
 [oslo_messaging_notifications]

@@ -224,6 +224,11 @@ falco:
   falcoctl:
     image:
       registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+    artifact:
+      install:
+        enabled: false
+      follow:
+        enabled: false
 
   tolerations:
     - operator: Exists
@@ -234,6 +239,12 @@ falco:
       - --unbuffered
       - -o
       - json_output=true
+    initContainers:
+      - name: set-bpf-sysctl
+        image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco:0.45.2-debian
+        securityContext:
+          privileged: true
+        command: ["sh", "-c", "echo 1 > /proc/sys/kernel/unprivileged_bpf_disabled"]
 
   falco:
     rules_files:

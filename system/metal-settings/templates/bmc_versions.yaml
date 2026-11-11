@@ -1,38 +1,64 @@
-{{- if .Values.bmcVersions.enabled }}
-{{- $gatesEnabled := .Values.CRDVersionControl.features.readinessGates.enabled }}
+{{- if .Values.crdVersionControl.features.bmcVersions.enabled }}
+{{- include "metal-settings.rejectLegacyMachinesKey" . }}
+{{- $gatesEnabled := .Values.crdVersionControl.features.readinessGates.enabled }}
 {{- if $gatesEnabled }}
 {{- include "metal-settings.requireChainCapableAPI" . }}
 {{- end }}
 {{- $usedNames := dict }}
+{{- $knownKinds := include "metal-settings.knownKinds" . | fromYamlArray }}
 {{- $firmwareHost := $.Values.firmwareRepo.hostOverride | default (printf "%s.%s.%s" $.Values.firmwareRepo.host $.Values.global.region $.Values.global.tld) }}
-{{- range $vendor, $vendorConfig := .Values.machines }}
-{{- if $vendorConfig }}
-
-{{/* Vendor filtering */}}
-{{- if include "metal-settings.shouldInclude" (dict "item" $vendor "filters" $.Values.bmcVersions.filters.vendors) }}
-{{- range $entryName, $entry := $vendorConfig.models }}
-{{- include "metal-settings.rejectLegacyBiosBmcKeys" (dict "vendor" $vendor "entryName" $entryName "entry" $entry) }}
-{{- if $entry.chain }}
-{{- $model := $entry.model }}
+{{- $effectiveTypes := include "metal-settings.effectiveRolloutTypes" $ | fromYaml }}
+{{- $reservedVendorKeys := list "enabled" "rollouts" }}
+{{- range $vendor, $vendorParams := .Values.parameters }}
+{{- range $modelKey, $modelParams := $vendorParams }}
+{{- if not (has $modelKey $reservedVendorKeys) }}
+{{- $model := $modelKey }}
 
 {{/*
-machines.<vendor>.models.<name>.chain is a map of stepName -> {kind, order, params}. Map
-iteration in Go templates is key-sorted (not insertion order), so steps are re-sorted here by
-their explicit "order" field to guarantee correct sequencing.
+BMCVersionSet steps have no clusterType dimension of their own - they render once per MODEL. But
+workflow is resolved per effective cluster type (see metal-settings.resolveWorkflowForClusterType),
+so this collects each cluster type's resolved BMCVersionSet step(s) and verifies they're
+identical before rendering once - a model whose cluster types resolve to genuinely different
+version-kind definitions is a misconfiguration and fails fast here with a clear error.
+*/}}
+{{- $versionSteps := dict }}
+{{- range $clusterType, $_ := $effectiveTypes }}
+{{- $chainsByRule := include "metal-settings.computedChain" (dict "vendor" $vendor "model" $model "clusterType" $clusterType "root" $) | fromYaml }}
+{{- range $ruleIndex, $chain := $chainsByRule }}
+{{- range $stepName, $step := $chain }}
+{{- if eq $step.kind "BMCVersionSet" }}
+{{- if hasKey $versionSteps $stepName }}
+{{- $existing := index $versionSteps $stepName }}
+{{- if not (deepEqual $existing.step $step) }}
+{{- fail (printf "metal-settings: parameters.%s.%s step %q (BMCVersionSet) resolves differently for cluster type %q (rule %d) than for cluster type %q (rule %d) - version-kind steps must be identical across every cluster type/rule a model has (check rollouts.types)" $vendor $model $stepName $clusterType $ruleIndex $existing.clusterType $existing.ruleIndex) }}
+{{- end }}
+{{- else }}
+{{- $_ := set $versionSteps $stepName (dict "clusterType" $clusterType "ruleIndex" $ruleIndex "step" $step) }}
+{{- end }}
+{{- else if not (has $step.kind $knownKinds) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has unknown kind %q (expected one of %v)" $stepName $vendor $model $step.kind $knownKinds) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if gt (len $versionSteps) 0 }}
+
+{{/*
+Map iteration in Go templates is key-sorted (not insertion order), so steps are re-sorted here
+by their explicit "order" field to guarantee correct sequencing.
 */}}
 {{- $orderedSteps := dict }}
-{{- range $stepName, $step := $entry.chain }}
-{{- if not $step.kind }}
-{{- fail (printf "metal-settings: chain step %q for machines.%s.models.%s has no kind" $stepName $vendor $entryName) }}
-{{- end }}
+{{- range $stepName, $entry := $versionSteps }}
+{{- $step := $entry.step }}
 {{- if not $step.order }}
-{{- fail (printf "metal-settings: chain step %q for machines.%s.models.%s has no order" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q for parameters.%s.%s has no order" $stepName $vendor $model) }}
 {{- end }}
 {{- $orderKey := printf "%04d" (int $step.order) }}
 {{- if hasKey $orderedSteps $orderKey }}
-{{- fail (printf "metal-settings: machines.%s.models.%s has two chain steps with order %d" $vendor $entryName (int $step.order)) }}
+{{- fail (printf "metal-settings: parameters.%s.%s has two chain steps with order %d" $vendor $model (int $step.order)) }}
 {{- end }}
-{{- $_ := set $orderedSteps $orderKey (dict "stepName" $stepName "kind" $step.kind "params" ($step.params | default dict)) }}
+{{- $_ := set $orderedSteps $orderKey (dict "stepName" $stepName "kind" $step.kind "enabled" $step.enabled "params" ($step.params | default dict)) }}
 {{- end }}
 
 {{- $stepIndex := 0 }}
@@ -40,23 +66,22 @@ their explicit "order" field to guarantee correct sequencing.
 {{- $stepIndex = add $stepIndex 1 }}
 {{- $stepName := $s.stepName }}
 {{- $params := $s.params }}
-{{- if eq $s.kind "BMCVersionSet" }}
 {{- $imageURI := $params.imageURI }}
 {{- $imagePath := $params.imagePath }}
 {{- if not (or $imageURI $imagePath) }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) is a BMCVersionSet step but defines no params.imageURI or params.imagePath" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) is a BMCVersionSet step but defines no params.imageURI or params.imagePath" $stepName $vendor $model) }}
 {{- end }}
 {{- $version := $params.version }}
 {{- if not $version }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) is a BMCVersionSet step but defines no params.version" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) is a BMCVersionSet step but defines no params.version" $stepName $vendor $model) }}
 {{- end }}
-{{- if and (include "metal-settings.shouldInclude" (dict "item" $model "filters" $.Values.bmcVersions.filters.models)) (include "metal-settings.shouldInclude" (dict "item" $version "filters" $.Values.bmcVersions.filters.versions)) }}
+{{- if include "metal-settings.stepEnabled" (dict "step" $s "root" $) }}
 {{- if $gatesEnabled }}
 {{- if not $params.completionConditionType }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has no params.completionConditionType (required when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.completionConditionType (required when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- if and (gt $stepIndex 1) (not $params.readinessGates) }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has no params.readinessGates (required for non-first chain steps when CRDVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $entryName) }}
+{{- fail (printf "metal-settings: chain step %q (parameters.%s.%s) has no params.readinessGates (required for non-first chain steps when crdVersionControl.features.readinessGates.enabled=true)" $stepName $vendor $model) }}
 {{- end }}
 {{- end }}
 {{- $serverFilters := $params.serverFilter | default (dict "included" (list) "excluded" (list)) }}
@@ -64,16 +89,16 @@ their explicit "order" field to guarantee correct sequencing.
 {{- if $gatesEnabled }}
 {{- $defaultName = printf "%s-%s-%s" (lower $vendor) (lower $model) $stepName }}
 {{- end }}
-{{/* params.setMetadataName: see values.yaml machines inventory comment block for naming/tpl rules. */}}
+{{/* params.setMetadataName: see values.yaml's "Machine inventory" comment for naming/tpl rules. */}}
 {{- $resourceName := $defaultName }}
 {{- if $params.setMetadataName }}
 {{- $resourceName = tpl $params.setMetadataName $ }}
 {{- end }}
 {{- if hasKey $usedNames $resourceName }}
-{{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (entry %q, model %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $entryName $model) }}
+{{- fail (printf "metal-settings: duplicate BMCVersionSet name %q (model %q). Set a unique params.setMetadataName on one of the conflicting chain steps." $resourceName $model) }}
 {{- end }}
 {{- $_ := set $usedNames $resourceName true }}
-apiVersion: {{ $.Values.CRDVersionControl.apiVersions.bmcVersionSet }}
+apiVersion: {{ $.Values.crdVersionControl.apiVersions.bmcVersionSet }}
 kind: BMCVersionSet
 metadata:
   name: {{ $resourceName }}
@@ -86,12 +111,12 @@ spec:
 {{ $serverMatchExpressions | nindent 4 }}
 {{- end }}
   bmcVersionTemplate:
-    serverMaintenancePolicy: OwnerApproval
+    serverMaintenancePolicy: {{ $.Values.crdVersionControl.features.bmcVersions.serverMaintenancePolicy }}
     version: {{ $version | quote }}
     image:
       URI: {{ if $imageURI }}{{ $imageURI | quote }}{{ else }}{{ printf "%s://%s%s" $.Values.firmwareRepo.scheme $firmwareHost $imagePath | quote }}{{ end }}
-      transferProtocol: "HTTPS"
-{{- with $.Values.bmcVersions.retryPolicy }}
+      transferProtocol: {{ upper $.Values.firmwareRepo.scheme | quote }}
+{{- with $.Values.crdVersionControl.features.bmcVersions.retryPolicy }}
     retryPolicy:
 {{ toYaml . | indent 6 }}
 {{- end }}
@@ -103,10 +128,6 @@ spec:
     completionConditionType: {{ $params.completionConditionType }}
 {{- end }}
 ---
-{{- end }}
-{{- else if not (has $s.kind (list "BMCSettingsSet" "BIOSVersionSet" "BIOSSettingsSet")) }}
-{{- fail (printf "metal-settings: chain step %q (machines.%s.models.%s) has unknown kind %q (expected BMCSettingsSet, BMCVersionSet, BIOSVersionSet, or BIOSSettingsSet)" $stepName $vendor $entryName $s.kind) }}
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

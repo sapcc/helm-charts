@@ -44,6 +44,17 @@ spec:
 
   domains:
     - name: Default
+      {{- if $.Values.logRouter.enabled }}
+      # Same assignment on every domain below: hermes@Default gets
+      # objectstore_admin in every project, so log-router can log in scoped to
+      # the customer's project and Ceph makes that project the owner of every
+      # audit object. iaas- domains are not seeded; hermes-api grants the role
+      # per project on enable there (HERMES_DATAPLANE_ASSIGN_WRITER_ROLE).
+      role_assignments:
+      - user: hermes@Default
+        role: objectstore_admin
+        inherited: true
+      {{- end }}
       users:
         - name: 'hermes'
           description: Hermes Service
@@ -61,8 +72,9 @@ spec:
       projects:
         # Scope for log-router's token once logRouter.swift.writerProject is
         # switched. Plain objectstore_admin (not cloud_objectstore_admin, which
-        # is RGW admin) so the writer only reaches buckets it or the customer
-        # owns. Same pattern as keppel-payloads.
+        # is RGW admin). hermes@Default also holds objectstore_admin inherited
+        # on every non-iaas domain (see role_assignments on the domains), which
+        # log-router uses for project-scoped writes.
         - name: hermes-dataplane
           description: Hermes dataplane writer, owns no customer data
           role_assignments:
@@ -78,6 +90,12 @@ spec:
               role: audit_viewer
 
     - name: cc3test
+      {{- if $.Values.logRouter.enabled }}
+      role_assignments:
+      - user: hermes@Default
+        role: objectstore_admin
+        inherited: true
+      {{- end }}
       groups:
       - name: CC3TEST_DOMAIN_ADMINS
         role_assignments:
@@ -87,6 +105,12 @@ spec:
     {{- range $domains}}
     {{- if and (not (eq . "Default")) (not (eq . "cc3test")) (not (hasPrefix "iaas-" .))}}
     - name: {{ . }}
+      {{- if $.Values.logRouter.enabled }}
+      role_assignments:
+      - user: hermes@Default
+        role: objectstore_admin
+        inherited: true
+      {{- end }}
       {{- if eq . "ccadmin"}}
       projects:
       - name: master

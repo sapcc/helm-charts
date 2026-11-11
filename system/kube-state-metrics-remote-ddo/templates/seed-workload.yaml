@@ -1,0 +1,143 @@
+{{- if eq .Values.mode "seed" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.kubeStateMetrics.replicas }}
+  strategy:
+    type: {{ .Values.kubeStateMetrics.strategy.type | quote }}
+  selector:
+    matchLabels:
+    {{- include "chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+      {{- include "chart.selectorLabels" . | nindent 8 }}
+        networking.gardener.cloud/to-dns: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+        networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port | quote }}{{ end }}
+        greenhouse/scrape: "true"
+        greenhouse/target: {{ .Values.greenhouseScrapeTarget | quote }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: {{ quote .Values.kubeStateMetrics.container.env.kubernetesServiceHost }}
+        image: {{ .Values.kubeStateMetrics.container.image.repository }}:{{ .Values.kubeStateMetrics.container.image.tag | default .Chart.AppVersion }}
+        args:
+        {{- toYaml .Values.kubeStateMetrics.container.args | nindent 8 }}
+        name: kube-state-metrics
+        ports:
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
+          name: metrics
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 1 }}{{ .port }}{{ end }}
+          name: telemetry
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /livez
+            port: metrics
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /readyz
+            port: telemetry
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources: {}
+        securityContext: {{- toYaml .Values.kubeStateMetrics.container.containerSecurityContext | nindent 10 }}
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: remote-kubeconfig
+          readOnly: true
+        - mountPath: /etc/config
+          name: config-volume
+          readOnly: true
+      nodeSelector: {{- toYaml .Values.kubeStateMetrics.nodeSelector | nindent 8 }}
+      serviceAccountName: {{ include "chart.serviceAccountName" . }}
+      volumes:
+      - name: remote-kubeconfig
+        secret:
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
+          secretName: {{ include "chart.fullname" . }}-kubeconfig
+      - configMap:
+          name: {{ include "chart.fullname" . }}-config
+        name: config-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart.fullname" . }}-service
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  type: {{ .Values.kubeStateMetrics.type }}
+  selector:
+    {{- include "chart.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.kubeStateMetrics.ports | toYaml | nindent 2 }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "chart.fullname" . }}
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+    {{- include "chart.selectorLabels" . | nindent 6 }}
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
+    from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-monitoring
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "chart.fullname" . }}-config
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+data:
+  custom-resource-state.yaml: {{ .Values.config.customResourceStateYaml | quote }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "chart.fullname" . }}
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+{{- end }}
