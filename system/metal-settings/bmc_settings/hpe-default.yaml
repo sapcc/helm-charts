@@ -10,25 +10,28 @@
 # Multiple settings for the same endpoint are merged into a single JSON body.
 #
 # Values sourced from: baremetal-config/hpe/*/bmc/defaultsettings.yml
-settings:
-  {{- if .Values.clusterConfig.hpeLicenseSecretName }}
-  # License key — $(LicenseKey) fetched at reconcile time from the Secret named by clusterConfig.hpeLicenseSecretName.
-  "POST /redfish/v1/Managers/1/LicenseService/": '{"LicenseKey": "$(LicenseKey)"}'
-  {{- end }}
-  # Network protocol: HTTP port, IPMI, disable XML responses
-  "PATCH /redfish/v1/managers/1/networkprotocol": '{"HTTP": {"Port": 1080}, "IPMI": {"ProtocolEnabled": true}, "Oem": {"Hpe": {"XMLResponseEnabled": false}}}'
-  # SNMP: disable SNMPv1, disable cold-start trap broadcast
-  "PATCH /redfish/v1/Managers/1/SnmpService": '{"SNMPv1Enabled": false, "Oem": {"Hpe": {"SNMPColdStartTrapBroadcast": false}}}'
-  # iLO Federation: disable discovery; require login for iLO RBSU
-  "PATCH /redfish/v1/Managers/1": '{"Oem": {"Hpe": {"FederationConfig": {"iLOFederationManagement": "Disabled", "MulticastDiscovery": "Disabled"}, "RequiredLoginForiLORBSU": true}}}'
-  # Account service: enforce password complexity
-  "PATCH /redfish/v1/accountservice": '{"Oem": {"Hpe": {"EnforcePasswordComplexity": true}}}'
-  # NTP servers
-  "PATCH /redfish/v1/Managers/1/DateTime": '{"StaticNTPServers": ["timehost1.global.cloud.sap", "timehost2.global.cloud.sap"]}'
-  # Security: Production state, disable weak ciphers
-  "PATCH /redfish/v1/Managers/1/SecurityService": '{"SecurityState": "Production", "DisableWeakCiphers": true}'
-  # ServerFQDN — $(NodeName)r-$(BB) resolved at reconcile time from BMC labels (e.g. "node002r-ap052")
-  "PATCH /redfish/v1/systems/1": '{"Oem": {"Hpe": {"ServerFQDN": "$(NodeName)r-$(BB)"}}}'
+settingsFlow:
+- name: defaultSettings
+  priority: 10
+  settings:
+    {{- if .Values.clusterConfig.hpeLicenseSecretName }}
+    # License key — $(LicenseKey) fetched at reconcile time from the Secret named by clusterConfig.hpeLicenseSecretName.
+    "POST /redfish/v1/Managers/1/LicenseService/": '{"LicenseKey": "$(LicenseKey)"}'
+    {{- end }}
+    # Network protocol: HTTP port, IPMI, disable XML responses
+    "PATCH /redfish/v1/managers/1/networkprotocol": '{"HTTP": {"Port": 1080}, "IPMI": {"ProtocolEnabled": true}, "Oem": {"Hpe": {"XMLResponseEnabled": false}}}'
+    # SNMP: disable SNMPv1, disable cold-start trap broadcast
+    "PATCH /redfish/v1/Managers/1/SnmpService": '{"SNMPv1Enabled": false, "Oem": {"Hpe": {"SNMPColdStartTrapBroadcast": false}}}'
+    # iLO Federation: disable discovery; require login for iLO RBSU
+    "PATCH /redfish/v1/Managers/1": '{"Oem": {"Hpe": {"FederationConfig": {"iLOFederationManagement": "Disabled", "MulticastDiscovery": "Disabled"}, "RequiredLoginForiLORBSU": true}}}'
+    # Account service: enforce password complexity
+    "PATCH /redfish/v1/accountservice": '{"Oem": {"Hpe": {"EnforcePasswordComplexity": true}}}'
+    # NTP servers
+    "PATCH /redfish/v1/Managers/1/DateTime": '{"StaticNTPServers": ["timehost1.global.cloud.sap", "timehost2.global.cloud.sap"]}'
+    # Security: Production state, disable weak ciphers
+    "PATCH /redfish/v1/Managers/1/SecurityService": '{"SecurityState": "Production", "DisableWeakCiphers": true}'
+    # ServerFQDN — $(NodeName)r-$(BB) resolved at reconcile time from BMC labels (e.g. "node002r-ap052")
+    "PATCH /redfish/v1/systems/1": '{"Oem": {"Hpe": {"ServerFQDN": "$(NodeName)r-$(BB)"}}}'
 variables:
   # BmcName: resolved from the BMCSettings object itself — used as the name for objectFieldRef lookups below.
   - key: BmcName
