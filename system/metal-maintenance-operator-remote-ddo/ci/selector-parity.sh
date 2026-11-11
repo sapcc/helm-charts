@@ -11,7 +11,11 @@ helm template metal-maintenance-operator-remote "$chart_dir" --set mode=seed \
 # Extract selectors into variables using CHECKED commands (not process substitution
 # where exit codes are discarded). yq failures propagate immediately via set -euo pipefail.
 deployment_selector="$(yq -o=json 'select(.kind == "Deployment" and .metadata.name == "metal-maintenance-operator-controller-manager") | .spec.selector.matchLabels' "$rendered")"
-service_selector="$(yq -o=json 'select(.kind == "Service" and .metadata.name == "metal-maintenance-operator-controller-manager-telemetry-events") | .spec.selector' "$rendered")"
+# The seed render contains two telemetry Services with the same name: the upstream-origin
+# one (from the subchart) and the additions-origin one (templates/telemetry-service.yaml).
+# Both share the same selector, so comparing either is equivalent. jq -s '.[0]' picks the
+# first document from the multi-document yq output.
+service_selector="$(yq -o=json 'select(.kind == "Service" and .metadata.name == "metal-maintenance-operator-controller-manager-telemetry-events") | .spec.selector' "$rendered" | jq -s '.[0]')"
 
 # Validate each extraction is a non-empty JSON object with at least one key.
 # Reject: empty string, "null", "{}", "[]", or any value jq cannot parse as an object.

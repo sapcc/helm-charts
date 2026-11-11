@@ -46,10 +46,14 @@ The shoot additions include:
 - All shoot-additions objects carry the
   `dual-deployment-operator.cc.sap/origin: additions` annotation
 
-The upstream subchart renders all RBAC as namespaced `Role`/`RoleBinding`
-(MMO's `rbac.namespaced=true`). The additions ClusterRoles and ClusterRoleBindings
-are therefore entirely SAP-authored; they are not present in the upstream chart
-at all.
+The shoot render uses `mmo-core.rbac.namespaced=false` (cluster-scoped manager
+RBAC) and `mmo-core.rbac.helpers.enable=true` (per-CRD admin/editor/viewer
+ClusterRoles). The upstream subchart emits cluster-scoped `ClusterRole` and
+`ClusterRoleBinding` objects for the manager and the helper set. Leader election
+is the only namespaced grant (a `Role` and `RoleBinding` in `kube-system`).
+
+The additions templates supply the OIDC-IAS bindings and the bare
+cross-operator grants (see §Carried additions in `examples/rbac-parity.md`).
 
 ### Telemetry Service and selector parity
 
@@ -61,19 +65,22 @@ The `ci/selector-parity.sh` gate verifies this on every CI run (see below).
 
 ## Shoot RBAC parity
 
-The shoot render enables `mmo-core.rbac.namespaced=true` + `mmo-core.rbac.helpers.enable=true`
-plus `mmo-core.serviceAccount.enable=true`. All upstream-originated RBAC is
-namespaced (Roles + RoleBindings in `kube-system`). No `ClusterRole` or
-`ClusterRoleBinding` comes from the upstream subchart; the additions overlay
-supplies all cluster-scoped grants.
+The shoot render enables `mmo-core.rbac.namespaced=false` + `mmo-core.rbac.helpers.enable=true`
+plus `mmo-core.serviceAccount.enable=true`. The upstream subchart emits cluster-scoped
+`ClusterRole` and `ClusterRoleBinding` objects (manager-role, manager-rolebinding, and
+per-CRD helper roles). Leader election is namespaced: `Role` and `RoleBinding` in `kube-system`.
+The additions overlay supplies the OIDC-IAS bindings + token-rotate + bare dual-group editor
+role (all with `origin: additions`).
 
 The `DualDeploymentOperator` `shootNamespace` must be `kube-system`; the
 upstream ServiceAccount and all RBAC binding subjects render into that release
 namespace.
 
-The upstream telemetry Service (seed-side) uses the Deployment's labels as its
-selector: `app.kubernetes.io/name: mmo-core` and `control-plane: controller-manager`.
-The seed additions (token-requestor Secret) do not select any Deployment labels.
+The upstream telemetry Service (emitted unconditionally by the subchart) appears in **both**
+renders. The DDO CR (Task 8) must apply `filterKinds: {kinds: [Service], source: upstream}`
+to drop upstream-origin Services from both renders. A seed-only additions telemetry Service
+(`templates/telemetry-service.yaml`) re-provides the :9092 endpoint on the seed with
+`origin: additions`, so it survives the source-scoped filter.
 
 See `examples/rbac-parity.md` for the full shoot-render inventory and accepted
 deviations from the legacy manifest.

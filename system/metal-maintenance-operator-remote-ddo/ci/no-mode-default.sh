@@ -3,10 +3,10 @@ set -euo pipefail
 
 chart_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Gate 1: values.yaml must not declare a default for mode.
-# The dual-deployment-operator injects .Values.mode at render time; a chart-level
-# default causes the operator to reject the render.
-if grep -Eq '^[[:space:]]*mode:' "$chart_dir/values.yaml"; then
+# Gate 1: values.yaml must not declare a default for mode (any form).
+# Uses yq has() so quoted, null, or empty forms are all caught — not just
+# the bare `mode: <value>` that a simple grep would miss.
+if [ "$(/opt/homebrew/bin/yq 'has("mode")' "$chart_dir/values.yaml")" = "true" ]; then
   echo "FAIL: values.yaml must not declare mode"
   exit 1
 fi

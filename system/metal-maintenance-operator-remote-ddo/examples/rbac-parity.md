@@ -127,10 +127,10 @@ completely. See §Accepted deviations D1/D2.
 
 ### CRDs
 
-| Name | Render (`--include-crds`) | Live (`mr-crd-*`) | Note |
+| Name | Render (`--include-crds --set mmo-core.crd.enable=true`) | Live (`mr-crd-*`) | Note |
 | --- | --- | --- | --- |
-| `servermaintenances.maintenance.metal.ironcore.dev` | ✓ | ✓ | Authoritative |
-| `biossettings.system.metal.ironcore.dev` | ✓ | ✗ | Subchart CRD, not in mr-crd-* — DDO CRD delivery path TBD (Task 8) |
+| `servermaintenances.maintenance.metal.ironcore.dev` | ✓ | ✓ | **Match** — sole live mr-crd-* entry |
+| `biossettings.system.metal.ironcore.dev` | ✓ | ✗ | Subchart CRD, templated by 0.1.0-crds (gated by crd.enable) |
 | `biossettingssets.system.metal.ironcore.dev` | ✓ | ✗ | (same) |
 | `biosversions.system.metal.ironcore.dev` | ✓ | ✗ | (same) |
 | `biosversionsets.system.metal.ironcore.dev` | ✓ | ✗ | (same) |
@@ -142,10 +142,18 @@ completely. See §Accepted deviations D1/D2.
 | `consoles.vendorconsole.metal.ironcore.dev` | ✓ | ✗ | (same) |
 | `serverwirings.readiness.metal.ironcore.dev` | ✓ | ✗ | (same) |
 
-CRDs reside in the subchart's `crds/` directory. `helm template` does not render
-`crds/` content without `--include-crds`. The DDO helm source rendering path and whether
-it includes CRDs is confirmed during Task 8 / operator CR authoring. The legacy delivered
-CRDs as explicit `mr-crd-*` ManagedResources; the DDO path must produce equivalent delivery.
+**CRD count reconciliation (R7):** The `0.1.0-crds` subchart variant moves all CRDs
+from the static `crds/` directory into `templates/crd/*.yaml`, each gated by
+`{{ if .Values.crd.enable }}`. The seed render (`mmo-core.crd.enable=false`) emits
+**0 CRDs** even with `--include-crds`. The shoot render (`mmo-core.crd.enable=true`)
+emits **12 CRDs** — all 12 files in `templates/crd/`. The old static `crds/crds.yaml`
+in 0.1.0 contained 12 CRDs (same set), so the CRD content is identical between versions.
+
+Live baseline has only 1 mr-crd-* entry (`servermaintenances`). The remaining 11 CRDs in
+the shoot render are a **superset** — the upstream subchart templates them but the legacy
+delivery omitted them from ManagedResources. This is not a permission regression (CRDs are
+cluster-scoped, install-time objects). The DDO shoot render delivers the full CRD set the
+upstream chart defines. See §CRD delivery note below.
 
 ---
 
@@ -263,21 +271,79 @@ chart and comparing the rendered Deployment selector with the live cluster state
 
 ---
 
-## Telemetry Service split (P2)
+## Telemetry Service split (R8 — resolved)
 
 The subchart template `templates/extras/controller-manager-telemetry-events.yaml` renders
 unconditionally (no `manager.enabled` guard). Therefore:
 
 - **Seed render** (`--set mode=seed --set mmo-core.manager.enabled=true`): emits
-  `Service/metal-maintenance-operator-controller-manager-telemetry-events` on port 9092. ✓ expected.
-- **Shoot render** (`--set mode=shoot --set mmo-core.manager.enabled=false`): also emits the
-  **same Service** on port 9092. This is a shoot-side object that should NOT exist there
-  (no controller runs on shoot to serve events).
+  `Service/metal-maintenance-operator-controller-manager-telemetry-events` on port 9092
+  with `origin: upstream`. ✓ expected, but must survive the shoot Service filter.
+- **Shoot render** (`--set mode=shoot --set mmo-core.manager.enabled=false`): also emits
+  **the same Service** on port 9092 with `origin: upstream`. This must be dropped —
+  no controller runs on shoot.
 
-This proves that the DDO CR (Task 8) **genuinely requires a `filterKinds` transformation**
-to drop the `Service` kind from the shoot render, even though the chart has no webhooks.
-Without `filterKinds`, the shoot would receive the telemetry Service pointing at a
-non-existent pod — a stale endpoint that could confuse monitoring.
+### DDO transform investigation (R8)
+
+The DDO `filterKinds` transformation supports a `source` field (maps to manifest origin):
+
+```go
+type FilterKindsSpec struct {
+    Kinds  []string `json:"kinds"`
+    Source string   `json:"source,omitempty"` // matches manifest.Origin exactly
+}
+```
+
+`source: upstream` restricts the drop to manifests with `origin == "upstream"` (i.e.,
+resources NOT carrying the `dual-deployment-operator.cc.sap/origin: additions` annotation).
+
+**Correct CR transformation (Task 8):**
+```yaml
+transformations:
+  - filterKinds:
+      kinds: [Service]
+      source: upstream
+```
+
+This applies to BOTH renders (transformations are per-render, not mode-scoped):
+- **Seed render:** upstream-origin telemetry Service is dropped. The additions-origin
+  `templates/telemetry-service.yaml` Service (origin: additions, same name, same selector,
+  port 9092) is NOT dropped — it survives the source-scoped filter. ✓ Seed has exactly
+  one working :9092 telemetry Service after transform.
+- **Shoot render:** upstream-origin telemetry Service is dropped. The additions Service
+  is seed-only (`{{- if eq .Values.mode "seed" }}`), so it does not appear in the shoot
+  render at all. ✓ Shoot ends up with zero telemetry Services — correct.
+
+**Why not `filterKinds: {kinds: [Service]}`** (no source): drops ALL Services from both
+renders including any additions-origin ones — the seed would end up with no telemetry
+Service. Rejected.
+
+**Why not a name+jsonPatch deletion:** The `patch` transform selects by kind/name/origin
+but cannot "delete an object from the render stream" — it mutates object fields, not
+removes objects. `filterKinds` is the correct removal mechanism. With `source: upstream`
+it is precise enough.
+
+### Render assertion
+
+After applying `filterKinds: {kinds: [Service], source: upstream}` (Task 8 CR):
+
+| Render | Telemetry Service present | Port | Origin |
+| --- | --- | --- | --- |
+| Seed | ✓ `metal-maintenance-operator-controller-manager-telemetry-events` | 9092 | additions |
+| Shoot | ✗ (none) | — | — |
+
+---
+
+## CRD delivery note
+
+The `0.1.0-crds` subchart variant ships CRDs as `templates/crd/*.yaml` gated by
+`{{ if .Values.crd.enable }}`. The DDO CR (Task 8) sets:
+- `seedValues: {mmo-core: {crd: {enable: false}}}` → 0 CRDs on seed ✓
+- `shootValues: {mmo-core: {crd: {enable: true}}}` → 12 CRDs on shoot
+
+All 12 shoot CRDs are delivered as shoot-side managed resources. Only
+`servermaintenances.maintenance.metal.ironcore.dev` was delivered by the legacy chart
+(`mr-crd-*`). The remaining 11 are a superset expansion, not a regression.
 
 ---
 
@@ -294,13 +360,20 @@ the upstream subchart):
 | Role | `metal-maintenance-token-rotate` in `kube-system` | Allows `serviceaccounts/token` create for controller-manager SA |
 | RoleBinding | `metal-maintenance-token-rotate` in `kube-system` | Binds token-rotate SA |
 | ClusterRole | `metal-maintenance-operator-viewer` | Read access to serverwirings + consoles |
-| ClusterRole | `servermaintenance-editor-role` | CRUD on servermaintenances |
+| ClusterRole | `servermaintenance-editor-role` | CRUD on servermaintenances (GET-only on /status) |
 | ClusterRoleBinding | `cc:oidc-ias-maintenance-viewer` | Binds IAS group to viewer role |
 | ClusterRoleBinding | `cc:oidc-ias-maintenance-editor` | Binds IAS group to editor role |
 
+The seed render includes the following SAP-authored additions:
+
+| Resource | Name | Purpose |
+| --- | --- | --- |
+| Secret | `metal-maintenance-operator-kubeconfig` in `kube-system` | Token-requestor seed Secret |
+| Service | `metal-maintenance-operator-controller-manager-telemetry-events` | Seed-side telemetry :9092 (additions-origin, survives filterKinds source:upstream) |
+
 ---
 
-## CI gate results (2026-11-11)
+## CI gate results (2026-11-11, updated after final-fix wave)
 
 ```
 ci/no-mode-default.sh  → PASS: no mode default; no additions leak without mode
