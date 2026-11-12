@@ -56,11 +56,12 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- define "job_name" }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
-    {{- $all := list (include (print .Template.BasePath "/configmap-etc.yaml") .) (include (print .Template.BasePath "/secrets.yaml") .) (include "utils.proxysql.proxysql_signal_stop_script" . ) (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) | join "\n" }}
-    {{- $hash := $all | sha256sum }}
-{{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.api.imageTag | required "Please set api.imageTag or similar"}}
-    {{- /* Bootstrap must also rerun when the image and configuration stay the same. */}}
-    {{- if eq $name "job-bootstrap" }}-r{{ .Release.Revision }}{{- end }}
+    {{- /* Rerun each Job on every Helm release revision. */}}
+    {{- $suffix := printf "-%s-r%d" $name .Release.Revision }}
+    {{- /* Keep the Job kind and revision intact within the 63-character limit. */}}
+    {{- $prefixLength := sub 63 (len $suffix) | int }}
+    {{- $prefix := .Release.Name | trunc $prefixLength | trimSuffix "-" }}
+    {{- printf "%s%s" $prefix $suffix }}
   {{- end }}
 {{- end }}
 
