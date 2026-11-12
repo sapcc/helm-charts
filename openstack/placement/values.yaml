@@ -49,8 +49,22 @@ pod:
         memory: "150Mi"
 
 uwsgi:
+  add-header: "Connection: close"
+  buffer-size: 65535
+  die-on-term: true
+  enable-threads: true
+  exit-on-reload: false
+  gid: placement
+  hook-master-start: "unix_signal:15"
+  lazy-apps: true
+  master: true
+  memory-report: true
+  need-app: true
   processes: 10
-  wsgi_file: "/var/lib/openstack/bin/placement-api"
+  thunder-lock: true
+  uid: placement
+  worker-reload-mercy: 90
+  module: "placement.wsgi.api:application"
 
 max_pool_size: 50
 max_overflow: -1
