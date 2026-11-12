@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Consolidated contract/parity driver.  Two sections:
+# Consolidated contract/parity driver.  Three sections:
 #   (2a) semantic 7-CRD surface check — exact names, split controller-gen stamps,
 #        pool move-hierarchy labels, and injector label.
 #   (2b) crd_parity.py self-test — 10 synthetic cases exercising the fingerprint
 #        lib's fail-closed edge cases directly.
+#   (2c) real-render baseline parity — compares the ACTUAL seed/shoot renders to
+#        the reviewed committed baseline (crd-baseline.json), closing the blind spot
+#        where (2b) only exercised a synthetic CRD and never checked real output.
 #   (3) explicit 8-webhook URL contract — human-readable assertion of the exact
 #       mutate/validate URLs after a simulated DDO rewriteWebhookURL, plus a
 #       Service inventory guard (upstream webhook-service deleted by $patch:delete).
@@ -84,6 +87,13 @@ with tempfile.TemporaryDirectory() as tmp:
     baseline.write_text(json.dumps(tampered))
     check('changed baseline fingerprint rejected', [original], False)
 PY
+
+# ── (2c) Real-render baseline parity ─────────────────────────────────────────
+# Compare the ACTUAL seed/shoot renders to the reviewed committed baseline
+# (crd-baseline.json). This closes the blind spot where the self-test (2b) only
+# exercised a synthetic CRD and never checked real output.
+echo "=== (2c) Real-render baseline parity ==="
+python3 "$DIR/crd_parity.py" "$WORK/shoot.yaml" "$WORK/seed.yaml" "$DIR/crd-baseline.json"
 
 # ── (3) explicit 8-webhook URL contract (simulated DDO rewriteWebhookURL) ─────
 # Legible string-level assertion of the exact mutate/validate URLs, plus the raw-build
