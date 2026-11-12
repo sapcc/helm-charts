@@ -1,4 +1,7 @@
-{{- if .Release.IsInstall }}
+{{- $migrationJob := "" -}}
+{{- if or .Release.IsInstall .Values.run_db_migration -}}
+  {{- $migrationJob = tuple . "job-migration" | include "job_name" -}}
+{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -11,7 +14,6 @@ metadata:
     system: openstack
     component: keystone
     type: job
-    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
     ccloud/support-group: identity
     ccloud/service: keystone
 spec:
@@ -27,9 +29,8 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        # only run once on initial install
-        "helm.sh/hook": post-install
 {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
@@ -38,7 +39,7 @@ spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
-      {{- tuple . (dict "SERVICE" (include "keystone.db_service" .) "JOBS" (tuple . "job-migration" | include "job_name")) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" $migrationJob) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
@@ -70,6 +71,10 @@ spec:
               readOnly: true
             - name: keystone-etc-confd
               mountPath: /etc/keystone/keystone.conf.d
+            - name: keystone-bootstrap
+              mountPath: /etc/keystone/bootstrap.yaml
+              subPath: bootstrap.yaml
+              readOnly: true
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml
@@ -103,6 +108,10 @@ spec:
           secret:
             secretName: {{ .Release.Name }}-secrets
             defaultMode: 0444
+        - name: keystone-bootstrap
+          secret:
+            secretName: {{ .Release.Name }}-bootstrap
+            defaultMode: 0444
         - name: keystone-bin
           projected:
             sources:
@@ -123,4 +132,3 @@ spec:
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
-{{ end -}}
