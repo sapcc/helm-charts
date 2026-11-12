@@ -4,7 +4,7 @@ groups:
 - name: concourse.alerts
   rules:
   - alert: ConcoursePostgresDatabaseSize
-    expr: pg_database_size_bytes{datname="concourse"} >= 40 * 1024^3
+    expr: max by (region, cluster, persistentvolumeclaim) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*postgres.*"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*postgres.*"}) > 0.75
     for: 5m
     labels:
       tier: ci
@@ -12,9 +12,9 @@ groups:
       severity: warning
       context: concourse
       support_group: containers
-      meta: "Database {{ $labels.datname }} to large"
+      meta: "PostgreSQL PVC {{ $labels.persistentvolumeclaim }} usage above 75% in {{ $labels.cluster }}"
     annotations:
-      description: "The concourse database size is greater than 40GB and will exceed the PV limits eventually"
+      description: "The PostgreSQL PVC {{ $labels.persistentvolumeclaim }} in cluster {{ $labels.cluster }} is more than 75% full and will exceed PV limits eventually. Consider pruning old build data."
       summary: Concourse database is too large
 
   - alert: ConcoursePostgresSharedMemoryError
