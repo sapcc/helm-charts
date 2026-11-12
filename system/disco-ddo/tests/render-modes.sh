@@ -73,13 +73,13 @@ import yaml
 seed_path, shoot_path = sys.argv[1:3]
 
 SEED_EXPECTED = sorted([
-    "Certificate/disco-serving-cert",
+    # cert-manager and webhook resources are excluded from the default seed render.
+    # The DDO operator ClusterRole does not cover cert-manager.io API groups, and
+    # Records live on the shoot — the webhook would never fire on the seed.
+    # To include them, set certManager.enabled=true / webhook.enabled=true.
     "Deployment/disco-controller-manager",
-    "Issuer/disco-selfsigned-issuer",
-    "MutatingWebhookConfiguration/disco-ddo-mutating-webhook-configuration",
     "Secret/disco-config",
     "Secret/disco-remote-kubeconfig",
-    "Service/disco-webhook-service",
     "ServiceAccount/disco-controller-manager",
 ])
 

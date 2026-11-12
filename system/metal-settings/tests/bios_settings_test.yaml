@@ -9,7 +9,7 @@ tests:
   - it: should render BIOSSettingsSet resources by default
     asserts:
       - hasDocuments:
-          count: 153
+          count: 154
       - isKind:
           of: BIOSSettingsSet
 
@@ -59,48 +59,24 @@ tests:
           value: OwnerApproval
 
   #############################################################################
-  # FILTERING TESTS
+  # ENABLED / clusterTypes TESTS
   #############################################################################
 
-  # UC1: Filter by vendor
-  - it: should only render Dell resources when vendors.included is set
+  # UC1: Disable a vendor
+  - it: should skip a vendor when parameters.<vendor>.enabled is false
     set:
-      biosSettings.filters.vendors.included: [dell]
+      parameters.hpe.enabled: false
     asserts:
       - containsDocument:
           kind: BIOSSettingsSet
           apiVersion: metal.ironcore.dev/v1alpha1
           name: dell-poweredge-r7615-sci-k8s-controlplane
           any: true
-      - not: true
-        containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: hpe-proliant-dl560-gen11-sci-k8s-controlplane
-          any: true
-      - not: true
-        containsDocument:
+      - containsDocument:
           kind: BIOSSettingsSet
           apiVersion: metal.ironcore.dev/v1alpha1
           name: lenovo-thinksystem-sr850p-sci-k8s-controlplane
           any: true
-
-  # UC2: Filter by model
-  - it: should only render specific model when models.included is set
-    set:
-      biosSettings.filters.models.included: [poweredge-r7615]
-    asserts:
-      - containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: dell-poweredge-r7615-sci-k8s-controlplane
-          any: true
-      - not: true
-        containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: dell-poweredge-r660-sci-k8s-controlplane
-          any: true
       - not: true
         containsDocument:
           kind: BIOSSettingsSet
@@ -108,10 +84,57 @@ tests:
           name: hpe-proliant-dl560-gen11-sci-k8s-controlplane
           any: true
 
-  # UC3: Filter by clusterType
-  - it: should only render specific clusterType when clusterTypes.included is set
+  # UC2: Disable a specific model
+  - it: should skip a model when parameters.<vendor>.<model>.enabled is false
     set:
-      biosSettings.filters.clusterTypes.included: [sci-k8s-controlplane]
+      parameters.dell.poweredge-r7615.enabled: false
+    asserts:
+      - not: true
+        containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-controlplane
+          any: true
+      - containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+      - containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl560-gen11-sci-k8s-controlplane
+          any: true
+
+  # UC3: Disable a domain (bios) for one model, bmc stays untouched
+  - it: should skip just the bios domain when parameters.<vendor>.<model>.bios.enabled is false
+    set:
+      parameters.dell.poweredge-r7615.bios.enabled: false
+    asserts:
+      - not: true
+        containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-sci-k8s-controlplane
+          any: true
+      - containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+
+  # UC4: Narrow cluster types for the whole cluster (real-world override: kube-secrets sets this
+  # per cluster so only the cluster types actually present get a Settings resource)
+  - it: should only render the real cluster's clusterTypes when clusterTypes is set
+    set:
+      rollouts.types:
+        sci-k8s-controlplane:
+          - workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
     asserts:
       - containsDocument:
           kind: BIOSSettingsSet
@@ -129,14 +152,31 @@ tests:
           kind: BIOSSettingsSet
           apiVersion: metal.ironcore.dev/v1alpha1
           name: dell-poweredge-r7615-sci-k8s-runtime
-          any: true
 
-  # UC4: Combination filter
-  - it: should filter by vendor and model combination
+  # UC5: Combination - disable other vendors/models and narrow clusterTypes
+  - it: should combine vendor/model disable with a clusterTypes override
     set:
-      biosSettings.filters.vendors.included: [dell]
-      biosSettings.filters.models.included: [poweredge-r7615]
-      biosSettings.filters.clusterTypes.included: [sci-k8s-controlplane]
+      parameters.hpe.enabled: false
+      parameters.lenovo.enabled: false
+      parameters.dell.poweredge-r640.enabled: false
+      parameters.dell.poweredge-r660.enabled: false
+      parameters.dell.poweredge-r6715.enabled: false
+      parameters.dell.poweredge-r740.enabled: false
+      parameters.dell.poweredge-r740xd.enabled: false
+      parameters.dell.poweredge-r760.enabled: false
+      parameters.dell.poweredge-r770.enabled: false
+      parameters.dell.poweredge-r7715.enabled: false
+      parameters.dell.poweredge-r840.enabled: false
+      parameters.dell.poweredge-r860.enabled: false
+      parameters.dell.poweredge-xe9680.enabled: false
+      rollouts.types:
+        sci-k8s-controlplane:
+          - workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
     asserts:
       - hasDocuments:
           count: 1
@@ -146,58 +186,29 @@ tests:
           name: dell-poweredge-r7615-sci-k8s-controlplane
           any: true
 
-  # UC5: Disable entirely
+  # UC6: Disable entirely
   - it: should render no resources when enabled is false
     set:
-      biosSettings.enabled: false
+      crdVersionControl.features.biosSettings.enabled: false
     asserts:
       - hasDocuments:
           count: 0
 
-  # UC6: Include vendor but exclude model
-  - it: should exclude specific model when models.excluded is set
+  # UC7: clusterTypes override narrows to multiple remaining types (equivalent to excluding one)
+  - it: should exclude a single cluster type by omitting it from clusterTypes
     set:
-      biosSettings.filters.vendors.included: [dell]
-      biosSettings.filters.models.excluded: [poweredge-r7615]
-    asserts:
-      - not: true
-        containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: dell-poweredge-r7615-sci-k8s-controlplane
-          any: true
-      - containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: dell-poweredge-r660-sci-k8s-controlplane
-          any: true
-
-  # UC7: Exclude specific vendor
-  - it: should exclude vendor when vendors.excluded is set
-    set:
-      biosSettings.filters.vendors.excluded: [hpe]
-    asserts:
-      - containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: dell-poweredge-r7615-sci-k8s-controlplane
-          any: true
-      - containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: lenovo-thinksystem-sr850p-sci-k8s-controlplane
-          any: true
-      - not: true
-        containsDocument:
-          kind: BIOSSettingsSet
-          apiVersion: metal.ironcore.dev/v1alpha1
-          name: hpe-proliant-dl560-gen11-sci-k8s-controlplane
-          any: true
-
-  # UC8: Exclude clusterType
-  - it: should exclude clusterType when clusterTypes.excluded is set
-    set:
-      biosSettings.filters.clusterTypes.excluded: [cc-kvm-compute]
+      rollouts.types:
+        sci-k8s-controlplane: &biosSettingsOnlyWorkflow
+          - workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+        sci-k8s-management: *biosSettingsOnlyWorkflow
+        sci-k8s-runtime: *biosSettingsOnlyWorkflow
+        sci-k8s-storage: *biosSettingsOnlyWorkflow
+        cc-ironcore: *biosSettingsOnlyWorkflow
     asserts:
       - containsDocument:
           kind: BIOSSettingsSet
@@ -210,3 +221,168 @@ tests:
           apiVersion: metal.ironcore.dev/v1alpha1
           name: dell-poweredge-r7615-cc-kvm-compute
           any: true
+
+  #############################################################################
+  # include/exclude TESTS (see README's UC13)
+  #############################################################################
+
+  # A rule whose exclude matches (model, kind) with no "servers" suppresses that kind entirely for
+  # THAT model only - other models (not matched by exclude.models) still render normally from the
+  # very same rule, no separate catch-all needed.
+  - it: should skip BIOSSettingsSet when exclude matches model+kind with no servers
+    set:
+      rollouts.types:
+        cc-ironcore:
+          - filter:
+              exclude:
+                models: [poweredge-r770]
+                resources: [BIOSSettingsSet]
+            workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+    asserts:
+      - not: true
+        containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r770-cc-ironcore
+          any: true
+      - containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-cc-ironcore
+          any: true
+
+  # A rule scoped via include.models+include.resources only matches that one model/kind.
+  - it: should render BIOSSettingsSet when include matches it
+    set:
+      rollouts.types:
+        cc-ironcore:
+          - filter: { exclude: { models: [poweredge-r770] } }
+            workflow: &minimalWorkflow
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+          - filter:
+              include: { models: [poweredge-r770], resources: [BIOSSettingsSet] }
+            workflow: *minimalWorkflow
+    asserts:
+      - containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r770-cc-ironcore
+          any: true
+
+  # One broad rule (exclude.servers carves node004-bb098 out of its BIOSSettingsSet) plus one
+  # narrow rule (include.servers covers just that node) render exactly one BIOSSettingsSet per
+  # server subset with no overlap/duplication - no separate catch-all rule needed, since the
+  # broad rule's exclude only narrows its OWN scope for the one model/kind it targets.
+  - it: should split BIOSSettingsSet by server via complementary exclude/include servers
+    set:
+      rollouts.types:
+        cc-ironcore:
+          - filter:
+              exclude:
+                models: [poweredge-r770]
+                resources: [BIOSSettingsSet]
+                servers: [node004-bb098]
+            workflow: &sharedWorkflow
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+          - filter:
+              include:
+                models: [poweredge-r770]
+                resources: [BIOSSettingsSet]
+                servers: [node004-bb098]
+            workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+                setMetadataName: dell-poweredge-r770-nic-slot10
+    asserts:
+      - containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r770-cc-ironcore
+          any: true
+      - containsDocument:
+          kind: BIOSSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r770-nic-slot10-cc-ironcore
+          any: true
+
+  - it: should exclude node004-bb098 from the default rule's matchExpressions
+    set:
+      rollouts.types:
+        cc-ironcore:
+          - filter:
+              exclude:
+                models: [poweredge-r770]
+                resources: [BIOSSettingsSet]
+                servers: [node004-bb098]
+            workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r770-cc-ironcore
+    asserts:
+      - equal:
+          path: spec.serverSelector.matchExpressions[0].operator
+          value: NotIn
+      - equal:
+          path: spec.serverSelector.matchExpressions[0].values[0]
+          value: node004-bb098
+
+  - it: should include only node004-bb098 in the nic-slot10 rule's matchExpressions
+    set:
+      rollouts.types:
+        cc-ironcore:
+          - filter:
+              exclude:
+                models: [poweredge-r770]
+                resources: [BIOSSettingsSet]
+                servers: [node004-bb098]
+            workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+          - filter:
+              include:
+                models: [poweredge-r770]
+                resources: [BIOSSettingsSet]
+                servers: [node004-bb098]
+            workflow:
+              biosSettings:
+                order: 1
+                kind: BIOSSettingsSet
+                versionKey: bios.versions.defaultVersion
+                settingsKey: bios.settings.defaultSettings
+                setMetadataName: dell-poweredge-r770-nic-slot10
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r770-nic-slot10-cc-ironcore
+    asserts:
+      - equal:
+          path: spec.serverSelector.matchExpressions[0].operator
+          value: In
+      - equal:
+          path: spec.serverSelector.matchExpressions[0].values[0]
+          value: node004-bb098
+
+

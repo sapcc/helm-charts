@@ -52,9 +52,11 @@ spec:
           periodSeconds: 20
         name: manager
         ports:
+        {{- if .Values.certManager.enabled }}
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
+        {{- end }}
         - containerPort: 8080
           name: https
           protocol: TCP
@@ -67,9 +69,11 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
         volumeMounts:
+        {{- if .Values.certManager.enabled }}
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        {{- end }}
         - name: remote-kubeconfig
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           readOnly: true
@@ -78,10 +82,12 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: 10
       volumes:
+      {{- if .Values.certManager.enabled }}
       - name: cert
         secret:
           defaultMode: 420
           secretName: tls-disco-webhook-service
+      {{- end }}
       - name: remote-kubeconfig
         secret:
           secretName: disco-remote-kubeconfig

@@ -36,6 +36,23 @@ hermes:
   # Required to enable dataplane for a project; the env is only rendered when set.
   dataplane_writer_user_id: ""
   dataplane_swift_service_type: "object-store-ceph"
+  # Project-owned audit objects, two switches, turned on in this order:
+  # 1. dataplane_assign_writer_role: on enable, hermes-api gives hermes@Default
+  #    objectstore_admin in the project when it isn't effective there yet
+  #    (iaas- domains; the Keystone seed grants it inherited on every other
+  #    domain wherever logRouter.enabled). Projects in iaas- domains that were
+  #    enabled before need, before step 2, one re-enable by a project admin
+  #    (same body, current target_bucket) or a cloud admin grant per domain:
+  #    openstack role add --user hermes --user-domain Default
+  #      --domain <iaas-domain> --inherited objectstore_admin
+  # 2. dataplane_project_scoped_writes: log-router writes customer audit objects
+  #    with a token scoped to the customer project, so Ceph makes that project
+  #    the owner of every object. A project without the role has its events
+  #    dropped. Needs step 1 (the chart fails otherwise). Off: objects are owned
+  #    by the writerProject (cloud_admin). Objects written before need one
+  #    bucket chown.
+  dataplane_assign_writer_role: false
+  dataplane_project_scoped_writes: false
 
   debug: 0
   insecure: 0
@@ -359,9 +376,14 @@ logRouter:
     # ccadmin/cloud_admin for cross-account access, then switches to this account
     # for admin writes. Must be set when swift.enabled=true.
     adminProjectID: ""
-    # Project log-router's token is scoped to. The defaults keep the
+    # Project log-router's main token is scoped to. With
+    # hermes.dataplane_project_scoped_writes on, customer objects are written
+    # with a token scoped to the customer project instead, and this scope is
+    # only used for the fallback container, readiness, the check that tells a
+    # missing writer role apart from a broken main login, and
+    # migrate-dataplane-acl. The defaults keep the
     # cloud_objectstore_admin scope. Switch to hermes-dataplane / Default
-    # (objectstore_admin only) only after the log-router and hermez images with
+    # (objectstore_admin) only after the log-router and hermez images with
     # customer-owned bucket support are deployed and `migrate-dataplane-acl --apply`
     # has granted the writer read+write on every bucket in the region (the Ceph
     # chown is NOT a prerequisite). Rollback: set back to cloud_admin / ccadmin.

@@ -239,6 +239,9 @@ build-metaldhcp:
 
 build-metaldhcp-remote:
 	@helm dep up metaldhcp-remote
+	@helm template metaldhcp metaldhcp-remote/charts/metaldhcp*.tgz | \
+		yq eval 'select(.kind == "CustomResourceDefinition")' - \
+		> metaldhcp-remote/managedresources/crds.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metaldhcp-remote/Chart.yaml
 
 build-boot-operator:
