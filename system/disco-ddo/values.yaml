@@ -8,8 +8,15 @@ fullnameOverride: ""
 serviceAccount:
   name: disco-controller-manager
 
-# These labels will be set on the disco controller manager
-controllerLabels: {}
+# Gardener seed NetworkPolicy egress labels — required for the controller pod
+# to reach the shoot API server and public DNS (OpenStack Designate).
+# Static, region-generic, identical on every cluster — so they live here in
+# the chart, NOT in the per-cluster CR (see cc/kube-secrets).
+controllerLabels:
+  networking.gardener.cloud/to-dns: "allowed"
+  networking.gardener.cloud/to-public-networks: "allowed"
+  networking.gardener.cloud/to-shoot-apiserver: "allowed"
+  networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: "allowed"
 
 # Record which should be used. e.g.: 'ingress.domain.tld.'. Must be provided.
 record: ""
