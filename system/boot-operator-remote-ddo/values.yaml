@@ -26,6 +26,38 @@ boot-operator-core:
     enable: false
     # Shoot RBAC binds this upstream SA in kube-system (the shoot release namespace).
     serviceAccountName: boot-operator-controller-manager
+    # Chart defaults to the PUBLIC upstream registry (ghcr.io/ironcore-dev/boot-operator).
+    # SAP deployments override repository to the in-landscape keppel mirror via the
+    # DualDeploymentOperator CR values (see cc/kube-secrets).
+    manager:
+      image:
+        repository: ghcr.io/ironcore-dev/boot-operator
+      # Gardener seed NetworkPolicy is default-deny egress. These pod labels open
+      # the egress paths the seed-resident controller needs (DNS, private/public
+      # networks, runtime + kube apiserver, istio ingress). Static + region-generic,
+      # identical on every cluster — so they live here in the chart, NOT in the
+      # per-cluster CR. Without them the controller cannot resolve names or reach
+      # the shoot.
+      volumes:
+        - name: remote-kubeconfig
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+          source:
+            secret:
+              secretName: boot-operator-remote-kubeconfig
+              items:
+                - key: token
+                  path: token
+                - key: bundle.crt
+                  path: ca.crt
+    pod:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
   crd:
     enable: false
   rbac:
