@@ -169,6 +169,14 @@ spec:
                 cidr:
                   description: CIDR is the IPv4 network from which addresses are allocated, e.g. "10.0.1.0/24".
                   type: string
+                clientIdList:
+                  description: |-
+                    ClientIdList is the DHCP client-identifier set (option 61) the filter mode operates on.
+                    Entries are lowercase hex strings. A client is matched when its MAC is in MacList OR its
+                    client ID is in ClientIdList. Ignored when Mode is allowAll.
+                  items:
+                    type: string
+                  type: array
                 dnsServers:
                   description: |-
                     DNSServers overrides the global DNS server list (option 6) for clients in this subnet.
@@ -224,22 +232,30 @@ spec:
                 staticLeases:
                   description: StaticLeases pins specific MACs to fixed IPs within this subnet, bypassing dynamic allocation.
                   items:
-                    description: StaticLease pins a MAC address to a fixed IP within the subnet, bypassing dynamic allocation.
+                    description: |-
+                      StaticLease pins a client to a fixed IP within the subnet, bypassing dynamic allocation.
+                      Exactly one of MAC or ClientId must be set; the admission webhook enforces this.
                     properties:
+                      clientId:
+                        description: |-
+                          ClientId is the DHCP client identifier (option 61) as a lowercase hex string.
+                          Mutually exclusive with MAC.
+                        type: string
                       hostname:
                         description: Hostname is the optional hostname to include in the DHCP offer (option 12).
                         type: string
                       ip:
-                        description: IP is the fixed IPv4 address to offer to this MAC.
+                        description: IP is the fixed IPv4 address to offer to this client.
                         format: ipv4
                         type: string
                       mac:
-                        description: MAC is the hardware address of the client, e.g. "00:11:22:33:44:55".
+                        description: |-
+                          MAC is the hardware address of the client, e.g. "00:11:22:33:44:55".
+                          Mutually exclusive with ClientId.
                         pattern: ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$
                         type: string
                     required:
                       - ip
-                      - mac
                     type: object
                   type: array
               required:
