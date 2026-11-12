@@ -1,0 +1,596 @@
+#!/usr/bin/env bash
+# Focused failure paths; source the real engine without executing main.
+set -euo pipefail
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+source "$ROOT/cutover-ddo.sh"
+declare -F print_rollback_plan >/dev/null
+trap 'rm -rf "$TMP"' EXIT
+passed=0; failed=0
+test_case() {
+  local name=$1; shift
+  if ( set -e; "$@" ) >"$TMP/result" 2>&1; then
+    echo "PASS: $name"; passed=$((passed+1))
+  else
+    echo "FAIL: $name"; /usr/bin/tee /dev/null < "$TMP/result"; failed=$((failed+1))
+  fi
+}
+reject() {
+  local rc=0
+  ( "$@" ) >"$TMP/reject" 2>&1 || rc=$?
+  [[ $rc -ne 0 && $rc -ne 127 ]]
+}
+defaults() {
+  OPERATOR=ipam-capi-remote; CLUSTER=m-qa-de-200; TARGET_CTX=shoot; SEED_CTX=seed
+  NAMESPACE=cp; RELEASE=legacy; DDO_CR=new; DEPLOY=controller
+  OWNED_BY_LABEL=dual-deployment-operator.cc.sap/owned-by
+  CRD_GROUPS=ipam.cluster.x-k8s.io; PROTECT_MRS=''; NAMESPACE_CASCADE_GATE=off
+  BASELINE_SNAPSHOT_KINDS_CLUSTER=''; BASELINE_SNAPSHOT_KINDS_NS=globalinclusterippools.ipam.cluster.x-k8s.io
+  DRY_RUN=false; RESUME=false; PHASE=uninstall; OUTAGE_BUDGET_MIN=20
+  STATE_DIR="$TMP/state-$RANDOM"; mkdir -p "$STATE_DIR"
+}
+bad_capture() { defaults; kt() { echo '{"kind":"List","items":[]}'; return 1; }; reject snapshot_baseline; }
+bad_list() { defaults; reject parse_deletion_timestamps '{"items":{}}' pools; }
+empty_crds() { defaults; kt() { echo '{"apiVersion":"v1","kind":"List","items":[]}'; }; reject preflight_crds_on_target; }
+missing_epoch() { defaults; reject check_outage_budget; }
+partial_rollback() {
+  defaults; PROTECT_MRS=adopted-data
+  obj_state() { echo found; }; ks() { echo '{}'; }
+  print_rollback_plan partial >"$TMP/rollback"
+  ! grep -Eq 'delete ddo|label ns|helm install|replicas=1' "$TMP/rollback"
+}
+unknown_rollback() {
+  defaults; obj_state() { echo found; }; ks() { return 1; }
+  print_rollback_plan unknown >"$TMP/rollback"
+  grep -q 'S0' "$TMP/rollback" && ! grep -q 'delete ddo' "$TMP/rollback"
+}
+missing_baseline() { defaults; reject verify_baseline; }
+missing_readiness() { defaults; READINESS_EVIDENCE=''; FREEZE_EVIDENCE=''; reject require_manual_contracts; }
+missing_freeze() { defaults; FREEZE_EVIDENCE=''; reject require_freeze; }
+epoch_boundary() {
+  defaults; OUTAGE_BUDGET_MIN=1
+  printf '1000\n' > "$STATE_DIR/uninstall-epoch"
+  date() { echo 1060; }
+  local rc=0; (check_outage_budget) || rc=$?
+  [[ $rc -eq 30 ]]
+}
+process_bound() {
+  defaults
+  local rc=0
+  evidence run 0.1 python3 -c 'import time; time.sleep(3)' || rc=$?
+  [[ $rc -eq 124 ]]
+}
+lock_conflict() {
+  defaults; STATE_DIR_OVERRIDE="$STATE_DIR/root"; mkdir -p "$STATE_DIR_OVERRIDE/.lock"
+  reject init_state_dir
+  [[ -d "$STATE_DIR_OVERRIDE/.lock" ]]
+}
+resume_contract() {
+  defaults; STATE_DIR_OVERRIDE="$STATE_DIR/root"
+  init_state_dir
+  mkdir "$STATE_DIR/evidence"; cp "$STATE_DIR/identity.json" "$STATE_DIR/evidence/identity.json"; evidence seal "$STATE_DIR/evidence"
+  release_lock; LOCK_DIR=''
+  reject init_state_dir
+  RESUME=true; init_state_dir; release_lock; LOCK_DIR=''
+  RELEASE=another-release; reject init_state_dir
+}
+dryrun_isolation() {
+  defaults; STATE_DIR_OVERRIDE="$STATE_DIR/root"
+  init_state_dir; local active=$STATE_DIR; release_lock; LOCK_DIR=''
+  DRY_RUN=true; init_state_dir
+  [[ "$STATE_DIR" != "$active" && "$STATE_DIR" == */rehearsals/* && -f "$active/identity.json" ]]
+}
+tampered_baseline() {
+  defaults; mkdir "$STATE_DIR/evidence"; echo '{}' > "$STATE_DIR/evidence/fixture.json"
+  evidence seal "$STATE_DIR/evidence"
+  chmod u+w "$STATE_DIR/evidence/fixture.json"; echo '[]' > "$STATE_DIR/evidence/fixture.json"
+  reject verify_baseline
+}
+known_pool_invariant() {
+  defaults
+  printf '%s\n' '{"apiVersion":"v1","kind":"List","items":[]}' > "$STATE_DIR/pools.json"
+  reject evidence baseline "$STATE_DIR/pools.json" ipam-known-two
+}
+keep_readback() {
+  defaults; ks() { echo '{"kind":"ManagedResource","metadata":{"name":"protected","annotations":{"meta.helm.sh/release-name":"legacy"}},"spec":{"keepObjects":false}}'; }
+  reject assert_protected_mr protected
+}
+wrong_owner() {
+  defaults
+  printf '%s\n' '{"kind":"Deployment","metadata":{"uid":"u","generation":2,"labels":{"dual-deployment-operator.cc.sap/owned-by":"foreign"}},"spec":{"replicas":2},"status":{"observedGeneration":2,"readyReplicas":2,"availableReplicas":2,"updatedReplicas":2}}' > "$STATE_DIR/deploy.json"
+  reject evidence healthy "$STATE_DIR/deploy.json" deployment intended-owner
+}
+stale_cr() {
+  defaults
+  printf '%s\n' '{"kind":"DualDeploymentOperator","metadata":{"uid":"u","generation":2},"status":{"conditions":[{"type":"Ready","status":"True","observedGeneration":1}]}}' > "$STATE_DIR/cr.json"
+  reject evidence healthy "$STATE_DIR/cr.json" cr
+}
+failed_uninstall_epoch() {
+  defaults
+  hs() { case "$1" in status) return 0;; uninstall) [[ -s "$STATE_DIR/uninstall-epoch" ]] || return 99; echo called > "$STATE_DIR/uninstall-called"; return 1;; esac; }
+  obj_state() { echo absent; }; require_manual_contracts() { :; }
+  capture_evidence() { :; }; preflight() { :; }; verify_baseline() { :; }
+  confirm_token() { :; }; recheck_preservation() { :; }
+  reject phase_uninstall
+  [[ -s "$STATE_DIR/uninstall-epoch" && -f "$STATE_DIR/uninstall-called" ]]
+}
+repeat_partial_uninstall() {
+  defaults; RESUME=true; date +%s > "$STATE_DIR/uninstall-epoch"
+  mkdir "$STATE_DIR/evidence"; echo '{}' > "$STATE_DIR/evidence/fixture.json"; evidence seal "$STATE_DIR/evidence"
+  hs() { case "$1" in status) return 0;; uninstall) echo unsafe > "$STATE_DIR/unsafe";; esac; }
+  obj_state() { echo absent; }; require_manual_contracts() { :; }
+  capture_evidence() { echo unsafe > "$STATE_DIR/unsafe"; }
+  reject phase_uninstall
+  [[ ! -e "$STATE_DIR/unsafe" ]]
+}
+teardown_parser_failure() {
+  defaults; date +%s > "$STATE_DIR/uninstall-epoch"
+  ks() { echo '{"apiVersion":"v1","kind":"List","items":{}}'; }
+  reject wait_for_old_release_gone
+}
+missing_archive() {
+  defaults; LEGACY_CHART_ARCHIVE=''; hs() { echo '[]'; }
+  reject capture_evidence
+  [[ ! -d "$STATE_DIR/evidence" ]]
+}
+baseline_no_overwrite() {
+  defaults
+  local file="$STATE_DIR/baseline.json"
+  echo original > "$file"
+  kt() { echo '{"apiVersion":"v1","kind":"List","items":[]}'; }
+  reject capture_json "$file" kt
+  [[ $(< "$file") == original ]]
+}
+readonly_before_freeze() {
+  defaults; FREEZE_EVIDENCE=''
+  preflight_target_connection() { :; }; preflight_crds_on_target() { :; }; preflight_mr_keepobjects() { :; }
+  preflight_namespace_cascade() { echo unsafe > "$STATE_DIR/unsafe"; }
+  preflight_protect_mrs() { :; }; preflight_freeze_gate() { :; }; preflight_ddo_prereqs() { :; }
+  reject preflight
+  [[ ! -e "$STATE_DIR/unsafe" ]]
+}
+fixtures() {
+  run_identity > "$STATE_DIR/identity.json"
+  python3 "$ROOT/tests/safety_fixtures.py" "$STATE_DIR"
+  FREEZE_EVIDENCE="$STATE_DIR/freeze.json"; READINESS_EVIDENCE="$STATE_DIR/readiness.json"
+  LEGACY_CHART_ARCHIVE="$STATE_DIR/legacy.tgz"; LEGACY_CHART_DIR=system/ipam-capi-remote
+}
+readiness_contracts() {
+  defaults; fixtures
+  require_manual_contracts
+  jq '.ddoHTTPFetchVerified = false' "$READINESS_EVIDENCE" > "$STATE_DIR/bad.json"
+  READINESS_EVIDENCE="$STATE_DIR/bad.json"
+  reject require_manual_contracts
+}
+dryrun_cannot_certify() {
+  defaults; fixtures
+  jq '.dryRun = true' "$READINESS_EVIDENCE" > "$STATE_DIR/bad.json"
+  READINESS_EVIDENCE="$STATE_DIR/bad.json"
+  reject require_manual_contracts
+}
+missing_render() {
+  defaults; fixtures; rm "$STATE_DIR/seedRender.json"
+  reject require_manual_contracts
+}
+missing_restore_contract() {
+  defaults; fixtures
+  jq 'del(.restoreOnInterruption)' "$FREEZE_EVIDENCE" > "$STATE_DIR/bad.json"
+  FREEZE_EVIDENCE="$STATE_DIR/bad.json"
+  reject require_freeze
+}
+valid_capture() {
+  defaults; fixtures
+  hs() {
+    case "$1 $2" in
+      'list -a') /usr/bin/tee /dev/null < "$STATE_DIR/releases.json";;
+      'get values') echo '{}';;
+      'get manifest') /usr/bin/tee /dev/null < "$STATE_DIR/manifest.json";;
+      *) return 1;;
+    esac
+  }
+  ks() {
+    case "$1" in
+      create) /usr/bin/tee /dev/null < "$STATE_DIR/manifest.json";;
+      get) /usr/bin/tee /dev/null < "$STATE_DIR/mrs.json";;
+      *) return 1;;
+    esac
+  }
+  ks_global() { /usr/bin/tee /dev/null < "$STATE_DIR/controllers.json"; }
+  kt() {
+    case "$1 $2" in
+      'get crd'|'create --dry-run=client') /usr/bin/tee /dev/null < "$STATE_DIR/crds.json";;
+      'get globalinclusterippools.ipam.cluster.x-k8s.io') /usr/bin/tee /dev/null < "$STATE_DIR/pools.json";;
+      *) return 1;;
+    esac
+  }
+  require_manual_contracts
+  capture_evidence
+  evidence check "$STATE_DIR/evidence"
+  [[ $(jq -r '.metadata.namespace' "$STATE_DIR/evidence/ddo-controller.json") == actual-system ]]
+  [[ $(jq -r '.spec.replicas' "$STATE_DIR/evidence/ddo-controller.json") == 3 ]]
+  reject capture_evidence
+}
+missing_embedded_secret() {
+  defaults; fixtures
+  jq '.items |= map(select(.kind != "Secret"))' "$STATE_DIR/manifest.json" > "$STATE_DIR/bad.json"
+  reject evidence embedded-crds "$STATE_DIR/bad.json"
+}
+missing_expected_crd() {
+  defaults; fixtures
+  echo '{"kind":"List","apiVersion":"v1","items":[]}' > "$STATE_DIR/empty.json"
+  reject evidence crd-coverage "$STATE_DIR/crds.json" "$STATE_DIR/empty.json"
+}
+reappeared_release() {
+  defaults; hs() { echo 'STATUS: deployed'; }
+  reject assert_legacy_absent
+}
+real_object_classifier() {
+  defaults
+  unreadable() { echo 'exec: login-helper not found' >&2; return 1; }
+  missing_kind() { echo "the server doesn't have a resource type" >&2; return 1; }
+  missing_object() { echo 'Error from server (NotFound): deployments "x" not found' >&2; return 1; }
+  [[ $(obj_state unreadable get deployment x) == error ]]
+  [[ $(obj_state missing_kind get deployment x) == error ]]
+  [[ $(obj_state missing_object get deployment x) == absent ]]
+}
+crd_mrs_prefix_fallback() {
+  # Empty CRD_MRS -> derive from the mr-crd-* legacy naming (the 4 existing profiles).
+  defaults; fixtures
+  [[ "$(evidence crd-mrs "$STATE_DIR/manifest.json")" == mr-crd-pools ]]
+}
+crd_mrs_explicit_authoritative() {
+  # Explicit name (disco) is authoritative; a present non-mr-crd MR resolves by name.
+  defaults; fixtures
+  cat > "$STATE_DIR/disco-manifest.json" <<'JSON'
+{"apiVersion":"v1","kind":"List","items":[
+ {"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource",
+  "metadata":{"name":"disco-remote-crd","namespace":"cp","annotations":{"meta.helm.sh/release-name":"disco-remote"}},
+  "spec":{"keepObjects":true,"secretRefs":[{"name":"disco-remote-crd"}]}},
+ {"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource",
+  "metadata":{"name":"disco-remote-rbac","namespace":"cp","annotations":{"meta.helm.sh/release-name":"disco-remote"}},
+  "spec":{"keepObjects":false,"secretRefs":[{"name":"disco-remote-rbac"}]}}
+]}
+JSON
+  [[ "$(evidence crd-mrs "$STATE_DIR/disco-manifest.json" disco-remote-crd)" == disco-remote-crd ]]
+}
+crd_mrs_explicit_absent_blocks() {
+  # Explicit name that is not present in the manifest fails closed (never prefix-falls-back).
+  defaults; fixtures
+  reject evidence crd-mrs "$STATE_DIR/manifest.json" nonexistent-crd-mr
+}
+crd_mrs_explicit_duplicate_blocks() {
+  defaults; fixtures
+  reject evidence crd-mrs "$STATE_DIR/manifest.json" mr-crd-pools mr-crd-pools
+}
+crd_mrs_empty_no_prefix_blocks() {
+  # No explicit names AND no mr-crd-* MRs -> empty inventory, fail closed.
+  defaults; fixtures
+  echo '{"apiVersion":"v1","kind":"List","items":[{"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource","metadata":{"name":"disco-remote-rbac","namespace":"cp"},"spec":{"keepObjects":false}}]}' > "$STATE_DIR/no-crd-mr.json"
+  reject evidence crd-mrs "$STATE_DIR/no-crd-mr.json"
+}
+crd_mrs_explicit_embedded_extraction() {
+  # embedded-crds honors the explicit name: extracts the CRD payload from the named MR Secret.
+  defaults; fixtures
+  cat > "$STATE_DIR/disco-embed.json" <<'JSON'
+{"apiVersion":"v1","kind":"List","items":[
+ {"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource",
+  "metadata":{"name":"disco-remote-crd","namespace":"cp","annotations":{"meta.helm.sh/release-name":"disco-remote"}},
+  "spec":{"keepObjects":true,"secretRefs":[{"name":"disco-crd-secret"}]}},
+ {"apiVersion":"v1","kind":"Secret","metadata":{"name":"disco-crd-secret","namespace":"cp"},
+  "data":{"crd.yaml":"a2luZDogQ3VzdG9tUmVzb3VyY2VEZWZpbml0aW9u"}}
+]}
+JSON
+  [[ "$(evidence embedded-crds "$STATE_DIR/disco-embed.json" disco-remote-crd)" == *CustomResourceDefinition* ]]
+}
+crd_mrs_wildcard_rejected() {
+  # A CRD_MRS value of "*" must be rejected as an invalid name, never glob-expanded
+  # against the local filesystem (even when matching filenames exist in CWD).
+  defaults
+  local probe="$TMP/glob-probe-$RANDOM"; mkdir -p "$probe"
+  : > "$probe/disco-remote-crd"; : > "$probe/mr-crd-pools"
+  ( cd "$probe"; CRD_MRS='*'; reject validate_crd_mrs )
+}
+teardown_deploy_read_error_blocks() {
+  # Deployment read that is NOT a genuine server-side NotFound (auth/transport) must
+  # NOT clear the barrier. With no MRs and no pods, a credential-helper error on the
+  # Deployment read must keep the barrier blocked (fail-closed), not succeed.
+  defaults; date +%s > "$STATE_DIR/uninstall-epoch"
+  mkdir -p "$STATE_DIR/evidence"; printf 'disco-remote-crd\n' > "$STATE_DIR/evidence/crd-mrs.txt"
+  ks() {
+    case "$2" in
+      managedresource) echo '{"apiVersion":"v1","kind":"List","items":[]}';;
+      pods) echo '{"apiVersion":"v1","kind":"List","items":[]}';;
+      deployment) echo 'error: exec: executable credential-helper not found' >&2; return 1;;
+    esac
+  }
+  # Drive loop termination through the REAL check_outage_budget: budget positive on the
+  # first pass, exhausted on the next -> real exit 30. File-based counter survives any
+  # subshell; sleep is a no-op in tests.
+  printf '%s' "$(( $(date +%s) - 1 ))" > "$STATE_DIR/uninstall-epoch"
+  OUTAGE_BUDGET_MIN=1
+  : > "$STATE_DIR/rs.count"
+  remaining_seconds() { local c; c=$(wc -l < "$STATE_DIR/rs.count"); echo x >> "$STATE_DIR/rs.count"; [[ $c -ge 2 ]] && echo 0 || echo 30; }
+  sleep() { :; }
+  assert_legacy_absent() { : > "$STATE_DIR/CLEARED"; }
+  reject wait_for_old_release_gone
+  [[ ! -e "$STATE_DIR/CLEARED" ]]
+}
+teardown_sealed_crdmr_blocks() {
+  # A CRD MR still present (Terminating) whose release annotation was stripped/changed
+  # must remain visible via the sealed crd-mrs.txt inventory and block the barrier.
+  defaults; date +%s > "$STATE_DIR/uninstall-epoch"
+  mkdir -p "$STATE_DIR/evidence"; printf 'disco-remote-crd\n' > "$STATE_DIR/evidence/crd-mrs.txt"
+  ks() {
+    case "$2" in
+      managedresource) echo '{"apiVersion":"v1","kind":"List","items":[{"apiVersion":"resources.gardener.cloud/v1alpha1","kind":"ManagedResource","metadata":{"name":"disco-remote-crd","namespace":"cp","deletionTimestamp":"2026-01-01T00:00:00Z","annotations":{}}}]}';;
+      pods) echo '{"apiVersion":"v1","kind":"List","items":[]}';;
+      deployment) return 1;;
+    esac
+  }
+  obj_state() { echo absent; }
+  printf '%s' "$(( $(date +%s) - 1 ))" > "$STATE_DIR/uninstall-epoch"
+  OUTAGE_BUDGET_MIN=1
+  : > "$STATE_DIR/rs.count"
+  remaining_seconds() { local c; c=$(wc -l < "$STATE_DIR/rs.count"); echo x >> "$STATE_DIR/rs.count"; [[ $c -ge 2 ]] && echo 0 || echo 30; }
+  sleep() { :; }
+  assert_legacy_absent() { : > "$STATE_DIR/CLEARED"; }
+  reject wait_for_old_release_gone
+  [[ ! -e "$STATE_DIR/CLEARED" ]]
+}
+baseline_crd_not_established_blocks() {
+  # A surviving CRD with the correct uid but Established!=True must fail verify_baseline:
+  # object survival alone is insufficient; its API must be served for adoption. The
+  # matching-uid baseline + sealed identity ensure the run reaches the Established check
+  # (not an earlier identity/checksum abort), so the assertion exercises the real gate.
+  defaults
+  BASELINE_SNAPSHOT_KINDS_CLUSTER=''; BASELINE_SNAPSHOT_KINDS_NS=''
+  NAMESPACE_CASCADE_GATE=off
+  run_identity > "$STATE_DIR/identity.json"
+  mkdir -p "$STATE_DIR/evidence"
+  cp "$STATE_DIR/identity.json" "$STATE_DIR/evidence/identity.json"
+  cat > "$STATE_DIR/evidence/baseline-crds.json" <<'JSON'
+{"apiVersion":"v1","kind":"List","items":[{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","namespace":"_cluster","uid":"uid-123"}}]}
+JSON
+  evidence seal "$STATE_DIR/evidence"
+  # (1) Established=False must fail.
+  kt() { echo '{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","uid":"uid-123"},"status":{"conditions":[{"type":"Established","status":"False"}]}}'; }
+  reject verify_baseline || return 1
+  # (2) Missing Established condition must fail.
+  kt() { echo '{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","uid":"uid-123"},"status":{"conditions":[{"type":"NamesAccepted","status":"True"}]}}'; }
+  reject verify_baseline || return 1
+  # (3) Established=True with the SAME fixture must pass — proves the gate is specific
+  # to the Established status, not an unrelated abort.
+  kt() { echo '{"apiVersion":"apiextensions.k8s.io/v1","kind":"CustomResourceDefinition","metadata":{"name":"records.disco.stable.sap.cc","uid":"uid-123"},"status":{"conditions":[{"type":"Established","status":"True"}]}}'; }
+  verify_baseline
+}
+
+helm_output_flag_equals_form() {
+  # u8s mangles helm args when a flag VALUE is passed as a separate word
+  # (e.g. `-o json`): the trailing word is consumed/reordered so helm sees a
+  # bare `-o`. Only the =-joined form (`-o=json`) survives. kubectl via u8s is
+  # unaffected. Guard that every helm (hs) call in capture_evidence passes
+  # output format as `-o=json`, never `-o json`, by routing hs through a fake
+  # u8s that rejects the space form exactly like the real tool.
+  defaults; fixtures
+  u8s() {
+    # Reject a bare `-o`/`--output` whose value is a separate following word,
+    # mimicking the real u8s helm quirk. Scan the forwarded argv.
+    local a
+    for a in "$@"; do
+      case "$a" in
+        -o|--output) echo "Error: flag needs an argument: 'o' in -o" >&2; return 1;;
+      esac
+    done
+    # Serve the captures hs needs (release list, values, manifest).
+    case " $* " in
+      *" list "*)        /usr/bin/tee /dev/null < "$STATE_DIR/releases.json";;
+      *" get values "*)  echo '{}';;
+      *" get manifest "*) /usr/bin/tee /dev/null < "$STATE_DIR/manifest.json";;
+      *) return 0;;
+    esac
+  }
+  hs() { u8s helm "$@"; }
+  ks() {
+    case "$1" in
+      create) /usr/bin/tee /dev/null < "$STATE_DIR/manifest.json";;
+      get) /usr/bin/tee /dev/null < "$STATE_DIR/mrs.json";;
+      *) return 1;;
+    esac
+  }
+  ks_global() { /usr/bin/tee /dev/null < "$STATE_DIR/controllers.json"; }
+  kt() {
+    case "$1 $2" in
+      'get crd'|'create --dry-run=client') /usr/bin/tee /dev/null < "$STATE_DIR/crds.json";;
+      'get globalinclusterippools.ipam.cluster.x-k8s.io') /usr/bin/tee /dev/null < "$STATE_DIR/pools.json";;
+      *) return 1;;
+    esac
+  }
+  require_manual_contracts
+  capture_evidence
+  evidence check "$STATE_DIR/evidence"
+}
+
+test_case 'helm output flag uses =-joined form (survives u8s space-form bug)' helm_output_flag_equals_form
+
+# ============================================================================
+# NO_CRDS mode tests
+# ============================================================================
+
+# (a) NO_CRDS unset + empty CRD_GROUPS still dies (unchanged behaviour)
+no_crds_unset_empty_groups_dies() {
+  defaults
+  # Create a temp profile with empty CRD_GROUPS and NO_CRDS unset
+  local tdir; tdir=$(mktemp -d "$TMP/profile-a.XXXXXX")
+  cat > "$tdir/no-crds-unset.env" <<'ENVEOF'
+RELEASE=no-crds-unset; DDO_CR=no-crds-unset; LEGACY_CHART_DIR=system/test
+ROLLOUT_ORDER=99; DEPLOY=test-controller; CONTROLLER_POD_SELECTOR=app=test
+CRD_GROUPS=""; NAMESPACE_CASCADE_GATE=off; OWNED_BY_LABEL=dual-deployment-operator.cc.sap/owned-by
+ENVEOF
+  OPERATOR=no-crds-unset; PROFILES_DIR="$tdir"
+  reject load_profile
+}
+
+# (b1) NO_CRDS=1 + CRD_GROUPS set -> dies (ambiguity guard)
+no_crds_with_groups_set_dies() {
+  defaults
+  local tdir; tdir=$(mktemp -d "$TMP/profile-b1.XXXXXX")
+  cat > "$tdir/bad-no-crds.env" <<'ENVEOF'
+RELEASE=bad-no-crds; DDO_CR=bad-no-crds; LEGACY_CHART_DIR=system/test
+ROLLOUT_ORDER=99; DEPLOY=test-controller; CONTROLLER_POD_SELECTOR=app=test
+NO_CRDS=1; CRD_GROUPS="some.group.example.com"
+NAMESPACE_CASCADE_GATE=off; OWNED_BY_LABEL=dual-deployment-operator.cc.sap/owned-by
+ENVEOF
+  OPERATOR=bad-no-crds; PROFILES_DIR="$tdir"
+  reject load_profile
+}
+
+# (b2) NO_CRDS=1 + CRD_MRS set -> dies (ambiguity guard)
+no_crds_with_crd_mrs_set_dies() {
+  defaults
+  local tdir; tdir=$(mktemp -d "$TMP/profile-b2.XXXXXX")
+  cat > "$tdir/bad-no-crds2.env" <<'ENVEOF'
+RELEASE=bad-no-crds2; DDO_CR=bad-no-crds2; LEGACY_CHART_DIR=system/test
+ROLLOUT_ORDER=99; DEPLOY=test-controller; CONTROLLER_POD_SELECTOR=app=test
+NO_CRDS=1; CRD_GROUPS=""; CRD_MRS="mr-crd-something"
+NAMESPACE_CASCADE_GATE=off; OWNED_BY_LABEL=dual-deployment-operator.cc.sap/owned-by
+ENVEOF
+  OPERATOR=bad-no-crds2; PROFILES_DIR="$tdir"
+  reject load_profile
+}
+
+# (c1) check_mr_coverage is a no-op under NO_CRDS=1 (does not die on empty inventory)
+no_crds_check_mr_coverage_skipped() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  local live='{"apiVersion":"v1","kind":"List","items":[]}'
+  # Without NO_CRDS=1 this would die ("Legacy manifest has no required CRD MR inventory")
+  # because evidence/crd-mrs.txt is absent. With NO_CRDS=1 it must return 0.
+  check_mr_coverage "$live"
+}
+
+# (c2) capture_baselines under NO_CRDS=1 writes empty baseline-crds.json without
+#      querying kt for CRDs (no kt calls at all)
+no_crds_capture_baselines_no_crd_queries() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  BASELINE_SNAPSHOT_KINDS_CLUSTER=''; BASELINE_SNAPSHOT_KINDS_NS=''
+  local dir="$STATE_DIR/baselines-test"; mkdir -p "$dir"
+  local kt_called=0
+  kt() { kt_called=1; echo '{"apiVersion":"v1","kind":"List","items":[]}'; }
+  capture_baselines "$dir"
+  # Must have written an empty valid List
+  jq -e '.items | length == 0' "$dir/baseline-crds.json" >/dev/null || return 1
+  # kt must NOT have been called (no CRD queries)
+  [[ $kt_called -eq 0 ]]
+}
+
+# (c3) verify_baseline under NO_CRDS=1 with empty baseline-crds.json passes
+#      (no CRD uid checks, no Established checks)
+no_crds_verify_baseline_empty_crds_passes() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  BASELINE_SNAPSHOT_KINDS_CLUSTER=''; BASELINE_SNAPSHOT_KINDS_NS=''
+  NAMESPACE_CASCADE_GATE=off
+  run_identity > "$STATE_DIR/identity.json"
+  mkdir -p "$STATE_DIR/evidence"
+  cp "$STATE_DIR/identity.json" "$STATE_DIR/evidence/identity.json"
+  printf '{"apiVersion":"v1","kind":"List","items":[]}\n' > "$STATE_DIR/evidence/baseline-crds.json"
+  evidence seal "$STATE_DIR/evidence"
+  # kt must NOT be called for CRD checks — use a kt that fails to ensure no CRD reads
+  kt() { echo 'kt called unexpectedly' >&2; return 1; }
+  verify_baseline
+}
+
+# (c4) preflight_crds_on_target is skipped under NO_CRDS=1
+no_crds_preflight_crd_target_skipped() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  kt_called=0
+  kt() { kt_called=$((kt_called+1)); echo '{"apiVersion":"v1","kind":"List","items":[]}'; }
+  preflight_crds_on_target
+  # kt should NOT have been called to list CRDs
+  [[ $kt_called -eq 0 ]]
+}
+
+# (c5) preflight_mr_keepobjects is skipped under NO_CRDS=1
+no_crds_preflight_mr_keepobjects_skipped() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  local ks_called=0
+  ks() { ks_called=$((ks_called+1)); echo '{"apiVersion":"v1","kind":"List","items":[]}'; }
+  preflight_mr_keepobjects
+  # ks should NOT have been called for MR keepObjects check
+  [[ $ks_called -eq 0 ]]
+}
+
+# (c6) NO_CRDS=1 is bound into run identity string
+no_crds_in_identity_string() {
+  defaults; NO_CRDS=1; CRD_GROUPS=''
+  local id
+  id=$(run_identity)
+  # The profileContract field must contain NO_CRDS=1
+  echo "$id" | jq -e '.profileContract | contains("NO_CRDS=1")' >/dev/null
+}
+
+# (c7) NO_CRDS unset => identity string does not contain NO_CRDS=1
+no_crds_absent_in_identity_when_unset() {
+  defaults  # defaults sets CRD_GROUPS=ipam.cluster.x-k8s.io, NO_CRDS unset
+  NO_CRDS=''
+  local id
+  id=$(run_identity)
+  # profileContract must NOT claim NO_CRDS=1 (it should end with |NO_CRDS=)
+  echo "$id" | jq -e '.profileContract | contains("NO_CRDS=1") | not' >/dev/null
+}
+
+test_case 'NO_CRDS unset + empty CRD_GROUPS still fails closed' no_crds_unset_empty_groups_dies
+test_case 'NO_CRDS=1 + CRD_GROUPS set is rejected (ambiguity guard)' no_crds_with_groups_set_dies
+test_case 'NO_CRDS=1 + CRD_MRS set is rejected (ambiguity guard)' no_crds_with_crd_mrs_set_dies
+test_case 'check_mr_coverage is no-op under NO_CRDS=1' no_crds_check_mr_coverage_skipped
+test_case 'capture_baselines NO_CRDS=1 writes empty-List baseline-crds without CRD queries' no_crds_capture_baselines_no_crd_queries
+test_case 'verify_baseline NO_CRDS=1 passes with empty baseline-crds (no CRD uid/Established checks)' no_crds_verify_baseline_empty_crds_passes
+test_case 'preflight_crds_on_target is skipped under NO_CRDS=1' no_crds_preflight_crd_target_skipped
+test_case 'preflight_mr_keepobjects is skipped under NO_CRDS=1' no_crds_preflight_mr_keepobjects_skipped
+test_case 'NO_CRDS=1 is bound into run identity string' no_crds_in_identity_string
+test_case 'NO_CRDS absent when unset in run identity string' no_crds_absent_in_identity_when_unset
+test_case 'legacy release reappearance blocks final verification' reappeared_release
+test_case 'real obj_state distinguishes object absence from read/kind errors' real_object_classifier
+test_case 'complete valid mocked evidence capture is sealed and cannot repeat' valid_capture
+test_case 'IPAM missing HTTP platform proof blocks readiness' readiness_contracts
+test_case 'dryrun cannot serve as execution readiness' dryrun_cannot_certify
+test_case 'missing actual seed render blocks readiness' missing_render
+test_case 'missing interruption restoration contract blocks freeze' missing_restore_contract
+test_case 'missing CRD MR referenced Secret blocks inventory extraction' missing_embedded_secret
+test_case 'empty CRD_MRS derives mr-crd-* prefix inventory (existing profiles)' crd_mrs_prefix_fallback
+test_case 'explicit CRD_MRS name is authoritative (disco non-mr-crd naming)' crd_mrs_explicit_authoritative
+test_case 'explicit CRD_MRS name absent from manifest fails closed' crd_mrs_explicit_absent_blocks
+test_case 'duplicate explicit CRD_MRS names blocked' crd_mrs_explicit_duplicate_blocks
+test_case 'no explicit names and no mr-crd-* MR fails closed' crd_mrs_empty_no_prefix_blocks
+test_case 'embedded-crds honors explicit CRD_MRS name extraction' crd_mrs_explicit_embedded_extraction
+test_case 'CRD_MRS wildcard is rejected not glob-expanded' crd_mrs_wildcard_rejected
+test_case 'teardown Deployment read error blocks (fail-closed)' teardown_deploy_read_error_blocks
+test_case 'teardown sealed CRD-MR inventory blocks relabeled terminating MR' teardown_sealed_crdmr_blocks
+test_case 'surviving CRD not Established=True blocks baseline' baseline_crd_not_established_blocks
+test_case 'missing exact legacy CRD blocks despite valid empty List' missing_expected_crd
+test_case 'capture cannot truncate existing evidence file' baseline_no_overwrite
+test_case 'direct preflight cannot patch before mandatory freeze' readonly_before_freeze
+test_case 'deadline expires at exact seconds boundary' epoch_boundary
+test_case 'whole-process auth latency is bounded' process_bound
+test_case 'active lock blocks concurrent invocation' lock_conflict
+test_case 'repeat and mismatched resume cannot overwrite evidence' resume_contract
+test_case 'dryrun evidence is isolated from active identity' dryrun_isolation
+test_case 'altered baseline fails checksum verification' tampered_baseline
+test_case 'IPAM known two pools cannot be absent' known_pool_invariant
+test_case 'keepObjects reverted readback blocks destruction' keep_readback
+test_case 'foreign nonempty owner does not pass health gate' wrong_owner
+test_case 'stale Ready=True does not pass CR gate' stale_cr
+test_case 'failed uninstall retains epoch recorded before invocation' failed_uninstall_epoch
+test_case 'resume of partial uninstall never repeats destructive work' repeat_partial_uninstall
+test_case 'teardown parser failure blocks handoff' teardown_parser_failure
+test_case 'missing exact legacy archive blocks capture' missing_archive
+test_case 'capture failure is fatal' bad_capture
+test_case 'invalid List blocks freeze parser' bad_list
+test_case 'empty required CRD inventory blocks' empty_crds
+test_case 'active verify requires epoch' missing_epoch
+test_case 'adopted-data rollback never offers delete/detach/install' partial_rollback
+test_case 'secondary read errors classify S0' unknown_rollback
+test_case 'missing baseline blocks verification' missing_baseline
+test_case 'missing readiness blocks execution' missing_readiness
+test_case 'missing freeze blocks execution' missing_freeze
+echo "$passed passed; $failed failed"
+[[ $failed -eq 0 ]]
