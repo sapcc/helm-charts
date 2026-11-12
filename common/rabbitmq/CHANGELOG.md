@@ -2,6 +2,11 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.26.2 - 2026/11/12
+
+- Add linkerd `skip-inbound-ports` annotation for the TLS listener port in the RabbitMQ statefulset, if enabled
+- Chart version bumped
+
 ## 0.26.1 - 2026/10/26
 
 - RabbitMQ [4.3.7 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.7)
