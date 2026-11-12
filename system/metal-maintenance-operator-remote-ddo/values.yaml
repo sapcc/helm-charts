@@ -24,6 +24,57 @@ fullnameOverride: metal-maintenance-operator
 mmo-core:
   # load-bearing: subchart fullname → "metal-maintenance-operator-controller-manager"
   fullnameOverride: metal-maintenance-operator
+  # -------------------------------------------------------------------------
+  # Controller manager — STATIC, region-generic wiring only.
+  #
+  # Rule of thumb: static + public-safe config lives here in the PUBLIC
+  # operand chart; static-but-SAP-internal config (keppel mirror image,
+  # internal URLs) and per-cluster config live in the kube-secrets CR
+  # (seedValues / shootValues / per-cluster overlay). Never set a default
+  # for manager.enabled — the CR drives it per mode.
+  #
+  # This block is consumed only by the seed render (where manager.enabled is
+  # flipped true by the CR). In shoot mode no Deployment renders, so the
+  # block is inert there.
+  # -------------------------------------------------------------------------
+  manager:
+    # Gardener seed NetworkPolicy is default-deny egress. These pod labels open
+    # the egress paths the seed-resident controller needs (DNS, private/public
+    # networks, runtime + kube apiserver, istio ingress). Static + region-generic,
+    # identical on every cluster — so they live here, NOT in the per-cluster CR.
+    pod:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    # Mount the Gardener token-requestor kubeconfig Secret (emitted seed-side by
+    # templates/remote-kubeconfig.yaml) at the in-cluster SA path, so the
+    # seed-resident controller authenticates to the shoot as
+    # metal-maintenance-operator-controller-manager. Paired with
+    # manager.envOverrides.KUBERNETES_SERVICE_HOST (per-cluster, set in the CR).
+    # Static mount — lives here, not the CR.
+    extraVolumes:
+      - name: remote-kubeconfig
+        secret:
+          secretName: metal-maintenance-operator-remote-kubeconfig
+          items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+    extraVolumeMounts:
+      - name: remote-kubeconfig
+        mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        readOnly: true
+    # envOverrides is a string-valued MAP that APPENDS to the subchart's default
+    # env list (preserving its POD_NAMESPACE fieldRef). Use this, never
+    # manager.env (the list form would clobber POD_NAMESPACE). The webhook is
+    # disabled (webhook.enable=false); this env mirrors the legacy controller.
+    envOverrides:
+      ENABLE_WEBHOOKS: "false"
   rbac:
     namespaced: false
     helpers:
