@@ -113,7 +113,7 @@ groups:
       severity: warning
       context: concourse
       support_group: lifecycle-management
-      meta: "Worker {{ $labels.name }} has a stale container metric."
+      meta: "Worker {{ $labels.worker }} has a stale container metric."
       persesDashboard: "https://perses.{{ $labels.region }}.cloud.sap/projects/lcm-monitoring/dashboards/concourse-web?var-cluster={{ $labels.cluster }}"
     annotations:
       description: "The workers container count seems to be stuck indicating that the worker might be stalled."
@@ -165,7 +165,7 @@ groups:
       summary: "Worker node workdir out of disk space in the near future"
 
   - alert: ConcourseWebDown
-    expr: up{job=~".*concourse-web.*"} == 0
+    expr: up{job=~"concourse-.*-web-prometheus"} == 0
     for: 5m
     labels:
       tier: ci
@@ -300,7 +300,10 @@ groups:
       summary: Concourse worker pod CPU exceeds request
 
   - alert: ConcourseOOMKill
-    expr: increase(kube_pod_container_status_last_terminated_reason{namespace="concourse", reason="OOMKilled"}[15m]) > 0
+    expr: |
+      increase(kube_pod_container_status_restarts_total{namespace="concourse"}[15m]) > 0
+      and on (region, cluster, namespace, pod, container)
+      kube_pod_container_status_last_terminated_reason{namespace="concourse", reason="OOMKilled"} == 1
     for: 0m
     labels:
       tier: ci
