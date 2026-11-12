@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Default iLO BMC settings for HPE ProLiant Gen12 models (iLO 7).
+# Applied via BMCSettingsSet after the BMC firmware reaches the target version.
+# Rendered as a Helm template via tpl — clusterConfig values are substituted at chart render time.
+#
+# Keys use the format "METHOD /redfish/endpoint" — the controller issues the
+# corresponding HTTP call and compares the current response against the desired body.
+# Multiple settings for the same endpoint are merged into a single JSON body.
+#
+# iLO 7 differences from iLO 6 (hpe-default.yaml):
+#   HTTP.Port in networkprotocol    -> read-only in iLO 7, removed
+#   FederationConfig in Managers/1  -> gone in iLO 7; MulticastDiscovery is Disabled by default
+#   RequiredLoginForiLORBSU         -> gone in iLO 7
+#   DisableWeakCiphers              -> gone in iLO 7
+#   SecurityState "Production"      -> not valid in iLO 7; replaced by "SecureStandard"
+#
+# Values sourced from: baremetal-config/hpe/*/bmc/defaultsettings.yml
+settingsFlow:
+- name: defaultSettings
+  priority: 10
+  settings:
+    {{- if .Values.clusterConfig.hpeLicenseSecretName }}
+    # License key — $(LicenseKey) fetched at reconcile time from the Secret named by clusterConfig.hpeLicenseSecretName.
+    "POST /redfish/v1/Managers/1/LicenseService/": '{"LicenseKey": "$(LicenseKey)"}'
+    {{- end }}
+    # Network protocol: IPMI, disable XML responses (HTTP port is read-only in iLO 7)
+    "PATCH /redfish/v1/managers/1/networkprotocol": '{"IPMI": {"ProtocolEnabled": true}, "Oem": {"Hpe": {"XMLResponseEnabled": false}}}'
+    # SNMP: disable SNMPv1, disable cold-start trap broadcast
+    "PATCH /redfish/v1/Managers/1/SnmpService": '{"SNMPv1Enabled": false, "Oem": {"Hpe": {"SNMPColdStartTrapBroadcast": false}}}'
+    # Account service: enforce password complexity
+    "PATCH /redfish/v1/accountservice": '{"Oem": {"Hpe": {"EnforcePasswordComplexity": true}}}'
+    # NTP servers
+    "PATCH /redfish/v1/Managers/1/DateTime": '{"StaticNTPServers": ["timehost1.global.cloud.sap", "timehost2.global.cloud.sap"]}'
+    # Security: SecureStandard is the iLO 7 equivalent of iLO 6 Production state
+    "PATCH /redfish/v1/Managers/1/SecurityService": '{"SecurityState": "SecureStandard"}'
+    # ServerFQDN — $(NodeName)r-$(BB) resolved at reconcile time from BMC labels (e.g. "node001r-bb098")
+    "PATCH /redfish/v1/systems/1": '{"Oem": {"Hpe": {"ServerFQDN": "$(NodeName)r-$(BB)"}}}'
+variables:
+  # BmcName: resolved from the BMCSettings object itself — used as the name for objectFieldRef lookups below.
+  - key: BmcName
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.bmcRef.name
+  # NodeName: short node name from BMC label (e.g. "node001").
+  - key: NodeName
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[kubernetes.metal.cloud.sap/nodename]
+  # BB: building block identifier from BMC label (e.g. "bb098").
+  - key: BB
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[kubernetes.metal.cloud.sap/bb]
+  # LicenseKey: iLO license fetched at reconcile time — secret name configured via Helm values.
+  {{- if .Values.clusterConfig.hpeLicenseSecretName }}
+  - key: LicenseKey
+    valueFrom:
+      secretKeyRef:
+        name: {{ .Values.clusterConfig.hpeLicenseSecretName }}
+        namespace: {{ .Values.clusterConfig.managedNamespace }}
+        key: licenseKey
+  {{- end }}
