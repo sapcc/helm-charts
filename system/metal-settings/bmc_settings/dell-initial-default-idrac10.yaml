@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Initial iDRAC BMC settings for Dell PowerEdge 17G (iDRAC10) models.
+# Applied via BMCSettingsSet before firmware update, as step 1 of the chain.
+# iDRAC10 uses different Redfish attribute paths from iDRAC9 (16G):
+#   IPv4Static.1.DNS1/DNS2       -> IPv4.1.StaticDNS1/StaticDNS2
+#   NIC.1.DNSRacName             -> Network.1.DNSRacName
+#   NIC.1.DNSDomainName          -> Network.1.StaticDNSDomainName
+#   NIC.1.DNSDomainNameFromDHCP  -> removed (no equivalent in iDRAC10)
+#
+# Values sourced from: baremetal-config/dell/*/bmc/defaultsettings.yml
+settingsFlow:
+- name: initialSettings
+  priority: 10
+  settings:
+    NTPConfigGroup.1.NTPEnable: "Enabled"
+    IPv6.1.Enable: "Disabled"
+    NTPConfigGroup.1.NTP1: "timehost1.global.cloud.sap"
+    NTPConfigGroup.1.NTP2: "timehost2.global.cloud.sap"
+    NTPConfigGroup.1.NTP3: "timehost3.global.cloud.sap"
+    IPv4.1.StaticDNS1: "147.204.9.200"
+    IPv4.1.StaticDNS2: "147.204.9.201"
+    Time.1.DayLightOffset: "0"
+    Time.1.Timezone: "UTC"
+    Time.1.TimeZoneOffset: "0"
+    # Per-BMC dynamic settings resolved at reconcile time via controller variables below.
+    # $(NodeName)r-$(BB) → e.g. "node003r-bb098" (matches inventory_hostname_short convention)
+    Network.1.DNSRacName: "$(NodeName)r-$(BB)"
+    # cc.$(Region).cloud.sap → e.g. "cc.qa-de-1.cloud.sap"
+    Network.1.StaticDNSDomainName: "cc.$(Region).cloud.sap"
+variables:
+  # BmcName: resolved from the BMCSettings object itself — used as the name for all objectFieldRef lookups below.
+  - key: BmcName
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.bmcRef.name
+  # NodeName: short node name from BMC label (e.g. "node003").
+  - key: NodeName
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[kubernetes.metal.cloud.sap/nodename]
+  # BB: building block identifier from BMC label (e.g. "bb098").
+  - key: BB
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[kubernetes.metal.cloud.sap/bb]
+  # Region: topology region from BMC label (e.g. "qa-de-1") — used to construct the DNS domain.
+  - key: Region
+    valueFrom:
+      objectFieldRef:
+        kind: BMC
+        name: $(BmcName)
+        fieldPath: metadata.labels[topology.kubernetes.io/region]
