@@ -2,7 +2,7 @@ groups:
 - name: kubelet-stats-metrics.alerts
   rules:
   - alert: PodEphemeralStorageUsage
-    expr: (kubelet_stats_ephemeral_storage_pod_usage / kubelet_stats_ephemeral_storage_pod_capacity >= 0.3) * on (pod_name) group_left (label_ccloud_support_group) (label_replace(kube_pod_labels, "pod_name", "$1", "pod", "(.*)"))
+    expr: label_replace((kubelet_stats_ephemeral_storage_pod_usage / kubelet_stats_ephemeral_storage_pod_capacity >= 0.3) * on (pod_name) group_left (label_ccloud_support_group) (label_replace(kube_pod_labels, "pod_name", "$1", "pod", "(.*)")), "pod", "$1", "pod_name", "(.*)")
     for: 1h
     labels:
       tier: k8s
