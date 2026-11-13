@@ -56,18 +56,15 @@
 
 "blocklist_projects": "'{{required ".Values.api.cloudAdminProjectId is missing" .Values.api.cloudAdminProjectId}}':%(target.project.id)s"
 
-# ccloud: DNS operational roles are managed separately from the main blocklist.
-# They can be assigned to any user/project (including tenant domains) but only
-# by cloud_admin, cloud_dns_admin, or cloud_dns_ops when scoped to the admin
-# project. dns_admin is obsolete and has been removed from the policy.
+# ccloud: dns ops roles are removed from the main blocklist so they can be
+# assigned by cloud_dns_admin/cloud_dns_ops without requiring cloud_admin.
+# domain/project admins remain blocked via dns_ops_roles in their grant rules.
+# dns_admin is obsolete (legacy pre-dns_* role) and has been removed entirely.
 "dns_ops_roles": "'dns_hostmaster':%(target.role.name)s or
   'dns_zonemaster':%(target.role.name)s or
   'dns_mailmaster':%(target.role.name)s"
 
-"dns_ops_role_assignor": "rule:cloud_admin or
-  ((role:cloud_dns_admin or role:cloud_dns_ops) and (is_admin_project:True or domain_id:default or system_scope:all))"
-
-"dns_ops_role_grant_ok": "not rule:dns_ops_roles or rule:dns_ops_role_assignor"
+"dns_admin_for_grants": "rule:dns_ops_roles and not rule:blocklist_projects and (role:cloud_dns_admin or role:cloud_dns_ops)"
 
 # Show access rule details.
 # GET  /v3/users/{user_id}/access_rules/{access_rule_id}
@@ -448,11 +445,11 @@
 "identity:remove_endpoint_group_from_project": "rule:cloud_admin"
 
 # grant-specific rules
-"domain_admin_for_grants": "(rule:domain_admin_for_global_role_grants or rule:domain_admin_for_domain_role_grants) and not rule:blocklist_roles and not rule:blocklist_projects"
+"domain_admin_for_grants": "(rule:domain_admin_for_global_role_grants or rule:domain_admin_for_domain_role_grants) and not rule:blocklist_roles and not rule:dns_ops_roles and not rule:blocklist_projects"
 "domain_admin_for_global_role_grants": "rule:admin_required and None:%(target.role.domain_id)s and rule:domain_admin_grant_match"
 "domain_admin_for_domain_role_grants": "rule:admin_required and domain_id:%(target.role.domain_id)s and rule:domain_admin_grant_match"
 "domain_admin_grant_match": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s"
-"project_admin_for_grants": "(rule:project_admin_for_global_role_grants or rule:project_admin_for_domain_role_grants) and not rule:blocklist_roles and not rule:blocklist_projects"
+"project_admin_for_grants": "(rule:project_admin_for_global_role_grants or rule:project_admin_for_domain_role_grants) and not rule:blocklist_roles and not rule:dns_ops_roles and not rule:blocklist_projects"
 "project_admin_for_global_role_grants": "(rule:admin_required or role:role_admin) and None:%(target.role.domain_id)s and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s)"
 "project_admin_for_domain_role_grants": "(rule:admin_required or role:role_admin) and project_domain_id:%(target.role.domain_id)s and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s)"
 "domain_admin_for_list_grants": "rule:admin_required and rule:domain_admin_grant_match"
@@ -481,7 +478,7 @@
 # GET  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:check_grant": "(role:reader and system_scope:all) or ((role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:reader and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants"
+"identity:check_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:dns_admin_for_grants or rule:project_admin_for_grants"
 
 # List roles granted to an actor on a target. A target can be either a
 # domain or a project. An actor can be either a user or a group. For
@@ -517,7 +514,7 @@
 # PUT  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:create_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:create_grant": "(rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants) and rule:dns_ops_role_grant_ok"
+"identity:create_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:dns_admin_for_grants or rule:project_admin_for_grants"
 
 # Revoke a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
@@ -536,7 +533,7 @@
 # DELETE  /v3/OS-INHERIT/domains/{domain_id}/groups/{group_id}/roles/{role_id}/inherited_to_projects
 # Intended scope(s): system, domain
 #"identity:revoke_grant": "(role:admin and system_scope:all) or ((role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.user.domain_id)s and domain_id:%(target.domain.id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.project.domain_id)s) or (role:admin and domain_id:%(target.group.domain_id)s and domain_id:%(target.domain.id)s)) and (domain_id:%(target.role.domain_id)s or None:%(target.role.domain_id)s)"
-"identity:revoke_grant": "(rule:cloud_admin or rule:domain_admin_for_grants or rule:project_admin_for_grants) and rule:dns_ops_role_grant_ok"
+"identity:revoke_grant": "rule:cloud_admin or rule:domain_admin_for_grants or rule:dns_admin_for_grants or rule:project_admin_for_grants"
 
 # List all grants a specific user has on the system.
 # ['HEAD', 'GET']  /v3/system/users/{user_id}/roles
