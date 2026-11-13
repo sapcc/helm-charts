@@ -1,0 +1,64 @@
+---
+# Linkerd TLS listener annotations for the RabbitMQ pod template.
+#
+# When Linkerd is enabled (global.linkerd_enabled and global.linkerd_requested,
+# plus linkerd.enabled in this chart) and SSL is enabled (enableSsl), the pod
+# template must skip inbound traffic on the AMQPS port so the linkerd proxy
+# does not terminate TLS. This must hold for both the Deployment variant and
+# the StatefulSet variant of the workload.
+#
+# Regression coverage: both workload variants must render the annotation.
+#
+# NOTE: bin-configmap.yaml must be listed here because both workload templates
+# use `include` to compute a checksum of its rendered content at template time.
+suite: linkerd TLS listener annotations
+values:
+  - ../ci/test-values.yaml
+set:
+  global.linkerd_enabled: true
+  global.linkerd_requested: true
+release:
+  name: testrelease
+  namespace: testnamespace
+templates:
+  - deployment.yaml
+  - statefulset.yaml
+  - bin-configmap.yaml
+tests:
+  - it: Deployment skips inbound AMQPS port when Linkerd and SSL are enabled
+    template: deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.metadata.annotations["config.linkerd.io/skip-inbound-ports"]
+          value: "5671"
+
+  - it: StatefulSet skips inbound AMQPS port when Linkerd and SSL are enabled
+    template: statefulset.yaml
+    set:
+      kind: statefulset
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.metadata.annotations["config.linkerd.io/skip-inbound-ports"]
+          value: "5671"
+
+  - it: StatefulSet does not skip inbound AMQPS port when SSL is disabled
+    template: statefulset.yaml
+    set:
+      kind: statefulset
+      enableSsl: false
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["config.linkerd.io/skip-inbound-ports"]
+
+  - it: StatefulSet does not skip inbound AMQPS port when Linkerd is disabled
+    template: statefulset.yaml
+    set:
+      kind: statefulset
+      global.linkerd_enabled: false
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["config.linkerd.io/skip-inbound-ports"]
