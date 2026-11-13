@@ -45,6 +45,10 @@ spec:
             - pricelist-regional-{{ $name }}-api
             - ":80"
           env:
+            {{ include "orbitus_openstack_envvars" $ | indent 12 }}
+            {{- if $config.queries_limitas }}
+            {{ include "pricelist_openstack_envvars" $ | indent 12 }}
+            {{- end }}
             {{ include "pricelist_common_envvars" $ | indent 12 }}
             - name: ORBITUS_OSLO_POLICY_PATH
               value: /etc/pricelist/policy.json

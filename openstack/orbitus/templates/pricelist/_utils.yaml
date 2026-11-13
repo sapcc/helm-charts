@@ -6,6 +6,18 @@
   {{- end -}}
 {{- end -}}
 
+{{- define "pricelist_openstack_envvars" }}
+{{- $region := .Values.global.region | required "missing value for .Values.global.region" }}
+{{- $regionKey := $region | replace "-" "_" | upper }}
+- name: OS_{{ $regionKey }}_AUTH_URL
+  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.{{ $.Values.global.clusterDNSSearchDomain }}:5000/v3"
+- name: OS_{{ $regionKey }}_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: orbitus-secret
+      key: os_password
+{{- end -}}
+
 {{- define "pricelist_common_envvars" }}
 - name: PRICELIST_DRYRUN
   value: {{ quote $.Values.pricelist.dryrun }}
