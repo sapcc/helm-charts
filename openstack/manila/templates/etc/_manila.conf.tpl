@@ -96,7 +96,7 @@ share_server_replicas = {{ .Values.quota.share_server_replicas }}
 
 [neutron]
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+auth_url = {{ include "keystone_api_endpoint_url_internal" . }}
 auth_type = v3password
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
@@ -112,7 +112,7 @@ ttl = {{ .Values.designate.ttl | default 300 }}
 endpoint_type = {{ .Values.designate.endpoint_type | default "publicURL" }}
 region_name = {{ .Values.designate.region_name | default .Values.global.region }}
 auth_type = v3password
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+auth_url = {{ include "keystone_api_endpoint_url_internal" . }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -143,7 +143,7 @@ auth_type = v3password
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+auth_url = {{ include "keystone_api_endpoint_url_internal" . }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project |  default "service"}}
