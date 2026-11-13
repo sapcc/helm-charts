@@ -1,0 +1,39 @@
+{{- $vbase := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $keystoneNamespace := .Values.global.keystoneNamespace | required "missing value for .Values.global.keystoneNamespace" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: orbitus-seed
+
+spec:
+  requires:
+  - {{ $keystoneNamespace }}/keystone-seed
+  - {{ $keystoneNamespace }}/domain-default-seed
+  - {{ $keystoneNamespace }}/domain-ccadmin-seed
+
+  roles:
+    # roles defined by other services (instead of adding complicated seed
+    # dependencies between services, we just redefine these roles here)
+    - name: service
+    - name: cloud_resource_viewer
+    - name: cloud_compute_viewer
+
+  domains:
+    - name: Default
+      users:
+        - name: orbitus
+          description: Orbitus Service
+          password: {{ printf "%s/%s/orbitus/keystone-user/service/password" $vbase $region | quote }}
+
+    - name: ccadmin
+      projects:
+        - name: cloud_admin
+          role_assignments:
+            - user: orbitus@Default
+              role: service # to validate users' Keystone tokens
+            - user: orbitus@Default
+              role: cloud_resource_viewer # to query the limitas API
+            - user: orbitus@Default
+              role: cloud_compute_viewer # to query Nova flavors
