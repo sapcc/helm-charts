@@ -65,6 +65,11 @@ data:
         discard-timeout: {{ .Values.unbound.discard_timeout }}
         {{- end }}
 
+        {{- if hasKey .Values.unbound "outgoing_range" }}
+        # outgoing query capacity (unbound default is 4096)
+        outgoing-range: {{ .Values.unbound.outgoing_range }}
+        {{- end }}
+
         # Faster UDP with multithreading (only on Linux)
         so-reuseport: yes
 
@@ -140,6 +145,10 @@ data:
        {{- end}}
 
   firewall.conf: |
+       {{- range $wait_limits := $.Values.unbound.wait_limits | default list }}
+       wait-limit-netblock: {{ $wait_limits.netblock }} {{ $wait_limits.limit }}
+       {{- end }}
+
        {{- range $blocklisted := .Values.unbound.blocklisted_zones }}
        local-zone: {{ tpl $blocklisted $ | quote }} always_nxdomain
        {{- end }}

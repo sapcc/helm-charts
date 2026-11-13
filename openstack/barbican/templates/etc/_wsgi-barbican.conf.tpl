@@ -1,8 +1,8 @@
 {{- define "wsgi_barbican_conf" }}
 ServerName {{ include "barbican_api_endpoint_host_public" . }}
+ErrorLogFormat "%M"
 {{- if .Values.use_json }}
 ErrorLog /dev/stdout
-ErrorLogFormat "%M"
 LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%a\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"}" json_combined
 LogFormat "{\"timestamp\":\"%{%Y-%m-%dT%H:%M:%S}t.%{msec_frac}t\",\"pid\":%{pid}P,\"levelname\":\"INFO\",\"name\":\"apache.access\",\"request_id\":\"%{X-Openstack-Request-ID}i\",\"client_ip\":\"%{X-Forwarded-For}i\",\"method\":\"%m\",\"uri\":\"%U%q\",\"protocol\":\"%H\",\"status\":%>s,\"bytes_sent\":%B,\"duration_ms\":%{ms}T,\"referer\":\"%{Referer}i\",\"user_agent\":\"%{User-Agent}i\"}" json_proxy
 {{- else }}
@@ -40,9 +40,6 @@ Listen 0.0.0.0:443
     WSGIPassAuthorization On
     LimitRequestBody 114688
 
-    <IfVersion >= 2.4>
-        ErrorLogFormat "%{cu}t %M"
-    </IfVersion>
     ErrorLog /dev/stderr
     {{- if .Values.use_json }}
     SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded

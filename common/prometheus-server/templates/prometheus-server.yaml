@@ -14,7 +14,7 @@ spec:
   replicas: 1
   shards: 1
 
-  priorityClassName: {{ default "important-payload" $.Values.priorityClassName }} 
+  priorityClassName: {{ default "important-payload" $.Values.priorityClassName }}
 
   {{ if $.Values.rbac.create -}}
   serviceAccountName: {{ include "serviceAccount.name" (list $name $root) }}
@@ -57,7 +57,7 @@ spec:
   probeNamespaceSelector: {}
   {{- end }}
 
-  nameValidationScheme: {{ default "Legacy" $.Values.nameValidationScheme }} 
+  nameValidationScheme: {{ default "Legacy" $.Values.nameValidationScheme }}
 
   {{- if $.Values.remoteWriteTargets }}
   remoteWrite:
@@ -164,6 +164,9 @@ spec:
         labels:
           prometheus: {{ include "prometheus.name" (list $name $root) }}
       spec:
+        {{- if $.Values.persistence.storageClassName }}
+        storageClassName: {{ $.Values.persistence.storageClassName }}
+        {{- end }}
         accessModes:
           - {{ required "$.Values.persistence.accessMode missing" $.Values.persistence.accessMode | quote }}
         resources:
@@ -191,10 +194,6 @@ spec:
 {{ toYaml $.Values.thanos.spec | indent 4 }}
   {{- end }}
 
-  # See: https://github.com/prometheus-operator/prometheus-operator/issues/8763 for more details
-  {{- if $.Values.disableCompaction }}
-  disableCompaction: true
-  {{- end }}
 
   {{ if $.Values.resources }}
   # Kubernetes resource requests and limits if configured.

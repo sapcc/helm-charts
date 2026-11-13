@@ -1,29 +1,46 @@
 global:
   dockerHubMirror:
   registry:
-
-osprofiler: {}
-sentry: {}
+  region: null
 
 imageName: rclone/rclone
 imageVersion: null
+
+osAuthUrl: null
+swiftUserDomainName: Default
+swiftProjectName: master
+swiftProjectDomainName: ccadmin
+swiftEndpointType: internal
+
+swiftContainer: coredump-exporter
+
+username: null
+password: null
+
+# Seconds between shipment passes.
 pollingDelay: 300
 pollingFudging: 30
 
-swiftDeleteAfter: 864000 # Maximum age in seconds
 rcloneOperation: "copyto" # Keeps the files, in comparison to moveto
 
-authUrl: null
-applicationCredentialId: null
-applicationCredentialName: null
-applicationCredentialSecret: null
+# Object expiry in Swift (seconds).
+swiftDeleteAfter: 864000
 
 pod:
   lifecycle:
     upgrades:
-      deployments:
-        revision_history: 5
+      daemonsets:
+        revisionHistory: 5
   tolerations: {}
+  nodeSelector: {}
+  affinity: {}
+  priorityClassName: null
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
 
 owner-info:
   support-group: compute-storage-api

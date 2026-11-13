@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-set -ex
+set -e
 
-# seed just enough to have a functional v3 api
+# Bootstrap failures are temporarily non-fatal for Helm deployments.
+echo "Running native Keystone bootstrap"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf bootstrap \
     --bootstrap-username {{ .Values.api.adminUser }} \
     --bootstrap-password {{ required "A valid .Values.api.adminPassword required!" .Values.api.adminPassword | include "resolve_secret" }} \
@@ -16,13 +17,17 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 {{- else }}
     --bootstrap-public-url {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
 {{- end }}
-{{- if .Values.global.clusterDomain }}
-    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3 \
-{{- else if .Values.global.is_global_region }}
+{{- if .Values.global.is_global_region }}
     --bootstrap-internal-url http://{{ .Values.global.keystone_internal_ip }}:5000/v3 \
 {{- else }}
-    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
+    --bootstrap-internal-url http://{{ include "keystone_api_endpoint_host_internal" . }}:5000/v3 \
 {{- end }}
-    --bootstrap-region-id {{ .Values.global.region }}
+    --bootstrap-region-id {{ .Values.global.region }} ||
+    echo "ERROR: Native Keystone bootstrap failed with exit code $?; ignoring failure." >&2
+
+echo "Running Keystone extensions bootstrap"
+keystone-manage-extension --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf bootstrap \
+    --bootstrap-file=/etc/keystone/bootstrap.yaml ||
+    echo "ERROR: Keystone extensions bootstrap failed with exit code $?; ignoring failure." >&2
 
 {{ include "utils.script.job_finished_hook" . | trim }}

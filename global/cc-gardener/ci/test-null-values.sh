@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CHART_DIR="$(dirname "$SCRIPT_DIR")"
+
 echo "Testing Null Values Handling"
 echo "============================="
 echo ""
 
 # Test 1: all ociRepository fields are null - extension.helm section should not be rendered
 echo "Test 1: Null ociRepository (extension.helm section should not be rendered)"
-OUTPUT=$(helm template test . -f values.testvalues -f ci/test-values.yaml -f ci/test-null-ocirepository.testvalues --show-only templates/extension-auditing.yaml 2>&1)
+OUTPUT=$(helm template test "$CHART_DIR" -f "$CHART_DIR/values.yaml" -f "$CHART_DIR/ci/test-values.yaml" -f "$CHART_DIR/ci/test-null-ocirepository.testvalues" --show-only templates/extension-auditing.yaml 2>&1)
 
 # Check specifically for extension.helm using yq
 EXTENSION_HELM=$(echo "$OUTPUT" | yq '.spec.deployment.extension.helm' 2>/dev/null || echo "null")
@@ -25,7 +28,7 @@ echo ""
 
 # Test 2: admission with all null values - sections should not be rendered
 echo "Test 2: Null admission fields (runtimeCluster/virtualCluster should not be rendered)"
-OUTPUT=$(helm template test . -f values.testvalues -f ci/test-values.yaml -f ci/test-null-admission.testvalues --show-only templates/extension-auditing.yaml 2>&1)
+OUTPUT=$(helm template test "$CHART_DIR" -f "$CHART_DIR/values.yaml" -f "$CHART_DIR/ci/test-values.yaml" -f "$CHART_DIR/ci/test-null-admission.testvalues" --show-only templates/extension-auditing.yaml 2>&1)
 
 # Check specifically for admission.runtimeCluster using yq
 RUNTIME_CLUSTER=$(echo "$OUTPUT" | yq '.spec.deployment.admission.runtimeCluster' 2>/dev/null || echo "null")

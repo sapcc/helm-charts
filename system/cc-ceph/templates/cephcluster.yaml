@@ -8,6 +8,15 @@ spec:
   cephVersion:
     image: {{ .Values.ceph.registry }}{{  .Values.ceph.image }}:{{ .Values.ceph.version }}
     allowUnsupported: true
+  {{- if and .Values.security .Values.security.cephx }}
+  security:
+    cephx:
+      {{- if .Values.security.cephx.daemon }}
+      daemon:
+        keyRotationPolicy: {{ .Values.security.cephx.daemon.keyRotationPolicy }}
+        keyGeneration: {{ .Values.security.cephx.daemon.keyGeneration }}
+      {{- end }}
+  {{- end }}
   mon:
     count: {{ .Values.mon.count }}
     allowMultiplePerNode: false
@@ -19,7 +28,7 @@ spec:
     allowMultiplePerNode: false
     modules:
       - name: rook
-        enabled: true
+        enabled: false
   dashboard:
     enabled: true
   crashCollector:

@@ -1,11 +1,3 @@
-{{- define "pricelist_image" -}}
-  {{- if not $.Values.pricelist.image_tag -}}
-    {{ required "This release should be installed by the deployment pipeline!" "" }}
-  {{- else -}}
-    {{ $.Values.global.registry }}/orbitus:{{ $.Values.pricelist.image_tag }}
-  {{- end -}}
-{{- end -}}
-
 {{- define "pricelist_data_image" -}}
   {{- if not $.Values.pricelist.pricelist_data_image_tag -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}

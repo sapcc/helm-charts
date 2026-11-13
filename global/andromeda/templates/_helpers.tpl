@@ -58,6 +58,14 @@ Create the name of the service account to use
 {{define "andromeda_keystone_api_endpoint_internal"}}keystone.{{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}.svc.kubernetes.{{ include "host_fqdn" . }}{{end}}
 {{define "andromeda_keystone_global_api_endpoint_internal"}}keystone-global.{{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}{{end}}
 
+{{- define "keystone_api_endpoint_host_public" -}}
+{{- if .Values.qa -}}
+identity-3-qa.{{ include "host_fqdn" . }}
+{{- else -}}
+identity-3.{{ include "host_fqdn" . }}
+{{- end -}}
+{{- end -}}
+
 {{- define "andromeda_api"}}
 {{- if .Values.qa -}}
   gtm-qa.{{ include "host_fqdn" . }}

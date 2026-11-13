@@ -13,7 +13,7 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}{{- if (include "keystone.tls.serving" .) }},{{ .Values.tls.secretName | default "keystone-tls" }}{{- end }}"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-bootstrap,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}{{- if (include "keystone.tls.serving" .) }},{{ .Values.tls.secretName | default "keystone-tls" }}{{- end }}"
     {{- if .Values.federation.saml.enabled }}
     configmap.reloader.stakater.com/reload: "keystone-saml-shibboleth-config,keystone-saml-federation-saml-tenants,{{ .Values.federation.saml.idp.metadataConfigMap }}"
     {{- end }}
@@ -55,6 +55,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         sentry-filter-rules-hash: {{ include (print $.Template.BasePath "/configmap-sentry-filter-rules.yaml") . | sha256sum }}
         secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.federation.oidc.enabled }}
         federation-hash: {{ include (print $.Template.BasePath "/federation.yaml") . | sha256sum }}
@@ -228,6 +229,10 @@ spec:
               mountPath: /etc/keystone
             - name: keystone-etc-confd
               mountPath: /etc/keystone/keystone.conf.d
+            - name: keystone-bootstrap
+              mountPath: /etc/keystone/bootstrap.yaml
+              subPath: bootstrap.yaml
+              readOnly: true
             - name: wsgi-keystone
               mountPath: /var/www/cgi-bin/keystone
             - name: keystone-etc
@@ -404,6 +409,10 @@ spec:
         - name: keystone-etc-confd
           secret:
             secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
+        - name: keystone-bootstrap
+          secret:
+            secretName: {{ .Release.Name }}-bootstrap
             defaultMode: 0444
         {{- if .Values.federation.oidc.enabled }}
         - name: keystone-federation

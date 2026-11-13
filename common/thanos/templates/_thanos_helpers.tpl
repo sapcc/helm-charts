@@ -211,5 +211,8 @@ endpoints:
 {{- range $regionalList | sortAlpha }}
   - address: {{ . }}:443
 {{- end }}
+{{- range $store := $root.Values.customStoresAddresses -}}
+  - address: {{ . }}
+{{- end }}
 {{- end }}
 {{- end }}

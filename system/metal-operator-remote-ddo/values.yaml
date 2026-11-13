@@ -55,11 +55,16 @@ metal-operator-core:
 
 # ---------------------------------------------------------------------------
 # webhook-injector sidecar (r7 target-patch mode)
-# Image pinned to the r7 target-patch build; move to a released tag at cutover.
+# Default points at the PUBLIC upstream image (ghcr.io). This chart passes
+# --target-label / --target-kubeconfig to the injector; those flags were added
+# by SAP-cloud-infrastructure/webhook-injector PR #14 (merged 2026-08-13 as
+# commit f85df8e3), so the default is pinned to that merge build.
+# Internal consumers override repository (to an in-landscape keppel mirror) and
+# tag via the DualDeploymentOperator CR values — see cc/kube-secrets.
 # ---------------------------------------------------------------------------
 webhookInjector:
-  repository: keppel.eu-de-1.cloud.sap/cloud-infrastructure-dev/webhook-injector
-  tag: "20c495f"
+  repository: ghcr.io/sap-cloud-infrastructure/webhook-injector
+  tag: sha-f85df8e3d55165e3b6e1117f6b120624268d0976
   metrics:
     # Enable Prometheus scraping of the webhook-injector sidecar (port 8082).
     # Requires the monitoring.coreos.com/v1 API to be present in the cluster.

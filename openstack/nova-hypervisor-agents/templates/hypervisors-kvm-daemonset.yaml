@@ -9,6 +9,8 @@
 {{- $hypervisor := merge (deepCopy $hv) (deepCopy $.Values.defaults.hypervisor.kvm) (deepCopy $.Values.defaults.hypervisor.common) }}
 {{- $selectorName := printf "%s-compute-%s" $.Release.Name $name }}
 {{- $configMapName := printf "%s-%s" $.Release.Name $name }}
+{{- $virtType := dig "config_file" "libvirt" "virt_type" "ch" $hypervisor }}
+{{- $mountHostQemu := or (eq $virtType "kvm") (eq $virtType "qemu") }}
 {{- if eq $name "compute-kvm" }}
 {{- $selectorName = $.Release.Name }}
 {{- end }}
@@ -93,6 +95,11 @@ spec:
       - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/nova-compute-init"]
+        {{- if $hypervisor.storage_network_interface }}
+        env:
+        - name: STORAGE_NETWORK_INTERFACE
+          value: {{ $hypervisor.storage_network_interface | quote }}
+        {{- end }}
         volumeMounts:
           - mountPath: /container.init
             name: bin
@@ -204,8 +211,10 @@ spec:
             name: host
           - mountPath: /var/lib/nova/.ssh
             name: nova-ssh
+          {{- if $mountHostQemu }}
           - mountPath: /usr/share/qemu
             name: usr-share-qemu
+          {{- end }}
           - mountPath: /etc/sudoers.d/nova
             name: sudoers-etc
             subPath: nova
@@ -309,10 +318,12 @@ spec:
         hostPath:
           path: /
           type: Directory
+      {{- if $mountHostQemu }}
       - name: usr-share-qemu
         hostPath:
           path: /usr/share/qemu
           type: Directory
+      {{- end }}
 {{- end }}
       - name: mnt
       {{- if not .Values.hypervisor_on_host }}

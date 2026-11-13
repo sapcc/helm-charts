@@ -9,7 +9,6 @@ calicoLoadBalancer: false
 global:
   # tld: cloud.sap
   # region: cluster
-  # clusterDomain: cluster.local
   dbUser: keystone
   dbPassword: ""
 # registryAlternateRegion: keppel.$REGION.cloud.sap
@@ -34,6 +33,13 @@ run_db_migration: true
 
 # ignore invalid role assignments
 skipRepairRoleAssignments: false
+
+# Shared LDAP profiles and ccadmin definitions from secrets/global/values/domain-seeds.yaml,
+# followed by regional domain-seeds values, extend /etc/keystone/bootstrap.yaml.
+# Keystone uses keystoneBootstrap.ldapPassword for its secrets-injector reference.
+keystoneBootstrap: {}
+ldapDefaults: {}
+ldapProfiles: {}
 
 ## Affinity for pod assignment
 ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -121,7 +127,7 @@ federation:
     iHaveAlreadyDeployedFederationChart: false
     spInit:
       image: keystone-saml-sp-init
-      imageTag: ""
+      imageTag: "v0.5.0"
       # Three required axes for key lifecycle management.
       # All three must be set when federation.saml.enabled is true.
       # See keystone-saml-sp-init for available plugins.
@@ -139,7 +145,7 @@ federation:
       # dedicated ConfigMaps (keystone-saml-shibboleth-config and
       # keystone-saml-federation-saml-tenants) and are not configurable
       # via values; they are wired by name in deployment-api.yaml.
-      metadataConfigMap: ""           # IdP metadata files (XML)
+      metadataConfigMap: "keystone-saml-idp-metadata"  # IdP metadata files (XML)
       spKeySecretName: "keystone-saml-sp"  # Per-tenant SP key pairs (from federation chart)
 
 api:

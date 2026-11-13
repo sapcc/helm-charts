@@ -162,8 +162,8 @@ spec:
         justification: |
           TODO
         mayBePrivileged: true
-        mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc ]
-        mayWriteHostPathVolumes: [ /lib/modules, /run/containerd, /run/crio, /var/run ]
+        mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc, /sys/kernel, /sys/module ]
+        mayWriteHostPathVolumes: [ /dev, /lib/modules, /run/containerd, /run/crio, /run/host-containerd, /run/k3s, /run/podman, /var/run ]
 
       # RSBC images
       - matchNamespace: kube-monitoring
@@ -171,8 +171,8 @@ spec:
         justification: |
           TODO
         mayBePrivileged: true
-        mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc ]
-        mayWriteHostPathVolumes: [ /lib/modules, /run/containerd, /run/crio, /var/run ]
+        mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc, /sys/kernel, /sys/module ]
+        mayWriteHostPathVolumes: [ /dev, /lib/modules, /run/containerd, /run/crio, /run/host-containerd, /run/k3s, /run/podman, /var/run ]
       {{- end }}
 
       # TODO: delete after full migration to RSBC images
@@ -554,7 +554,7 @@ spec:
         mayUseHostNetwork: true
         mayUseCapabilities: [ NET_ADMIN ]
 
-      {{- if eq .Values.cluster_name "eu-de-3" }}
+      {{- if and (eq .Values.cluster_type "baremetal") (not .Values.global.srs.is_classic_region) }}
       - matchNamespace: bridge-attach
         matchRepository: ccloud/shared-app-images/alpine-iproute2
         justification: |
@@ -929,7 +929,8 @@ spec:
         mayBePrivileged: true
       {{- end }}
 
-      {{- if or (eq .Values.cluster_type "scaleout") (eq .Values.cluster_name "eu-de-3") }}
+      {{- if or (eq .Values.cluster_type "scaleout") (and (eq .Values.cluster_type "baremetal") (not .Values.global.srs.is_classic_region)) -}}
+      {{/* ^ Read this as: OpenSearch is deployed to scaleout in classic regions, or to the baremetal controlplane cluster otherwise. */}}
       - matchNamespace: opensearch-logs
         matchRepository: ccloud-dockerhub-mirror/library/busybox
         justification: |
