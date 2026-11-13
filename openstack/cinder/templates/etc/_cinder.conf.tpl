@@ -1,5 +1,6 @@
 [DEFAULT]
 log_config_append = /etc/cinder/logging.ini
+backend_stats_polling_interval = {{ .Values.backend_stats_polling_interval | default 60 }}
 {{ include "ini_sections.logging_format" . }}
 
 backup_swift_url = https://objectstore-3.{{.Values.global.region}}.{{.Values.global.tld}}:443/v1/AUTH_
