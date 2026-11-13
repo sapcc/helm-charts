@@ -292,9 +292,17 @@ Custom DB URL for the global services using percona_cluster
 
 {{define "horizon_endpoint_host"}}horizon-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "keystone_api_endpoint_host_admin"}}keystone.{{ include "svc_fqdn" . }}{{end}}
-{{define "keystone_api_endpoint_host_internal"}}keystone.{{ include "svc_fqdn" . }}{{end}}
+{{define "keystone_api_endpoint_host_admin"}}{{ if .Values.global.keystone_internal_is_public }}{{ include "keystone_api_endpoint_host_public" . }}{{ else }}keystone.{{ include "svc_fqdn" . }}{{ end }}{{end}}
+{{define "keystone_api_endpoint_host_internal"}}{{ if .Values.global.keystone_internal_is_public }}{{ include "keystone_api_endpoint_host_public" . }}{{ else }}keystone.{{ include "svc_fqdn" . }}{{ end }}{{end}}
 {{define "keystone_api_endpoint_host_public"}}identity-3.{{ include "host_fqdn" . }}{{end}}
+
+{{- define "keystone_api_endpoint_url_internal" -}}
+{{- if .Values.global.keystone_internal_is_public -}}
+{{ .Values.global.keystone_api_endpoint_protocol_public | default "https" }}://{{ include "keystone_api_endpoint_host_public" . }}/v3
+{{- else -}}
+{{ .Values.global.keystone_api_endpoint_protocol_internal | default "http" }}://{{ include "keystone_api_endpoint_host_internal" . }}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
+{{- end -}}
+{{- end -}}
 
 {{define "glance_db_host"}}glance-mariadb.{{ include "svc_fqdn" . }}{{end}}
 {{define "glance_api_endpoint_host_admin"}}glance.{{ include "svc_fqdn" . }}{{end}}
