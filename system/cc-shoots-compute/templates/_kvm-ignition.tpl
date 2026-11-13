@@ -1,13 +1,13 @@
-{{- define "cc-shoots-compute.kvmIgnition" }}
+{{- define "cc-shoots-compute.kvmIgnition" -}}
 storage:
   files:
   {{- if eq .workerChannel "preRelease" }}
   {{- if and .worker.extraIgnitionFiles ( typeIs "string" .worker.extraIgnitionFiles ) }}
-  {{- .worker.extraIgnitionFiles | nindent 16 }}
+  {{- .worker.extraIgnitionFiles | nindent 2 }}
   {{- end }}
   {{- end }}
   {{- if and ( eq .workerChannel "preRelease" ) .worker.defaultIgnitionFiles ( typeIs "string" .worker.defaultIgnitionFiles ) }}
-  {{- .worker.defaultIgnitionFiles | nindent 16 }}
+  {{- .worker.defaultIgnitionFiles | nindent 2 }}
   {{- else }}
 
   - path: /etc/default/openvswitch-switch
@@ -125,11 +125,11 @@ systemd:
   units:
   {{- if eq .workerChannel "preRelease" }}
   {{- if and .worker.extraIgnitionSystemdUnits ( typeIs "string" .worker.extraIgnitionSystemdUnits ) }}
-  {{- .worker.extraIgnitionSystemdUnits | nindent 16 }}
+  {{- .worker.extraIgnitionSystemdUnits | nindent 2 }}
   {{- end }}
   {{- end }}
   {{- if and ( eq .workerChannel "preRelease" ) .worker.defaultIgnitionSystemdUnits ( typeIs "string" .worker.defaultIgnitionSystemdUnits ) }}
-  {{- .worker.defaultIgnitionSystemdUnits | nindent 16 }}
+  {{- .worker.defaultIgnitionSystemdUnits | nindent 2 }}
   {{- else }}
   - name: ovsdb-server.service
     dropins:

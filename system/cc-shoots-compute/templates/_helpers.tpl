@@ -7,3 +7,12 @@ Usage: {{ include "asNumber" .Values.networking.asNumber }}
 {{- define "asNumber" -}}
 {{- if kindIs "float64" . -}}{{ printf "%.0f" . }}{{- else -}}{{ . | quote }}{{- end -}}
 {{- end -}}
+
+{{/* Workers without extraIgnition share the shoot-level Secret. */}}
+{{- define "cc-shoots-compute.ignitionSecretName" -}}
+{{- if .worker.extraIgnition -}}
+{{- printf "extraignition-compute-%s-%s" .shootName .workerName -}}
+{{- else -}}
+{{- printf "extraignition-compute-%s" .shootName -}}
+{{- end -}}
+{{- end -}}

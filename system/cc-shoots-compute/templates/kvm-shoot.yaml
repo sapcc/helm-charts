@@ -80,11 +80,18 @@ spec:
             secretReferenceName: auditing-mtls-compute
   {{- end }}
   resources:
-  - name: extraignition-compute-{{ $key }}
+  {{- $ignitionSecrets := dict }}
+  {{- range $workerkey, $worker := $cluster.workers }}
+  {{- $secretName := include "cc-shoots-compute.ignitionSecretName" (dict "shootName" $key "workerName" $workerkey "worker" $worker) }}
+  {{- if not (hasKey $ignitionSecrets $secretName) }}
+  {{- $_ := set $ignitionSecrets $secretName true }}
+  - name: {{ $secretName }}
     resourceRef:
       apiVersion: v1
       kind: Secret
-      name: extraignition-compute-{{ $key }}
+      name: {{ $secretName }}
+  {{- end }}
+  {{- end }}
   {{- if $cluster.auditing.enabled }}
   - name: auditing-mtls-compute
     resourceRef:
@@ -243,9 +250,9 @@ spec:
               name: compute-{{ $key }}
           extraIgnition:
             override: false
-            secretRef: extraignition-compute-{{ $key }}
+            secretRef: {{ include "cc-shoots-compute.ignitionSecretName" (dict "shootName" $key "workerName" $workerkey "worker" $worker) }}
             raw: |
-            {{- include "cc-shoots-compute.kvmIgnition" (dict "root" $ "cluster" $cluster "worker" $worker "workerChannel" $workerChannel) | nindent 14 }}
+{{ include "cc-shoots-compute.kvmIgnition" (dict "root" $ "cluster" $cluster "worker" $worker "workerChannel" $workerChannel) | indent 14 }}
 {{- end }}
 {{- end }}
 {{- end }}
