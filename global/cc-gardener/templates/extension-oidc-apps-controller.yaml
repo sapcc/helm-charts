@@ -17,8 +17,15 @@ spec:
         cacheSelectorStr: observability.gardener.cloud/app in (plutono, prometheus-shoot,
           alertmanager-seed, alertmanager-shoot, prometheus-garden)
         clients:
+        {{- if .clients }}
+        {{- range .clients }}
+        - clientId: {{ .clientId }}
+          name: {{ .name }}
+        {{- end }}
+        {{- else }}
         - clientId: {{ .oidcClientId | default $.Values.garden.dashboard.oidc.clientIDPublic }}
-          name: oidc-apps-controller-users
+          name: default
+        {{- end }}
         global:
           istioGateway:
             enabled: true
