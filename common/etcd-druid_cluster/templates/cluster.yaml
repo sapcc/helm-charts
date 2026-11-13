@@ -1,0 +1,35 @@
+apiVersion: druid.gardener.cloud/v1alpha1
+kind: Etcd
+metadata:
+  name: etcd-druid
+  namespace: monsoon3
+  labels:
+    app: etcd-statefulset
+    role: test
+spec:
+  annotations:
+    app: etcd-statefulset
+    # networking.gardener.cloud/to-dns: allowed
+    # networking.gardener.cloud/to-private-networks: allowed
+    # networking.gardener.cloud/to-public-networks: allowed
+    role: test
+  labels:
+    app: etcd-statefulset
+    # networking.gardener.cloud/to-dns: allowed
+    # networking.gardener.cloud/to-private-networks: allowed
+    # networking.gardener.cloud/to-public-networks: allowed
+    role: test
+  etcd:
+    metrics: basic
+    defragmentationSchedule: "0 */24 * * *"
+    resources:
+      limits: { cpu: 500m, memory: 1Gi }
+      requests: { cpu: 100m, memory: 200Mi }
+    clientPort: 2379
+    serverPort: 2380
+    quota: 8Gi
+  backup: {}
+  sharedConfig:
+    autoCompactionMode: periodic
+    autoCompactionRetention: "15m"
+  replicas: 3
