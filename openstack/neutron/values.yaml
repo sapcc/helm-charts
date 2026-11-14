@@ -10,6 +10,15 @@ rbac:
 oslo_policy:
   enforce_scope: false
   enforce_new_defaults: false
+  # ccloud ADR Invariant 2 (network-reachability containment), ccadmin-only, per-region.
+  # When enforce_ccadmin_member is true AND ccadmin_domain_id is set to the ccadmin domain
+  # UUID, a plain member scoped into that domain may mutate security groups /
+  # port_security_enabled only if it also holds role:extended_member. Both unset/false by
+  # default => the gate is NOT emitted => behaviour identical to today. Set per-region (e.g.
+  # eu-de-1) in secrets. Independent of keystone api.adminDomainIds by design, so enabling the
+  # Invariant-1 grant restriction does not switch this network gate on.
+  enforce_ccadmin_member: false
+  ccadmin_domain_id: ""
 
 # osprofiler
 osprofiler:

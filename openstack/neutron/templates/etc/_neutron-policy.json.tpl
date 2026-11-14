@@ -316,6 +316,15 @@
     "delete_log": "rule:context_is_network_admin",
     "get_logs": "rule:context_is_network_viewer",
     "get_log": "rule:context_is_network_viewer",
+{{- if and .Values.oslo_policy.enforce_ccadmin_member .Values.oslo_policy.ccadmin_domain_id }}
+    "_comment_ccadmin_invariant2": "ccloud ADR Invariant 2, ccadmin-only, per-region. A plain member scoped into ccadmin may mutate security groups / port_security_enabled only if it also holds role:extended_member. Keyed on project_domain_id (UUID). These keys override the earlier definitions (last-definition-wins). Inert unless oslo_policy.enforce_ccadmin_member and oslo_policy.ccadmin_domain_id are both set.",
+    "ccadmin_scope": "project_domain_id:{{ .Values.oslo_policy.ccadmin_domain_id }}",
+    "ccadmin_member_ok": "rule:member and (not rule:ccadmin_scope or role:extended_member)",
+    "ccadmin_netedit_ok": "rule:context_is_network_network_admin or (rule:network_member and (not rule:ccadmin_scope or role:extended_member))",
+    "update_port:security_groups": "rule:context_is_network_admin or rule:compute_admin_wsg or rule:context_is_securitygroup_admin or rule:ccadmin_member_ok",
+    "create_port:port_security_enabled": "rule:ccadmin_netedit_ok",
+    "update_port:port_security_enabled": "rule:ccadmin_netedit_ok",
+{{- end }}
 {{ if .Values.interconnection.enabled }}
     "create_interconnection": "rule:context_is_editor",
     "update_interconnection": "rule:context_is_editor",
