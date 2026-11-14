@@ -41,7 +41,7 @@ spec:
     rules:
     - alert: NodeCountReached
       expr: |
-        256 - shoot:kube_node_info:count{project="garden", name!~"gcp-ha-.*"} <= 20
+        256 - shoot:kube_node_info:count{project="garden"} <= 20
       labels:
         severity: warning
         topology: garden
@@ -49,9 +49,8 @@ spec:
         summary: Node count approaching 256 nodes
         description: >-
           Seed {{ "{{ $labels.name }}" }} in landscape {{ "{{ $externalLabels.landscape }}" }}
-          is approaching 256 nodes. {{ "{{ $value }}" }} nodes left until that value is
-          reached. Please check this issue for mitigation
-          https://github.tools.sap/kubernetes/landscape-stability/issues/140
+          is approaching 256 nodes (/24 subnet limit). {{ "{{ $value }}" }} IP addresses
+          left until the limit is reached.
 
     - alert: ShootAPIServerUnavailable10min
       expr: |
@@ -154,4 +153,29 @@ spec:
           {{ "{{ $labels.project }}" }}/{{ "{{ $labels.shoot_name }}" }} the registry
           cache PersistentVolume claimed by {{ "{{ $labels.persistentvolumeclaim }}" }}
           is expected to fill up within four days.
+
+    - alert: SeedNodeNotHealthy
+      expr: |2
+          count_over_time(
+            (
+              sum by (seed, node) (
+                  kube_node_spec_taint{effect="NoSchedule", key!="ToBeDeletedByClusterAutoscaler",
+                                                            key!="deployment.machine.sapcloud.io/prefer-no-schedule",
+                                                            key!="node-role.kubernetes.io/control-plane",
+                                                            key!="node.gardener.cloud/critical-components-not-ready",
+                                                            key!="node.kubernetes.io/unschedulable",
+                                                            key!="pool.worker.gardener.cloud/legacy-nodes"}
+              )
+            )[30m:]
+          )
+        >
+          9
+      labels:
+        severity: warning
+        topology: garden
+      annotations:
+        summary: A seed node was reported not healthy for several scrapes in the past 30 minutes.
+        description: >-
+          Node {{ "{{ $labels.node }}" }} in seed {{ "{{ $labels.seed }}" }} in landscape
+          {{ "{{ $externalLabels.landscape }}" }} was not healthy for several scrapes in the past 30 minutes.
 {{- end }}
