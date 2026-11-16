@@ -1,0 +1,50 @@
+groups:
+- name: pg-database.alerts
+  rules:
+  - alert: SentryStuckTransactions
+    expr: max(pg_stat_activity_max_tx_duration{datname="sentry",usename!="backup"}) > 600
+    for: 5m
+    labels:
+      context: database
+      support_group: identity
+      tier: os
+      service: sentry
+      severity: info
+      meta: DB transactions are stuck
+    annotations:
+      summary: DB transactions are stuck
+      description: >
+        Some transactions are taking unusually long to complete or not making progress at all.
+        Check the logs of the Postgres container; this could be caused by file locks getting stuck.
+        To see which transactions are stuck, query for
+        `SELECT * FROM pg_stat_activity WHERE state = 'idle in transaction' AND backend_start < NOW() - interval '1 minute'`.
+
+  - alert: SentryPostgresMetricsEvalErrors
+    expr: max(pg_exporter_last_scrape_error{kubernetes_namespace="sentry",app="sentry-pgmetrics"}) > 0
+    for: 5m
+    labels:
+      context: database
+      support_group: identity
+      tier: os
+      service: sentry
+      severity: info
+      meta: Evaluation error in Postgres DB metrics
+    annotations:
+      summary: Evaluation error in Postgres DB metrics
+      description: >
+        Some of the custom metrics in the postgres-exporter configuration cannot be evaluated. Check the sentry-pgmetrics pod log for errors.
+
+  - alert: SentryPostgresMetricsSlowCollection
+    expr: max(avg_over_time(scrape_duration_seconds{kubernetes_namespace="sentry",app="sentry-pgmetrics"}[30m])) > 5
+    for: 5m
+    labels:
+      context: database
+      support_group: identity
+      tier: os
+      service: sentry
+      severity: info
+      meta: Slow metrics collection in postgres-exporter
+    annotations:
+      summary: Slow metrics collection in postgres-exporter
+      description: >
+        The sentry-pgmetrics pod is taking a long time to gather metrics. Check for throttling in the pgmetrics pod. If that's not a problem, this alert can be an early indication that the PostgreSQL server performance is degrading.
