@@ -60,3 +60,15 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+"true" when auditbeat only listens to the audit events of the node's own auditd
+(auditd.socket_type: multicast), empty otherwise.
+*/}}
+{{- define "auditbeat.multicast" -}}
+{{- $socketType := .Values.auditd.socket_type | default "" -}}
+{{- if not (has $socketType (list "" "multicast")) -}}
+{{- fail (printf "auditd.socket_type must be empty or multicast, not %q" $socketType) -}}
+{{- end -}}
+{{- if eq $socketType "multicast" -}}true{{- end -}}
+{{- end }}
