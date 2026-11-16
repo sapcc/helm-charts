@@ -9,10 +9,6 @@ spec:
   shoot:
     name: mgmt-{{ $key }}
   gardenlet:
-    seedTemplate:
-      metadata:
-        annotations:
-          oidc-apps.extensions.gardener.cloud/client-name: {{ default "default" $cluster.oidcAppsClientName }}
     config:
       apiVersion: gardenlet.config.gardener.cloud/v1alpha1
       kind: GardenletConfiguration
@@ -24,6 +20,8 @@ spec:
         metadata:
           labels:
             environment: production
+          annotations:
+            oidc-apps.extensions.gardener.cloud/client-name: {{ default "default" $cluster.oidcAppsClientName }}
         spec:
           backup:
             provider: {{ default "aws" $cluster.backup.provider | quote }}
