@@ -29,36 +29,20 @@ spec:
           url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc'
         {{- end }}
 
-    - name:        limitas-resources
-      type:        limitas-resources
-      description: 'Hierarchical quota/usage/commitment tracking (v2+)'
+    - name:        limitas
+      type:        limitas
+      description: 'Resource quota/usage/commitment and rate limit/usage tracking (v2+)'
       enabled:     true
       endpoints:
         - region:    '{{ $region }}'
           interface: public
           enabled:   true
-          url:       'https://{{ $v2_domain }}/resources'
+          url:       'https://{{ $v2_domain }}'
         {{- if not .Values.global.is_global_region }}
         - region:    '{{ $region }}'
           interface: internal
           enabled:   true
-          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc/resources'
-        {{- end }}
-
-    - name:        limitas-rates
-      type:        limitas-rates
-      description: 'Hierarchical rate limit/usage tracking'
-      enabled:     true
-      endpoints:
-        - region:    '{{ $region }}'
-          interface: public
-          enabled:   true
-          url:       'https://{{ $v2_domain }}/rates'
-        {{- if not .Values.global.is_global_region }}
-        - region:    '{{ $region }}'
-          interface: internal
-          enabled:   true
-          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc/rates'
+          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc'
         {{- end }}
 
     {{- range $name := sortAlpha (keys .Values.limes.local_liquids) }}
