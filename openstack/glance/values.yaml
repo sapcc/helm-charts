@@ -6,7 +6,7 @@ global:
   master_password: ""
   domain_seeds:
     skip_hcm_domain: false
-  linkerd_requested: false
+  linkerd_requested: true
 
 rbac:
   enabled: true
@@ -75,7 +75,7 @@ statsd:
   imageTag: '0.31.0-latest'
 
 api:
-  debug: false
+  debug: true
   resources:
     enabled: true
     limits:
@@ -120,8 +120,14 @@ unittest:
 
 db_name: glance
 
+max_pool_size: 50
+max_overflow: -1
+
 proxysql:
-  mode: unix_socket
+  imageRepository: keppel.global.cloud.sap/ccloud/shared-app-images/proxysql
+  connect_retries_delay: 1000
+  mode: host_alias
+  max_connections_per_proc: 15
   native_sidecar: true
 
 mariadb:
@@ -151,6 +157,14 @@ mariadb:
         memory: 64Mi
   alerts:
     support_group: compute-storage-api
+  backup_v2:
+    enabled: true
+    databases:
+      - glance
+    verify_tables:
+      - glance.image_locations
+    oauth:
+      client_id: "glance"
 
 pxc_db:
   enabled: false
