@@ -1,8 +1,9 @@
 {{- $hypervisor := merge .Values.defaults.network.ovn .Values.defaults.network.common }}
+{{- $daemonsetName := ternary "neutron-ovn-controller" (printf "%s-ovn-controller" .Release.Name) (eq .Release.Name "neutron-hypervisor-agents") }}
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: neutron-ovn-controller
+  name: {{ $daemonsetName }}
   labels:
     system: openstack
     type: backend
@@ -13,12 +14,12 @@ spec:
     {{- .Values.pod.lifecycle.upgrades.daemonsets.updateStrategy | toYaml | nindent 4 }}
   selector:
     matchLabels:
-      name: neutron-ovn-controller
+      name: {{ $daemonsetName }}
   template:
     metadata:
       labels:
         {{ tuple . "neutron" "ovn-controller" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
-        name: neutron-ovn-controller
+        name: {{ $daemonsetName }}
         alert-tier: os
         alert-service: neutron
         ml2-driver: "ovn"
