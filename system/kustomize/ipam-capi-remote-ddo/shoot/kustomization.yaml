@@ -1,0 +1,73 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../additions/shoot
+  # Provider v1.1.1, resolved to its immutable commit (not the mutable tag).
+  # Written scheme-less (no https://) ON PURPOSE: this is a git-DIRECTORY ref.
+  # krusty (kustomize) tries an HTTP fetch for an https:// URL first; GitHub
+  # answers the directory URL with 404, so krusty falls back to the git loader
+  # and checks out the ?ref=<sha> commit. The scheme-less github.com/... form
+  # goes straight to the git loader. Either way the SHA pin IS enforced: a bogus
+  # ?ref= fails at `git fetch`, so the pin is not a no-op.
+  - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/crd?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
+  - core-crds
+  - rbac.yaml
+  # Webhook manifests fetched from upstream config/webhook (same SHA pin as CRDs above).
+  # The upstream directory ships manifests.yaml (MWC+VWC in service-form) and service.yaml.
+  # The upstream webhook-service (Service/system/webhook-service) is deleted below via
+  # $patch: delete — targeted removal in the overlay so it never reaches DDO at all.
+  # DDO converts the remaining service-form clientConfigs -> url-form via rewriteWebhookURL.
+  # Plain `kustomize build shoot/` shows pre-rewriteWebhookURL (service-form) webhook
+  # clientConfig — that is expected; contract_test.sh simulates the DDO transform.
+  - github.com/kubernetes-sigs/cluster-api-ipam-provider-in-cluster//config/webhook?ref=7933583138cf1b5b16b6a1dd82a804729f83afab
+patches:
+  # All four pool CRDs get the injector label (strategy:Webhook + service-form
+  # conversion inherited from upstream //config/crd; DDO rewriteWebhookURL adds
+  # the /convert URL at deploy). One regex-targeted patch replaces the four
+  # former per-pool label-only files.
+  - target:
+      kind: CustomResourceDefinition
+      name: "^(global)?incluster(ip|prefix)pools\\.ipam\\.cluster\\.x-k8s\\.io$"
+    patch: |-
+      - op: add
+        path: /metadata/labels/dual-deployment-operator.cc.sap~1webhook-injector
+        value: ipam-capi-remote
+  # Delete the upstream webhook-service (Service) from the shoot render.
+  # The upstream config/webhook dir ships this Service alongside MWC/VWC; we remove it
+  # here via a targeted kustomize delete patch rather than a DDO filterKinds[Service],
+  # which would be a GLOBAL kind filter and would wrongly drop the shoot metrics Service
+  # and the seed admission endpoint Service too.
+  - target:
+      kind: Service
+      name: webhook-service
+    patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: webhook-service
+        namespace: system
+  # Rename upstream webhook configs to the SAP names and add the injector label.
+  # JSON patch (RFC 6902) replaces the name in-place and adds the label in one step.
+  - target:
+      kind: MutatingWebhookConfiguration
+      name: mutating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: ipam-capi-remote-mutating-webhook-configuration
+      - op: add
+        path: /metadata/labels
+        value:
+          dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote
+  - target:
+      kind: ValidatingWebhookConfiguration
+      name: validating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: ipam-capi-remote-validating-webhook-configuration
+      - op: add
+        path: /metadata/labels
+        value:
+          dual-deployment-operator.cc.sap/webhook-injector: ipam-capi-remote

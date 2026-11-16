@@ -64,6 +64,7 @@ ipv6 = False
 
 [neutron_plugin_options]
 max_mtu = 9000
+dns_zone_attributes = label:Internal SAP Hosted Zone
 
 [baremetal]
 max_microversion = 1.78

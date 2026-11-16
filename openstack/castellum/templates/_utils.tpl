@@ -31,7 +31,7 @@
   value: "http://{{ $.Values.global.srs.is_classic_region | ternary "prometheus-openstack.prometheus-openstack.svc" "obs-metrics-product-prometheus.obs-metrics.svc" }}:9090"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
   # NOTE: some exclusion-reason metrics come from prometheus-openstack, but are federated into prometheus-storage as of <https://github.com/sapcc/helm-charts/pull/12354>
-  value: "http://{{ $.Values.global.srs.is_classic_region | ternary "prometheus-storage.infra-monitoring.svc" "storage-metrics-thanos-product-query.storage-metrics.svc" }}:9090"
+  value: "http://{{ $.Values.global.srs.is_classic_region | ternary "prometheus-storage.infra-monitoring.svc:9090" "storage-metrics-thanos-product-query.storage-metrics.svc:10902" }}"
 {{- end }}
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.json

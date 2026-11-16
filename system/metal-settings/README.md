@@ -448,10 +448,13 @@ spec:
     version: "7.20.60.50"                       # parameters.dell.poweredge-r7615.bmc.versions.defaultVersion.version
     # Content of bmc_settings/dell-default.yaml (parameters.dell.poweredge-r7615.bmc.settings.defaultSettings), loaded via
     # $.Files.Get and rendered via `tpl` (unlike BIOS settings) - so it can reference clusterConfig.* Helm values directly:
-    settings:
-      IPMILan.1.Enable: "Enabled"
-      SysLog.1.Server1: "$(SyslogServer)"         # literal $(...) left for the operator to resolve at reconcile time (see "variables" below) - not Helm templating
-      # ...rest of bmc_settings/dell-default.yaml's settings...
+    settingsFlow:
+    - name: defaultSettings
+      priority: 10
+      settings:
+        IPMILan.1.Enable: "Enabled"
+        SysLog.1.Server1: "$(SyslogServer)"       # literal $(...) left for the operator to resolve at reconcile time (see "variables" below) - not Helm templating
+        # ...rest of bmc_settings/dell-default.yaml's settings...
     variables:
       # Every "variables" entry below is static template content from bmc_settings/dell-default.yaml - resolved by the
       # operator at reconcile time (objectFieldRef/configMapKeyRef), not by this chart.

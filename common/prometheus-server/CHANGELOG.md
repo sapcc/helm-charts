@@ -1,3 +1,7 @@
+## 8.4.0
+
+* add `storageClassName` attribute to prometheus `volumeClaimTemplate`
+
 ## 8.3.0
 
 * bump Thanos sidecar to v0.42.5; prometheus-operator enables delayed compaction (blocks merged after upload) only for Thanos >= v0.42.0
@@ -8,7 +12,7 @@
 
 ## 8.2.6
 
-* disable absent-metrics-operator for Thanos-Ruler alerts 
+* disable absent-metrics-operator for Thanos-Ruler alerts
 
 ## 8.2.3
 
@@ -29,7 +33,7 @@
 
 ## 8.1.2
 
-* fix helper referring to `thanos.baseImage` which is causes the image tag version to be missing 
+* fix helper referring to `thanos.baseImage` which is causes the image tag version to be missing
 
 ## 8.1.1
 
@@ -50,7 +54,7 @@
 ## 8.0.8
 
 * Upgrade Prometheus to v3.6.0
-* add default priorityClass for better scheduling 
+* add default priorityClass for better scheduling
 
 ## 8.0.7
 
@@ -94,7 +98,7 @@
 
 ## 7.5.7
 
-* softening VPA alerts 
+* softening VPA alerts
 
 ## 7.5.6
 
@@ -128,7 +132,7 @@
 
 ## 7.4.9 - 7.4.10
 
-* VPA mapping adjustment to set individual values 
+* VPA mapping adjustment to set individual values
 * minReplicas set to 1
 
 ## 7.4.8
@@ -137,7 +141,7 @@
 
 ## 7.4.7
 
-* corrected VPA memory directive 
+* corrected VPA memory directive
 
 ## 7.4.6
 
@@ -149,11 +153,11 @@
 
 ## 7.4.4
 
-* Soften out-of-order alert 
+* Soften out-of-order alert
 
 ## 7.4.3
 
-* Thanos sidecar to v0.31.0 to match Thanos environment 
+* Thanos sidecar to v0.31.0 to match Thanos environment
 
 ## 7.4.2
 
@@ -193,7 +197,7 @@
 
 ## 7.2.11
 
-* Defaulting ingressClassName to nginx to avoid picking up traefik 
+* Defaulting ingressClassName to nginx to avoid picking up traefik
 
 ## 7.2.10
 
@@ -201,7 +205,7 @@
 
 ## 7.2.9
 
-* adding thanos endpoint for internalIngress 
+* adding thanos endpoint for internalIngress
 
 ## 7.2.8
 
@@ -251,7 +255,7 @@
 
 ## 7.1.32
 
-* Option to disable the object store in order to enable only the gRPC store API for the Thanos sidecar. 
+* Option to disable the object store in order to enable only the gRPC store API for the Thanos sidecar.
 
 ## 7.1.31
 
@@ -275,7 +279,7 @@
 
 ## 7.1.23 - 7.1.25
 
- * Revised Prometheus and Thanos sidecar alerts; added PodMonitor for Thanos sidecar. 
+ * Revised Prometheus and Thanos sidecar alerts; added PodMonitor for Thanos sidecar.
 
 ## 7.1.22
 
@@ -431,7 +435,7 @@
 
 ## 5.3.2
 
-* Optional additional internal ingress is limited to `/federate` and thanos paths. 
+* Optional additional internal ingress is limited to `/federate` and thanos paths.
 
 ## 5.3.1
 
@@ -439,7 +443,7 @@
 
 ## 5.3.0
 
-* Allow separate configuration of internal ingress via values. 
+* Allow separate configuration of internal ingress via values.
 
 ## 5.2.0
 
@@ -474,7 +478,7 @@
 
 ## 4.5.2
 
-* [cadvisor/kubelet SD] Exclude cadvisor/kubelet in PrometheusMultipleTargetScrapes as the instance is the same but the metric path is different. 
+* [cadvisor/kubelet SD] Exclude cadvisor/kubelet in PrometheusMultipleTargetScrapes as the instance is the same but the metric path is different.
 
 ## 4.5.1
 
@@ -504,7 +508,7 @@
 
 ## 4.2.1
 
-* Ensure kubelet and cAdvisor metrics have labels `pod`, `pod_name`, `container`, `container_name` present for compatibility reasons.   
+* Ensure kubelet and cAdvisor metrics have labels `pod`, `pod_name`, `container`, `container_name` present for compatibility reasons.
 
 ## 4.2.0
 
@@ -527,7 +531,7 @@
 * **[Breaking]** ChartVersion is now v2.
 * Remove `vice-president` annotation from Ingress.
 * Bump Prometheus to `v2.23.0`.
-* Switch from sapcc fork to upstream and upgrade Thanos components to `v0.17.1`. 
+* Switch from sapcc fork to upstream and upgrade Thanos components to `v0.17.1`.
 This includes the Thanos sidecar to the Prometheus server, resolving the memory leak.
 
 
@@ -568,7 +572,7 @@ This includes the Thanos sidecar to the Prometheus server, resolving the memory 
 
 ## 3.3.5
 
-* Standardize labels: Ensure the `node` label (node name) is present on cAdvisor, kubelet metrics. 
+* Standardize labels: Ensure the `node` label (node name) is present on cAdvisor, kubelet metrics.
 
 ## 3.3.4
 
@@ -589,19 +593,19 @@ This includes the Thanos sidecar to the Prometheus server, resolving the memory 
     authentication:
       enabled: false
       # The certificate used for authentication with the Alertmanager..
-      ssoCert: 
+      ssoCert:
       # The key used for authentication with the Alertmanager.
       ssoKey:
-  
+
     # List of Alertmanagers (AM) to send alerts to.
     # If multiple AMs are used in an HA setup, alerts must be send to every AM.
     hosts: []
     # - alertmanager1.tld
     # - alertmanager2.tld
   ```
-* Fixed double scraping for service/endpoint service discovery when using `prometheus.io/port` annotation. 
+* Fixed double scraping for service/endpoint service discovery when using `prometheus.io/port` annotation.
   A service has to declare the port(s) on which they expose metrics on in their spec. The service gets dropped otherwise.
-  Per default Prometheus tries to get metrics from service ports with the name `metrics`. 
+  Per default Prometheus tries to get metrics from service ports with the name `metrics`.
 
 ## 3.1.1
 
@@ -612,9 +616,9 @@ This includes the Thanos sidecar to the Prometheus server, resolving the memory 
 * Potential **Breaking change** if the out-of-the-box pod service discovery is being used.
   To avoid double scraping of metrics from pods with multiple containers, the containers have to explicitly declare the port(s) on which they expose metrics on in their spec.
   They will no get scraped otherwise.
-  Per default Prometheus tries to get metrics from ports with number `9102` or name `metrics`. 
+  Per default Prometheus tries to get metrics from ports with number `9102` or name `metrics`.
 * Bump Prometheus to `v2.14.0`.
-* Update Thanos components to `v0.8.1`.  
+* Update Thanos components to `v0.8.1`.
 
 ## 3.0.5
 
@@ -662,7 +666,7 @@ This includes the Thanos sidecar to the Prometheus server, resolving the memory 
 
 ## 2.1.0
 
-* **[Breaking change]** If Thanos is being used the external labels `region`, `cluster`, `cluster_type` will be prefixed with `thanos_` to avoid the are being overwritten by the Thanos sidecar.   
+* **[Breaking change]** If Thanos is being used the external labels `region`, `cluster`, `cluster_type` will be prefixed with `thanos_` to avoid the are being overwritten by the Thanos sidecar.
   One has to ensure these labels are set during scrape via `relabel_config`. This is already if the default service discovery for endpoints, pods via ServiceMonitor, PodMonitor is being used.
 * Added `alert_relabel_configs` to ensure `region`, `cluster`, `cluster_type` labels exist on alerts.
 * Adds alert and playbook for out-of-order ingestion of metrics.
@@ -696,7 +700,7 @@ This includes the Thanos sidecar to the Prometheus server, resolving the memory 
 
 ## 1.1.23
 
-* Adds `region` and if set add `cluster_type`, `cluster` label to all metrics. 
+* Adds `region` and if set add `cluster_type`, `cluster` label to all metrics.
 
 ## 1.1.22
 
@@ -798,7 +802,7 @@ This includes the Thanos sidecar to the Prometheus server, resolving the memory 
 
 ## v1.0.19
 
-* Prefix all resources (confimaps,ingress, service, etc.) with `prometheus-<name>`. 
+* Prefix all resources (confimaps,ingress, service, etc.) with `prometheus-<name>`.
 
 ## v1.0.18
 

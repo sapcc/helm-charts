@@ -16,6 +16,13 @@ dnsmasq: CommandFilter, dnsmasq, root
 kill_dnsmasq: KillFilter, root, /sbin/dnsmasq, -9, -HUP
 kill_dnsmasq_usr: KillFilter, root, /usr/sbin/dnsmasq, -9, -HUP
 
+{{- if .Values.unbound.enabled }}
+unbound: CommandFilter, unbound, root
+unbound_control: CommandFilter, unbound-control, root
+unbound_env: EnvFilter, env, root, PROCESS_TAG=, unbound
+kill_unbound: KillFilter, root, /usr/sbin/unbound, -15, -9
+{{- end }}
+
 ovs-vsctl: CommandFilter, ovs-vsctl, root
 ivs-ctl: CommandFilter, ivs-ctl, root
 mm-ctl: CommandFilter, mm-ctl, root

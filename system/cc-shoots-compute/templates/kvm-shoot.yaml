@@ -228,6 +228,9 @@ spec:
           extraServerLabels:
             kubernetes.metal.cloud.sap/bb: {{ required "worker.bb is required" $worker.bb }}
             kubernetes.metal.cloud.sap/cluster: {{ $key }}
+            {{- with $worker.extraServerLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           metadata:
             interfaces: {{ coalesce $worker.interfaces $cluster.networking.interfaces $.Values.networking.interfaces }}
             vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}

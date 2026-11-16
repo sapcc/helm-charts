@@ -12,7 +12,7 @@ metadata:
     component: keystone
     type: operations
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-bootstrap"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.cron.replicas }}
@@ -36,6 +36,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
@@ -79,6 +80,10 @@ spec:
               name: keystone-etc
             - mountPath: /etc/keystone/keystone.conf.d
               name: keystone-etc-confd
+            - name: keystone-bootstrap
+              mountPath: /etc/keystone/bootstrap.yaml
+              subPath: bootstrap.yaml
+              readOnly: true
             - mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
               name: keystone-etc
@@ -106,6 +111,10 @@ spec:
         - name: keystone-etc-confd
           secret:
             secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
+        - name: keystone-bootstrap
+          secret:
+            secretName: {{ .Release.Name }}-bootstrap
             defaultMode: 0444
         - name: keystone-bin
           projected:

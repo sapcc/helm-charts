@@ -70,5 +70,5 @@ Create the name of the service account to use
 {{- end -}}
 
 {{- define "kmip.db_host" -}}
-{{ include "utils.db_host" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+{{ include "utils.db_host" . }}.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDNSSearchDomain | required "missing value for .Values.global.clusterDNSSearchDomain" }}
 {{- end -}}
