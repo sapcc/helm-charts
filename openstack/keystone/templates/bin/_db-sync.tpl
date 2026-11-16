@@ -10,7 +10,7 @@ if [ $status -ne 0 ]; then
   exit $status
 fi
 
-# Logging may also go to stdout; db_version prints the revision on the last line.
+# Logging may also go to stdout; db_version prints the revision on the last line or 'None' if DB is empty.
 db_version=${db_version_output##*$'\n'}
 if [ "$db_version" = "None" ]; then
   echo "No DB migration version recorded. Skipping pre-upgrade check for initial schema creation."
@@ -34,7 +34,10 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 echo "DB Version after migration:"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf db_version
 
+# TODO(habetuz): Allow doctor to fail until keystone-manage-extension doctor command is available: https://github.com/sapcc/keystone-extensions/pull/21
+set +e
 echo "Keystone doctor:"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf doctor
+set -e
 
 {{ include "utils.script.job_finished_hook" . | trim }}
