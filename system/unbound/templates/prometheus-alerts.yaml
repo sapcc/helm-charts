@@ -199,7 +199,18 @@ spec:
 {{- $num_ports := len $.Values.unbound.externalPorts }}
 {{- $num_proto := list "TCP" "UDP" | len }}
 {{- $num_expected_endpoints := mul $num_replicas $num_ports $num_proto }}
-      expr: count(kube_endpoint_address{namespace="{{ $.Release.Namespace }}",endpoint=~"{{ $.Values.unbound.name }}-.*"}) != {{ $num_expected_endpoints }}
+      expr: |
+        (
+          sum(
+            count by (namespace, endpointslice) (
+              kube_endpointslice_endpoints{namespace="{{ $.Release.Namespace }}", endpointslice=~"{{ $.Values.unbound.name }}-.*", ready="true"}
+            )
+            * on(namespace, endpointslice)
+            count by (namespace, endpointslice) (
+              kube_endpointslice_ports{namespace="{{ $.Release.Namespace }}", endpointslice=~"{{ $.Values.unbound.name }}-.*"}
+            )
+          ) or vector(0)
+        ) != {{ $num_expected_endpoints }}
       for: 15m
       labels:
         context: unbound

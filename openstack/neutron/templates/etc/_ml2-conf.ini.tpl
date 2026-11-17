@@ -19,19 +19,21 @@ extension_drivers = {{required "A valid .Values.dns_ml2_extension required!" .Va
 path_mtu = {{.Values.global.default_mtu | default 9000}}
 
 [ml2_type_vlan]
-network_vlan_ranges = {{ range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.hostgroups }}
-    {{- $physical_network := default $aci_hostgroup.name $aci_hostgroup.physical_network -}}
-    {{- $network_ranges := default $.Values.aci.aci_hostgroups.segment_ranges $aci_hostgroup.segment_ranges -}}
+network_vlan_ranges = {{ if .Values.aci.enabled -}}
+    {{ range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.hostgroups }}
+        {{- $physical_network := default $aci_hostgroup.name $aci_hostgroup.physical_network -}}
+        {{- $network_ranges := default $.Values.aci.aci_hostgroups.segment_ranges $aci_hostgroup.segment_ranges -}}
 
-    {{- if ne $i 0 }},{{ end -}}
-    {{- range $x, $range := $network_ranges -}}
-        {{- if ne $x 0 }},{{ end -}}
-        {{ $physical_network }}:{{ $range }}
-    {{- end -}}
+        {{- if ne $i 0 }},{{ end -}}
+        {{- range $x, $range := $network_ranges -}}
+            {{- if ne $x 0 }},{{ end -}}
+            {{ $physical_network }}:{{ $range }}
+        {{- end -}}
+    {{- end }}
 {{- end }}
 {{- if .Values.cc_fabric.enabled }}
     {{- range $i, $switchgroup := .Values.cc_fabric.driver_config.switchgroups -}}
-        {{- if or (ne $i 0) ((($.Values.aci|default).aci_hostgroups|default).hostgroups|default) }},{{ end -}}
+        {{- if or (ne $i 0) (and ($.Values.aci.enabled) ((($.Values.aci|default).aci_hostgroups|default).hostgroups|default)) }},{{ end -}}
         {{- range $x, $range := $switchgroup.vlan_ranges | default $.Values.cc_fabric.driver_config.global_config.default_vlan_ranges -}}
             {{- if ne $x 0 }},{{ end -}}
             {{ default $switchgroup.name $switchgroup.override_vlan_pool }}:{{ $range }}
