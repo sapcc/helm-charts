@@ -10,17 +10,10 @@ managedResourceNamespace: ""
 metal-onboarding-operator:
   image:
     repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sap-cloud-infrastructure/metal-onboarding-operator
-    tag: sha-9bbc79e
+    tag: sha-331b4fa
 
-  # NetBox settings — url is required. A token is optional: NetBox read access is
-  # unauthenticated, so leave tokenSecret.name empty unless your instance requires auth.
-  netbox:
-    url: ""
-    tokenSecret:
-      name: ""
-      key: token
-
-  # Name of this cluster, used by the NetBox provider to gate ClusterGate decisions.
+  # Name of the MetalCluster CR that holds the server inventory for this cluster.
+  # Optional — when empty, label changes on any MetalCluster CR trigger re-enqueuing.
   clusterName: ""
 
   leaderElect: false  # only one replica runs per remote cluster
@@ -35,6 +28,9 @@ metal-onboarding-operator:
 
   rbac:
     create: false  # RBAC for dhcpleases/bmcs is delivered to the m-cluster via ManagedResource
+
+  serverReadinessRule:
+    enabled: false  # SRR is delivered to m-cluster via ManagedResource (see managedresources/srr.yaml)
 
   # remoteAPIServer is the m-cluster kube-apiserver address (host:port). Required.
   # Gardener injects the token/CA into the <release-name>-remote-kubeconfig Secret via token-requestor.
@@ -51,18 +47,3 @@ metal-onboarding-operator:
     limits:
       cpu: 500m
       memory: 256Mi
-
-  # labelMap maps Kubernetes label keys to dot-separated NetBox device JSON paths.
-  # The entries below mirror the hardcoded defaults already applied by the operator.
-  # Add extra entries here for any additional NetBox fields you want as labels.
-  # Note: kubernetes.metal.cloud.sap/nodename and /bb are derived by splitting the
-  # device name on "-" and cannot be expressed as JSON paths.
-  labelMap:
-    topology.kubernetes.io/region: site.region.slug
-    topology.kubernetes.io/zone: site.slug
-    kubernetes.metal.cloud.sap/cluster: cluster.name
-    kubernetes.metal.cloud.sap/cluster-type: cluster.type.slug
-    kubernetes.metal.cloud.sap/name: name
-    kubernetes.metal.cloud.sap/type: device_type.slug
-    kubernetes.metal.cloud.sap/role: device_role.slug
-    kubernetes.metal.cloud.sap/platform: platform.slug

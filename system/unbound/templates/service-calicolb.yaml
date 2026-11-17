@@ -1,16 +1,17 @@
-{{- range tuple "udp" "tcp"}}
-{{- $proto := . }}
+{{- if $.Values.calicoLoadBalancer }}
+{{/*
+calico LB does not allow separate service objects per protocol, so we merge everything into one service object
+we have to live with https://github.com/kubernetes/kubernetes/issues/39188
+*/}}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $.Values.unbound.name }}-{{ $proto }}
+  name: {{ $.Values.unbound.name }}
   annotations:
     parrot.sap.cc/announce: 'true'
     service.alpha.kubernetes.io/reject-traffic-on-external-ip: "false"
-{{- if $.Values.calicoLoadBalancer }}
     projectcalico.org/loadBalancerIPs: '{{ $.Values.unbound.externalIPs | toJson }}'
-{{- end }}
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -19,12 +20,12 @@ spec:
     type: dns
   ports:
 {{- range $.Values.unbound.externalPorts | required "$.Values.unbound.externalPorts missing" }}
-    - name: dns-{{ $proto }}-{{.}}
+{{- $port := . }}
+{{- range tuple "udp" "tcp"}}
+{{- $proto := . }}
+    - name: dns-{{ $proto }}-{{ $port }}
       protocol: {{ $proto | upper }}
-      port: {{.}}
-{{- end }}
-{{- if (not $.Values.calicoLoadBalancer) }}
-  externalIPs:
-    {{- required "A valid $.Values.unbound.externalIPs required!" $.Values.unbound.externalIPs | toYaml | nindent 2 }}
-{{- end }}
-{{- end }}
+      port: {{ $port }}
+{{- end }} {{/* range proto */}}
+{{- end }} {{/* range port */}}
+{{- end }} {{/* if */}}

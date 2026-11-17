@@ -279,6 +279,20 @@ build-metal-maintenance-operator-remote:
 		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-maintenance-operator-remote/Chart.yaml; \
 	fi
 
+build-metal-onboarding-operator:
+	@helm dep up metal-onboarding-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-onboarding-operator/Chart.yaml
+
+build-metal-onboarding-operator-remote:
+	@helm dep up metal-onboarding-operator-remote
+	@helm template metal-onboarding-operator \
+		metal-onboarding-operator-remote/charts/metal-onboarding-operator*.tgz \
+		--set clusterName=dummy \
+		--include-crds | \
+		yq eval 'select(.kind == "CustomResourceDefinition")' - \
+		> metal-onboarding-operator-remote/managedresources/crds.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-onboarding-operator-remote/Chart.yaml
+
 build-argora-operator:
 	@helm dep up argora-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
