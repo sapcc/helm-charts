@@ -41,6 +41,32 @@ groups:
       description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed health scrape loops > 5m.'
       summary: 'Archer agent for {{ $labels.cloud_sap_host }} has health scrape failures.'
 
+  - alert: archer-audit-submission-failures
+    expr: sum(rate(audittools_failed_submissions{app="archer"}[5m])) > 0
+    for: 15m
+    labels:
+      context: api
+      service: archer
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Archer API has sustained audit event submission failures to Hermes/RabbitMQ for > 15m. Audit events may be lost.'
+      summary: 'Archer audit event submissions to Hermes are failing.'
+
+  - alert: archer-audit-events-dropped
+    expr: sum(rate(archer_audit_events_total{app="archer",outcome=~"dropped_.*"}[5m])) > 0
+    for: 5m
+    labels:
+      context: api
+      service: archer
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Archer API is dropping audit events due to missing or invalid principals (outcome={{ $labels.outcome }}). This indicates an auth middleware misconfiguration.'
+      summary: 'Archer is dropping audit events.'
+
   # SLO: availability >= 99.90% (error budget 0.10%, i.e. allowed error ratio 0.001).
   # Multi-window, multi-burn-rate alerting (Google SRE Workbook): page only when a
   # long AND a short window are both burning budget fast. The short window makes the
