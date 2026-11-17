@@ -17,6 +17,11 @@ spec:
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
+    metadata:
+      labels:
+        component: keystone
+        release: {{ .Release.Name | quote }}
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
     spec:
       backoffLimit: 3
       template:
@@ -26,6 +31,7 @@ spec:
             system: openstack
             component: keystone
             type: operations
+            {{- include "keystone.upgrade_labels" . | nindent 12 }}
             alert-tier: os
             alert-service: keystone
           annotations:
@@ -35,7 +41,7 @@ spec:
             secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
             secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
             secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-            {{- include "utils.linkerd.pod_and_service_annotation" . | indent 12 }}
+            {{- include "keystone.startup_linkerd_annotation" . | indent 12 }}
         spec:
 {{- if .Values.rbac.enabled }}
           serviceAccountName: {{ .Release.Name }}
@@ -43,7 +49,8 @@ spec:
           restartPolicy: Never
           {{- include "utils.proxysql.job_pod_settings" . | indent 10 }}
           initContainers:
-          {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" (include "keystone.job_dependencies" .)) | include "keystone.kubernetes_entrypoint_init_container" | indent 10 }}
+          {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" (tuple . "job-bootstrap" | include "job_name")) | include "keystone.kubernetes_entrypoint_init_container" | indent 10 }}
+          {{- include "keystone.schema_check_init_container" . | indent 10 }}
           {{- if .Values.proxysql.native_sidecar }}
           {{- include "utils.proxysql.container" . | indent 10 }}
           {{- end }}

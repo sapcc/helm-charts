@@ -66,11 +66,108 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{- define "keystone.job_dependencies" }}
-  {{- if or .Release.IsInstall .Values.run_db_migration }}
-    {{- printf "%s," (tuple . "job-migration" | include "job_name") }}
+  {{- $jobs := list }}
+  {{- if include "keystone.migration_enabled" . }}
+    {{- $jobs = append $jobs (tuple . "job-migration" | include "job_name") }}
   {{- end }}
-  {{- tuple . "job-bootstrap" | include "job_name" }}
+  {{- $jobs = append $jobs (tuple . "job-bootstrap" | include "job_name") }}
+  {{- join "," $jobs }}
 {{- end }}
+
+{{/* Stable, revision-scoped inputs for Jobs and the API startup check. */}}
+{{- define "keystone.upgrade_config" -}}
+{{- tuple . "upgrade-config" | include "job_name" -}}
+{{- end -}}
+
+{{- define "keystone.upgrade_labels" }}
+cloud.sap/keystone-release: {{ .Release.Name | quote }}
+cloud.sap/keystone-revision: {{ .Release.Revision | quote }}
+{{- end }}
+
+{{- define "keystone.migration_enabled" -}}
+{{- if or .Values.run_db_migration .Release.IsInstall -}}true{{- end -}}
+{{- end -}}
+
+{{/* Bypass ProxySQL for startup checks, including legacy non-native sidecars.
+     The FQDN avoids the ProxySQL pod's short-name hostAliases. */}}
+{{- define "keystone.direct_db_url" -}}
+{{- if or .Values.percona_cluster.enabled (eq .Values.dbType "pxc-global") -}}
+  {{- include "db_url_pxc" . -}}
+{{- else -}}
+  {{- $values := deepCopy .Values -}}
+  {{- $_ := set $values.proxysql "mode" "" -}}
+  {{- $host := include "keystone.db_service" . -}}
+  {{- include "utils.db_url" (dict "Values" $values) | replace (printf "@%s/" $host) (printf "@%s.%s/" $host (include "svc_fqdn" .)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "keystone.rollout_env" }}
+- name: KEYSTONE_RELEASE
+  value: {{ .Release.Name | quote }}
+- name: KEYSTONE_NAMESPACE
+  value: {{ .Release.Namespace | quote }}
+- name: KEYSTONE_REVISION
+  value: {{ .Release.Revision | quote }}
+- name: KEYSTONE_API_IMAGE
+  value: {{ printf "%s/%s:%v" .Values.global.registryAlternateRegion .Values.api.image .Values.api.imageTag | quote }}
+{{- end }}
+
+{{/* Call after kubernetes-entrypoint; requires the keystone-bin volume. */}}
+{{- define "keystone.schema_check_init_container" }}
+- name: keystone-schema-check
+  image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+  imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+  command: [bash, /scripts/schema-check]
+  volumeMounts:
+    {{- include "keystone.startup_check_volume_mounts" . | nindent 4 }}
+    - name: keystone-bin
+      mountPath: /scripts
+      readOnly: true
+{{- end }}
+
+{{- define "keystone.upgrade_check_init_container" }}
+- name: keystone-upgrade-check
+  image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+  imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+  command: [bash, /upgrade/upgrade-check]
+  volumeMounts:
+    {{- include "keystone.startup_check_volume_mounts" . | nindent 4 }}
+    - name: upgrade
+      mountPath: /upgrade
+      readOnly: true
+{{- end }}
+
+{{- define "keystone.startup_check_volume_mounts" }}
+- name: keystone-etc
+  mountPath: /etc/keystone/keystone.conf
+  subPath: keystone.conf
+  readOnly: true
+- name: keystone-etc
+  mountPath: /etc/keystone/logging.conf
+  subPath: logging.conf
+  readOnly: true
+- name: keystone-etc
+  mountPath: /etc/keystone/policy.yaml
+  subPath: policy.yaml
+  readOnly: true
+- name: keystone-etc-confd
+  mountPath: /etc/keystone/keystone.conf.d
+  readOnly: true
+- name: fernet
+  mountPath: /fernet-keys
+  readOnly: true
+- name: credential-keys
+  mountPath: /credential-keys
+  readOnly: true
+{{- include "utils.trust_bundle.volume_mount" . }}
+{{- end }}
+
+{{/* Database-checking init containers need the mesh proxy to be running first. */}}
+{{- define "keystone.startup_linkerd_annotation" -}}
+{{- $values := deepCopy .Values -}}
+{{- $_ := set $values.global "linkerd_use_native_sidecar" true -}}
+{{- include "utils.linkerd.pod_and_service_annotation" (dict "Values" $values) -}}
+{{- end -}}
 
 {{/*
 kubernetes-entrypoint init container using the sapcc fork from ghcrIoMirrorAlternateRegion.

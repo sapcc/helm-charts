@@ -1,0 +1,41 @@
+{{- if .Release.IsUpgrade }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ tuple . "job-rollout-ready" | include "job_name" }}
+  labels:
+    component: keystone
+    release: {{ .Release.Name }}
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        component: keystone
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
+      annotations:
+        # This Job only talks to the TLS-protected Kubernetes API.
+        linkerd.io/inject: disabled
+    spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
+      restartPolicy: Never
+      initContainers:
+      {{- tuple . (dict "JOBS" (include "keystone.job_dependencies" .)) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
+      containers:
+        - name: rollout-ready
+          image: {{ .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
+          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+          command: [python3, /upgrade/rollout.py]
+          env:
+            {{- include "keystone.rollout_env" . | nindent 12 }}
+          volumeMounts:
+            - name: upgrade
+              mountPath: /upgrade
+              readOnly: true
+      volumes:
+        - name: upgrade
+          configMap:
+            name: {{ include "keystone.upgrade_config" . }}
+{{- end }}

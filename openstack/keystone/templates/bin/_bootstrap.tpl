@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Bootstrap failures are temporarily non-fatal for Helm deployments.
+finish() {
+    status=$?
+    trap - EXIT
+    set +e
+    {{- include "utils.script.job_finished_hook" . | nindent 4 }}
+    exit "$status"
+}
+trap finish EXIT
+
 echo "Running native Keystone bootstrap"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf bootstrap \
     --bootstrap-username {{ .Values.api.adminUser }} \
@@ -22,12 +30,8 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 {{- else }}
     --bootstrap-internal-url http://{{ include "keystone_api_endpoint_host_internal" . }}:5000/v3 \
 {{- end }}
-    --bootstrap-region-id {{ .Values.global.region }} ||
-    echo "ERROR: Native Keystone bootstrap failed with exit code $?; ignoring failure." >&2
+    --bootstrap-region-id {{ .Values.global.region }}
 
 echo "Running Keystone extensions bootstrap"
 keystone-manage-extension --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf bootstrap \
-    --bootstrap-file=/etc/keystone/bootstrap.yaml ||
-    echo "ERROR: Keystone extensions bootstrap failed with exit code $?; ignoring failure." >&2
-
-{{ include "utils.script.job_finished_hook" . | trim }}
+    --bootstrap-file=/etc/keystone/bootstrap.yaml
