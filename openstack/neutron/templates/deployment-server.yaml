@@ -30,8 +30,10 @@ spec:
 {{ tuple . "neutron" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: neutron-server
+        {{- if .Values.aci.enabled }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") $ | sha256sum }}
+        {{- end }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") $ | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
 {{- if .Values.api.uwsgi }}
@@ -205,11 +207,13 @@ spec:
               name: neutron-etc
               subPath: ml2-conf.ini
               readOnly: true
+            {{- if .Values.aci.enabled }}
             {{- range until (int (include "neutron.aci_config_count" .)) }}
             - mountPath: /etc/neutron/neutron.conf.d/ml2-conf-aci-{{ printf "%03d" . }}.conf
               name: neutron-etc-aci
               subPath: ml2-conf-aci-{{ printf "%03d" . }}.ini
               readOnly: true
+            {{- end }}
             {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
               name: neutron-etc-vendor
@@ -340,12 +344,14 @@ spec:
         - name: neutron-etc-aci
           projected:
             sources:
+            {{- if .Values.aci.enabled }}
             {{- range until (int (include "neutron.aci_config_count" .)) }}
             - configMap:
                 name: neutron-etc-aci-{{ printf "%03d" . }}
                 items:
                 - key: ml2-conf-aci.ini
                   path: ml2-conf-aci-{{ printf "%03d" . }}.ini
+            {{- end }}
             {{- end }}
 {{- if .Values.api.uwsgi }}
         - name: neutron-etc-api

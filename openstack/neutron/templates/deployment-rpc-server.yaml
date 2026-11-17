@@ -32,7 +32,9 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: neutron-rpc-server
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        {{- if .Values.aci.enabled }}
         configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") $ | sha256sum }}
+        {{- end }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") $ | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") $ | sha256sum }}
         {{- if .Values.cc_fabric.enabled }}
@@ -134,11 +136,13 @@ spec:
               name: neutron-etc
               subPath: ml2-conf.ini
               readOnly: true
+            {{- if .Values.aci.enabled }}
             {{- range until (int (include "neutron.aci_config_count" .)) }}
             - mountPath: /etc/neutron/neutron.conf.d/ml2-conf-aci-{{ printf "%03d" . }}.conf
               name: neutron-etc-aci-{{ printf "%03d" . }}
               subPath: ml2-conf-aci.ini
               readOnly: true
+            {{- end }}
             {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
               name: neutron-etc-vendor
@@ -206,10 +210,12 @@ spec:
         - name: neutron-etc-vendor
           configMap:
             name: neutron-etc-vendor
+        {{- if .Values.aci.enabled }}
         {{- range until (int (include "neutron.aci_config_count" .)) }}
         - name: neutron-etc-aci-{{ printf "%03d" . }}
           configMap:
             name: neutron-etc-aci-{{ printf "%03d" . }}
+        {{- end }}
         {{- end }}
         - name: neutron-bin
           configMap:

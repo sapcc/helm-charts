@@ -30,7 +30,9 @@ spec:
         kubectl.kubernetes.io/default-container: neutron-aci-agent
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        {{- if .Values.aci.enabled }}
         configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") $ | sha256sum }}
+        {{- end }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") $ | sha256sum }}
         secret-neutron-common-hash: {{ include (print $.Template.BasePath "/secret-neutron-common.yaml") $ | sha256sum }}
         secret-aci-agent-hash: {{ include (print $.Template.BasePath "/secret-aci-agent.yaml") $ | sha256sum }}
@@ -89,12 +91,14 @@ spec:
         - name: neutron-etc-aci
           projected:
             sources:
+            {{- if .Values.aci.enabled }}
             {{- range until (int (include "neutron.aci_config_count" .)) }}
             - configMap:
                 name: neutron-etc-aci-{{ printf "%03d" . }}
                 items:
                 - key: ml2-conf-aci.ini
                   path: ml2-conf-aci-{{ printf "%03d" . }}.ini
+            {{- end }}
             {{- end }}
         - name: neutron-etc-vendor
           configMap:
