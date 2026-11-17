@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "sci-label-injector.fullname" . }}
+  labels:
+    {{- include "sci-label-injector.labels" . | nindent 4 }}
+spec:
+  schedule: 0 */6 * * *
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ include "sci-label-injector.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ .Chart.Name }}
+              args:
+              - --cluster-level-apis=false
+              {{ if .Values.staging.enabled }}
+              - --namespace={{ .Values.staging.namespace }}
+              {{ end }}
+              command:
+              - /labeller
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              envFrom:
+              - configMapRef:
+                  name: {{ include "sci-label-injector.fullname" . }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}

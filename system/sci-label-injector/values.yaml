@@ -1,0 +1,61 @@
+global:
+  region:
+
+replicaCount: 3
+
+mutatingWebhook:
+  enabled: true
+
+staging:
+  enabled: false
+  namespace: sci-label-injector-staging
+
+# Namespaces where the mutating webhook should NOT run in production mode
+# (the release's own namespace is excluded automatically by the template).
+excludedNamespaces:
+  - kube-node-lease
+  - kube-system
+  - kube-public
+  - cert-manager
+
+sci:
+  # Owned domain the sci label keys derive from (SCI_DOMAIN). The Kubernetes
+  # label prefix is "<domain>/" and the OCI label prefix is its reverse-DNS.
+  domain: cloud.sap
+  # Extra registry hosts the injector may read image config from, on top of the
+  # defaults (SCI_ALLOWED_REGISTRIES, an SSRF allowlist). The injector matches the
+  # image's registry host exactly: no wildcard, no regexp, so each entry is a bare
+  # host. The default allowlist is three Keppel hosts: the current-region registry
+  # (global.registry), the alternate-region registry (global.registryAlternateRegion),
+  # and keppel.global.cloud.sap. Anything listed here is added to that default
+  # (union), it does not replace it. The chart never emits an empty allowlist, so
+  # the injector's "empty allows any host" mode is not reachable here.
+  allowedRegistries: ""
+
+image:
+  repository: keppel.global.cloud.sap/ccloud/sci-label-injector
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+
+service:
+  type: ClusterIP
+  port: 443
+
+
+resources:
+  limits:
+    cpu: 800m
+    memory: 8000Mi
+  requests:
+    cpu: 400m
+    memory: 4000Mi
