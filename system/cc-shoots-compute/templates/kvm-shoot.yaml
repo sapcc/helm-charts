@@ -82,7 +82,7 @@ spec:
   resources:
   {{- $ignitionSecrets := dict }}
   {{- range $workerkey, $worker := $cluster.workers }}
-  {{- $secretName := include "cc-shoots-compute.ignitionSecretName" (dict "shootName" $key "workerName" $workerkey "worker" $worker) }}
+  {{- $secretName := include "cc-shoots-compute.ignitionSecretName" (dict "root" $ "cluster" $cluster "shootName" $key "workerName" $workerkey "worker" $worker) }}
   {{- if not (hasKey $ignitionSecrets $secretName) }}
   {{- $_ := set $ignitionSecrets $secretName true }}
   - name: {{ $secretName }}
@@ -250,9 +250,7 @@ spec:
               name: compute-{{ $key }}
           extraIgnition:
             override: false
-            secretRef: {{ include "cc-shoots-compute.ignitionSecretName" (dict "shootName" $key "workerName" $workerkey "worker" $worker) }}
-            raw: |
-{{ include "cc-shoots-compute.kvmIgnition" (dict "root" $ "cluster" $cluster "worker" $worker "workerChannel" $workerChannel) | indent 14 }}
+            secretRef: {{ include "cc-shoots-compute.ignitionSecretName" (dict "root" $ "cluster" $cluster "shootName" $key "workerName" $workerkey "worker" $worker) }}
 {{- end }}
 {{- end }}
 {{- end }}

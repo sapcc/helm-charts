@@ -1,6 +1,9 @@
 {{- define "cc-shoots-compute.kvmIgnition" -}}
 storage:
   files:
+  {{- with .commonFiles }}
+  {{- . | nindent 2 }}
+  {{- end }}
   {{- if eq .workerChannel "preRelease" }}
   {{- if and .worker.extraIgnitionFiles ( typeIs "string" .worker.extraIgnitionFiles ) }}
   {{- .worker.extraIgnitionFiles | nindent 2 }}
