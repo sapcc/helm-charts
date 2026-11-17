@@ -20,11 +20,11 @@ settingsFlow:
     {{- end }}
     # Network protocol: HTTP port, IPMI, disable XML responses
     "PATCH /redfish/v1/managers/1/networkprotocol": '{"HTTP": {"Port": 1080}, "IPMI": {"ProtocolEnabled": true}, "Oem": {"Hpe": {"XMLResponseEnabled": false}}}'
-  {{- if .Values.clusterConfig.syslogServer }}
-  # Remote syslog — $(SyslogServer) resolved at reconcile time from the metal-bmc-settings ConfigMap.
-  # Only rendered when clusterConfig.syslogServer is set (mirrors the Dell SysLog.1.* settings).
-  "PATCH /redfish/v1/Managers/1/NetworkProtocol": '{"Oem": {"Hpe": {"RemoteSyslogEnabled": true, "RemoteSyslogPort": 514, "RemoteSyslogServer": "$(SyslogServer)"}}}'
-  {{- end }}
+{{- if .Values.clusterConfig.syslogServer }}
+    # Remote syslog — $(SyslogServer) resolved at reconcile time from the metal-bmc-settings ConfigMap.
+    # Only rendered when clusterConfig.syslogServer is set (mirrors the Dell SysLog.1.* settings).
+    "PATCH /redfish/v1/Managers/1/NetworkProtocol": '{"Oem": {"Hpe": {"RemoteSyslogEnabled": true, "RemoteSyslogPort": 514, "RemoteSyslogServer": "$(SyslogServer)"}}}'
+{{- end }}
     # SNMP: disable SNMPv1, disable cold-start trap broadcast
     "PATCH /redfish/v1/Managers/1/SnmpService": '{"SNMPv1Enabled": false, "Oem": {"Hpe": {"SNMPColdStartTrapBroadcast": false}}}'
     # iLO Federation: disable discovery; require login for iLO RBSU

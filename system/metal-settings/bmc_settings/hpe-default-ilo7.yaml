@@ -27,6 +27,11 @@ settingsFlow:
     {{- end }}
     # Network protocol: IPMI, disable XML responses (HTTP port is read-only in iLO 7)
     "PATCH /redfish/v1/managers/1/networkprotocol": '{"IPMI": {"ProtocolEnabled": true}, "Oem": {"Hpe": {"XMLResponseEnabled": false}}}'
+{{- if .Values.clusterConfig.syslogServer }}
+    # Remote syslog — $(SyslogServer) resolved at reconcile time from the metal-bmc-settings ConfigMap.
+    # Only rendered when clusterConfig.syslogServer is set (mirrors the Dell SysLog.1.* settings).
+    "PATCH /redfish/v1/Managers/1/NetworkProtocol": '{"Oem": {"Hpe": {"RemoteSyslogEnabled": true, "RemoteSyslogPort": 514, "RemoteSyslogServer": "$(SyslogServer)"}}}'
+{{- end }}
     # SNMP: disable SNMPv1, disable cold-start trap broadcast
     "PATCH /redfish/v1/Managers/1/SnmpService": '{"SNMPv1Enabled": false, "Oem": {"Hpe": {"SNMPColdStartTrapBroadcast": false}}}'
     # Account service: enforce password complexity
@@ -57,6 +62,15 @@ variables:
         kind: BMC
         name: $(BmcName)
         fieldPath: metadata.labels[kubernetes.metal.cloud.sap/bb]
+  # SyslogServer: cluster-level syslog endpoint from the metal-bmc-settings ConfigMap.
+  {{- if .Values.clusterConfig.syslogServer }}
+  - key: SyslogServer
+    valueFrom:
+      configMapKeyRef:
+        name: {{ .Values.clusterConfig.configMapName }}
+        namespace: {{ .Values.clusterConfig.managedNamespace }}
+        key: syslogServer
+  {{- end }}
   # LicenseKey: iLO license fetched at reconcile time — secret name configured via Helm values.
   {{- if .Values.clusterConfig.hpeLicenseSecretName }}
   - key: LicenseKey
