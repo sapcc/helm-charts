@@ -9,6 +9,7 @@ set -e
 function process_config {
     mkdir -p /etc/neutron/plugins/cisco
     mkdir -p /etc/neutron/plugins/ml2
+    mkdir -p /etc/neutron/neutron.conf.d
 
     cp /neutron-etc/neutron.conf  /etc/neutron/neutron.conf
     cp /neutron-etc/asr1k-global.ini /etc/neutron/plugins/asr1k-global.ini
