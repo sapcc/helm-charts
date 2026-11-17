@@ -43,4 +43,6 @@
   value: "orbitus-postgresql.{{ $ctx.Release.Namespace }}.svc"
 - name: ORBITUS_DB_CONNECTION_OPTIONS
   value: "sslmode=disable"
+- name: ORBITUS_DB_NAME
+  value: {{ quote $db }}
 {{- end -}}
