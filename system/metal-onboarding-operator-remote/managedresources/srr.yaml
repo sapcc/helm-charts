@@ -1,0 +1,15 @@
+apiVersion: metal.ironcore.dev/v1alpha1
+kind: ServerReadinessRule
+metadata:
+  name: metal-onboarding-operator
+spec:
+  serverSelector:
+    matchLabels:
+      onboarding.metal.ironcore.dev/managed-by: metal-onboarding-operator
+  conditions:
+    - type: Discovered
+      requiredStatus: "True"
+  enforcementMode: BootstrapOnly
+  taint:
+    key: metal.ironcore.dev/Undiscovered
+    effect: NoBind
