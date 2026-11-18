@@ -19,9 +19,7 @@ REVISION = "cloud.sap/keystone-revision"
 RELEASE = "cloud.sap/keystone-release"
 WRITERS = {
     "keystone-db-expansion", "keystone-db-contraction",
-    "keystone-api", "keystone-cron", "keystone-repair-assignments",
-    "keystone-migration", "keystone-bootstrap", "keystone-credential-migrate",
-    "keystone-pre-rollout",
+    "keystone-api", "keystone-repair-assignments", "keystone-pre-rollout",
 }
 
 
@@ -51,16 +49,14 @@ def target_template(kind, name, template, revision, container, image, pending):
     return True
 
 
-def pending_rollout(release, revision, image, deployments, replicasets, pods, jobs, cronjob):
-    """Return reasons to wait; reject a superseded rollout immediately."""
+def pending_rollout(release, revision, image, deployments, replicasets, pods, jobs):
+    """Check release-labelled pipeline workloads; reject a superseded rollout."""
     pending = []
-    owned_deployments = set()
     name = f"{release}-api"
     dep = deployments.get(name)
     if dep is None:
         pending.append(f"Deployment {name} does not exist yet")
     else:
-        owned_deployments.add(dep["metadata"]["uid"])
         current = target_template("Deployment", name, dep["spec"]["template"], revision,
                                   "keystone-api", image, pending)
         desired = dep["spec"].get("replicas", 1)
@@ -73,51 +69,22 @@ def pending_rollout(release, revision, image, deployments, replicasets, pods, jo
             if status.get(key, 0) != desired:
                 pending.append(f"Deployment {name}: {key}={status.get(key, 0)}, expected {desired}")
 
-    maintenance_name = f"{release}-repair-assignments"
-    if cronjob is None:
-        pending.append(f"CronJob {maintenance_name} does not exist yet")
-    else:
-        # CronJobs have no Deployment-style readiness or observedGeneration.
-        # Check future runs' template, then drain old Jobs and pods below.
-        target_template("CronJob", maintenance_name, cronjob["spec"]["jobTemplate"]["spec"]["template"],
-                        revision, "keystone-repair-assignments", image, pending)
-
-    legacy_name = f"{release}-cron"
-    legacy = deployments.get(legacy_name)
-    if legacy is not None:
-        owned_deployments.add(legacy["metadata"]["uid"])
-        pending.append(f"Legacy Deployment {legacy_name} has not been removed")
-
-    owned_replicasets = set()
     for rs in replicasets:
         template = rs["spec"]["template"]
-        # A background-deleted legacy Deployment may already be gone while
-        # its ReplicaSets are still able to create pods.
-        owned = (labels(template).get(RELEASE) == release
-                 or labels(template).get("name") in (f"{release}-api", legacy_name)
-                 or any(ref.get("uid") in owned_deployments for ref in rs["metadata"].get("ownerReferences", [])))
-        if not owned:
+        if labels(template).get(RELEASE) != release:
             continue
-        owned_replicasets.add(rs["metadata"]["uid"])
-        if labels(template).get(REVISION) != revision or labels(template).get("name") == legacy_name:
+        if not any(c["name"] == "keystone-api" for c in writer_containers(template)):
+            continue
+        if labels(template).get(REVISION) != revision:
             if rs["spec"].get("replicas", 0) or rs.get("status", {}).get("replicas", 0):
                 pending.append(f"Old ReplicaSet {rs['metadata']['name']} still has replicas")
 
-    owned_jobs = set()
     for job in jobs:
         template = job["spec"]["template"]
-        # Older CronJob-generated Jobs have no release/component metadata
-        # labels. Their pod template and owner reference identify them instead.
-        owned = (labels(job).get("release") == release or labels(job).get(RELEASE) == release
-                 or labels(template).get(RELEASE) == release
-                 or labels(template).get("name") == maintenance_name
-                 or any(ref.get("kind") == "CronJob" and ref.get("name") == maintenance_name
-                        for ref in job["metadata"].get("ownerReferences", [])))
-        if not owned:
+        if labels(template).get(RELEASE) != release:
             continue
         if not writer_containers(template):
             continue
-        owned_jobs.add(job["metadata"]["uid"])
         if labels(template).get(REVISION) != revision and not finished(job):
             # A non-terminal Job can create another old-version pod between
             # retries even when it currently has no active pods.
@@ -126,15 +93,12 @@ def pending_rollout(release, revision, image, deployments, replicasets, pods, jo
 
     ready_api_pods = 0
     for pod in pods:
-        refs = pod["metadata"].get("ownerReferences", [])
-        owned = (labels(pod).get(RELEASE) == release
-                 or labels(pod).get("name") in (f"{release}-api", legacy_name, maintenance_name)
-                 or any(ref.get("uid") in owned_replicasets | owned_jobs for ref in refs))
         containers = writer_containers(pod)
-        if not owned or not containers or pod.get("status", {}).get("phase") in ("Succeeded", "Failed"):
+        if (labels(pod).get(RELEASE) != release or not containers
+                or pod.get("status", {}).get("phase") in ("Succeeded", "Failed")):
             continue
         name = pod["metadata"]["name"]
-        if labels(pod).get(REVISION) != revision or any(c["name"] == "keystone-cron" for c in containers):
+        if labels(pod).get(REVISION) != revision:
             pending.append(f"Old pod {name} has not terminated")
             continue
         for container in containers:
@@ -183,11 +147,9 @@ class Kubernetes:
     def path(self, api, resource):
         return f"/{api}/namespaces/{self.namespace}/{resource}"
 
-    def list(self, api, resource, selector="component=keystone"):
+    def list(self, api, resource):
         result = []
-        query = {"limit": "500"}
-        if selector:
-            query["labelSelector"] = selector
+        query = {"labelSelector": "component=keystone", "limit": "500"}
         while True:
             page = self.get(self.path(api, resource) + "?" + urllib.parse.urlencode(query))
             if page is None:
@@ -200,16 +162,14 @@ class Kubernetes:
 
     def snapshot(self, release):
         deployments = {
-            f"{release}-{component}": self.get(self.path("apis/apps/v1", f"deployments/{release}-{component}"))
-            for component in ("api", "cron")
+            f"{release}-api": self.get(self.path("apis/apps/v1", f"deployments/{release}-api")),
         }
-        cronjob = self.get(self.path("apis/batch/v1", f"cronjobs/{release}-repair-assignments"))
         replicasets = self.list("apis/apps/v1", "replicasets")
-        jobs = self.list("apis/batch/v1", "jobs", selector=None)
+        jobs = self.list("apis/batch/v1", "jobs")
         # Read controllers before their children so old Jobs/pods created
         # while the templates are being updated are included in this check.
         pods = self.list("api/v1", "pods")
-        return deployments, replicasets, pods, jobs, cronjob
+        return deployments, replicasets, pods, jobs
 
 
 def wait_for_rollout(client, release, revision, image):

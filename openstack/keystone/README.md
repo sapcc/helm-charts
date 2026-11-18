@@ -16,11 +16,10 @@ ordinary Kubernetes Jobs and `kubernetes-entrypoint` dependency checks.
   Upgrade-check warnings are accepted. API and repair pods wait for this Job, so these steps
   run once per release revision rather than in every API pod.
 - **`db-contraction`** runs after expansion on upgrades. It waits for
-  `pre-rollout`, checks the target API revision is ready and the repair
-  CronJob template is updated, then runs `db_sync --contract` and verifies the
-  final schema. Older Jobs must no longer be able to run, old ReplicaSets must
-  have no replicas, old pods must have terminated, and the legacy cron
-  Deployment must be removed. It does not wait for a new scheduled repair run.
+  `pre-rollout`, checks the target API revision is ready, then runs
+  `db_sync --contract` and verifies the final schema. Earlier revisions of
+  these Jobs must no longer be able to run,
+  old API ReplicaSets must have no replicas, and old pods must have terminated.
 - **`repair-assignments`** is scheduled by its CronJob. Each run waits for
   `pre-rollout` before repairing role assignments.
 
@@ -58,18 +57,14 @@ flowchart TD
     PRE --> API[API]
     PRE --> REPAIR[repair-assignments Job]
     API -.-> CONTRACT[db-contraction]
-    CRON[repair-assignments CronJob] -.-> CONTRACT
 
     subgraph OLD[Previous-revision Jobs and resources]
         OLD_MIG[db-expansion]
         OLD_PRE[pre-rollout]
-        OLD_BOOT[job-bootstrap]
-        OLD_CREDS[job-creds-migrate]
         OLD_CONTRACT[db-contraction]
         OLD_REPAIR[repair-assignments Job]
         OLD_RS[ReplicaSets]
         OLD_PODS[Pods]
-        LEGACY[Legacy cron Deployment]
     end
     OLD -.-> CONTRACT
 ```
