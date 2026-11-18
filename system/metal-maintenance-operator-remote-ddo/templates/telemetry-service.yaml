@@ -1,0 +1,51 @@
+{{/*
+Seed-only telemetry Service (additions-origin).
+
+WHY THIS EXISTS:
+  The upstream subchart emits a telemetry Service named
+  metal-maintenance-operator-controller-manager-telemetry-events (port 9092)
+  unconditionally for BOTH renders.
+
+  The DDO CR (Task 8) must drop the shoot-render copy of this Service because
+  no controller runs on the shoot cluster. The correct CR transformation is:
+    filterKinds: { kinds: [Service], source: upstream }
+  This drops upstream-origin Services from BOTH renders.
+
+  Without this additions template the seed would then have NO telemetry Service.
+  This template reinstates it as an additions-origin object (origin: additions),
+  which the filterKinds source:upstream transformation leaves untouched.
+
+NAME COLLISION NOTE:
+  The upstream Service and this additions Service carry DIFFERENT origins:
+    upstream Service → origin: upstream (dropped by filterKinds source:upstream)
+    this Service     → origin: additions (survives)
+  They carry the SAME name so that no further CR patches are needed; the DDO
+  filterKinds transformation atomically swaps the upstream copy for this one.
+
+SELECTOR:
+  Matches the upstream Deployment's spec.selector.matchLabels exactly:
+    app.kubernetes.io/name: mmo-core   (chart alias — immutable selector key)
+    control-plane: controller-manager
+  Verified by ci/selector-parity.sh on every CI run.
+*/}}
+{{- if eq .Values.mode "seed" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-maintenance-operator-controller-manager-telemetry-events
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+spec:
+  ports:
+  - name: events
+    port: 9092
+    protocol: TCP
+    targetPort: events
+  selector:
+    app.kubernetes.io/name: mmo-core
+    control-plane: controller-manager
+{{- end }}

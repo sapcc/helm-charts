@@ -1,0 +1,177 @@
+{{/*
+shoot-only cross-operator + OIDC-IAS RBAC additions.
+All objects rendered only in mode=shoot; each stamped origin: additions.
+Group names are region-gated (contains "qa-de-" → QA group).
+*/}}
+{{- if eq .Values.mode "shoot" }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metal-maintenance-token-rotate
+  namespace: kube-system
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metal-maintenance-token-rotate
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metal-maintenance-token-rotate
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-maintenance-token-rotate
+subjects:
+- kind: ServiceAccount
+  name: metal-maintenance-token-rotate
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: metal-maintenance-token-rotate
+  namespace: kube-system
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts/token
+  verbs:
+  - create
+  resourceNames:
+  - metal-maintenance-operator-controller-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: metal-maintenance-token-rotate
+  namespace: kube-system
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: metal-maintenance-token-rotate
+subjects:
+- kind: ServiceAccount
+  name: metal-maintenance-token-rotate
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metal-maintenance-operator-viewer
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+rules:
+- apiGroups:
+  - readiness.metal.ironcore.dev
+  resources:
+  - serverwirings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - vendorconsole.metal.ironcore.dev
+  resources:
+  - consoles
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-maintenance-viewer
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-maintenance-operator-viewer
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}}CC_IAS_CONTROLPLANE_QA_DEVELOPER{{- else -}}CC_IAS_CONTROLPLANE_PROD_DEVELOPER{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-maintenance-editor
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-maintenance-operator-servermaintenance-editor-role
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}}CC_IAS_CONTROLPLANE_QA_DEVELOPER{{- else -}}CC_IAS_CONTROLPLANE_PROD_DEVELOPER{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: servermaintenance-editor-role
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    {{- include "chart.additionsAnnotations" . | nindent 4 }}
+rules:
+- apiGroups:
+  - maintenance.metal.ironcore.dev
+  - metal.ironcore.dev
+  resources:
+  - servermaintenances
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - maintenance.metal.ironcore.dev
+  - metal.ironcore.dev
+  resources:
+  - servermaintenances/status
+  verbs:
+  - get
+{{- end }}
