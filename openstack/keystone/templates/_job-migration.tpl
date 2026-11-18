@@ -6,10 +6,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ tuple . $job | include "job_name" }}"
-  {{- if ne $phase "contract" }}
-  annotations:
-    helm.sh/resource-policy: keep
-  {{- end }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -44,8 +40,7 @@ spec:
       initContainers:
       {{- $dependencies := dict "SERVICE" (include "keystone.db_service" .) }}
       {{- if eq $phase "contract" }}
-        {{- $jobs := list (tuple . "job-bootstrap" | include "job_name") (tuple . "job-creds-migrate" | include "job_name") (tuple . "job-rollout-ready" | include "job_name") }}
-        {{- $_ := set $dependencies "JOBS" (join "," $jobs) }}
+        {{- $_ := set $dependencies "JOBS" (include "keystone.job_dependencies" .) }}
       {{- end }}
       {{- tuple . $dependencies | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}

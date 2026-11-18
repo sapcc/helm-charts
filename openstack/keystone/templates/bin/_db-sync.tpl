@@ -1,33 +1,25 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
-finish() {
-    status=$?
-    trap - EXIT
-    set +e
-    {{- include "utils.script.job_finished_hook" . | nindent 4 }}
-    exit "$status"
-}
-trap finish EXIT
-
 manage=(keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf)
 phase=${1:?Expected initialize, expand or contract}
 
+echo "DB Version before migration:"
+"${manage[@]}" db_version
+
+status=0
 case "$phase" in
     initialize)
-        "${manage[@]}" db_sync
-        "${manage[@]}" doctor
+        "${manage[@]}" db_sync || status=$?
         ;;
     expand)
-        # Skip doctor until "--ignore" is supported
-        # "${manage[@]}" doctor
-        "${manage[@]}" db_sync --expand
+        "${manage[@]}" db_sync --expand || status=$?
         ;;
     contract)
         # A ready Service can still route to old replicas. Recheck the target
         # rollout immediately before the destructive schema step.
-        python3 /upgrade/rollout.py
-        "${manage[@]}" db_sync --contract
+        python3 /upgrade/rollout.py || status=$?
+        if [[ "$status" == 0 ]]; then
+            "${manage[@]}" db_sync --contract || status=$?
+        fi
         ;;
     *)
         echo "Unknown database migration phase: $phase" >&2
@@ -35,11 +27,18 @@ case "$phase" in
         ;;
 esac
 
-status=0
-"${manage[@]}" db_sync --check || status=$?
-if [[ "$status" == 0 || ( "$phase" == expand && "$status" == 4 ) ]]; then
-    echo "Database $phase completed (schema check: $status)."
-else
-    echo "Unexpected database state after $phase (schema check: $status)." >&2
-    exit "$status"
+echo "DB Version after migration:"
+"${manage[@]}" db_version
+
+if [[ "$status" == 0 ]]; then
+    "${manage[@]}" db_sync --check || status=$?
+    if [[ "$status" == 0 || ( "$phase" == expand && "$status" == 4 ) ]]; then
+        echo "Database $phase completed (schema check: $status)."
+        status=0
+    else
+        echo "Unexpected database state after $phase (schema check: $status)." >&2
+    fi
 fi
+
+{{ include "utils.script.job_finished_hook" . | trim }}
+exit "$status"

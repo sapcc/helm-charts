@@ -66,15 +66,10 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{- define "keystone.job_dependencies" }}
-  {{- $jobs := list }}
-  {{- if include "keystone.migration_enabled" . }}
-    {{- $jobs = append $jobs (tuple . "job-migration" | include "job_name") }}
-  {{- end }}
-  {{- $jobs = append $jobs (tuple . "job-bootstrap" | include "job_name") }}
-  {{- join "," $jobs }}
+  {{- tuple . "pre-rollout" | include "job_name" }}
 {{- end }}
 
-{{/* Stable, revision-scoped inputs for Jobs and the API startup check. */}}
+{{/* Stable, revision-scoped scripts for migration Jobs. */}}
 {{- define "keystone.upgrade_config" -}}
 {{- tuple . "upgrade-config" | include "job_name" -}}
 {{- end -}}
@@ -85,7 +80,7 @@ cloud.sap/keystone-revision: {{ .Release.Revision | quote }}
 {{- end }}
 
 {{- define "keystone.migration_enabled" -}}
-{{- if or .Values.run_db_migration .Release.IsInstall -}}true{{- end -}}
+{{- if .Values.run_db_migration -}}true{{- end -}}
 {{- end -}}
 
 {{/* Bypass ProxySQL for startup checks, including legacy non-native sidecars.
@@ -111,63 +106,6 @@ cloud.sap/keystone-revision: {{ .Release.Revision | quote }}
 - name: KEYSTONE_API_IMAGE
   value: {{ printf "%s/%s:%v" .Values.global.registryAlternateRegion .Values.api.image .Values.api.imageTag | quote }}
 {{- end }}
-
-{{/* Call after kubernetes-entrypoint; requires the keystone-bin volume. */}}
-{{- define "keystone.schema_check_init_container" }}
-- name: keystone-schema-check
-  image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
-  imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
-  command: [bash, /scripts/schema-check]
-  volumeMounts:
-    {{- include "keystone.startup_check_volume_mounts" . | nindent 4 }}
-    - name: keystone-bin
-      mountPath: /scripts
-      readOnly: true
-{{- end }}
-
-{{- define "keystone.upgrade_check_init_container" }}
-- name: keystone-upgrade-check
-  image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
-  imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
-  command: [bash, /upgrade/upgrade-check]
-  volumeMounts:
-    {{- include "keystone.startup_check_volume_mounts" . | nindent 4 }}
-    - name: upgrade
-      mountPath: /upgrade
-      readOnly: true
-{{- end }}
-
-{{- define "keystone.startup_check_volume_mounts" }}
-- name: keystone-etc
-  mountPath: /etc/keystone/keystone.conf
-  subPath: keystone.conf
-  readOnly: true
-- name: keystone-etc
-  mountPath: /etc/keystone/logging.conf
-  subPath: logging.conf
-  readOnly: true
-- name: keystone-etc
-  mountPath: /etc/keystone/policy.yaml
-  subPath: policy.yaml
-  readOnly: true
-- name: keystone-etc-confd
-  mountPath: /etc/keystone/keystone.conf.d
-  readOnly: true
-- name: fernet
-  mountPath: /fernet-keys
-  readOnly: true
-- name: credential-keys
-  mountPath: /credential-keys
-  readOnly: true
-{{- include "utils.trust_bundle.volume_mount" . }}
-{{- end }}
-
-{{/* Database-checking init containers need the mesh proxy to be running first. */}}
-{{- define "keystone.startup_linkerd_annotation" -}}
-{{- $values := deepCopy .Values -}}
-{{- $_ := set $values.global "linkerd_use_native_sidecar" true -}}
-{{- include "utils.linkerd.pod_and_service_annotation" (dict "Values" $values) -}}
-{{- end -}}
 
 {{/*
 kubernetes-entrypoint init container using the sapcc fork from ghcrIoMirrorAlternateRegion.

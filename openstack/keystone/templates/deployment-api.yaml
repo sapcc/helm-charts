@@ -55,7 +55,6 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         sentry-filter-rules-hash: {{ include (print $.Template.BasePath "/configmap-sentry-filter-rules.yaml") . | sha256sum }}
-        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
         secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.federation.oidc.enabled }}
@@ -77,7 +76,7 @@ spec:
         {{- if .Values.api.apacheMetrics.enabled }}
         prometheus.io/port_1: {{ .Values.api.apacheMetrics.port | quote }}
         {{- end }}
-        {{- include "keystone.startup_linkerd_annotation" . | indent 8 }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- if (include "keystone.tls.serving" .) }}
       securityContext:
@@ -98,8 +97,6 @@ spec:
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" (include "keystone.job_dependencies" .)) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
-      {{- include "keystone.schema_check_init_container" . | indent 6 }}
-      {{- include "keystone.upgrade_check_init_container" . | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
@@ -397,9 +394,6 @@ spec:
       {{- include "utils.proxysql.container" . | indent 8 }}
       {{- end }}
       volumes:
-        - name: upgrade
-          configMap:
-            name: {{ include "keystone.upgrade_config" . }}
         - name: etc-keystone
           emptyDir: {}
         - name: wsgi-keystone
@@ -453,16 +447,9 @@ spec:
             defaultMode: 0444
         {{- end }}
         - name: keystone-bin
-          projected:
+          configMap:
+            name: keystone-bin
             defaultMode: 0555
-            sources:
-            - configMap:
-                name: keystone-bin
-            - secret:
-                name: keystone-bin-secrets
-                items:
-                  - key: bootstrap
-                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet

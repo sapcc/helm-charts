@@ -20,6 +20,7 @@ RELEASE = "cloud.sap/keystone-release"
 WRITERS = {
     "keystone-api", "keystone-cron", "keystone-repair-assignments",
     "keystone-migration", "keystone-bootstrap", "keystone-credential-migrate",
+    "keystone-pre-rollout",
 }
 
 

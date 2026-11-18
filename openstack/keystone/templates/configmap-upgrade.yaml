@@ -5,14 +5,9 @@ metadata:
   labels:
     component: keystone
     release: {{ .Release.Name }}
-  annotations:
-    # Old ReplicaSets may still start pods using these scripts.
-    helm.sh/resource-policy: keep
 immutable: true
 data:
   db-sync: |
 {{ include (print .Template.BasePath "/bin/_db-sync.tpl") . | indent 4 }}
-  upgrade-check: |
-{{ include (print .Template.BasePath "/bin/_upgrade-check.tpl") . | indent 4 }}
   rollout.py: |
 {{ include (print .Template.BasePath "/bin/_rollout.py.tpl") . | indent 4 }}
