@@ -75,7 +75,7 @@ spec:
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
                 - SYS_PTRACE
-          command: ["dumb-init", "/bin/bash", "-c"]
+          command: ["/bin/bash", "-c"]
           args:
             - |
               set -xe
@@ -183,7 +183,31 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
+            - name: network-status
+              mountPath: /run/dhcp-agent
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: agent-check-exporter
+          image: {{$.Values.global.registry}}/neutron-network-agent-checks:{{ $.Values.imageVersionAgentExporter | required "Please set neutron.imageVersionAgentExporter "}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: METRIC_PREFIX
+              value: openstack_neutron_agent_check
+          ports:
+            - name: metrics-export
+              containerPort: 9116
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9116
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+            periodSeconds: 60
+          resources:
+{{ toYaml $.Values.pod.resources.agent_checks_exporter | indent 12 }}
+          volumeMounts:
+            - name: network-status
+              mountPath: /run/dhcp-agent
+
         - name: neutron-metadata-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
@@ -286,3 +310,7 @@ spec:
               items:
                 - key: neutron-metadata-secrets.conf
                   path: secrets/neutron-metadata-secrets.conf
+      {{- if $hypervisor.deploy_dhcp_agent }}
+      - name: network-status
+        emptyDir: {}
+      {{- end }}
