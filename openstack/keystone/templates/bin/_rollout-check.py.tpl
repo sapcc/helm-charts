@@ -18,6 +18,7 @@ from pathlib import Path
 REVISION = "cloud.sap/keystone-revision"
 RELEASE = "cloud.sap/keystone-release"
 WRITERS = {
+    "keystone-db-expansion", "keystone-db-contraction",
     "keystone-api", "keystone-cron", "keystone-repair-assignments",
     "keystone-migration", "keystone-bootstrap", "keystone-credential-migrate",
     "keystone-pre-rollout",

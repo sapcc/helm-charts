@@ -1,4 +1,4 @@
-{{- define "keystone.migration_job" -}}
+{{- define "keystone.db_migration_job" -}}
 {{- $phase := .phase -}}
 {{- $job := .job -}}
 {{- with .root }}
@@ -47,12 +47,12 @@ spec:
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       containers:
-        - name: keystone-migration
+        - name: keystone-{{ $job }}
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.api.imagePullPolicy | quote }}
           command:
             - bash
-            - /upgrade/db-sync
+            - /upgrade/db-migration.sh
             - {{ $phase }}
           env:
             {{- if eq $phase "contract" }}

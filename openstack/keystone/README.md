@@ -6,7 +6,7 @@ ordinary Kubernetes Jobs and `kubernetes-entrypoint` dependency checks.
 
 ## Jobs
 
-- **`job-migration`** runs when `run_db_migration` is true: full `db_sync` on
+- **`db-expansion`** runs when `run_db_migration` is true: full `db_sync` on
   installation, or `db_sync --expand` on upgrade.
 - **`pre-rollout`** waits for database preparation, when enabled, then runs
   schema validation, native/extension bootstrap, credential migration,
@@ -15,7 +15,7 @@ ordinary Kubernetes Jobs and `kubernetes-entrypoint` dependency checks.
   Bootstrap, schema, credential and upgrade-check errors fail the Job.
   Upgrade-check warnings are accepted. API and repair pods wait for this Job, so these steps
   run once per release revision rather than in every API pod.
-- **`job-db-contract`** runs after expansion on upgrades. It waits for
+- **`db-contraction`** runs after expansion on upgrades. It waits for
   `pre-rollout`, checks the target API revision is ready and the repair
   CronJob template is updated, then runs `db_sync --contract` and verifies the
   final schema. Older Jobs must no longer be able to run, old ReplicaSets must
@@ -41,7 +41,7 @@ full synchronization and does not need a separate contraction Job.
 
 ```mermaid
 flowchart TD
-    DB[Database] --> MIG[job-migration]
+    DB[Database] --> MIG[db-expansion]
     MIG --> PRE[pre-rollout]
     CACHE[Memcached] --> PRE
     PRE --> API[API]
@@ -52,20 +52,20 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    DB[Database] --> MIG[job-migration]
+    DB[Database] --> MIG[db-expansion]
     MIG --> PRE[pre-rollout]
     CACHE[Memcached] --> PRE
     PRE --> API[API]
     PRE --> REPAIR[repair-assignments Job]
-    API -.-> CONTRACT[job-db-contract]
+    API -.-> CONTRACT[db-contraction]
     CRON[repair-assignments CronJob] -.-> CONTRACT
 
     subgraph OLD[Previous-revision Jobs and resources]
-        OLD_MIG[job-migration]
+        OLD_MIG[db-expansion]
         OLD_PRE[pre-rollout]
         OLD_BOOT[job-bootstrap]
         OLD_CREDS[job-creds-migrate]
-        OLD_CONTRACT[job-db-contract]
+        OLD_CONTRACT[db-contraction]
         OLD_REPAIR[repair-assignments Job]
         OLD_RS[ReplicaSets]
         OLD_PODS[Pods]

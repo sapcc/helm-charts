@@ -79,7 +79,7 @@ cloud.sap/keystone-release: {{ .Release.Name | quote }}
 cloud.sap/keystone-revision: {{ .Release.Revision | quote }}
 {{- end }}
 
-{{- define "keystone.migration_enabled" -}}
+{{- define "keystone.db_migration_enabled" -}}
 {{- if .Values.run_db_migration -}}true{{- end -}}
 {{- end -}}
 
