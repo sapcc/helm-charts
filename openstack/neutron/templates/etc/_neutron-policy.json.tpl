@@ -25,8 +25,8 @@
     "context_is_securitygroup_admin": "(role:securitygroup_admin and rule:owner) or rule:context_is_compute_admin or rule:context_is_network_admin",
     "context_is_securitygroup_viewer": "(role:securitygroup_viewer and rule:owner) or rule:context_is_viewer or rule:context_is_securitygroup_admin",
     "_comment_ccadmin_invariant2": "ccloud ADR Invariant 2, Model A (grant-layer). Security-group / port_security_enabled mutation requires the explicitly-assigned role:extended_member in addition to member. Cloud-wide and domain-agnostic on purpose: the ccadmin-only effect comes from WHO holds extended_member (granted everywhere except the restricted ccadmin groups), not from the policy.",
-    "ccadmin_member_ok": "rule:member and role:extended_member",
-    "ccadmin_netedit_ok": "rule:context_is_network_network_admin or (rule:network_member and role:extended_member)",
+    "ccadmin_member_ok": "role:admin or (rule:member and role:extended_member)",
+    "ccadmin_netedit_ok": "rule:context_is_network_network_admin or role:admin or (rule:network_member and role:extended_member)",
 
     "shared": "field:networks:shared=True",
     "shared_firewalls": "field:firewalls:shared=True",
