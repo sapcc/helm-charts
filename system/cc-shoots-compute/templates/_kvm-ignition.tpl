@@ -4,12 +4,10 @@ storage:
   {{- with .commonFiles }}
   {{- . | nindent 2 }}
   {{- end }}
-  {{- if eq .workerChannel "preRelease" }}
   {{- if and .worker.extraIgnitionFiles ( typeIs "string" .worker.extraIgnitionFiles ) }}
   {{- .worker.extraIgnitionFiles | nindent 2 }}
   {{- end }}
-  {{- end }}
-  {{- if and ( eq .workerChannel "preRelease" ) .worker.defaultIgnitionFiles ( typeIs "string" .worker.defaultIgnitionFiles ) }}
+  {{- if and .worker.defaultIgnitionFiles ( typeIs "string" .worker.defaultIgnitionFiles ) }}
   {{- .worker.defaultIgnitionFiles | nindent 2 }}
   {{- else }}
 
@@ -126,12 +124,10 @@ storage:
 
 systemd:
   units:
-  {{- if eq .workerChannel "preRelease" }}
   {{- if and .worker.extraIgnitionSystemdUnits ( typeIs "string" .worker.extraIgnitionSystemdUnits ) }}
   {{- .worker.extraIgnitionSystemdUnits | nindent 2 }}
   {{- end }}
-  {{- end }}
-  {{- if and ( eq .workerChannel "preRelease" ) .worker.defaultIgnitionSystemdUnits ( typeIs "string" .worker.defaultIgnitionSystemdUnits ) }}
+  {{- if and .worker.defaultIgnitionSystemdUnits ( typeIs "string" .worker.defaultIgnitionSystemdUnits ) }}
   {{- .worker.defaultIgnitionSystemdUnits | nindent 2 }}
   {{- else }}
   - name: ovsdb-server.service

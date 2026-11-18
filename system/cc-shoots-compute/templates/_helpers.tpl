@@ -10,13 +10,11 @@ Usage: {{ include "asNumber" .Values.networking.asNumber }}
 
 {{/* Share the shoot Secret only when non-overridden workers render identical ignition. */}}
 {{- define "cc-shoots-compute.ignitionSecretName" -}}
-{{- $workerChannel := coalesce .worker.channel .cluster.channel .root.Values.workerDefaults.channel -}}
-{{- $ignition := include "cc-shoots-compute.kvmIgnition" (dict "root" .root "cluster" .cluster "worker" .worker "workerChannel" $workerChannel) -}}
+{{- $ignition := include "cc-shoots-compute.kvmIgnition" (dict "root" .root "cluster" .cluster "worker" .worker) -}}
 {{- $workerSpecific := not (empty .worker.extraIgnition) -}}
 {{- range $other := .cluster.workers -}}
 {{- if not $other.extraIgnition -}}
-{{- $otherChannel := coalesce $other.channel $.cluster.channel $.root.Values.workerDefaults.channel -}}
-{{- $otherIgnition := include "cc-shoots-compute.kvmIgnition" (dict "root" $.root "cluster" $.cluster "worker" $other "workerChannel" $otherChannel) -}}
+{{- $otherIgnition := include "cc-shoots-compute.kvmIgnition" (dict "root" $.root "cluster" $.cluster "worker" $other) -}}
 {{- if ne $ignition $otherIgnition -}}
 {{- $workerSpecific = true -}}
 {{- end -}}
