@@ -66,25 +66,16 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{- define "keystone.job_dependencies" }}
-  {{- if include "keystone.db_migration_enabled" . }}
+  {{- if or .Values.run_db_migration .Release.IsInstall }}
     {{- printf "%s," (tuple . "db-expansion" | include "job_name") }}
   {{- end }}
   {{- tuple . "job-bootstrap" | include "job_name" }}
 {{- end }}
 
-{{/* Stable, revision-scoped scripts for migration Jobs. */}}
-{{- define "keystone.upgrade_config" -}}
-{{- tuple . "upgrade-config" | include "job_name" -}}
-{{- end -}}
-
 {{- define "keystone.upgrade_labels" }}
 cloud.sap/keystone-release: {{ .Release.Name | quote }}
 cloud.sap/keystone-revision: {{ .Release.Revision | quote }}
 {{- end }}
-
-{{- define "keystone.db_migration_enabled" -}}
-{{- if .Values.run_db_migration -}}true{{- end -}}
-{{- end -}}
 
 {{- define "keystone.rollout_env" }}
 - name: KEYSTONE_RELEASE

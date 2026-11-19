@@ -6,9 +6,11 @@ ordinary Kubernetes Jobs and `kubernetes-entrypoint` dependency checks.
 
 ## Jobs
 
-- **`db-expansion`** runs when `run_db_migration` is true: full `db_sync` on
-  installation, or `db_sync --expand` on upgrade.
-- **`job-bootstrap`** waits for database preparation, when enabled, then runs
+- **`db-expansion`** always runs full `db_sync` on installation, regardless of
+  `run_db_migration`. On upgrade, it runs `db_sync --expand` only when
+  `run_db_migration` is true.
+- **`job-bootstrap`** waits for database initialization on installation or
+  expansion on upgrade, when enabled, then runs
   native and extension bootstrap. API and repair pods wait for this Job.
 - **`job-creds-migrate`** re-encrypts credentials with the current primary key
   in a separate Job, once the database Service is ready.
@@ -30,12 +32,14 @@ Solid arrows show Job/Service prerequisites; dashed arrows show resource-state
 checks. Transitive dependencies are omitted. Job names include the release name
 and Helm revision. The API never waits for contraction.
 
-Complete an upgrade before starting the next: previous-revision Jobs and
-script ConfigMaps are not retained when Helm replaces them.
+Complete an upgrade before starting the next: previous-revision Jobs are not
+retained when Helm replaces them, and migration scripts in the shared
+`keystone-bin` ConfigMap are updated in place rather than pinned to a revision.
 
-The graphs assume `run_db_migration: true`. When false, both database migration
-Jobs are omitted and the schema must already be prepared. Installation uses a
-full synchronization and does not need a separate contraction Job.
+The upgrade graph assumes `run_db_migration: true`. When false on upgrades,
+both database migration Jobs are omitted and the schema must already be
+prepared. Installation always uses a full synchronization and does not need
+a separate contraction Job.
 
 ### Installation
 

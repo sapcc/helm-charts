@@ -52,7 +52,7 @@ spec:
           imagePullPolicy: {{ default "IfNotPresent" .Values.api.imagePullPolicy | quote }}
           command:
             - bash
-            - /upgrade/db-migration.sh
+            - /scripts/db-migration.sh
             - {{ $phase }}
           env:
             {{- if eq $phase "contract" }}
@@ -89,8 +89,8 @@ spec:
             - name: fernet
               mountPath: /fernet-keys
               readOnly: true
-            - name: upgrade
-              mountPath: /upgrade
+            - name: keystone-bin
+              mountPath: /scripts
               readOnly: true
             - name: credential-keys
               mountPath: /credential-keys
@@ -111,9 +111,9 @@ spec:
           secret:
             secretName: {{ .Release.Name }}-secrets
             defaultMode: 0444
-        - name: upgrade
+        - name: keystone-bin
           configMap:
-            name: {{ include "keystone.upgrade_config" . }}
+            name: keystone-bin
         - name: fernet
           secret:
             secretName: keystone-fernet

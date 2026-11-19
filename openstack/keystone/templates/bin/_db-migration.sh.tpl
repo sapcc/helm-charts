@@ -35,7 +35,7 @@ case "$phase" in
     contract)
         # A ready Service can still route to old replicas. Recheck the target
         # rollout immediately before the destructive schema step.
-        python3 /upgrade/rollout-check.py || status=$?
+        python3 /scripts/rollout-check.py || status=$?
         if [[ "$status" == 0 ]]; then
             "${manage[@]}" db_sync --contract || status=$?
         fi
