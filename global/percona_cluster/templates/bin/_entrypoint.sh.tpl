@@ -27,7 +27,7 @@ ipaddr={{ $ip }}
 gmcast_segment={{ .Values.gmcast_segment }}
 
 # Cluster IPs are all K8s service IPs
-cluster_ips="{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}"
+cluster_ips="{{ join "," $cluster_ips }}"
 hostname=$(hostname)
 echo "I AM $hostname - $ipaddr"
 
@@ -71,7 +71,7 @@ write_password_file
 init_mysql_upgrade
 update_users &
 exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname-$ipaddr \
---wsrep_cluster_address="gcomm://{{ include "helm-toolkit.utils.joinListWithComma" $cluster_ips }}" --wsrep_sst_method=xtrabackup-v2 \
+--wsrep_cluster_address="gcomm://{{ join "," $cluster_ips }}" --wsrep_sst_method=xtrabackup-v2 \
 --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
 --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" \
 --wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;ist.recv_bind=0.0.0.0:4568;gmcast.segment=$gmcast_segment" \
