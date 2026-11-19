@@ -242,6 +242,12 @@ build-metaldhcp-remote:
 	@helm template metaldhcp metaldhcp-remote/charts/metaldhcp*.tgz | \
 		yq eval 'select(.kind == "CustomResourceDefinition")' - \
 		> metaldhcp-remote/managedresources/crds.yaml
+	@helm template metaldhcp metaldhcp-remote/charts/metaldhcp*.tgz \
+		--set namespace=kube-system \
+		-n kube-system | \
+		yq eval 'select(.kind == "ServiceAccount" or .kind == "ClusterRole" or .kind == "ClusterRoleBinding")' - | \
+		yq eval 'del(.metadata.labels)' - \
+		> metaldhcp-remote/managedresources/rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metaldhcp-remote/Chart.yaml
 
 build-boot-operator:
@@ -291,6 +297,13 @@ build-metal-onboarding-operator-remote:
 		--include-crds | \
 		yq eval 'select(.kind == "CustomResourceDefinition")' - \
 		> metal-onboarding-operator-remote/managedresources/crds.yaml
+	@helm template metal-onboarding-operator \
+		metal-onboarding-operator-remote/charts/metal-onboarding-operator*.tgz \
+		--set clusterName=dummy \
+		-n kube-system | \
+		yq eval 'select(.kind == "ServiceAccount" or .kind == "ClusterRole" or .kind == "ClusterRoleBinding")' - | \
+		yq eval 'del(.metadata.labels)' - \
+		> metal-onboarding-operator-remote/managedresources/rbac.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-onboarding-operator-remote/Chart.yaml
 
 build-argora-operator:
