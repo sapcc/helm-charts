@@ -1,25 +1,55 @@
----
+# Source: metaldhcp/templates/serviceaccount.yaml
+# SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: metaldhcp
   namespace: kube-system
 ---
+# Source: metaldhcp/templates/clusterrole.yaml
+# SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: metaldhcp
 rules:
-  - apiGroups: ["dhcp.metal.ironcore.dev"]
-    resources: ["oobsubnets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
-  - apiGroups: ["dhcp.metal.ironcore.dev"]
-    resources: ["dhcpleases"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["create", "patch", "update"]
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+      - update
+  - apiGroups:
+      - dhcp.metal.ironcore.dev
+    resources:
+      - dhcpleases
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - dhcp.metal.ironcore.dev
+    resources:
+      - oobsubnets
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
 ---
+# Source: metaldhcp/templates/clusterrolebinding.yaml
+# SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

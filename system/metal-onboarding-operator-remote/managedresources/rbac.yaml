@@ -1,27 +1,47 @@
+---
+# Source: metal-onboarding-operator/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: metal-onboarding-operator
   namespace: kube-system
 ---
+# Source: metal-onboarding-operator/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: metal-onboarding-operator
 rules:
-  - apiGroups: ["dhcp.metal.ironcore.dev"]
-    resources: ["dhcpleases"]
-    verbs: ["get", "list", "patch", "watch"]
-  - apiGroups: ["metal.ironcore.dev"]
-    resources: ["bmcs"]
-    verbs: ["create", "get", "list", "patch", "update", "watch"]
-  - apiGroups: ["onboarding.metal.ironcore.dev"]
-    resources: ["metalclusters"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["create", "patch", "update"]
+  - apiGroups:
+      - dhcp.metal.ironcore.dev
+    resources:
+      - dhcpleases
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcs
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - baseboard.metal.ironcore.dev
+    resources:
+      - bmcusersets
+    verbs:
+      - create
+      - get
+      - list
+      - watch
 ---
+# Source: metal-onboarding-operator/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
