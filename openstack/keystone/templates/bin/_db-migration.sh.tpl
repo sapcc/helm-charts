@@ -3,6 +3,12 @@ manage=(keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=
 phase=${1:?Expected initialize, expand or contract}
 
 if [[ "$phase" != contract ]]; then
+    # TODO(habetuz): Make doctor fail loud once '--ignore' is supported.
+    echo "Keystone doctor:"
+    "${manage[@]}" doctor
+fi
+
+if [[ "$phase" != contract ]]; then
     echo "Status before migration:"
     keystone-status --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf upgrade check
     status=$?
@@ -43,10 +49,6 @@ esac
 echo "DB Version after migration:"
 "${manage[@]}" db_version
 
-if [[ "$phase" != contract ]]; then
-    echo "Keystone doctor:"
-    "${manage[@]}" doctor
-fi
 
 if [[ "$status" == 0 ]]; then
     "${manage[@]}" db_sync --check || status=$?
