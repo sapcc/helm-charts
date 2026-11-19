@@ -17,6 +17,11 @@ spec:
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
+    metadata:
+      labels:
+        component: keystone
+        release: {{ .Release.Name | quote }}
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
     spec:
       backoffLimit: 3
       template:
@@ -26,6 +31,7 @@ spec:
             system: openstack
             component: keystone
             type: operations
+            {{- include "keystone.upgrade_labels" . | nindent 12 }}
             alert-tier: os
             alert-service: keystone
           annotations:

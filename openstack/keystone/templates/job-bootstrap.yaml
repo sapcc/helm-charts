@@ -1,6 +1,6 @@
 {{- $migrationJob := "" -}}
-{{- if or .Release.IsInstall .Values.run_db_migration -}}
-  {{- $migrationJob = tuple . "job-migration" | include "job_name" -}}
+{{- if include "keystone.db_migration_enabled" . -}}
+  {{- $migrationJob = tuple . "db-expansion" | include "job_name" -}}
 {{- end -}}
 apiVersion: batch/v1
 kind: Job
@@ -21,6 +21,7 @@ spec:
     metadata:
       labels:
         name: "{{ tuple . "job-bootstrap" | include "job_name" }}"
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
         system: openstack
         component: keystone
         type: job
