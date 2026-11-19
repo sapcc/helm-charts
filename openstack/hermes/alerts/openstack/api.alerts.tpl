@@ -252,7 +252,8 @@ groups:
       summary: "Log Router falling back to DLQ — data not reaching S3"
 
   - alert: OpenstackHermesLogRouterAllWritesDenied
-    expr: sum(increase(log_router_events_dropped_total{reason=~"access_denied|writer_not_authorized"}[15m])) > 0 and sum(increase(log_router_events_flushed_total[15m])) == 0
+    # writer_not_authorized: newer log-router keeps those events and counts log_router_writer_not_authorized_total; older ones dropped them.
+    expr: (sum(increase(log_router_events_dropped_total{reason=~"access_denied|writer_not_authorized"}[15m])) > 0 or sum(increase(log_router_writer_not_authorized_total[15m])) > 0) and sum(increase(log_router_events_flushed_total[15m])) == 0
     for: 5m
     labels:
       context: log-router
@@ -262,27 +263,30 @@ groups:
       severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router: every write is denied by the object store, events are being dropped"
+      no_alert_on_absence: "true" # writer_not_authorized_total only exists after a refusal; OpenstackHermesLogRouterFlushFailing covers events_flushed_total
+      meta: "Log Router: every write is denied, nothing has been flushed for 15m"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "Log Router is dropping events as access_denied or writer_not_authorized and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration), or, with project-scoped writes, the writer user lost objectstore_admin in every project. A lost role on the main scope (cloud_objectstore_admin) does not show up here, see OpenstackHermesLogRouterFlushFailing."
+      description: "Log Router is denied on every write (access_denied drops, or writer_not_authorized refusals whose events are held back) and has flushed nothing for 15m. One customer revoking access does not do this. It means access was denied on every container, for example all container ACLs were wiped (an old image rolled back after the ACL migration), or, with project-scoped writes, the writer user lost objectstore_admin in every project. A lost role on the main scope (cloud_objectstore_admin) does not show up here, see OpenstackHermesLogRouterFlushFailing."
       summary: "Log Router writes denied for all tenants"
 
   - alert: OpenstackHermesLogRouterWriterNotAuthorized
-    # 1h: a partition flushes from minute 15 of its hour on, so drops come in bursts.
-    expr: sum by (tenant) (increase(log_router_events_dropped_total{reason="writer_not_authorized"}[1h])) > 0
+    # Newer log-router keeps the events and counts every refused login (once per 5m per replica);
+    # older ones dropped them (1h: drops come in bursts from minute 15 of the hour on).
+    expr: sum by (tenant) (increase(log_router_writer_not_authorized_total[15m])) > 0 or sum by (tenant) (increase(log_router_events_dropped_total{reason="writer_not_authorized"}[1h])) > 0
     labels:
       context: log-router
       dashboard: hermes-log-router
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
       service: hermes
-      severity: info
+      severity: warning
       support_group: observability
       tier: os
-      meta: "Log Router drops audit events of project {{`{{ $labels.tenant }}`}}: the writer user has no objectstore_admin there"
+      no_alert_on_absence: "true" # writer_not_authorized_total only exists after a refusal
+      meta: "Log Router cannot write audit events of project {{`{{ $labels.tenant }}`}}: the writer user has no objectstore_admin there"
       playbook: "docs/devops/alert/hermes"
     annotations:
-      description: "With project-scoped writes on, Keystone refuses the writer user (hermes@Default) a token for project {{`{{ $labels.tenant }}`}}, so its audit events are dropped. Usually an iaas- project that was enabled before hermes.dataplane_assign_writer_role was on and was never re-enabled. Fix: a project admin re-enables dataplane through hermez with the current config (including target_bucket), or a cloud admin runs openstack role add --user hermes --user-domain Default --project {{`{{ $labels.tenant }}`}} objectstore_admin."
+      description: "With project-scoped writes on, Keystone refuses the writer user (hermes@Default) a token for project {{`{{ $labels.tenant }}`}}, so its audit events are held back and retried (older log-router versions drop them; held events fill the buffer memory and then delay every tenant). Usually an iaas- project that was enabled before hermes.dataplane_assign_writer_role was on and was never re-enabled. Fix: a project admin re-enables dataplane through hermez with the current config (including target_bucket), or a cloud admin runs openstack role add --user hermes --user-domain Default --project {{`{{ $labels.tenant }}`}} objectstore_admin."
       summary: "Log Router writer has no role in project {{`{{ $labels.tenant }}`}}"
 
   - alert: OpenstackHermesLogRouterFlushFailing
@@ -301,4 +305,98 @@ groups:
     annotations:
       description: "Log Router has had flush errors and flushed nothing for 15m, so it cannot write anywhere. Likely causes are a lost storage role (RGW answers 401), RGW or Keystone being down, or bad credentials. Events are kept in the WAL and retried, nothing is dropped yet, but the WAL grows until this is fixed."
       summary: "Log Router cannot flush to object storage"
+
+  # The hold gauges only have a series while a project is held, so their absence is normal.
+  - alert: OpenstackHermesLogRouterHeldEvents
+    expr: sum by (tenant) (log_router_held_events) > 0
+    for: 15m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      no_alert_on_absence: "true" # only exported while a project is held
+      meta: "Log Router is holding audit events of project {{`{{ $labels.tenant }}`}} it cannot write"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router has held audit events of project {{`{{ $labels.tenant }}`}} for 15m ({{`{{ $value | humanize }}`}} events now) because writing them fails on our side. Nothing is lost yet: they stay in the WAL and are delivered once the write works. Check that the writer user has objectstore_admin in the project (see OpenstackHermesLogRouterWriterNotAuthorized) and that RGW and Keystone are reachable (see OpenstackHermesLogRouterFlushFailing)."
+      summary: "Log Router holding events of project {{`{{ $labels.tenant }}`}}"
+
+  # Budgets are per pod (each replica has its own WAL); a budget of 0 means no budget.
+  # Matched on pod and instance: a recreated pod has a new IP, its old series may still be in the lookback.
+  - alert: OpenstackHermesLogRouterHoldBudgetHigh
+    expr: max by (tenant, pod) (log_router_held_bytes / on (pod, instance) group_left () (log_router_hold_budget_bytes{scope="tenant"} > 0)) > 0.7
+    for: 5m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      no_alert_on_absence: "true" # held_bytes is only exported while a project is held
+      meta: "Log Router: held events of project {{`{{ $labels.tenant }}`}} are close to the per-project hold budget"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Held events of project {{`{{ $labels.tenant }}`}} use {{`{{ $value | humanizePercentage }}`}} of the per-project hold budget on {{`{{ $labels.pod }}`}}. When the budget is full, the oldest held events of this project are dropped and lost. Fix the write for this project before that: check the writer role in the project and that storage is reachable."
+      summary: "Log Router hold budget of project {{`{{ $labels.tenant }}`}} over 70%"
+
+  - alert: OpenstackHermesLogRouterHoldBudgetHigh
+    expr: sum by (pod, instance) (log_router_held_bytes) / on (pod, instance) (log_router_hold_budget_bytes{scope="total"} > 0) > 0.7
+    for: 5m
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      no_alert_on_absence: "true" # held_bytes is only exported while a project is held
+      meta: "Log Router: held events on {{`{{ $labels.pod }}`}} are close to the total hold budget"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Held events of all projects on {{`{{ $labels.pod }}`}} use {{`{{ $value | humanizePercentage }}`}} of the total hold budget. When it is full, the oldest held events of the project holding the most are dropped and lost. See OpenstackHermesLogRouterHeldEvents for the projects being held and fix their writes; if nothing gets written at all, see OpenstackHermesLogRouterFlushFailing."
+      summary: "Log Router total hold budget on {{`{{ $labels.pod }}`}} over 70%"
+
+  # log-router creates the tenant's hold_budget_exceeded counter at 0 when the tenant gets held,
+  # so increase() sees the first drop. Drops at startup (budget enforced at the end of WAL recovery,
+  # e.g. after a budget was lowered) come before the first scrape: any count of a process younger than 15m counts too.
+  - alert: OpenstackHermesLogRouterHoldBudgetDrop
+    expr: sum by (tenant) (log_router_events_dropped_total{reason="hold_budget_exceeded"} > 0 and on (pod, instance) (time() - process_start_time_seconds{pod=~"log-router-.*"} < 900)) > 0 or sum by (tenant) (increase(log_router_events_dropped_total{reason="hold_budget_exceeded"}[15m])) > 0
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: critical
+      support_group: observability
+      tier: os
+      meta: "Log Router dropped held audit events of project {{`{{ $labels.tenant }}`}}: data loss"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router dropped about {{`{{ $value | humanize }}`}} held audit events of project {{`{{ $labels.tenant }}`}} because a hold budget was full. This is real data loss: the events were accepted and are gone. Their writes have been failing on our side for a long time. Fix the write (writer role in the project, storage reachable) so the remaining held events get delivered, and check whether the hold budgets and WAL volume are too small."
+      summary: "Log Router lost held events of project {{`{{ $labels.tenant }}`}}"
+
+  # Later drops start from the 0 series log-router creates when a tenant gets held. Startup recovery
+  # counts before the first scrape, which increase() cannot see: any count of a process younger than 1h counts too.
+  - alert: OpenstackHermesLogRouterWALUndecodable
+    expr: sum by (tenant) (log_router_events_dropped_total{reason="wal_undecodable"} > 0 and on (pod, instance) (time() - process_start_time_seconds{pod=~"log-router-.*"} < 3600)) > 0 or sum by (tenant) (increase(log_router_events_dropped_total{reason="wal_undecodable"}[1h])) > 0
+    labels:
+      context: log-router
+      dashboard: hermes-log-router
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-log-router"
+      service: hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      meta: "Log Router removed WAL entries of project {{`{{ $labels.tenant }}`}} it could not decode"
+      playbook: "docs/devops/alert/hermes"
+    annotations:
+      description: "Log Router removed about {{`{{ $value | humanize }}`}} events of project {{`{{ $labels.tenant }}`}} from its WAL because they could not be decoded. These events were accepted and are lost. This is a log-router bug or a damaged WAL volume, not a customer problem. Check the log-router logs for 'cannot be decoded' and the health of the WAL volume."
+      summary: "Log Router lost undecodable WAL entries of project {{`{{ $labels.tenant }}`}}"
 {{- end }}
