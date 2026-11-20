@@ -1,4 +1,3 @@
-{{- $vbase  := .Values.global.vaultBaseURL   | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
 {{- $dbRegion := .Values.global.db_region  | required "missing value for .Values.global.db_region"    -}}
 {{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
@@ -6,7 +5,6 @@
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "ccadmin") $cdomains -}}
 {{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
-{{- $regionHasSwift := .Values.global.srs.is_classic_region }}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -17,9 +15,8 @@ spec:
     {{- range $domains }}
     - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .|lower}}-seed
     {{- end }}
+    {{- if eq $region "qa-de-1" }}
     - {{ $.Values.global.keystoneNamespace }}/domain-cc3test-seed
-    {{- if and $regionHasSwift (not .Values.global.is_global_region) }}
-    - swift/swift-seed
     {{- end }}
 
   roles:
@@ -41,24 +38,9 @@ spec:
       region: {{ $region }}
       url: 'https://{{ and (contains "qa" $dbRegion) .Values.global.is_global_region | ternary "billing-qa" "billing" }}.{{ $region }}.{{ $tld }}:64000'
 
+  {{- if eq $region "qa-de-1" }}
   domains:
-  # we are unsure who mantains this, so as long as nobody requests it and there is no secret in vault, we don't deploy this part to global
-  {{- if not .Values.global.is_global_region}}
-  - name: Default
-    users:
-    - name: masterdata_scanner # service user for a data quality check job
-      description: 'Masterdata Scanner (Data Quality Validation)'
-      password: {{ printf "%s/%s/billing/keystone-user/masterdata-scanner/password" $vbase $region | quote }}
-  {{- end }}
-
   - name: cc3test
-  {{- if not .Values.global.is_global_region}}
-    role_assignments:
-    - user: masterdata_scanner@Default
-      role: masterdata_admin
-      inherited: true
-  {{- end }}
-  {{- if eq $region "qa-de-1"}}
     projects:
     - name: billing_test
       description: 'project used for testing the billing service'
@@ -76,10 +58,6 @@ spec:
   {{- range $domains }}
   {{- if not (hasPrefix "iaas-" .) }}
   - name: {{ . | lower }}
-    role_assignments:
-    - user: masterdata_scanner@Default
-      role: masterdata_admin
-      inherited: true
     {{- if eq . "ccadmin" }}
     projects:
     {{- if not $.Values.global.is_global_region }}
@@ -89,15 +67,9 @@ spec:
       # Role provisioned from CAM to enable takeover of seeded project by billing admins
       - group: CCADMIN_BILLING_ADMIN
         role: admin
-    {{- if $regionHasSwift }}
-      swift:
-        enabled: true
-    {{- end }}
     {{- end }}
     - name: cloud_admin
       role_assignments:
-        - user: masterdata_scanner@Default
-          role: cloud_identity_viewer
         # this role is necessary to view a complete flavor list across the region with GET compute-3.$REGION.cloud.sap/$VERSION/flavors, there is currently no cloud_compute_viewer role
         - user: TCC_BILLING_001
           role: cloud_compute_admin
