@@ -46,7 +46,7 @@ manager:
     type: Recreate
   image:
     repository: ghcr.io/ironcore-dev/metal-operator-controller-manager
-    tag: sha-6f8fd0a
+    tag: sha-7f387b6
     ## Image tag (defaults to Chart.appVersion if not set)
     ##
     # tag: ""
@@ -81,10 +81,18 @@ manager:
     capabilities:
       drop:
         - ALL
+  ## Env overrides (--set manager.envOverrides.VAR=value)
+  ## Same name in env above: this value takes precedence.
+  ##
   envOverrides:
     KUBERNETES_SERVICE_HOST: "apiserver-url"
     KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
     KUBECONFIG: "/var/run/remote-kubeconfig/kubeconfig"
+  ## Image pull secrets
+  ##
+  # imagePullSecrets:
+  #   - name: myregistrykey
+
   extraVolumeMounts:
     - name: webhook-certs
       mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -146,6 +154,8 @@ manager:
       networking.gardener.cloud/to-runtime-apiserver: allowed
       networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
       networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+  ## Environment variables
+  ##
   env:
     - name: ENABLE_WEBHOOKS
       value: "true"
@@ -165,11 +175,18 @@ manager:
   #   rollingUpdate:
   #     maxSurge: 25%
   #     maxUnavailable: 25%
+
+  ## Health probes.
+  ## The manager serves the liveness (/healthz) and readiness (/readyz) endpoints on this port.
+  ##
+  healthProbe:
+    # Health probe server port
+    port: 8081
 # Values for the vendored metaldata DaemonSet (see templates/metaldata.yaml, templates/metaldata-rbac.yaml).
 metaldata:
   image:
     repository: ghcr.io/ironcore-dev/metaldata
-    tag: sha-6f8fd0a
+    tag: sha-7f387b6
     pullPolicy: IfNotPresent
   additionalLabels: {}
   extraEnv: []
