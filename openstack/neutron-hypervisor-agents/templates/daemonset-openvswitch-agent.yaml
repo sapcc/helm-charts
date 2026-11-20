@@ -1,8 +1,9 @@
 {{- $hypervisor := merge .Values.defaults.network.ovs .Values.defaults.network.common }}
+{{- $daemonsetName := ternary "neutron-openvswitch-agent" (printf "%s-openvswitch-agent" .Release.Name) (eq .Release.Name "neutron-hypervisor-agents") }}
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: neutron-openvswitch-agent
+  name: {{ $daemonsetName }}
   labels:
     system: openstack
     type: backend
@@ -13,12 +14,12 @@ spec:
     {{- .Values.pod.lifecycle.upgrades.daemonsets.updateStrategy | toYaml | nindent 4 }}
   selector:
     matchLabels:
-      name: neutron-openvswitch-agent
+      name: {{ $daemonsetName }}
   template:
     metadata:
       labels:
         {{- tuple . "neutron" "openvswitch-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
-        name: neutron-openvswitch-agent
+        name: {{ $daemonsetName }}
         alert-tier: os
         alert-service: neutron
         ml2-driver: "ovs"
