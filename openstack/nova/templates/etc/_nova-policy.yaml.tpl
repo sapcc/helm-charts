@@ -10,6 +10,18 @@ context_is_compute_admin: rule:context_is_admin or rule:admin
 context_is_editor: rule:context_is_compute_admin or rule:member
 context_is_viewer: rule:context_is_editor or rule:viewer
 compute_admin_all: role:compute_admin or role:cloud_compute_admin
+# ccloud ADR Invariant 2 (network-reachability containment), Model A (grant-layer).
+# VM boot+wire requires the explicitly-assigned role:extended_member in addition to member.
+# This rule is cloud-wide and domain-agnostic on purpose: the ccadmin-only effect comes entirely
+# from WHO is granted extended_member (granted everywhere except the restricted ccadmin groups),
+# not from the policy.
+# `role:admin` is accepted directly so that project/domain admins (including Terraform service
+# accounts scoped as admin) keep their existing boot capability without needing extended_member —
+# nova's context_is_compute_admin keys on cloud_compute_admin/compute_admin, NOT bare role:admin,
+# so without this an admin-only token would fall through to the member branch and be gated. This is
+# gate-safe: the restricted ccadmin domain-user population (CCADMIN_DOMAIN_MEMBERS) holds only
+# `member`, not `admin`.
+ccadmin_boot_ok: rule:context_is_compute_admin or role:admin or (rule:member and role:extended_member)
 
 context_is_quota_admin: role:resource_service
 context_is_cloud_viewer: role:cloud_compute_viewer
@@ -61,17 +73,17 @@ os_compute_api:servers:confirm_resize: rule:context_is_editor
 # Create a server
 #   POST /servers
 #os_compute_api:servers:create: rule:project_member_api
-os_compute_api:servers:create: rule:context_is_editor
+os_compute_api:servers:create: rule:ccadmin_boot_ok
 
 # Create a server with the requested network attached  to it
 #   POST /servers
 #os_compute_api:servers:create:attach_network: rule:project_member_api
-os_compute_api:servers:create:attach_network: rule:context_is_editor
+os_compute_api:servers:create:attach_network: rule:ccadmin_boot_ok
 
 # Create a server with the requested volume attached to it
 #   POST /servers
 #os_compute_api:servers:create:attach_volume: rule:project_member_api
-os_compute_api:servers:create:attach_volume: rule:context_is_editor
+os_compute_api:servers:create:attach_volume: rule:ccadmin_boot_ok
 
 # Create a server on the specified host and/or node.
 # In this case, the server is forced to launch on the specified
