@@ -45,7 +45,13 @@ spec:
       serviceAccountName: {{ include "auditbeat.serviceAccountName" . }}
       terminationGracePeriodSeconds: 30
       hostPID: true  # Required by auditd module
+{{- if include "auditbeat.multicast" . }}
+      # The kernel sends multicast audit events only in the host network namespace.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+{{- else }}
       dnsPolicy: ClusterFirst
+{{- end }}
 {{- if .Values.enable_pamd_tty }}
       initContainers:
       - name: enable-pamd-tty
