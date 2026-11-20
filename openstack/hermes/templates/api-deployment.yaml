@@ -28,6 +28,16 @@ spec:
           secret:
             secretName: api-conf
             defaultMode: 420
+        {{- if .Values.global.gardener.enabled }}
+        # opensearch rest cert is signed by the in-cluster CA on gardener, only mount ca.crt
+        - name: opensearch-ca
+          secret:
+            secretName: rest-cert
+            defaultMode: 420
+            items:
+              - key: ca.crt
+                path: ca.crt
+        {{- end }}
       containers:
         - name: api
           image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
@@ -40,6 +50,11 @@ spec:
               value: '{{.Values.hermes.debug}}'
             - name: HERMES_INSECURE
               value: '{{.Values.hermes.insecure}}' # SSL certificates are hard :(
+            {{- if .Values.global.gardener.enabled }}
+            # go adds certs from this dir to the system roots, the default bundle file still loads for keystone
+            - name: SSL_CERT_DIR
+              value: /etc/hermes-opensearch-ca
+            {{- end }}
             - name: HERMES_OS_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -109,6 +124,11 @@ spec:
           volumeMounts:
             - mountPath: "/etc/hermes"
               name: config
+            {{- if .Values.global.gardener.enabled }}
+            - mountPath: /etc/hermes-opensearch-ca
+              name: opensearch-ca
+              readOnly: true
+            {{- end }}
           resources:
             requests:
               memory: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_memory_api}}

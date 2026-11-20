@@ -6,7 +6,11 @@ storage_driver = "opensearch"
 ListenAddress = "0.0.0.0:80"
 
 [opensearch]
+{{- if .Values.global.gardener.enabled }}
+url = "https://opensearch-hermes.hermes.svc.cluster.local:{{.Values.hermes_elasticsearch_port}}"
+{{- else }}
 url = "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"
+{{- end }}
 
 [keystone]
 auth_url = "{{.Values.hermes.auth_url}}"
