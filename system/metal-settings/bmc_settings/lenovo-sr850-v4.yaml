@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# XCC3 BMC settings for Lenovo ThinkSystem SR850 V4.
+# Differs from lenovo-default.yaml: the power restore policy is set on /redfish/v1/Systems/1
+# (no Oem Lenovo power endpoint) and the DNS domain is not set.
+# Applied via BMCSettingsSet after the BMC firmware reaches the target version.
+# BmcName is resolved at reconcile time from fieldRef.
+#
+# Keys use the format "METHOD /redfish/endpoint" — the controller issues the
+# corresponding HTTP call and compares the current response against the desired body.
+# Multiple settings for the same endpoint are merged into a single JSON body.
+#
+# Values sourced from: baremetal-config/lenovo/thinksystem-sr850-v4/bmc/default-settings.yml
+settingsFlow:
+- name: defaultSettings
+  priority: 10
+  settings:
+    # NTP + IPMI (merged — same endpoint)
+    "PATCH /redfish/v1/Managers/1/NetworkProtocol": '{"NTP": {"ProtocolEnabled": true, "NTPServers": ["timehost1.global.cloud.sap", "timehost2.global.cloud.sap", "timehost3.global.cloud.sap"]}, "IPMI": {"ProtocolEnabled": true}}'
+    # SNMP: disable SNMPv3 agent
+    "PATCH /redfish/v1/Managers/1/NetworkProtocol/Oem/Lenovo/SNMP": '{"SNMPv3Agent": {"ProtocolEnabled": false}}'
+    # Disable ToHost interface (in-band BMC access)
+    "PATCH /redfish/v1/Managers/1/EthernetInterfaces/ToHost": '{"InterfaceEnabled": false}'
+    # Power: restore last power state after power loss
+    "PATCH /redfish/v1/Systems/1": '{"PowerRestorePolicy": "LastState"}'
+    # Hostname — $(BmcName) resolved at reconcile time via fieldRef variable below
+    "PATCH /redfish/v1/Managers/1/EthernetInterfaces/NIC": '{"Oem": {"Lenovo": {"IPv6Enabled": false}}, "HostName": "$(BmcName)"}'
+    # DNS: static servers, disable DDNS
+    "PATCH /redfish/v1/Managers/1/NetworkProtocol/Oem/Lenovo/DNS": '{"IPv4Address1": "147.204.9.200", "IPv4Address2": "147.204.9.201", "DNSEnable": true, "PreferredAddresstype": "IPv4", "DDNS": [{"DomainNameSource": "DHCP", "DDNSEnable": false}]}'
+variables:
+  # BmcName: resolved from the BMCSettings object itself.
+  - key: BmcName
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.bmcRef.name
