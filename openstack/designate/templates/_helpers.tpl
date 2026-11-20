@@ -24,27 +24,6 @@ connection = {{ include "db_url_mysql" . }}
 {{- end }}
 {{- end }}
 
-{{- define "joinKey" -}}
-{{range $item, $_ := . -}}{{$item | replace "." "_" -}},{{- end}}
-{{- end -}}
-
-{{- define "loggerIni" -}}
-{{range $top_level_key, $value := .}}
-[{{$top_level_key}}]
-keys={{include "joinKey" $value | trimAll ","}}
-{{range $item, $values := $value}}
-[{{$top_level_key | trimSuffix "s"}}_{{$item | replace "." "_"}}]
-{{- if and (eq $top_level_key "loggers") (ne $item "root")}}
-qualname={{$item}}
-{{- end}}
-{{- range $key, $value := $values}}
-{{$key}}={{$value}}
-{{- end}}
-{{- end}}
-{{end}}
-{{- end -}}
-
-
 {{- define "migration_job_name" -}}
   {{- $bin := include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
   {{- $all := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container") (include "utils.trust_bundle.volume_mount" . ) (include "utils.trust_bundle.volumes" . )  | join "\n" }}
