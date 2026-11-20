@@ -10,6 +10,21 @@ context_is_compute_admin: rule:context_is_admin or rule:admin
 context_is_editor: rule:context_is_compute_admin or rule:member
 context_is_viewer: rule:context_is_editor or rule:viewer
 compute_admin_all: role:compute_admin or role:cloud_compute_admin
+{{- if and .Values.oslo_policy.enforce_ccadmin_member .Values.oslo_policy.ccadmin_domain_id }}
+# ccloud ADR Invariant 2 (network-reachability containment), ccadmin-only, per-region.
+# A plain member scoped INTO the ccadmin domain may not boot/wire a VM unless it also
+# holds the explicitly-assigned role:extended_member. Keyed on project_domain_id (a UUID)
+# because oslo.context to_policy_values() exposes project_domain_id, not project_domain_name.
+# Gated by TWO values: the feature flag oslo_policy.enforce_ccadmin_member AND the per-region
+# oslo_policy.ccadmin_domain_id (the ccadmin domain UUID). When either is unset this whole block
+# is NOT emitted and behaviour is identical to today (inert by default).
+# Compute/network admins and service users enter above the member tier (context_is_compute_admin)
+# and are unaffected; the member term is isolated here and deliberately not folded into
+# context_is_editor (which already admits member).
+ccadmin_scope: 'project_domain_id:{{ .Values.oslo_policy.ccadmin_domain_id }}'
+ccadmin_member_boot_ok: 'rule:member and (not rule:ccadmin_scope or role:extended_member)'
+ccadmin_boot_ok: 'rule:context_is_compute_admin or rule:ccadmin_member_boot_ok'
+{{- end }}
 
 context_is_quota_admin: role:resource_service
 context_is_cloud_viewer: role:cloud_compute_viewer
@@ -72,6 +87,16 @@ os_compute_api:servers:create:attach_network: rule:context_is_editor
 #   POST /servers
 #os_compute_api:servers:create:attach_volume: rule:project_member_api
 os_compute_api:servers:create:attach_volume: rule:context_is_editor
+{{- if and .Values.oslo_policy.enforce_ccadmin_member .Values.oslo_policy.ccadmin_domain_id }}
+# ccloud ADR Invariant 2 override (last-definition-wins). Inert unless the feature flag
+# oslo_policy.enforce_ccadmin_member and oslo_policy.ccadmin_domain_id are both set.
+# Re-points VM boot+wire through the ccadmin fence: a plain member in ccadmin is denied unless it
+# also holds role:extended_member. Outside ccadmin (and when inert) this is equivalent to the base
+# rule:context_is_editor.
+os_compute_api:servers:create: rule:ccadmin_boot_ok
+os_compute_api:servers:create:attach_network: rule:ccadmin_boot_ok
+os_compute_api:servers:create:attach_volume: rule:ccadmin_boot_ok
+{{- end }}
 
 # Create a server on the specified host and/or node.
 # In this case, the server is forced to launch on the specified
