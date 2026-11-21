@@ -4,10 +4,6 @@ metadata:
   name: tailcontrol
   labels:
     {{- include "tailcontrol.labels" . | nindent 4 }}
-{{- if .Values.tailcontrol.backup.enabled }}
-  annotations:
-    litestream-config: {{ include (print $.Template.BasePath "/litestream-config.yaml") $ | sha256sum }}
-{{- end }}
 spec:
   strategy:
     type: Recreate
@@ -19,6 +15,12 @@ spec:
     metadata:
       labels:
         {{- include "tailcontrol.selectorLabels" . | nindent 8 }}
+{{- if .Values.tailcontrol.backup.enabled }}
+      annotations:
+        checksum/aws-secret: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+        checksum/litestream-config: {{ include (print $.Template.BasePath "/litestream-config.yaml") $ | sha256sum }}
+        secret.reloader.stakater.com/reload: "tailcontrol-aws"
+{{- end }}
     spec:
       volumes:
         - name: ephemeral
