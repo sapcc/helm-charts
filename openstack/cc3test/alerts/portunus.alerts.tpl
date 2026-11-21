@@ -1,7 +1,7 @@
 groups:
 - name: cc3test-portunus.alerts
   rules:
-  - alert: CloudHSMApiDown
+  - alert: CC3TestPortunusApiDown
     expr: |
         cc3test_status{service="portunus", type="api", name=~"TestPortunusAPI_.+", phase="call"} == 0
     for: 30m
@@ -17,7 +17,7 @@ groups:
       description: "CloudHSM API is down: {{`{{ $labels.name }}`}}"
       summary: "CloudHSM API is down"
 
-  - alert: CloudHSMCreationFailed
+  - alert: CC3TestCloudHSMSCreationFailed
     expr: |
         cc3test_status{service="portunus", name=~"TestPortunusCloudHSM_create_cloudhsm.+", phase="call"} == 0
     for: 6h
@@ -33,7 +33,7 @@ groups:
       description: "CloudHSM Creation Failed: {{`{{ $labels.name }}`}}"
       summary: "CloudHSM Creation Failed"
 
-  - alert: CloudHSMDeletionFailed
+  - alert: CC3TestCloudHSMSDeletionFailed
     expr: |
         cc3test_status{service="portunus", name=~"TestPortunusCloudHSM_purge_cloudhsm", phase="call"} == 0
     for: 30m
