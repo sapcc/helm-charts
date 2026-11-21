@@ -318,7 +318,20 @@ workflowSciSettings: &workflowSciSettings
     order: 6
     kind: FirmwareUpdateSet
     paramsKey: firmware.params.defaultVersion
-    
+
+workflowMgmtSettings: &workflowMgmtSettings
+  biosSettings:
+    order: 5
+    kind: BIOSSettingsSet
+    versionKey: bios.versions.defaultVersion
+    settingsKey: bios.settings.mgmtSettings
+    readinessGatesOverride:
+      - type: metal.cloud.sap/step4-bmc-settings-done
+        requiredStatus: "True"
+  firmware:
+    order: 6
+    kind: FirmwareUpdateSet
+    paramsKey: firmware.params.defaultVersion
 
 # defaultRollouts.types: chart default catalog - every cluster type this chart knows about, mapped
 # to a LIST of rules (see the "Machine inventory" comment above for the full filter/include/exclude
@@ -350,10 +363,15 @@ defaultRollouts:
       - filter: { include: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
         workflow: *workflowSciSettings
     sci-k8s-management:
-      - filter: { exclude: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
+      - filter:
+          exclude:
+            models: [proliant-dl560-gen11, poweredge-r640, poweredge-r660]
+            resources: [BIOSSettingsSet]
         workflow: *workflow
       - filter: { include: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
         workflow: *workflowSciSettings
+      - filter: { include: { models: [poweredge-r640, poweredge-r660], resources: [BIOSSettingsSet] } }
+        workflow: *workflowMgmtSettings
     sci-k8s-runtime:
       - filter: { exclude: { models: [proliant-dl560-gen11], resources: [BIOSSettingsSet] } }
         workflow: *workflow
@@ -393,6 +411,7 @@ parameters:
             imagePath: "/hw-firmware/dell/poweredge-r640/BIOS_F8GPH_WN64_2.22.2.EXE"
         settings:
           defaultSettings: dell-default.yaml
+          mgmtSettings: dell-r640-mgmt.yaml
       firmware:
         params:
           defaultVersion:
@@ -417,6 +436,7 @@ parameters:
             imagePath: "/hw-firmware/dell/poweredge-r660/BIOS_PJYMD_WN64_2.4.4_02.EXE"
         settings:
           defaultSettings: dell-default.yaml
+          mgmtSettings: dell-r660-mgmt.yaml
       firmware:
         params:
           defaultVersion:
