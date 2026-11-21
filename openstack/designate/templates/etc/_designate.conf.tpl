@@ -97,8 +97,9 @@ workers = {{ .Values.central_workers }}
 # Minimum TTL
 #min_ttl = None
 
-# The name of the default pool
-default_pool_id = '794ccc2c-d751-44fe-b57f-8894c9f5c842'
+# The ID of the default pool. global.designate_default_pool_id is shared with
+# the neutron chart, which puts the PTR zones it creates into this pool.
+default_pool_id = '{{ .Values.global.designate_default_pool_id | default .Values.pool_id }}'
 
 ## Managed resources settings
 
