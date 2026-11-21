@@ -1,7 +1,11 @@
+{{- $expansionJob := "" -}}
+{{- if include "keystone.db_migration_enabled" . -}}
+  {{- $expansionJob = tuple . "db-expansion" | include "job_name" -}}
+{{- end -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ tuple . "job-creds-migrate" | include "job_name" }}"
+  name: "{{ tuple . "pre-rollout" | include "job_name" }}"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -10,44 +14,45 @@ metadata:
     system: openstack
     component: keystone
     type: job
+    ccloud/support-group: identity
+    ccloud/service: keystone
 spec:
+  backoffLimit: 0
   template:
     metadata:
       labels:
-        name: "{{ tuple . "job-creds-migrate" | include "job_name" }}"
+        name: "{{ tuple . "pre-rollout" | include "job_name" }}"
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
         system: openstack
         component: keystone
         type: job
-        alert-tier: os
-        alert-service: keystone
       annotations:
         chart-version: {{.Chart.Version}}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
 {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
-      restartPolicy: OnFailure
+      restartPolicy: Never
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
+      {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" $expansionJob) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       containers:
-        - name: keystone-credential-migrate
+        - name: keystone-pre-rollout
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.api.imagePullPolicy | quote }}
           command:
-            - kubernetes-entrypoint
+            - bash
+            - /scripts/pre-rollout.sh
           env:
-            - name: COMMAND
-              value: "bash /scripts/credential_migrate"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: {{ include "keystone.db_service" . | quote }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -68,17 +73,26 @@ spec:
               readOnly: true
             - name: keystone-etc-confd
               mountPath: /etc/keystone/keystone.conf.d
+            - name: keystone-bootstrap
+              mountPath: /etc/keystone/bootstrap.yaml
+              subPath: bootstrap.yaml
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
             - name: keystone-etc
               mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
               readOnly: true
-            - name: keystone-bin
-              mountPath: /scripts
+            - name: fernet
+              mountPath: /fernet-keys
               readOnly: true
             - name: credential-keys
               mountPath: /credential-keys
-            - name: fernet
-              mountPath: /fernet-keys
+              readOnly: true
+            - name: keystone-bin
+              mountPath: /scripts
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
@@ -96,16 +110,27 @@ spec:
           secret:
             secretName: {{ .Release.Name }}-secrets
             defaultMode: 0444
-        - name: keystone-bin
-          configMap:
-            name: keystone-bin-credential-migrate
-        - name: credential-keys
+        - name: keystone-bootstrap
           secret:
-            secretName: keystone-credential-keys
-            defaultMode: 0555
+            secretName: {{ .Release.Name }}-bootstrap
+            defaultMode: 0444
+        - name: keystone-bin
+          projected:
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: pre-rollout.sh
+                    path: pre-rollout.sh
         - name: fernet
           secret:
             secretName: keystone-fernet
+            defaultMode: 0555
+        - name: credential-keys
+          secret:
+            secretName: keystone-credential-keys
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

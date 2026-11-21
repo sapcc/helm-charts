@@ -66,10 +66,45 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{- define "keystone.job_dependencies" }}
-  {{- if or .Release.IsInstall .Values.run_db_migration }}
-    {{- printf "%s," (tuple . "job-migration" | include "job_name") }}
-  {{- end }}
-  {{- tuple . "job-bootstrap" | include "job_name" }}
+  {{- tuple . "pre-rollout" | include "job_name" }}
+{{- end }}
+
+{{/* Stable, revision-scoped scripts for migration Jobs. */}}
+{{- define "keystone.upgrade_config" -}}
+{{- tuple . "upgrade-config" | include "job_name" -}}
+{{- end -}}
+
+{{- define "keystone.upgrade_labels" }}
+cloud.sap/keystone-release: {{ .Release.Name | quote }}
+cloud.sap/keystone-revision: {{ .Release.Revision | quote }}
+{{- end }}
+
+{{- define "keystone.db_migration_enabled" -}}
+{{- if .Values.run_db_migration -}}true{{- end -}}
+{{- end -}}
+
+{{/* Bypass ProxySQL for startup checks, including legacy non-native sidecars.
+     The FQDN avoids the ProxySQL pod's short-name hostAliases. */}}
+{{- define "keystone.direct_db_url" -}}
+{{- if or .Values.percona_cluster.enabled (eq .Values.dbType "pxc-global") -}}
+  {{- include "db_url_pxc" . -}}
+{{- else -}}
+  {{- $values := deepCopy .Values -}}
+  {{- $_ := set $values.proxysql "mode" "" -}}
+  {{- $host := include "keystone.db_service" . -}}
+  {{- include "utils.db_url" (dict "Values" $values) | replace (printf "@%s/" $host) (printf "@%s.%s/" $host (include "svc_fqdn" .)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "keystone.rollout_env" }}
+- name: KEYSTONE_RELEASE
+  value: {{ .Release.Name | quote }}
+- name: KEYSTONE_NAMESPACE
+  value: {{ .Release.Namespace | quote }}
+- name: KEYSTONE_REVISION
+  value: {{ .Release.Revision | quote }}
+- name: KEYSTONE_API_IMAGE
+  value: {{ printf "%s/%s:%v" .Values.global.registryAlternateRegion .Values.api.image .Values.api.imageTag | quote }}
 {{- end }}
 
 {{/*

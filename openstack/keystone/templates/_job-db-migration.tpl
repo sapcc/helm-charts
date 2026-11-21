@@ -1,11 +1,11 @@
-{{- $migrationJob := "" -}}
-{{- if or .Release.IsInstall .Values.run_db_migration -}}
-  {{- $migrationJob = tuple . "job-migration" | include "job_name" -}}
-{{- end -}}
+{{- define "keystone.db_migration_job" -}}
+{{- $phase := .phase -}}
+{{- $job := .job -}}
+{{- with .root }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ tuple . "job-bootstrap" | include "job_name" }}"
+  name: "{{ tuple . $job | include "job_name" }}"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -14,43 +14,50 @@ metadata:
     system: openstack
     component: keystone
     type: job
-    ccloud/support-group: identity
-    ccloud/service: keystone
 spec:
+  backoffLimit: 0
   template:
     metadata:
       labels:
-        name: "{{ tuple . "job-bootstrap" | include "job_name" }}"
+        name: "{{ tuple . $job | include "job_name" }}"
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
         system: openstack
         component: keystone
         type: job
+        alert-tier: os
+        alert-service: keystone
       annotations:
         chart-version: {{.Chart.Version}}
-        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
-        secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
-        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print .Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print .Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
 {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
-      restartPolicy: OnFailure
+      restartPolicy: Never
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
-      {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" $migrationJob) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- $dependencies := dict "SERVICE" (include "keystone.db_service" .) }}
+      {{- if eq $phase "contract" }}
+        {{- $_ := set $dependencies "JOBS" (include "keystone.job_dependencies" .) }}
+      {{- end }}
+      {{- tuple . $dependencies | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       containers:
-        - name: keystone-bootstrap
+        - name: keystone-{{ $job }}
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
           imagePullPolicy: {{ default "IfNotPresent" .Values.api.imagePullPolicy | quote }}
           command:
             - bash
-            - /scripts/bootstrap
+            - /upgrade/db-migration.sh
+            - {{ $phase }}
           env:
+            {{- if eq $phase "contract" }}
+            {{- include "keystone.rollout_env" . | nindent 12 }}
+            {{- end }}
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
             {{- if .Values.sentry.dsn }}
@@ -71,10 +78,6 @@ spec:
               readOnly: true
             - name: keystone-etc-confd
               mountPath: /etc/keystone/keystone.conf.d
-            - name: keystone-bootstrap
-              mountPath: /etc/keystone/bootstrap.yaml
-              subPath: bootstrap.yaml
-              readOnly: true
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml
@@ -86,11 +89,11 @@ spec:
             - name: fernet
               mountPath: /fernet-keys
               readOnly: true
+            - name: upgrade
+              mountPath: /upgrade
+              readOnly: true
             - name: credential-keys
               mountPath: /credential-keys
-              readOnly: true
-            - name: keystone-bin
-              mountPath: /scripts
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
@@ -108,20 +111,9 @@ spec:
           secret:
             secretName: {{ .Release.Name }}-secrets
             defaultMode: 0444
-        - name: keystone-bootstrap
-          secret:
-            secretName: {{ .Release.Name }}-bootstrap
-            defaultMode: 0444
-        - name: keystone-bin
-          projected:
-            sources:
-            - configMap:
-                name: keystone-bin
-            - secret:
-                name: keystone-bin-secrets
-                items:
-                  - key: bootstrap
-                    path: bootstrap
+        - name: upgrade
+          configMap:
+            name: {{ include "keystone.upgrade_config" . }}
         - name: fernet
           secret:
             secretName: keystone-fernet
@@ -132,3 +124,5 @@ spec:
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+{{ end -}}
+{{- end -}}

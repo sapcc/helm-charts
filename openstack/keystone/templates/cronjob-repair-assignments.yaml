@@ -17,6 +17,11 @@ spec:
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
+    metadata:
+      labels:
+        component: keystone
+        release: {{ .Release.Name | quote }}
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
     spec:
       backoffLimit: 3
       template:
@@ -26,13 +31,13 @@ spec:
             system: openstack
             component: keystone
             type: operations
+            {{- include "keystone.upgrade_labels" . | nindent 12 }}
             alert-tier: os
             alert-service: keystone
           annotations:
             chart-version: {{.Chart.Version}}
             configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
             configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
-            secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
             secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
             secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
             {{- include "utils.linkerd.pod_and_service_annotation" . | indent 12 }}
@@ -115,15 +120,8 @@ spec:
                 secretName: {{ .Release.Name }}-bootstrap
                 defaultMode: 0444
             - name: keystone-bin
-              projected:
-                sources:
-                - configMap:
-                    name: keystone-bin
-                - secret:
-                    name: keystone-bin-secrets
-                    items:
-                      - key: bootstrap
-                        path: bootstrap
+              configMap:
+                name: keystone-bin
             - name: fernet
               secret:
                 secretName: keystone-fernet

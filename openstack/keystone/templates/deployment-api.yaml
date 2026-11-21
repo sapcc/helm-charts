@@ -43,6 +43,7 @@ spec:
         alert-tier: os
         alert-service: keystone
         app: keystone
+        {{- include "keystone.upgrade_labels" . | nindent 8 }}
         {{- if (include "keystone.tls.serving" .) }}
         # Marks pods that actually listen on :443 so the public TLS Service
         # (which selects on this) never routes to old non-TLS pods still
@@ -54,7 +55,6 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         sentry-filter-rules-hash: {{ include (print $.Template.BasePath "/configmap-sentry-filter-rules.yaml") . | sha256sum }}
-        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
         secrets-bootstrap-hash: {{ include (print $.Template.BasePath "/secret-bootstrap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.federation.oidc.enabled }}
@@ -447,16 +447,9 @@ spec:
             defaultMode: 0444
         {{- end }}
         - name: keystone-bin
-          projected:
+          configMap:
+            name: keystone-bin
             defaultMode: 0555
-            sources:
-            - configMap:
-                name: keystone-bin
-            - secret:
-                name: keystone-bin-secrets
-                items:
-                  - key: bootstrap
-                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet
