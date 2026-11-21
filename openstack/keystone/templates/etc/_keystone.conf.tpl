@@ -76,7 +76,7 @@ backend = dogpile.cache.bmemcached
 backend = dogpile.cache.memcached
 {{- end }}
 {{- if .Values.global.is_global_region }}
-memcache_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
+memcache_servers = "{{ join "," .Values.memcached.server_ips_ports }}"
 {{- else if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
 {{ else }}
