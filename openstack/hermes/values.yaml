@@ -62,6 +62,26 @@ hermes:
     port: 5672
     user: rabbitmq
     queue_name: "notifications.info"
+    # notifications.info is declared non-durable by its publishers and can't be
+    # changed in place (RabbitMQ 4.3 only allows it through the deprecated
+    # transient_nonexcl_queues feature), so services move to this durable
+    # queue over time and logstash reads both. oslo.messaging publishes to
+    # <topic>.<priority>, so oslo publishers reach it with topics = hermes at
+    # the audit priority, from a config whose own [oslo_messaging_rabbit] has
+    # amqp_durable_queues = true (it applies to every transport built from that
+    # config, so never set it in a config that also drives the service's RPC:
+    # keystone has none, audit middleware in nova, neutron and others does) and
+    # a control exchange no non-durable publisher declares on that broker;
+    # go-bits uses the queue name directly.
+    # Publishers must declare it exactly as logstash does: durable, not
+    # auto-delete, not exclusive, no arguments (classic queue). Anything else
+    # gets PRECONDITION_FAILED. Messages survive a broker restart only if they
+    # are sent persistent (delivery_mode 2); logstash acks once an event is in
+    # its in-memory queue, so a killed logstash pod still loses in-flight events.
+    # Don't disable once a publisher has moved, the queue would have no consumer.
+    durable_queue:
+      enabled: true
+      name: "hermes.audit"
     # hostnames are derived from this template using the key of the targets entry
     host_template: "%s-rabbitmq-notifications.monsoon3"
 

@@ -2,20 +2,27 @@ input {
 
 {{ range $replica_name, $replica := .Values.hermes.rabbitmq.targets }}
 {{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $replica_name $.Values.global.region $.Values.global.tld}}
+{{- $inputs := list (dict "id" (printf "logstash_hermes_%s" $replica_name) "queue" ($replica.queue_name | default $.Values.hermes.rabbitmq.queue_name) "durable" ($replica.durable | default false)) }}
+{{- if $.Values.hermes.rabbitmq.durable_queue.enabled }}
+{{- /* durable audit queue that publishers move to over time, declared here so it exists on every broker first */}}
+{{- $inputs = append $inputs (dict "id" (printf "logstash_hermes_%s_durable" $replica_name) "queue" (required "hermes.rabbitmq.durable_queue.name is required" $.Values.hermes.rabbitmq.durable_queue.name) "durable" true) }}
+{{- end }}
+{{- range $in := $inputs }}
 rabbitmq {
-    id => "{{ printf "logstash_hermes_%s" $replica_name }}"
+    id => "{{ $in.id }}"
     host => "{{ $replica.host | default (printf $.Values.hermes.rabbitmq.host_template $replica_name) }}"
     user => "${RABBITMQ_{{ upper $replica_name }}_USER}"
     password => "${RABBITMQ_{{ upper $replica_name }}_PASSWORD}"
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => "{{ $replica.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
+    queue => "{{ $in.queue }}"
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
     heartbeat => 5
     connect_retry_interval => 60
-    durable => {{ $replica.durable | default false }}
+    durable => {{ $in.durable }}
   }
+{{- end }}
 {{ end }}
 }
 
