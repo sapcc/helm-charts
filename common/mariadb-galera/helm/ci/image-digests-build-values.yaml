@@ -1,0 +1,57 @@
+# Pin the build field for all six components. This fixture also works standalone.
+mariadb:
+  fixFsPermissions: true
+  galera:
+    clustername: test
+    backup:
+      enabled: true
+      kopia:
+        enabled: true
+        job:
+          schedule:
+            full: "15 2 * * *"
+            binlog: "*/30 * * * *"
+        s3:
+          endpoint: s3.example.test
+          region: test-region
+          bucket: test-bucket
+  users:
+    root:
+      username: root
+      password: test-root
+    monitor:
+      username: monitor
+      password: test-monitor
+monitoring:
+  mysqld_exporter:
+    enabled: true
+proxy:
+  enabled: true
+  type: proxysql
+  proxysql:
+    fixFsPermissions: true
+    users:
+      admin:
+        username: admin
+        password: test-admin
+      stats:
+        username: stats
+        password: test-stats
+  haproxy:
+    users:
+      stats:
+        username: stats
+        password: test-stats
+image:
+  database:
+    imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  os:
+    imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  monitoring:
+    imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  proxysql:
+    imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  haproxy:
+    imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  kopiabackup:
+    imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"

@@ -27,6 +27,35 @@ templates:
   - configmap-haproxy.yaml
   - configmap-kopia.yaml
 tests:
+  - it: pinned build versions are retained after the assembled database and OS tags
+    template: statefulset-mariadb.yaml
+    set:
+      image.database.imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      image.os.imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111
+  - it: matching software and build pins render one final digest
+    template: statefulset-mariadb.yaml
+    set:
+      image.database.softwareversion: "10.5.25@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      image.database.imageversion: "20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240724035543@sha256:1111111111111111111111111111111111111111111111111111111111111111
+  - it: conflicting component pins fail explicitly
+    template: statefulset-mariadb.yaml
+    set:
+      image.database.softwareversion: "10.5.25@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      image.database.imageversion: "20240724035543@sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    asserts:
+      - failedTemplate:
+          errorMessage: "conflicting image digests for mariadb-galera: softwareversion has sha256:1111111111111111111111111111111111111111111111111111111111111111, imageversion has sha256:2222222222222222222222222222222222222222222222222222222222222222"
   - it: container image paths for mariadb-galera are correct
     template: statefulset-mariadb.yaml
     set:

@@ -1,3 +1,48 @@
+{{/* Plain software/build tag, independent of an optional image digest. */}}
+{{- define "mariadb-galera.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "mariadb-galera.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}
+{{- index $parts 1 -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Component helpers receive one image.<component> map. */}}
+{{- define "mariadb-galera.component.tag" -}}
+{{- $software := include "mariadb-galera.image.tag" .softwareversion -}}
+{{- $build := .imageversion -}}
+{{- if kindIs "string" $build -}}
+{{- $build = include "mariadb-galera.image.tag" $build -}}
+{{- end -}}
+{{/* Keep numeric YAML values numeric until int conversion, avoiding scientific notation. */}}
+{{- printf "%s-%d" $software (int $build) -}}
+{{- end -}}
+
+{{- define "mariadb-galera.component.digest" -}}
+{{- $software := include "mariadb-galera.image.digest" .softwareversion -}}
+{{- $build := include "mariadb-galera.image.digest" .imageversion -}}
+{{- if and $software $build (ne $software $build) -}}
+{{- fail (printf "conflicting image digests for %s: softwareversion has %s, imageversion has %s" .softwarename $software $build) -}}
+{{- end -}}
+{{- coalesce $software $build | default "" -}}
+{{- end -}}
+
+{{- define "mariadb-galera.component.image" -}}
+{{- $tag := include "mariadb-galera.component.tag" . -}}
+{{- $digest := include "mariadb-galera.component.digest" . -}}
+{{- printf "%s/%s/%s:%s" .registry .project .softwarename $tag -}}
+{{- if $digest -}}@{{ $digest }}{{- end -}}
+{{- end -}}
+
+{{- define "mariadb-galera.component.label" -}}
+{{- $tag := include "mariadb-galera.component.tag" . -}}
+{{- $label := regexReplaceAll "[^A-Za-z0-9_.-]" $tag "_" | trunc 63 -}}
+{{- regexReplaceAll "^[^A-Za-z0-9]+|[^A-Za-z0-9]+$" $label "" -}}
+{{- end -}}
+
 {{/*
   Generate Kubernetes service template
   service without per pod information:  include "networkService" (dict "global" $ "type" "backend" "service" $service "component" $component "replica" "notused")
@@ -343,7 +388,7 @@ app.kubernetes.io/instance: {{ $.Chart.Name }}-{{ $.Release.Name }}
 app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" $component)).softwarename }}-{{ $type }}-{{ $function }}
 app.kubernetes.io/part-of: {{ $.Release.Name }}
   {{- if eq (index . 1) "version" }}
-app.kubernetes.io/version: {{ (index $.Values.image (printf "%s" $component)).softwareversion }}-{{ (index $.Values.image (printf "%s" $component)).imageversion | int }}
+app.kubernetes.io/version: {{ include "mariadb-galera.component.label" (index $.Values.image $component) | quote }}
 helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
   {{- end }}
 {{- end }}

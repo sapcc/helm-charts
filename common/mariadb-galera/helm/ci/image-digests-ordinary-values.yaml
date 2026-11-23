@@ -1,0 +1,45 @@
+# Exercise numeric image defaults, monitoring, both OS init paths and Kopia backups.
+# The executable regression also switches the proxy to HAProxy and enables restore.
+mariadb:
+  fixFsPermissions: true
+  galera:
+    clustername: test
+    backup:
+      enabled: true
+      kopia:
+        enabled: true
+        job:
+          schedule:
+            full: "15 2 * * *"
+            binlog: "*/30 * * * *"
+        s3:
+          endpoint: s3.example.test
+          region: test-region
+          bucket: test-bucket
+  users:
+    root:
+      username: root
+      password: test-root
+    monitor:
+      username: monitor
+      password: test-monitor
+monitoring:
+  mysqld_exporter:
+    enabled: true
+proxy:
+  enabled: true
+  type: proxysql
+  proxysql:
+    fixFsPermissions: true
+    users:
+      admin:
+        username: admin
+        password: test-admin
+      stats:
+        username: stats
+        password: test-stats
+  haproxy:
+    users:
+      stats:
+        username: stats
+        password: test-stats
