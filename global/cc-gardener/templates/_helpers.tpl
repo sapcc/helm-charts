@@ -1,3 +1,19 @@
+{{/* Extract the plain tag for metadata and chart-version fallbacks only. */}}
+{{- define "cc-gardener.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{/* Preserve legacy digest-only secrets-injector references alongside tags/pins. */}}
+{{- define "cc-gardener.secretsInjector.image" -}}
+{{- $registry := required ".Values.global.registry is missing" .Values.global.registry -}}
+{{- $pin := required ".Values.secretsInjector.image.tag is missing" .Values.secretsInjector.image.tag -}}
+{{- $separator := ":" -}}
+{{- if hasPrefix "sha256:" (toString $pin) -}}
+{{- $separator = "@" -}}
+{{- end -}}
+{{- printf "%s/%s%s%s" $registry .Values.secretsInjector.image.repository $separator (toString $pin) -}}
+{{- end -}}
+
 {{/*
 Merge extension values with smart image reference handling.
 Applies fallback logic for image references while preserving all other values.
@@ -282,7 +298,7 @@ tag: null
 {{- /* Priority 2: repository/tag - unset ref */ -}}
 ref: null
 {{- /* Digest (can coexist with repository) */ -}}
-{{- if hasKey $ociRepo "digest" -}}
+{{- if hasKey $ociRepo "digest" }}
 digest: {{ $ociRepo.digest }}
 {{- end -}}
 {{- /* Repository and Tag as separate fields */ -}}

@@ -1,0 +1,46 @@
+# Standalone chart-testing fixture: image pins must not become OCI chart tags.
+global:
+  registry: registry.example.com:5000
+  region: qa-de-1
+  cluster: image-digests
+operator:
+  image:
+    tag: v1.144.2@sha256:1111111111111111111111111111111111111111111111111111111111111111
+garden:
+  enabled: true
+  managedresources: true
+  runtimeCluster:
+    zones: [qa-de-1a]
+  backup:
+    accessKeyID: test-access
+    secretAccessKey: test-secret
+    region: eu-central-1
+    bucket: test-backup
+secretsInjector:
+  enabled: true
+  image:
+    repository: secrets-injector
+    tag: v1.2.3@sha256:1111111111111111111111111111111111111111111111111111111111111111
+gardenlet:
+  enabled: true
+  namePrefix: digest-test
+  seedRegions:
+  - name: qa-de-1
+    backup:
+      provider: aws
+      region: eu-central-1
+    networks:
+      nodes: 10.1.0.0/16
+      pods: 10.2.0.0/16
+      services: 10.3.0.0/16
+    zones: [qa-de-1a]
+  - name: qa-de-2
+    bootstrap: true
+    backup:
+      provider: aws
+      region: eu-central-1
+    networks:
+      nodes: 10.4.0.0/16
+      pods: 10.5.0.0/16
+      services: 10.6.0.0/16
+    zones: [qa-de-2a]
