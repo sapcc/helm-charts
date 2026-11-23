@@ -713,6 +713,28 @@ flowchart LR
 
 A step starts only after the previous step's condition is patched as `status: True` on the Server. A step the model has no data for is skipped and the gate falls back to the nearest earlier step that is rendered.
 
+### Server Readiness Rules (`features.serverReadiness`)
+
+Keeps freshly onboarded Servers unclaimable (`metal.ironcore.dev/Uninitialized:NoBind` taint) until the chain above has finished for them. It renders one cluster-scoped `ServerReadinessRule` per model and cluster type, from the same `computedChain` that renders the Sets, so it always matches what is actually deployed (this replaces the static `mmo-initial-setup` rule that used to live in the metal-maintenance-operator charts).
+
+```yaml
+crdVersionControl:
+  features:
+    readinessGates:
+      enabled: true          # required - the rule gates on the published completionConditionTypes (the chart fails otherwise)
+    serverReadiness:
+      enabled: true          # default false
+      enforcementMode: BootstrapOnly
+      taint: { key: metal.ironcore.dev/Uninitialized, effect: NoBind }
+```
+
+- **Selector**: `labelKeys.type` + `labelKeys.clusterType`, same as the Sets. Servers metal-settings does not manage are never tainted.
+- **Conditions**: every *terminal* rendered step, i.e. each step whose `completionConditionType` no other rendered step gates on (all required, `True`). For a linear chain this is the last step (`step6-firmware-done` with firmware on, `step5-bios-settings-done` without it, `step3-bios-version-done` for a model without BIOS settings). Where rules split a chain so several steps run in parallel, all of them are required. Steps whose kind feature is disabled or whose `enabled` is false are not counted.
+- **Name**: `metal-settings-<vendor>-<model>-<clusterType>-<hash of conditions>`. `ServerReadinessRule.spec` is immutable, so a changed condition set (e.g. turning firmware on) produces a new rule name instead of a failed update; the old rule is pruned.
+- **Server subsets**: a condition is required for the whole selection only if some step publishing it is not restricted by `include.servers`. A step that exists only for a server subset (with no sibling rule publishing the same condition for the rest) is ignored, as requiring it would taint the other Servers forever.
+- **Limitation**: a step that gates on a condition that no rendered step publishes (e.g. `bmcSettings.enabled=false` while `bios-settings` still gates on `step4-bmc-settings-done`) never starts, so Servers of that model stay tainted. Keep the feature toggles and gates consistent.
+- **Deployment**: the rules are cluster-scoped and must be applied to the cluster that runs metal-operator's `Server` objects. Where the Sets are wrapped into ManagedResources (foundation-deployment `wrap-managed-resource-rules.yaml`), add `ServerReadinessRule` to the wrapped kinds. The taint is not removed when a rule is deleted. Roll out these rules before removing the old `mmo-initial-setup` rule.
+
 ### Parameters (`parameters`) — user input
 
 Per vendor/model firmware/settings data, keyed by the hardware model name (e.g. `poweredge-r640`):

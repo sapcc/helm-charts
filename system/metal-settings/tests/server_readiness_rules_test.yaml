@@ -1,0 +1,154 @@
+suite: server_readiness_rules
+templates:
+  - server_readiness_rules.yaml
+tests:
+  - it: should render nothing by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should fail when readinessGates is disabled because the completion conditions would never exist
+    set:
+      crdVersionControl.features.serverReadiness.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: "serverReadiness.enabled=true requires crdVersionControl.features.readinessGates.enabled=true"
+
+  - it: should gate on the last step (firmware) and select servers like the Sets do
+    set:
+      crdVersionControl.apiVersions.biosSettingsSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcSettingsSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.biosVersionSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcVersionSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.features.readinessGates.enabled: true
+      crdVersionControl.features.serverReadiness.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.firmware.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: metal-settings-dell-poweredge-r7615-cc-kvm-compute-1cdb9fa7
+    asserts:
+      - isKind:
+          of: ServerReadinessRule
+      - isAPIVersion:
+          of: metal.ironcore.dev/v1alpha1
+      - equal:
+          path: spec.serverSelector.matchLabels
+          value:
+            kubernetes.metal.cloud.sap/type: poweredge-r7615
+            kubernetes.metal.cloud.sap/cluster-type: cc-kvm-compute
+      - equal:
+          path: spec.conditions
+          value:
+            - type: metal.cloud.sap/step6-firmware-done
+              requiredStatus: "True"
+      - equal:
+          path: spec.enforcementMode
+          value: BootstrapOnly
+      - equal:
+          path: spec.taint
+          value:
+            key: metal.ironcore.dev/Uninitialized
+            effect: NoBind
+
+  - it: should fall back to bios-settings and use a different rule name when firmware is disabled
+    set:
+      crdVersionControl.apiVersions.biosSettingsSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcSettingsSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.biosVersionSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcVersionSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.features.readinessGates.enabled: true
+      crdVersionControl.features.serverReadiness.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.firmware.enabled: false
+    documentSelector:
+      path: metadata.name
+      value: metal-settings-dell-poweredge-r7615-cc-kvm-compute-9467b291
+    asserts:
+      - equal:
+          path: spec.conditions
+          value:
+            - type: metal.cloud.sap/step5-bios-settings-done
+              requiredStatus: "True"
+
+  - it: should gate on the last rendered step for a model that has no bios settings
+    set:
+      crdVersionControl.apiVersions.biosSettingsSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcSettingsSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.biosVersionSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcVersionSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.features.readinessGates.enabled: true
+      crdVersionControl.features.serverReadiness.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: metal-settings-hpe-proliant-dl560-gen10-cc-kvm-compute-261bd6ed
+    asserts:
+      - equal:
+          path: spec.conditions
+          value:
+            - type: metal.cloud.sap/step3-bios-version-done
+              requiredStatus: "True"
+
+  - it: should require every terminal step when a split chain has several steps nothing else gates on
+    set:
+      crdVersionControl.apiVersions.biosSettingsSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcSettingsSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.biosVersionSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcVersionSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.features.readinessGates.enabled: true
+      crdVersionControl.features.serverReadiness.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
+      crdVersionControl.features.firmware.enabled: true
+      rollouts:
+        types:
+          cc-kvm-compute:
+            - workflow:
+                biosSettings:
+                  order: 5
+                  kind: BIOSSettingsSet
+                  versionKey: bios.versions.defaultVersion
+                  settingsKey: bios.settings.defaultSettings
+                firmware:
+                  order: 6
+                  kind: FirmwareUpdateSet
+                  paramsKey: firmware.params.defaultVersion
+                  readinessGatesOverride:
+                    - type: metal.cloud.sap/step3-bios-version-done
+                      requiredStatus: "True"
+    documentSelector:
+      path: metadata.name
+      value: metal-settings-dell-poweredge-r7615-cc-kvm-compute-e347890b
+    asserts:
+      - equal:
+          path: spec.conditions
+          value:
+            - type: metal.cloud.sap/step5-bios-settings-done
+              requiredStatus: "True"
+            - type: metal.cloud.sap/step6-firmware-done
+              requiredStatus: "True"
+
+  - it: should only render rules for the cluster types in rollouts.types
+    set:
+      crdVersionControl.apiVersions.biosSettingsSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcSettingsSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.biosVersionSet: system.metal.ironcore.dev/v1alpha1
+      crdVersionControl.apiVersions.bmcVersionSet: baseboard.metal.ironcore.dev/v1alpha1
+      crdVersionControl.features.readinessGates.enabled: true
+      crdVersionControl.features.serverReadiness.enabled: true
+      crdVersionControl.features.bmcSettings.enabled: true
+      rollouts:
+        types:
+          cc-ironcore:
+            - workflow:
+                biosSettings:
+                  order: 5
+                  kind: BIOSSettingsSet
+                  versionKey: bios.versions.defaultVersion
+                  settingsKey: bios.settings.defaultSettings
+    asserts:
+      - hasDocuments:
+          count: 22
+      - matchRegex:
+          path: metadata.name
+          pattern: -cc-ironcore-[0-9a-f]{8}$
