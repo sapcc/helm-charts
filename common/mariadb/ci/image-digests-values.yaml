@@ -1,0 +1,48 @@
+---
+# Self-contained pinned companion; images retain these complete values.
+global:
+  registry: my.docker.registry
+  registryAlternateRegion: other.docker.registry
+  dockerHubMirror: my.dockerhub.mirror
+  dockerHubMirrorAlternateRegion: other.dockerhub.mirror
+  region: local
+  tld: local
+  backup_v2:
+    aws_access_key_id: test-key
+    aws_secret_access_key: test-secret
+  mariadb:
+    backup_v2:
+      aws:
+        region: local
+        sse_customer_key: test-key
+name: test
+root_password: test-password
+image: library/mariadb:10.11.19@sha256:1111111111111111111111111111111111111111111111111111111111111111
+credentialUpdater:
+  imageTag: python3.13-alpine3.24-20260820144936@sha256:1111111111111111111111111111111111111111111111111111111111111111
+alerts:
+  support_group: test
+sync:
+  enabled: true
+  init:
+    enabled: true
+    imageTag: python3.13-alpine3.24-20260820144936@sha256:1111111111111111111111111111111111111111111111111111111111111111
+  image:
+    tag: "20260813190947@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  backup:
+    service: test
+    swift:
+      password: test-password
+  source:
+    host: source-mariadb
+    password: test-password
+  target:
+    password: test-password
+  databases:
+    - test
+job:
+  maintenance:
+    enabled: true
+    schedule: "*/5 9 * * 2"
+  renameCheckConstraints:
+    enabled: true

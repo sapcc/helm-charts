@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.44.2 - 2026/11/23
+* support digest-qualified image tags in version labels, including optional sync
+* keep non-version labels empty and quoted; require literal dots in version extraction
+* chart version bumped
+
 ## v0.44.1 - 2026/10/15
 * move the `metrics` (mysqld-exporter) sidecar probes to `metrics.livenessProbe` / `metrics.readinessProbe`; leave them empty by default
   * MariaDB readiness depends on the metrics sidecar readiness
