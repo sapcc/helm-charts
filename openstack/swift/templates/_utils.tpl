@@ -99,7 +99,7 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
       valueFrom:
         secretKeyRef:
           name: swift-secret
-          key: {{ $context.Values.cluster_name }}_service_password
+          key: {{ $context.Values.service_password_key | default (printf "%s_service_password" $context.Values.cluster_name) }}
   {{- $resources_cpu := index $context.Values (printf "proxy_%s_resources_cpu" $kind) }}
   {{- $resources_memory := index $context.Values (printf "proxy_%s_resources_memory" $kind) }}
   resources:
@@ -151,7 +151,7 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
       valueFrom:
         secretKeyRef:
           name: swift-secret
-          key: dispersion_password
+          key: {{ $context.Values.dispersion_password_key | default "dispersion_password" }}
   ports:
     - name: metrics
       containerPort: 9520
