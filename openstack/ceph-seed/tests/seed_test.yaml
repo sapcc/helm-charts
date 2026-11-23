@@ -99,23 +99,40 @@ tests:
       - failedTemplate:
           errorMessage: global.ceph_rotation_service_password must not start or end with whitespace because the seeder trims passwords
 
-  - it: preserves quotes, backslashes, and newlines in both service passwords
+  - it: rejects embedded newlines in the rotation password
     set:
       service_user_rotation.enabled: true
-      global.ceph_service_password: |-
-        primary'"\:#
-        second line
-      global.ceph_rotation_service_password: |-
-        rotation'"\:#
-        second line
+      global.ceph_rotation_service_password: "first\nsecond"
+    asserts:
+      - failedTemplate:
+          errorMessage: global.ceph_rotation_service_password must be a single line
+
+  - it: rejects embedded carriage returns in the rotation password
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_rotation_service_password: "first\rsecond"
+    asserts:
+      - failedTemplate:
+          errorMessage: global.ceph_rotation_service_password must be a single line
+
+  - it: preserves Vault resolver expressions in both service password values
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_service_password: '{{ resolve "vault+kvv2:///secrets/test-region/ceph/keystone-user/service/password/password" }}'
+      global.ceph_rotation_service_password: '{{ resolve "vault+kvv2:///secrets/test-region/ceph/keystone-user/ceph2/password/password" }}'
     asserts:
       - equal:
           path: spec.domains[0].users[0].password
-          value: |-
-            primary'"\:#
-            second line
+          value: '{{ resolve "vault+kvv2:///secrets/test-region/ceph/keystone-user/service/password/password" }}'
       - equal:
           path: spec.domains[0].users[1].password
-          value: |-
-            rotation'"\:#
-            second line
+          value: '{{ resolve "vault+kvv2:///secrets/test-region/ceph/keystone-user/ceph2/password/password" }}'
+
+  - it: preserves apostrophes, double quotes, and backslashes in the resolved rotation password
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_rotation_service_password: rotation'"\:#
+    asserts:
+      - equal:
+          path: spec.domains[0].users[1].password
+          value: rotation'"\:#

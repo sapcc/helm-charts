@@ -14,10 +14,26 @@ service_user_rotation:
   enabled: true
 ```
 
-Supply an independent password through the existing secret values workflow as
-`global.ceph_rotation_service_password`. The original account continues to use
-`global.ceph_service_password`. Rendering fails if rotation is enabled without
-a nonempty rotation password, or if that password has leading/trailing whitespace.
+Supply independent Vault references in the regional secret values using the
+existing `*vault(path: ..., field: password)` convention:
+
+```yaml
+global:
+  ceph_service_password: *vault(path: <region>/ceph/keystone-user/service/password, field: password)
+  ceph_rotation_service_password: *vault(path: <region>/ceph/keystone-user/ceph2/password, field: password)
+```
+
+Replace `<region>` and the rotation secret path with the actual Vault locations.
+These are inputs to the deployment pipeline's `vault-injector interpolate` step,
+which resolves references before running Helm. Keep the reference in secret
+values when rotating; update the password stored in Vault. Plain Helm commands
+use the resolved values or the synthetic CI values, rather than raw `*vault` input.
+
+The original account retains its existing single-quoted
+`global.ceph_service_password` template. The rotation account uses the same
+single-quoted style and escapes apostrophes in the resolved password.
+Rendering fails if rotation is enabled without
+a nonempty, single-line rotation password, or if that password has leading/trailing whitespace.
 The seeder trims string values, so generate both passwords without surrounding
 whitespace. Keep actual passwords out of committed values.
 
@@ -57,7 +73,7 @@ Do not update the active account's password during preparation.
        admin_user: ceph2
        admin_domain: Default
        admin_project: admin
-       # admin_password: supplied through secret values
+       admin_password: *vault(path: <region>/ceph/keystone-user/ceph2/password, field: password)
    ```
 
    Deploy `cc-ceph`. Rook 1.19.10, pinned by this repository, watches the referenced
@@ -139,6 +155,7 @@ helm unittest openstack/ceph-seed
 ```
 
 The unit tests cover default behavior, independent passwords, the rotation
-account's role assignment, missing/empty/whitespace passwords, and password quoting.
+account's role assignment, missing/empty/whitespace passwords, Vault resolver
+expressions, and apostrophes in the rotation password.
 These checks validate rendering; live Keystone password updates, permissions,
 RGW propagation, and S3/Swift requests must pass before retiring old credentials.

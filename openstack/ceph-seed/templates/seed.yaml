@@ -31,15 +31,18 @@ spec:
       users:
         - name: ceph
           description: CEPH Object Store Service
-          password: {{ $.Values.global.ceph_service_password | default "" | quote }}
+          password: '{{ $.Values.global.ceph_service_password }}'
         {{- if .Values.service_user_rotation.enabled }}
         {{- $rotationPassword := required "global.ceph_rotation_service_password is required when service_user_rotation.enabled is true" $.Values.global.ceph_rotation_service_password }}
         {{- if ne $rotationPassword (trim $rotationPassword) }}
         {{- fail "global.ceph_rotation_service_password must not start or end with whitespace because the seeder trims passwords" }}
         {{- end }}
+        {{- if or (contains "\n" $rotationPassword) (contains "\r" $rotationPassword) }}
+        {{- fail "global.ceph_rotation_service_password must be a single line" }}
+        {{- end }}
         - name: ceph2
           description: CEPH Object Store Service rotation account
-          password: {{ $rotationPassword | quote }}
+          password: '{{ $.Values.global.ceph_rotation_service_password | replace "'" "''" }}'
           role_assignments:
             - project: admin
               role: service # for s3tokens auth access
