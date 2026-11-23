@@ -52,7 +52,10 @@ spec:
             - name: OS_INTERFACE
               value: {{ .Values.keystone_interface | default "admin" }}
             - name: OS_PASSWORD
-              value: {{ quote .Values.swift_service_password }}
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: {{ .Values.service_password_key | default (printf "%s_service_password" .Values.cluster_name) }}
             - name: OS_PROJECT_DOMAIN_NAME
               value: {{ .Values.swift_service_project_domain }}
             - name: OS_PROJECT_NAME
