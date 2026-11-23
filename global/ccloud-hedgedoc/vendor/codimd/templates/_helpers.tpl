@@ -42,7 +42,19 @@ app.kubernetes.io/name: {{ include "codimd.name" . }}
 helm.sh/chart: {{ include "codimd.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/version: {{ default .Chart.AppVersion .Values.image.tag | quote }}
+app.kubernetes.io/version: {{ include "codimd.image.versionLabel" (default .Chart.AppVersion .Values.image.tag) | quote }}
+{{- end -}}
+
+{{/* Keep image pins intact in images, but use the readable tag in metadata. */}}
+{{- define "codimd.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{/* Kubernetes label values must be bounded and start/end with alphanumerics. */}}
+{{- define "codimd.image.versionLabel" -}}
+{{- $tag := include "codimd.image.tag" . -}}
+{{- $label := regexReplaceAll "[^a-zA-Z0-9_.-]" $tag "_" | trunc 63 -}}
+{{- regexReplaceAll "^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$" $label "" -}}
 {{- end -}}
 
 
