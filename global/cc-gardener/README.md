@@ -23,22 +23,3 @@ The `cc-gardener` chart is upgraded based on two inputs from the umbrella chart 
 
 1. **Operator subchart version** — defined in the umbrella chart's `Chart.yaml`.
 2. **Generated `imageVectorOverrides`** — defined in the umbrella chart's `values.yaml`.
-
-# Image digest regression tests
-
-From the repository root, with Helm, Python 3 and yq v4 available:
-
-```sh
-helm dependency build global/cc-gardener
-python3 global/cc-gardener/ci/test-image-digests.py
-```
-
-From this chart directory, run `helm dependency build .` and
-`python3 ci/test-image-digests.py`. Dependencies use the existing lock file and
-internal OCI registry; fetched archives must not be committed.
-
-The tests render the real chart and decode the ManagedResource Secrets containing
-Gardenlets. They also render the original chart at commit `04f4dbf7` using the same
-dependencies, comparing ordinary, legacy digest-only and explicit-override output.
-The ordinary secrets-injector separator fix is the only allowed ordinary change.
-Use `--baseline-ref <commit>` to select a different original revision.
