@@ -34,7 +34,8 @@ spec:
         - name: cni-plugin
           mountPath: /opt/cni/bin
 {{- if .Values.plugins.multus }}
-      {{- $multusMajor := .Values.images.multus.tag | toString | trimPrefix "v" | splitList "." | first | int }}
+      {{- $tag := include "kube-cni.image.tag" .Values.images.multus.tag }}
+      {{- $multusMajor := $tag | trimPrefix "v" | splitList "." | first | int }}
       - name: install-multus-cni-plugin
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.images.multus.image }}:{{ .Values.images.multus.tag }}"
         command:
