@@ -1,4 +1,9 @@
 {{/* vim: set filetype=mustache: */}}
+{{/* Keep image pins in images, but use only the tag for version metadata. */}}
+{{- define "rabbitmq.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
 {{/*
 Expand the name of the chart.
 */}}
@@ -151,7 +156,7 @@ app.kubernetes.io/instance: {{ template "fullname" $ }}
 app.kubernetes.io/component: {{ include "label.component" (list $component $type $function) }}
 app.kubernetes.io/part-of: {{ $.Release.Name }}
   {{- if eq (index . 1) "version" }}
-app.kubernetes.io/version: {{ $.Values.imageTag | regexFind "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" }}
+app.kubernetes.io/version: {{ include "rabbitmq.image.tag" $.Values.imageTag | regexFind "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}" | quote }}
 app.kubernetes.io/managed-by: "helm"
 helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
   {{- end }}
