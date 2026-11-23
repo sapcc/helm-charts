@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: manila
     app.kubernetes.io/component: share-ensure
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    secret.reloader.stakater.com/reload: {{ include "manila.reloader.secrets" (dict "ctx" .) | quote }}
     deployment.reloader.stakater.com/pause-period: "60s"
     reloader.stakater.com/search: "true"
   {{- if .Values.vpa.set_main_container }}

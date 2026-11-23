@@ -47,3 +47,12 @@ Define the Manila dependency services for kubernetes-entrypoint init container
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.loci.imageVersion | required "Please set manila.loci.imageVersion" }}
   {{- end }}
 {{- end }}
+
+{{- define "manila.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list (printf "%s-secrets" $ctx.Release.Name) -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-proxysql-etc" $ctx.Release.Name) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}
