@@ -151,7 +151,7 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
       valueFrom:
         secretKeyRef:
           name: swift-secret
-          key: dispersion_password
+          key: {{ $context.Values.dispersion_password_key | default "dispersion_password" }}
   ports:
     - name: metrics
       containerPort: 9520
