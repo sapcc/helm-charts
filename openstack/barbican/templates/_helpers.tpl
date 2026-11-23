@@ -28,6 +28,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
   {{- template "barbican.db_service" . }}
 {{- end }}
 
+{{- define "barbican.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "barbican.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}{{- index $parts 1 -}}{{- end -}}
+{{- end -}}
+
 {{- define "job_name" }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
@@ -40,8 +49,20 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
           (include "utils.proxysql.volumes" .)
           (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container")
       | join "\n" }}
+    {{- $pin := .Values.imageVersionBarbicanApi | required "Please set barbican.imageVersionBarbicanApi" }}
+    {{- $tag := include "barbican.image.tag" $pin }}
+    {{- $digest := include "barbican.image.digest" $pin }}
+    {{- if $digest }}
+      {{- $all = printf "%s\n%s" $all $digest }}
+    {{- end }}
     {{- $hash := $all | sha256sum }}
-{{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersionBarbicanApi | required "Please set barbican.imageVersionBarbicanApi" }}
+    {{- if $digest }}
+      {{- $suffix := printf "-%s-%s" $name (substr 0 4 $hash) }}
+      {{- $prefix := regexReplaceAll "[^a-z0-9-]" (printf "%s-%s" .Release.Name $tag | lower) "-" }}
+      {{- printf "%s%s" ($prefix | trunc (int (sub 63 (len $suffix))) | trimAll "-") $suffix }}
+    {{- else }}
+      {{- printf "%s-%s-%s-%s" .Release.Name $name (substr 0 4 $hash) $tag }}
+    {{- end }}
   {{- end }}
 {{- end }}
 
