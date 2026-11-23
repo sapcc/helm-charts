@@ -2,6 +2,12 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.27.0 - 2026/11/23
+
+- RabbitMQ [4.4.1 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.4.1)
+- Delete the `guest` user on startup instead of clearing its password
+- Chart version bumped
+
 ## 0.26.2 - 2026/11/12
 
 - Add linkerd `skip-inbound-ports` annotation for the TLS listener port in the RabbitMQ statefulset, if enabled
