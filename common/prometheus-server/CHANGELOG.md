@@ -1,3 +1,7 @@
+## 8.4.1
+
+* Support digest-qualified Thanos versions while preserving the operator's semantic version and rejecting conflicting image pins.
+
 ## 8.4.0
 
 * add `storageClassName` attribute to prometheus `volumeClaimTemplate`

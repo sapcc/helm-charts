@@ -99,12 +99,54 @@ prometheus-{{- $name -}}.{{- required "$root.Values.global.region missing" $root
 {{- end -}}
 {{- end -}}
 
+{{- define "prometheus-server.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "prometheus-server.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}
+{{- index $parts 1 -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Keep the operator's semantic version separate from the complete image pin. */}}
+{{- define "prometheus-server.thanos.spec" -}}
+{{- $spec := deepCopy .Values.thanos.spec -}}
+{{- with $spec.version -}}
+{{- $pin := . -}}
+{{- $tag := include "prometheus-server.image.tag" $pin -}}
+{{- $digest := include "prometheus-server.image.digest" $pin -}}
+{{- if $digest -}}
+{{- $image := required ".Values.thanos.spec.image missing" $spec.image -}}
+{{- $plainImage := include "prometheus-server.image.tag" $image -}}
+{{- $imageDigest := include "prometheus-server.image.digest" $image -}}
+{{- $imageTag := regexFind ":[^/:]+$" $plainImage | trimPrefix ":" -}}
+{{- if and $imageDigest (or (ne $imageDigest $digest) (and $imageTag (ne $imageTag $tag))) -}}
+{{- fail "thanos.spec.image pin conflicts with thanos.spec.version tag or digest" -}}
+{{- end -}}
+{{/* Strip only a tag on the last path segment, never a registry port. */}}
+{{- $repository := regexReplaceAll ":[^/:]+$" $plainImage "" -}}
+{{- $_ := set $spec "version" $tag -}}
+{{- $_ := set $spec "image" (printf "%s:%s" $repository $pin) -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $spec -}}
+{{- end -}}
+
 {{/* Image for Thanos components. Do not use for Thanos sidecar! */}}
 {{- define "thanos.image" -}}
 {{- if and .Values.thanos.components.image .Values.thanos.components.version -}}
 {{- .Values.thanos.components.image -}}:{{- .Values.thanos.components.version -}}
 {{- else -}}
-{{- required ".Values.thanos.spec.image missing" .Values.thanos.spec.image -}}:{{- required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
+{{- $image := required ".Values.thanos.spec.image missing" .Values.thanos.spec.image -}}
+{{- $pin := required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
+{{- if include "prometheus-server.image.digest" $pin -}}
+{{- $spec := include "prometheus-server.thanos.spec" . | fromYaml -}}
+{{- $spec.image -}}
+{{- else -}}
+{{- $image -}}:{{- $pin -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
