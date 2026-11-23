@@ -4,7 +4,7 @@
 * support digest-qualified software/build versions for all six component images
   * retain numeric build conversion and append matching pins after the complete tag
   * reject conflicting pins and keep version labels and Kopia MARIADB_VERSION plain
-  * extend image/label unit tests and add executable full-chart regressions
+  * extend image/label unit tests
 * chart version bumped
 
 ## v0.29.5 - 2024/07/30
