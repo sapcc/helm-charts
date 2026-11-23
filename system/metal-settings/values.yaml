@@ -66,9 +66,20 @@ crdVersionControl:
     biosVersionSet: "metal.ironcore.dev/v1alpha1"
     bmcVersionSet: "metal.ironcore.dev/v1alpha1"
     firmwareUpdateSet: "system.metal.ironcore.dev/v1alpha1"
+    serverReadinessRule: "metal.ironcore.dev/v1alpha1"
   features:
     readinessGates:
       enabled: false
+    # Renders one cluster-scoped ServerReadinessRule per model and cluster type that keeps new Servers
+    # tainted until the LAST rendered chain step(s) of that model have completed (see README,
+    # "Server Readiness Rules"). Requires readinessGates.enabled=true - the rule gates on the
+    # completionConditionType the chain publishes, which only exists with gates enabled.
+    serverReadiness:
+      enabled: false
+      enforcementMode: BootstrapOnly
+      taint:
+        key: metal.ironcore.dev/Uninitialized
+        effect: NoBind
     # Per-kind enable toggles + retryPolicy + serverMaintenancePolicy for the generated CRD specs.
     # serverMaintenancePolicy is passed straight through to each kind's own <kind>Template.serverMaintenancePolicy
     # field (OwnerApproval by default) - override per-kind to change who/what must approve maintenance on affected Servers.

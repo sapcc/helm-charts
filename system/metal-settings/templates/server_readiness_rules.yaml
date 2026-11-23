@@ -1,0 +1,82 @@
+{{- if .Values.crdVersionControl.features.serverReadiness.enabled }}
+{{- include "metal-settings.rejectLegacyMachinesKey" . }}
+{{- if not .Values.crdVersionControl.features.readinessGates.enabled }}
+{{- fail "metal-settings: crdVersionControl.features.serverReadiness.enabled=true requires crdVersionControl.features.readinessGates.enabled=true - the rules gate on the completionConditionType values published by the readiness-gate chain, which never exist without it (Servers would stay tainted forever)." }}
+{{- end }}
+{{- include "metal-settings.requireChainCapableAPI" . }}
+{{- $features := .Values.crdVersionControl.features }}
+{{- $readiness := $features.serverReadiness }}
+{{- $kindFeatures := dict "BMCSettingsSet" "bmcSettings" "BMCVersionSet" "bmcVersions" "BIOSSettingsSet" "biosSettings" "BIOSVersionSet" "biosVersions" "FirmwareUpdateSet" "firmware" }}
+{{- $effectiveTypes := include "metal-settings.effectiveRolloutTypes" $ | fromYaml }}
+{{- $reservedVendorKeys := list "enabled" "rollouts" }}
+{{- $usedNames := dict }}
+{{- range $vendor, $vendorParams := .Values.parameters }}
+{{- range $modelKey, $modelParams := $vendorParams }}
+{{- if not (has $modelKey $reservedVendorKeys) }}
+{{- $model := $modelKey }}
+{{- range $clusterType, $_ := $effectiveTypes }}
+{{- $chainsByRule := include "metal-settings.computedChain" (dict "vendor" $vendor "model" $model "clusterType" $clusterType "root" $) | fromYaml }}
+{{/*
+A Server is initialized once every TERMINAL step of its chain has completed, i.e. every rendered
+step whose completionConditionType no other rendered step gates on. For a linear chain that is just
+the last step; when rules split a chain (e.g. bios-settings and firmware both gating on
+bmc-settings) it is several steps - all of them are required (conditions are ANDed).
+Only steps that are actually rendered count: the kind's feature toggle and the step's own
+"enabled" must be on, otherwise nothing would ever publish the condition.
+A condition is only required if some step publishing it applies to every Server of the model
+(no serverFilter.included) - a step carved out for specific servers by a sibling rule publishes the
+same condition type, so it is covered there, but a step that ONLY exists for a server subset
+cannot be required of the whole selection without tainting the other Servers forever.
+*/}}
+{{- $produced := dict }}
+{{- $referenced := dict }}
+{{- range $ruleIndex, $chain := $chainsByRule }}
+{{- range $stepName, $step := $chain }}
+{{- $kindFeature := index $kindFeatures $step.kind }}
+{{- if and (index $features $kindFeature).enabled (include "metal-settings.stepEnabled" (dict "step" (dict "enabled" $step.enabled) "root" $)) }}
+{{- $conditionType := $step.params.completionConditionType }}
+{{- $coversAll := not (dig "serverFilter" "included" list $step.params) }}
+{{- $_ := set $produced $conditionType (or $coversAll (get $produced $conditionType) | default false) }}
+{{- range $gate := $step.params.readinessGates }}
+{{- $_ := set $referenced $gate.type true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $conditions := list }}
+{{- range $conditionType := keys $produced | sortAlpha }}
+{{- if and (get $produced $conditionType) (not (hasKey $referenced $conditionType)) }}
+{{- $conditions = append $conditions $conditionType }}
+{{- end }}
+{{- end }}
+{{- if $conditions }}
+{{- $ruleName := printf "metal-settings-%s-%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) (join "," $conditions | sha256sum | trunc 8) }}
+{{- if hasKey $usedNames $ruleName }}
+{{- fail (printf "metal-settings: duplicate ServerReadinessRule name %q (model %q, clusterType %q)" $ruleName $model $clusterType) }}
+{{- end }}
+{{- $_ := set $usedNames $ruleName true }}
+apiVersion: {{ $.Values.crdVersionControl.apiVersions.serverReadinessRule }}
+kind: ServerReadinessRule
+metadata:
+  name: {{ $ruleName }}
+spec:
+  serverSelector:
+    matchLabels:
+      {{ $.Values.labelKeys.type }}: {{ $model }}
+      {{ $.Values.labelKeys.clusterType }}: {{ $clusterType }}
+  conditions:
+{{- range $conditions }}
+    - type: {{ . }}
+      requiredStatus: "True"
+{{- end }}
+  enforcementMode: {{ $readiness.enforcementMode }}
+  taint:
+    key: {{ $readiness.taint.key }}
+    effect: {{ $readiness.taint.effect }}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
