@@ -36,3 +36,12 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "glance.memcached_service" }}
   {{- .Release.Name }}-memcached
 {{- end }}
+
+{{- define "glance.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list (printf "%s-secrets" $ctx.Release.Name) -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-proxysql-etc" $ctx.Release.Name) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}
