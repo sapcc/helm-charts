@@ -1,0 +1,121 @@
+suite: Ceph service user rotation
+templates:
+  - seed.yaml
+values:
+  - ../ci/test-values.yaml
+tests:
+  - it: keeps the existing service account and assignment by default
+    asserts:
+      - lengthEqual:
+          path: spec.domains[0].users
+          count: 1
+      - equal:
+          path: spec.domains[0].users[0].name
+          value: ceph
+      - equal:
+          path: spec.domains[0].users[0].password
+          value: foo-bar
+      - equal:
+          path: spec.domains[1].projects[0].role_assignments
+          value:
+            - user: ceph@Default
+              role: service
+
+  - it: preserves an empty primary password when the value is omitted
+    set:
+      global.ceph_service_password: null
+    asserts:
+      - equal:
+          path: spec.domains[0].users[0].password
+          value: ""
+
+  - it: does not seed a rotation account just because its password is supplied
+    set:
+      global.ceph_rotation_service_password: unused-password
+    asserts:
+      - lengthEqual:
+          path: spec.domains[0].users
+          count: 1
+
+  - it: seeds both accounts with independent passwords and only the service assignment for the rotation account
+    values:
+      - ../ci/rotation-test-values.yaml
+    asserts:
+      - equal:
+          path: spec.domains[0].name
+          value: Default
+      - lengthEqual:
+          path: spec.domains[0].users
+          count: 2
+      - equal:
+          path: spec.domains[0].users[0].password
+          value: foo-bar
+      - equal:
+          path: spec.domains[0].users[1]
+          value:
+            name: ceph2
+            description: CEPH Object Store Service rotation account
+            password: test-rotation-password
+            role_assignments:
+              - project: admin
+                role: service
+
+  - it: rejects enabling rotation without a password
+    set:
+      service_user_rotation.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: global.ceph_rotation_service_password is required when service_user_rotation.enabled is true
+
+  - it: rejects an empty rotation password
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_rotation_service_password: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: global.ceph_rotation_service_password is required when service_user_rotation.enabled is true
+
+  - it: rejects a whitespace-only rotation password
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_rotation_service_password: "   "
+    asserts:
+      - failedTemplate:
+          errorMessage: global.ceph_rotation_service_password must not start or end with whitespace because the seeder trims passwords
+
+  - it: rejects leading whitespace that would change the password in the seeder
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_rotation_service_password: " password"
+    asserts:
+      - failedTemplate:
+          errorMessage: global.ceph_rotation_service_password must not start or end with whitespace because the seeder trims passwords
+
+  - it: rejects trailing whitespace that would change the password in the seeder
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_rotation_service_password: "password\n"
+    asserts:
+      - failedTemplate:
+          errorMessage: global.ceph_rotation_service_password must not start or end with whitespace because the seeder trims passwords
+
+  - it: preserves quotes, backslashes, and newlines in both service passwords
+    set:
+      service_user_rotation.enabled: true
+      global.ceph_service_password: |-
+        primary'"\:#
+        second line
+      global.ceph_rotation_service_password: |-
+        rotation'"\:#
+        second line
+    asserts:
+      - equal:
+          path: spec.domains[0].users[0].password
+          value: |-
+            primary'"\:#
+            second line
+      - equal:
+          path: spec.domains[0].users[1].password
+          value: |-
+            rotation'"\:#
+            second line
