@@ -51,71 +51,100 @@ spec:
             spec:
               description: spec defines the desired state of MetalCluster
               properties:
-                servers:
-                  description: Servers is the list of bare-metal servers that belong to this cluster.
+                groups:
+                  description: Groups groups servers by a shared label set (e.g. a building block, rack, or pod).
                   items:
-                    description: ServerEntry describes one server in the cluster inventory.
+                    description: Group is a named set of servers that share a common label set.
                     properties:
-                      interfaces:
-                        description: Interfaces lists the known data-plane network interfaces of the server.
-                        items:
-                          description: InterfaceEntry describes one network interface of a server.
-                          properties:
-                            mac:
-                              description: MAC is the MAC address of this interface.
-                              type: string
-                            name:
-                              description: Name is the expected interface name (e.g. "eth0", "eno1").
-                              type: string
-                            type:
-                              default: nic
-                              description: Type classifies the interface by its role (dpu, nic, oob).
-                              enum:
-                                - dpu
-                                - nic
-                                - oob
-                              type: string
-                          type: object
-                        type: array
                       labels:
                         additionalProperties:
                           type: string
-                        description: |-
-                          Labels are key/value pairs to be applied to the BMC CR and, by extension,
-                          the Server CR created by metal-operator. Specific label keys are mapped to
-                          NoBind taints on the Server to gate the onboarding phases driven by mmo.
+                        description: Labels are merged on top of the cluster-level labels for every server in this group.
                         type: object
                       name:
-                        description: |-
-                          Name is the canonical server name, sourced from the NetBox DCIM device name
-                          (e.g. "node001-bb684"). Used as the BMC CR metadata.name.
+                        description: Name identifies the group (e.g. "bb097", "rack-42", "pod-a").
                         minLength: 1
                         type: string
-                      remoteboardHostname:
-                        description: |-
-                          RemoteboardHostname is the DNS hostname of the remote-management interface
-                          (BMC/iDRAC/iLO), sourced from NetBox IPAM. Written to BMC spec.hostname.
-                          Falls back to Name when empty.
-                        type: string
-                      remoteboardMAC:
-                        description: |-
-                          RemoteboardMAC is the MAC address of the remote-management interface (BMC/iDRAC/iLO).
-                          Used as fallback lookup key when the serial is unknown or the BMC is unreachable.
-                        type: string
-                      serial:
-                        description: |-
-                          Serial is the chassis serial number (manufacturer-assigned), used as the
-                          primary lookup key when a Redfish probe can reach the BMC.
-                        minLength: 1
-                        type: string
+                      servers:
+                        description: Servers is the list of servers in this group.
+                        items:
+                          description: ServerEntry describes one server in the cluster inventory.
+                          properties:
+                            interfaces:
+                              description: Interfaces lists the known data-plane network interfaces of the server.
+                              items:
+                                description: InterfaceEntry describes one network interface of a server.
+                                properties:
+                                  mac:
+                                    description: MAC is the MAC address of this interface.
+                                    type: string
+                                  name:
+                                    description: Name is the expected interface name (e.g. "eth0", "eno1").
+                                    type: string
+                                  type:
+                                    default: nic
+                                    description: Type classifies the interface by its role (dpu, nic, oob).
+                                    enum:
+                                      - dpu
+                                      - nic
+                                      - oob
+                                    type: string
+                                type: object
+                              type: array
+                            labels:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                Labels are key/value pairs to be applied to the BMC CR and, by extension,
+                                the Server CR created by metal-operator. Specific label keys are mapped to
+                                NoBind taints on the Server to gate the onboarding phases driven by mmo.
+                              type: object
+                            name:
+                              description: |-
+                                Name is the canonical server name, sourced from the NetBox DCIM device name
+                                (e.g. "node001-bb684"). Used as the BMC CR metadata.name.
+                              minLength: 1
+                              type: string
+                            remoteboardHostname:
+                              description: |-
+                                RemoteboardHostname is the DNS hostname of the remote-management interface
+                                (BMC/iDRAC/iLO), sourced from NetBox IPAM. Written to BMC spec.hostname.
+                                Falls back to Name when empty.
+                              type: string
+                            remoteboardMAC:
+                              description: |-
+                                RemoteboardMAC is the MAC address of the remote-management interface (BMC/iDRAC/iLO).
+                                Used as fallback lookup key when the serial is unknown or the BMC is unreachable.
+                              type: string
+                            serial:
+                              description: |-
+                                Serial is the chassis serial number (manufacturer-assigned), used as the
+                                primary lookup key when a Redfish probe can reach the BMC.
+                              minLength: 1
+                              type: string
+                          required:
+                            - name
+                            - serial
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                          - name
+                        x-kubernetes-list-type: map
                     required:
                       - name
-                      - serial
                     type: object
                   type: array
                   x-kubernetes-list-map-keys:
                     - name
                   x-kubernetes-list-type: map
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: |-
+                    Labels are applied to every server in the cluster. Building-block and
+                    per-server labels are merged on top in that order, with later values
+                    overriding earlier ones.
+                  type: object
               type: object
             status:
               description: status defines the observed state of MetalCluster
