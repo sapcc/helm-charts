@@ -310,6 +310,10 @@ build-argora-operator:
 	@helm dep up argora-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
 
+build-argora-operator-remote-ddo:
+	@helm dep up argora-operator-remote-ddo
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote-ddo/Chart.yaml
+
 build-argora-operator-remote:
 	@helm dep up argora-operator-remote
 	@helm template argora-operator argora-operator-remote/charts/argora-* \
