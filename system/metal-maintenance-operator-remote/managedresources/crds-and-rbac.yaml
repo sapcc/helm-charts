@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: biossettings.system.metal.ironcore.dev
 spec:
   group: system.metal.ironcore.dev
@@ -61,6 +61,51 @@ spec:
             spec:
               description: BIOSSettingsSpec defines the desired state of BIOSSettings.
               properties:
+                completionConditionType:
+                  description: |-
+                    CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                    related Server(s) once this resource reaches its terminal success state. Downstream
+                    resources can reference this Type in their own ReadinessGates to build a manual
+                    sequence across resources.
+                    Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                    afterwards.
+                  maxLength: 316
+                  pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                  type: string
+                  x-kubernetes-validations:
+                    - message: completionConditionType is immutable once set
+                      rule: oldSelf == '' || self == oldSelf
+                readinessGates:
+                  description: |-
+                    ReadinessGates is a list of Server conditions that must be satisfied before the
+                    controller starts applying this resource. Semantics mirror Kubernetes
+                    Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                    Server(s) with the required status.
+                  items:
+                    description: |-
+                      ConditionRequirement defines a specific Server condition and the status value
+                      required to trigger the controller's action.
+                    properties:
+                      requiredStatus:
+                        description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: |-
+                          Type of server condition
+
+                          Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                        maxLength: 316
+                        minLength: 1
+                        type: string
+                    required:
+                      - requiredStatus
+                      - type
+                    type: object
+                  type: array
                 retryPolicy:
                   description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                   properties:
@@ -110,6 +155,7 @@ spec:
                 settingsFlow:
                   description: SettingsFlow contains the settings sequence to apply in the given order.
                   items:
+                    description: SettingsFlowItem defines one priority step in a settings application sequence.
                     properties:
                       name:
                         description: Name is the name of the flow item.
@@ -131,7 +177,13 @@ spec:
                       - name
                       - priority
                     type: object
+                  maxItems: 64
                   type: array
+                  x-kubernetes-validations:
+                    - message: settingsFlow item names must be unique
+                      rule: self.all(a, self.filter(b, b.name == a.name).size() == 1)
+                    - message: settingsFlow item priorities must be unique
+                      rule: self.all(a, self.filter(b, b.priority == a.priority).size() == 1)
                 variables:
                   description: Variables is a list of variables that can be used in the settings for templating.
                   items:
@@ -145,7 +197,10 @@ spec:
                         description: ValueFrom defines a simple single source for the variable value.
                         properties:
                           configMapKeyRef:
-                            description: ConfigMapKeyRef points to a namespaced ConfigMap key.
+                            description: |-
+                              ConfigMapKeyRef points to a namespaced ConfigMap key.
+                              The ConfigMap must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                              otherwise the reference is rejected.
                             properties:
                               key:
                                 description: Key is the key within the referenced object.
@@ -214,7 +269,10 @@ spec:
                               - name
                             type: object
                           secretKeyRef:
-                            description: SecretKeyRef points to a namespaced Secret key.
+                            description: |-
+                              SecretKeyRef points to a namespaced Secret key.
+                              The Secret must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                              otherwise the reference is rejected.
                             properties:
                               key:
                                 description: Key is the key within the referenced object.
@@ -254,9 +312,6 @@ spec:
               required:
                 - serverRef
               type: object
-              x-kubernetes-validations:
-                - message: version is required
-                  rule: size(self.version) > 0
             status:
               description: BIOSSettingsStatus defines the observed state of BIOSSettings.
               properties:
@@ -419,7 +474,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: biossettingssets.system.metal.ironcore.dev
 spec:
   group: system.metal.ironcore.dev
@@ -485,6 +540,51 @@ spec:
                 biosSettingsTemplate:
                   description: BIOSSettingsTemplate defines the template for the BIOSSettings resource to be applied to the servers.
                   properties:
+                    completionConditionType:
+                      description: |-
+                        CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                        related Server(s) once this resource reaches its terminal success state. Downstream
+                        resources can reference this Type in their own ReadinessGates to build a manual
+                        sequence across resources.
+                        Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                        afterwards.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                      x-kubernetes-validations:
+                        - message: completionConditionType is immutable once set
+                          rule: oldSelf == '' || self == oldSelf
+                    readinessGates:
+                      description: |-
+                        ReadinessGates is a list of Server conditions that must be satisfied before the
+                        controller starts applying this resource. Semantics mirror Kubernetes
+                        Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                        Server(s) with the required status.
+                      items:
+                        description: |-
+                          ConditionRequirement defines a specific Server condition and the status value
+                          required to trigger the controller's action.
+                        properties:
+                          requiredStatus:
+                            description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                            enum:
+                              - "True"
+                              - "False"
+                              - Unknown
+                            type: string
+                          type:
+                            description: |-
+                              Type of server condition
+
+                              Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                            maxLength: 316
+                            minLength: 1
+                            type: string
+                        required:
+                          - requiredStatus
+                          - type
+                        type: object
+                      type: array
                     retryPolicy:
                       description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                       properties:
@@ -504,6 +604,7 @@ spec:
                     settingsFlow:
                       description: SettingsFlow contains the settings sequence to apply in the given order.
                       items:
+                        description: SettingsFlowItem defines one priority step in a settings application sequence.
                         properties:
                           name:
                             description: Name is the name of the flow item.
@@ -525,7 +626,13 @@ spec:
                           - name
                           - priority
                         type: object
+                      maxItems: 64
                       type: array
+                      x-kubernetes-validations:
+                        - message: settingsFlow item names must be unique
+                          rule: self.all(a, self.filter(b, b.name == a.name).size() == 1)
+                        - message: settingsFlow item priorities must be unique
+                          rule: self.all(a, self.filter(b, b.priority == a.priority).size() == 1)
                     variables:
                       description: Variables is a list of variables that can be used in the settings for templating.
                       items:
@@ -539,7 +646,10 @@ spec:
                             description: ValueFrom defines a simple single source for the variable value.
                             properties:
                               configMapKeyRef:
-                                description: ConfigMapKeyRef points to a namespaced ConfigMap key.
+                                description: |-
+                                  ConfigMapKeyRef points to a namespaced ConfigMap key.
+                                  The ConfigMap must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                                  otherwise the reference is rejected.
                                 properties:
                                   key:
                                     description: Key is the key within the referenced object.
@@ -608,7 +718,10 @@ spec:
                                   - name
                                 type: object
                               secretKeyRef:
-                                description: SecretKeyRef points to a namespaced Secret key.
+                                description: |-
+                                  SecretKeyRef points to a namespaced Secret key.
+                                  The Secret must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                                  otherwise the reference is rejected.
                                 properties:
                                   key:
                                     description: Key is the key within the referenced object.
@@ -694,9 +807,6 @@ spec:
                 - biosSettingsTemplate
                 - serverSelector
               type: object
-              x-kubernetes-validations:
-                - message: version is required
-                  rule: size(self.biosSettingsTemplate.version) > 0
             status:
               description: BIOSSettingsSetStatus defines the observed state of BIOSSettingsSet.
               properties:
@@ -735,7 +845,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: biosversions.system.metal.ironcore.dev
 spec:
   group: system.metal.ironcore.dev
@@ -801,8 +911,22 @@ spec:
             spec:
               description: BIOSVersionSpec defines the desired state of BIOSVersion.
               properties:
+                completionConditionType:
+                  description: |-
+                    CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                    related Server(s) once this resource reaches its terminal success state. Downstream
+                    resources can reference this Type in their own ReadinessGates to build a manual
+                    sequence across resources.
+                    Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                    afterwards.
+                  maxLength: 316
+                  pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                  type: string
+                  x-kubernetes-validations:
+                    - message: completionConditionType is immutable once set
+                      rule: oldSelf == '' || self == oldSelf
                 image:
-                  description: Image specifies the image to use to upgrade to the given BIOS version.
+                  description: Image specifies the image to use to upgrade to the given version.
                   properties:
                     URI:
                       description: URI is the URI of the software image to install.
@@ -824,6 +948,37 @@ spec:
                   required:
                     - URI
                   type: object
+                readinessGates:
+                  description: |-
+                    ReadinessGates is a list of Server conditions that must be satisfied before the
+                    controller starts applying this resource. Semantics mirror Kubernetes
+                    Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                    Server(s) with the required status.
+                  items:
+                    description: |-
+                      ConditionRequirement defines a specific Server condition and the status value
+                      required to trigger the controller's action.
+                    properties:
+                      requiredStatus:
+                        description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: |-
+                          Type of server condition
+
+                          Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                        maxLength: 316
+                        minLength: 1
+                        type: string
+                    required:
+                      - requiredStatus
+                      - type
+                    type: object
+                  type: array
                 retryPolicy:
                   description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                   properties:
@@ -838,7 +993,7 @@ spec:
                       type: integer
                   type: object
                 serverMaintenancePolicy:
-                  description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
+                  description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
                   type: string
                 serverMaintenanceRef:
                   description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the controller has requested for the referred server.
@@ -874,7 +1029,7 @@ spec:
                   description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                   type: string
                 version:
-                  description: Version specifies the BIOS version to upgrade to.
+                  description: Version specifies the software version (e.g. BIOS, BMC) to upgrade to.
                   type: string
               required:
                 - image
@@ -981,7 +1136,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: biosversionsets.system.metal.ironcore.dev
 spec:
   group: system.metal.ironcore.dev
@@ -1047,8 +1202,22 @@ spec:
                 biosVersionTemplate:
                   description: BIOSVersionTemplate defines the template for the BIOSVersion resource to be applied to the servers.
                   properties:
+                    completionConditionType:
+                      description: |-
+                        CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                        related Server(s) once this resource reaches its terminal success state. Downstream
+                        resources can reference this Type in their own ReadinessGates to build a manual
+                        sequence across resources.
+                        Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                        afterwards.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                      x-kubernetes-validations:
+                        - message: completionConditionType is immutable once set
+                          rule: oldSelf == '' || self == oldSelf
                     image:
-                      description: Image specifies the image to use to upgrade to the given BIOS version.
+                      description: Image specifies the image to use to upgrade to the given version.
                       properties:
                         URI:
                           description: URI is the URI of the software image to install.
@@ -1070,6 +1239,37 @@ spec:
                       required:
                         - URI
                       type: object
+                    readinessGates:
+                      description: |-
+                        ReadinessGates is a list of Server conditions that must be satisfied before the
+                        controller starts applying this resource. Semantics mirror Kubernetes
+                        Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                        Server(s) with the required status.
+                      items:
+                        description: |-
+                          ConditionRequirement defines a specific Server condition and the status value
+                          required to trigger the controller's action.
+                        properties:
+                          requiredStatus:
+                            description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                            enum:
+                              - "True"
+                              - "False"
+                              - Unknown
+                            type: string
+                          type:
+                            description: |-
+                              Type of server condition
+
+                              Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                            maxLength: 316
+                            minLength: 1
+                            type: string
+                        required:
+                          - requiredStatus
+                          - type
+                        type: object
+                      type: array
                     retryPolicy:
                       description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                       properties:
@@ -1084,13 +1284,13 @@ spec:
                           type: integer
                       type: object
                     serverMaintenancePolicy:
-                      description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
+                      description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
                       type: string
                     updatePolicy:
                       description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                       type: string
                     version:
-                      description: Version specifies the BIOS version to upgrade to.
+                      description: Version specifies the software version (e.g. BIOS, BMC) to upgrade to.
                       type: string
                   required:
                     - image
@@ -1184,7 +1384,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: bmcsettings.baseboard.metal.ironcore.dev
 spec:
   group: baseboard.metal.ironcore.dev
@@ -1247,6 +1447,51 @@ spec:
                   x-kubernetes-validations:
                     - message: bmcRef is immutable
                       rule: self == oldSelf
+                completionConditionType:
+                  description: |-
+                    CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                    related Server(s) once this resource reaches its terminal success state. Downstream
+                    resources can reference this Type in their own ReadinessGates to build a manual
+                    sequence across resources.
+                    Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                    afterwards.
+                  maxLength: 316
+                  pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                  type: string
+                  x-kubernetes-validations:
+                    - message: completionConditionType is immutable once set
+                      rule: oldSelf == '' || self == oldSelf
+                readinessGates:
+                  description: |-
+                    ReadinessGates is a list of Server conditions that must be satisfied before the
+                    controller starts applying this resource. Semantics mirror Kubernetes
+                    Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                    Server(s) with the required status.
+                  items:
+                    description: |-
+                      ConditionRequirement defines a specific Server condition and the status value
+                      required to trigger the controller's action.
+                    properties:
+                      requiredStatus:
+                        description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: |-
+                          Type of server condition
+
+                          Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                        maxLength: 316
+                        minLength: 1
+                        type: string
+                    required:
+                      - requiredStatus
+                      - type
+                    type: object
+                  type: array
                 retryPolicy:
                   description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                   properties:
@@ -1288,6 +1533,7 @@ spec:
                 settingsFlow:
                   description: SettingsFlow contains the settings sequence to apply in the given order.
                   items:
+                    description: SettingsFlowItem defines one priority step in a settings application sequence.
                     properties:
                       name:
                         description: Name is the name of the flow item.
@@ -1309,7 +1555,13 @@ spec:
                       - name
                       - priority
                     type: object
+                  maxItems: 64
                   type: array
+                  x-kubernetes-validations:
+                    - message: settingsFlow item names must be unique
+                      rule: self.all(a, self.filter(b, b.name == a.name).size() == 1)
+                    - message: settingsFlow item priorities must be unique
+                      rule: self.all(a, self.filter(b, b.priority == a.priority).size() == 1)
                 variables:
                   description: Variables is a list of variables that can be used in the settings for templating.
                   items:
@@ -1323,7 +1575,10 @@ spec:
                         description: ValueFrom defines a simple single source for the variable value.
                         properties:
                           configMapKeyRef:
-                            description: ConfigMapKeyRef points to a namespaced ConfigMap key.
+                            description: |-
+                              ConfigMapKeyRef points to a namespaced ConfigMap key.
+                              The ConfigMap must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                              otherwise the reference is rejected.
                             properties:
                               key:
                                 description: Key is the key within the referenced object.
@@ -1392,7 +1647,10 @@ spec:
                               - name
                             type: object
                           secretKeyRef:
-                            description: SecretKeyRef points to a namespaced Secret key.
+                            description: |-
+                              SecretKeyRef points to a namespaced Secret key.
+                              The Secret must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                              otherwise the reference is rejected.
                             properties:
                               key:
                                 description: Key is the key within the referenced object.
@@ -1429,12 +1687,20 @@ spec:
                 version:
                   description: Version specifies the software version (e.g. BIOS, BMC) these settings apply to.
                   type: string
+                writeOnlyDriftPolicy:
+                  default: Conservative
+                  description: |-
+                    WriteOnlyDriftPolicy controls the operator's behaviour when the ETag for
+                    a resource containing a write-only key changes.  Defaults to Conservative.
+                    See WriteOnlyDriftPolicy for full semantics and limitations.
+                  enum:
+                    - Conservative
+                    - Strict
+                  type: string
               required:
                 - bmcRef
               type: object
               x-kubernetes-validations:
-                - message: version is required
-                  rule: size(self.version) > 0
                 - message: variable keys must be unique
                   rule: '!has(self.variables) || self.variables.all(v, self.variables.filter(w, w.key == v.key).size() == 1)'
             status:
@@ -1446,6 +1712,13 @@ spec:
                       BMCSettingsApplyResultEntry holds the URI, ETag, and value hash from the last
                       successful apply of a single settings key. Used for ETag-based drift detection.
                     properties:
+                      applyMethod:
+                        description: |-
+                          ApplyMethod is the HTTP method used to apply the value (e.g. "POST" or "PATCH").
+                          Values applied via POST create a (possibly ephemeral) resource whose URI cannot be
+                          used for ETag-based drift detection. These keys are not read back from the BMC;
+                          they are re-applied only when the desired value fingerprint (ValueHash) changes.
+                        type: string
                       etag:
                         description: |-
                           ETag is the drift-detection token captured after the last successful apply.
@@ -1461,9 +1734,9 @@ spec:
                         type: string
                       valueHash:
                         description: |-
-                          ValueHash is the SHA-256 hash of the effective (resolved) value at apply time.
-                          Used to detect desired-state changes from ConfigMap/Secret rotation independent
-                          of BMC-side drift.
+                          ValueHash is the keyed HMAC-SHA256 fingerprint of the effective (resolved) value
+                          at apply time. Used to detect desired-state changes from ConfigMap/Secret rotation
+                          independent of BMC-side drift.
                         type: string
                     type: object
                   description: |-
@@ -1533,6 +1806,87 @@ spec:
                   description: FailedAttempts is the number of automatic retry attempts made after failure.
                   format: int32
                   type: integer
+                flowState:
+                  description: |-
+                    FlowState tracks the per-priority-step reconciliation state for settingsFlow items.
+                    Each entry corresponds to one priority level in spec.settingsFlow.
+                  items:
+                    description: BMCSettingsFlowStatus describes the per-priority-step reconciliation state.
+                    properties:
+                      conditions:
+                        description: Conditions represents the latest observations of this flow step's progress.
+                        items:
+                          description: Condition contains details for one aspect of the current state of this API Resource.
+                          properties:
+                            lastTransitionTime:
+                              description: |-
+                                lastTransitionTime is the last time the condition transitioned from one status to another.
+                                This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                              format: date-time
+                              type: string
+                            message:
+                              description: |-
+                                message is a human readable message indicating details about the transition.
+                                This may be an empty string.
+                              maxLength: 32768
+                              type: string
+                            observedGeneration:
+                              description: |-
+                                observedGeneration represents the .metadata.generation that the condition was set based upon.
+                                For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                                with respect to the current state of the instance.
+                              format: int64
+                              minimum: 0
+                              type: integer
+                            reason:
+                              description: |-
+                                reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                                Producers of specific condition types may define expected values and meanings for this field,
+                                and whether the values are considered a guaranteed API.
+                                The value should be a CamelCase string.
+                                This field may not be empty.
+                              maxLength: 1024
+                              minLength: 1
+                              pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                              type: string
+                            status:
+                              description: status of the condition, one of True, False, Unknown.
+                              enum:
+                                - "True"
+                                - "False"
+                                - Unknown
+                              type: string
+                            type:
+                              description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                              maxLength: 316
+                              pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                              type: string
+                          required:
+                            - lastTransitionTime
+                            - message
+                            - reason
+                            - status
+                            - type
+                          type: object
+                        type: array
+                      flowState:
+                        description: State is the current reconciliation state of this flow step.
+                        type: string
+                      lastAppliedTime:
+                        description: LastAppliedTime is the timestamp when this flow step was last successfully applied.
+                        format: date-time
+                        type: string
+                      name:
+                        description: Name identifies the flow step from the spec.
+                        type: string
+                      priority:
+                        description: Priority identifies the settings priority from the spec.
+                        format: int32
+                        type: integer
+                    required:
+                      - priority
+                    type: object
+                  type: array
                 observedGeneration:
                   description: ObservedGeneration is the most recent generation observed by the controller.
                   format: int64
@@ -1551,7 +1905,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: bmcsettingssets.baseboard.metal.ironcore.dev
 spec:
   group: baseboard.metal.ironcore.dev
@@ -1659,6 +2013,51 @@ spec:
                 bmcSettingsTemplate:
                   description: BMCSettingsTemplate defines the template for the BMCSettings resource to be applied to the BMCs.
                   properties:
+                    completionConditionType:
+                      description: |-
+                        CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                        related Server(s) once this resource reaches its terminal success state. Downstream
+                        resources can reference this Type in their own ReadinessGates to build a manual
+                        sequence across resources.
+                        Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                        afterwards.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                      x-kubernetes-validations:
+                        - message: completionConditionType is immutable once set
+                          rule: oldSelf == '' || self == oldSelf
+                    readinessGates:
+                      description: |-
+                        ReadinessGates is a list of Server conditions that must be satisfied before the
+                        controller starts applying this resource. Semantics mirror Kubernetes
+                        Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                        Server(s) with the required status.
+                      items:
+                        description: |-
+                          ConditionRequirement defines a specific Server condition and the status value
+                          required to trigger the controller's action.
+                        properties:
+                          requiredStatus:
+                            description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                            enum:
+                              - "True"
+                              - "False"
+                              - Unknown
+                            type: string
+                          type:
+                            description: |-
+                              Type of server condition
+
+                              Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                            maxLength: 316
+                            minLength: 1
+                            type: string
+                        required:
+                          - requiredStatus
+                          - type
+                        type: object
+                      type: array
                     retryPolicy:
                       description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                       properties:
@@ -1678,6 +2077,7 @@ spec:
                     settingsFlow:
                       description: SettingsFlow contains the settings sequence to apply in the given order.
                       items:
+                        description: SettingsFlowItem defines one priority step in a settings application sequence.
                         properties:
                           name:
                             description: Name is the name of the flow item.
@@ -1699,7 +2099,13 @@ spec:
                           - name
                           - priority
                         type: object
+                      maxItems: 64
                       type: array
+                      x-kubernetes-validations:
+                        - message: settingsFlow item names must be unique
+                          rule: self.all(a, self.filter(b, b.name == a.name).size() == 1)
+                        - message: settingsFlow item priorities must be unique
+                          rule: self.all(a, self.filter(b, b.priority == a.priority).size() == 1)
                     variables:
                       description: Variables is a list of variables that can be used in the settings for templating.
                       items:
@@ -1713,7 +2119,10 @@ spec:
                             description: ValueFrom defines a simple single source for the variable value.
                             properties:
                               configMapKeyRef:
-                                description: ConfigMapKeyRef points to a namespaced ConfigMap key.
+                                description: |-
+                                  ConfigMapKeyRef points to a namespaced ConfigMap key.
+                                  The ConfigMap must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                                  otherwise the reference is rejected.
                                 properties:
                                   key:
                                     description: Key is the key within the referenced object.
@@ -1782,7 +2191,10 @@ spec:
                                   - name
                                 type: object
                               secretKeyRef:
-                                description: SecretKeyRef points to a namespaced Secret key.
+                                description: |-
+                                  SecretKeyRef points to a namespaced Secret key.
+                                  The Secret must carry the label metal.ironcore.dev/bmcsettings-variable-source=true,
+                                  otherwise the reference is rejected.
                                 properties:
                                   key:
                                     description: Key is the key within the referenced object.
@@ -1827,9 +2239,6 @@ spec:
                 - bmcSelector
                 - bmcSettingsTemplate
               type: object
-              x-kubernetes-validations:
-                - message: version is required
-                  rule: size(self.bmcSettingsTemplate.version) > 0
             status:
               description: BMCSettingsSetStatus defines the observed state of BMCSettingsSet.
               properties:
@@ -1868,7 +2277,223 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
+  name: bmcuserrotations.baseboard.metal.ironcore.dev
+spec:
+  group: baseboard.metal.ironcore.dev
+  names:
+    kind: BMCUserRotation
+    listKind: BMCUserRotationList
+    plural: bmcuserrotations
+    shortNames:
+      - bmcur
+    singular: bmcuserrotation
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.bmcUserRef.name
+          name: BMCUser
+          type: string
+        - jsonPath: .spec.type
+          name: Type
+          type: string
+        - jsonPath: .status.triggerReason
+          name: Trigger
+          type: string
+        - jsonPath: .status.phase
+          name: Phase
+          type: string
+        - jsonPath: .status.triggeredAt
+          name: TriggeredAt
+          type: date
+        - jsonPath: .status.completedAt
+          name: CompletedAt
+          type: date
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: |-
+            BMCUserRotation is the Schema for the bmcuserrotations API.
+            Each object represents one rotation event for a BMCUser. Spec is immutable after creation.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: |-
+                BMCUserRotationSpec defines the desired state of BMCUserRotation.
+                Spec is immutable after creation.
+              properties:
+                bmcUserRef:
+                  description: BMCUserRef references the BMCUser this rotation was triggered for.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type:
+                  description: Type is the rotation strategy used for this rotation event.
+                  enum:
+                    - DualAccount
+                    - SingleAccount
+                  type: string
+              required:
+                - bmcUserRef
+                - type
+              type: object
+              x-kubernetes-validations:
+                - message: BMCUserRotationSpec is immutable
+                  rule: self == oldSelf
+            status:
+              description: BMCUserRotationStatus defines the observed state of BMCUserRotation.
+              properties:
+                completedAt:
+                  description: CompletedAt is the timestamp when the rotation finished (succeeded or failed).
+                  format: date-time
+                  type: string
+                conditions:
+                  description: Conditions reflects the progress of this rotation.
+                  items:
+                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                connectionTestRetries:
+                  description: |-
+                    ConnectionTestRetries counts how many times the post-password-change
+                    connection test has been retried. When this exceeds the configured
+                    MaxConnectionTestRetries the rotation is moved to Failed.
+                  format: int32
+                  type: integer
+                message:
+                  description: |-
+                    Message provides a human-readable description of the current state,
+                    especially useful when Phase is Failed.
+                  type: string
+                newSecretRef:
+                  description: |-
+                    NewSecretRef references the BMCSecret created by this rotation.
+                    Set on success.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                phase:
+                  default: Pending
+                  description: Phase is the current lifecycle phase of this rotation.
+                  enum:
+                    - Pending
+                    - InProgress
+                    - Succeeded
+                    - Failed
+                  type: string
+                triggerReason:
+                  description: TriggerReason describes what caused this rotation.
+                  enum:
+                    - RotationPeriod
+                    - Annotation
+                    - PasswordExpiry
+                    - FactoryBootstrap
+                  type: string
+                triggeredAt:
+                  description: |-
+                    TriggeredAt is the timestamp when the rotation was initiated. Recorded by the
+                    controller when it creates the rotation.
+                  format: date-time
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: bmcusers.baseboard.metal.ironcore.dev
 spec:
   group: baseboard.metal.ironcore.dev
@@ -1958,16 +2583,44 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                deletionPolicy:
+                  description: |-
+                    DeletionPolicy controls whether the BMC account is deleted when this BMCUser is removed.
+                    Retain preserves the account on the BMC hardware; Delete removes it.
+                    When empty, OperatorAdmin users default to Retain and ServiceAccount users to Delete.
+                  enum:
+                    - Retain
+                    - Delete
+                  type: string
                 description:
                   description: Description is a description for the BMC user.
                   type: string
                 roleID:
                   description: RoleID is the ID of the role to assign to the user.
                   type: string
+                rotationHistoryLimit:
+                  default: 10
+                  description: |-
+                    RotationHistoryLimit is the maximum number of completed (Succeeded or Failed)
+                    BMCUserRotation objects to retain. Older objects beyond this limit are pruned.
+                    Defaults to 10.
+                  format: int32
+                  minimum: 1
+                  type: integer
                 rotationPeriod:
                   description: |-
                     RotationPeriod defines how often the password should be rotated.
                     If not set, the password will not be rotated.
+                  type: string
+                type:
+                  default: ServiceAccount
+                  description: |-
+                    Type identifies the role of this BMCUser within the operator.
+                    OperatorAdmin users propagate their verified credential to BMC.Spec.BMCSecretRef
+                    and use dual-account rotation. Defaults to ServiceAccount.
+                  enum:
+                    - OperatorAdmin
+                    - ServiceAccount
                   type: string
                 userName:
                   description: UserName is the username of the BMC user.
@@ -1979,6 +2632,35 @@ spec:
             status:
               description: BMCUserStatus defines the observed state of BMCUser.
               properties:
+                accountEnabled:
+                  description: |-
+                    AccountEnabled reflects whether the BMC account is enabled on the hardware.
+                    Nil means the state has not been observed yet.
+                  type: boolean
+                accountLocked:
+                  description: |-
+                    AccountLocked reflects whether the BMC has locked the account (e.g. after
+                    repeated authentication failures).
+                  type: boolean
+                bootstrapSecretRef:
+                  description: |-
+                    BootstrapSecretRef records the BMCSecret that was used for first contact with this BMC.
+                    Written once by the BMCUserSet controller before the user is first reconciled, so the
+                    peer (-b) can still bootstrap using the original factory credential even after -a has
+                    promoted a new credential into BMC.Spec.BMCSecretRef.
+                    Never changed after being set.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
                 conditions:
                   description: Conditions reflects the current state of the BMCUser.
                   items:
@@ -2051,6 +2733,12 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                factoryAccountHandled:
+                  description: |-
+                    FactoryAccountHandled records whether the factory account on this user's BMC has been
+                    successfully handled (e.g. rotated) after bootstrap. Set by the BMCUserSet controller
+                    once the FactoryBootstrap rotation succeeds.
+                  type: boolean
                 id:
                   description: ID is the identifier of the user in the BMC system.
                   type: string
@@ -2073,7 +2761,313 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
+  name: bmcusersets.baseboard.metal.ironcore.dev
+spec:
+  group: baseboard.metal.ironcore.dev
+  names:
+    kind: BMCUserSet
+    listKind: BMCUserSetList
+    plural: bmcusersets
+    shortNames:
+      - bmcus
+    singular: bmcuserset
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.rotationStrategy
+          name: Strategy
+          type: string
+        - jsonPath: .status.totalBMCs
+          name: Total
+          type: integer
+        - jsonPath: .status.bootstrappedBMCs
+          name: Bootstrapped
+          type: integer
+        - jsonPath: .status.pendingBMCs
+          name: Pending
+          type: integer
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: BMCUserSet is the Schema for the bmcusersets API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: BMCUserSetSpec defines the desired state of BMCUserSet.
+              properties:
+                bmcSelector:
+                  description: BMCSelector selects which BMC objects this set manages.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                      items:
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      type: object
+                  type: object
+                  x-kubernetes-map-type: atomic
+                factoryAccount:
+                  description: |-
+                    FactoryAccount configures how the factory/default BMC account is handled once
+                    both operator admin accounts are proven. When omitted, the factory account is
+                    left untouched.
+                  properties:
+                    action:
+                      default: Disable
+                      description: |-
+                        Action specifies what to do with the factory account once both operator accounts are proven.
+                        Rotate changes the password (risky if interrupted; opt-in only). Disable sets Enabled=false on
+                        the BMC and, when RetainCredential is true (the default), stores a new random password in a
+                        break-glass BMCSecret before disabling (idempotent, reversible, recommended for production).
+                        None leaves the account untouched.
+                        Defaults to Disable.
+                      enum:
+                        - Rotate
+                        - Disable
+                        - None
+                      type: string
+                    ignoreVendors:
+                      description: |-
+                        IgnoreVendors lists manufacturers (case-insensitive, matched against
+                        BMC.Status.Manufacturer) for which factory account handling is skipped.
+                      items:
+                        type: string
+                      type: array
+                    retainCredential:
+                      default: true
+                      description: |-
+                        RetainCredential keeps the rotated password as an immutable BMCSecret
+                        labelled baseboard.metal.ironcore.dev/credential-role=break-glass.
+                        The secret is owned by the active OperatorAdmin BMCUser.
+                        Defaults to true.
+                      type: boolean
+                    userNames:
+                      description: |-
+                        UserNames is an explicit list of factory account usernames to act on.
+                        When empty, the username is read from the BMCSecret referenced by
+                        BMCUser.Status.BootstrapSecretRef (the credential the BMC shipped with).
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                rotationStrategy:
+                  default: DualAccount
+                  description: |-
+                    RotationStrategy determines how many BMCUser objects are created per BMC.
+                    DualAccount (default) creates two users per BMC; SingleAccount creates one.
+                  enum:
+                    - DualAccount
+                    - SingleAccount
+                  type: string
+                setupCredentialRef:
+                  description: |-
+                    SetupCredentialRef references a corev1.Secret (keys: username, password) in the
+                    operator namespace used for first contact with a new BMC before operator accounts exist.
+                    This credential is used only during the bootstrap phase; once operator accounts
+                    are proven it is never used again for that BMC.
+                    When omitted, the controller falls back to the BMCSecret recorded in
+                    BMCUser.Status.BootstrapSecretRef (the factory credential in BMC.Spec.BMCSecretRef
+                    at the time the BMCUser was first created).
+                  properties:
+                    name:
+                      description: name is unique within a namespace to reference a secret resource.
+                      type: string
+                    namespace:
+                      description: namespace defines the space within which the secret name must be unique.
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                template:
+                  description: Template defines the common fields for BMCUser objects created by this set.
+                  properties:
+                    credentialSecretNameTemplate:
+                      description: |-
+                        CredentialSecretNameTemplate is a Go template for the stable corev1.Secret
+                        name written for each BMC after the first successful credential promotion.
+                        Available variable: .BMCName. Example: "bmc-operator-cred-{{ .BMCName }}".
+                        If empty, no stable Secret is written.
+                      type: string
+                    credentialSecretNamespace:
+                      description: |-
+                        CredentialSecretNamespace is the namespace in which stable credential Secrets
+                        are created. Defaults to the operator namespace if empty.
+                      type: string
+                    deletionPolicy:
+                      description: |-
+                        DeletionPolicy controls whether the BMC account is deleted when the BMCUser is removed.
+                        Retain (default for OperatorAdmin) preserves the account on the BMC hardware; Delete
+                        removes it. Omitting this field uses Retain for OperatorAdmin users and Delete for
+                        ServiceAccount users.
+                      enum:
+                        - Retain
+                        - Delete
+                      type: string
+                    roleID:
+                      description: RoleID is the Redfish role to assign (e.g. "Administrator", "ReadOnly").
+                      type: string
+                    rotationHistoryLimit:
+                      default: 10
+                      description: |-
+                        RotationHistoryLimit is the maximum number of completed (Succeeded or Failed)
+                        BMCUserRotation objects to retain per BMCUser. Older objects are pruned once
+                        the limit is exceeded. Defaults to 10.
+                      format: int32
+                      minimum: 1
+                      type: integer
+                    rotationPeriod:
+                      description: RotationPeriod defines how often the password should be rotated.
+                      type: string
+                    userName:
+                      description: |-
+                        UserName is the base username for the BMC account.
+                        For DualAccount strategy, -a and -b suffixes are appended per instance.
+                      type: string
+                  required:
+                    - roleID
+                    - userName
+                  type: object
+              required:
+                - bmcSelector
+                - template
+              type: object
+            status:
+              description: BMCUserSetStatus defines the observed state of BMCUserSet.
+              properties:
+                bootstrappedBMCs:
+                  description: |-
+                    BootstrappedBMCs is the number of BMCs where all operator accounts are proven
+                    and the factory account has been handled.
+                  format: int32
+                  type: integer
+                conditions:
+                  description: Conditions reflects the aggregate state of the BMCUserSet.
+                  items:
+                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                pendingBMCs:
+                  description: PendingBMCs is the number of BMCs still in the bootstrap phase.
+                  format: int32
+                  type: integer
+                totalBMCs:
+                  description: TotalBMCs is the number of BMCs matched by the selector.
+                  format: int32
+                  type: integer
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: bmcversions.baseboard.metal.ironcore.dev
 spec:
   group: baseboard.metal.ironcore.dev
@@ -2153,8 +3147,22 @@ spec:
                   x-kubernetes-validations:
                     - message: bmcRef is immutable
                       rule: self == oldSelf
+                completionConditionType:
+                  description: |-
+                    CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                    related Server(s) once this resource reaches its terminal success state. Downstream
+                    resources can reference this Type in their own ReadinessGates to build a manual
+                    sequence across resources.
+                    Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                    afterwards.
+                  maxLength: 316
+                  pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                  type: string
+                  x-kubernetes-validations:
+                    - message: completionConditionType is immutable once set
+                      rule: oldSelf == '' || self == oldSelf
                 image:
-                  description: Image specifies the image to use to upgrade to the given BMC version.
+                  description: Image specifies the image to use to upgrade to the given version.
                   properties:
                     URI:
                       description: URI is the URI of the software image to install.
@@ -2176,6 +3184,37 @@ spec:
                   required:
                     - URI
                   type: object
+                readinessGates:
+                  description: |-
+                    ReadinessGates is a list of Server conditions that must be satisfied before the
+                    controller starts applying this resource. Semantics mirror Kubernetes
+                    Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                    Server(s) with the required status.
+                  items:
+                    description: |-
+                      ConditionRequirement defines a specific Server condition and the status value
+                      required to trigger the controller's action.
+                    properties:
+                      requiredStatus:
+                        description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: |-
+                          Type of server condition
+
+                          Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                        maxLength: 316
+                        minLength: 1
+                        type: string
+                    required:
+                      - requiredStatus
+                      - type
+                    type: object
+                  type: array
                 retryPolicy:
                   description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                   properties:
@@ -2190,7 +3229,7 @@ spec:
                       type: integer
                   type: object
                 serverMaintenancePolicy:
-                  description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
+                  description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
                   type: string
                 serverMaintenanceRefs:
                   description: ServerMaintenanceRefs are references to ServerMaintenance objects that the controller has requested for the related servers.
@@ -2212,7 +3251,7 @@ spec:
                   description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                   type: string
                 version:
-                  description: Version specifies the BMC version to upgrade to.
+                  description: Version specifies the software version (e.g. BIOS, BMC) to upgrade to.
                   type: string
               required:
                 - bmcRef
@@ -2319,7 +3358,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: bmcversionsets.baseboard.metal.ironcore.dev
 spec:
   group: baseboard.metal.ironcore.dev
@@ -2429,8 +3468,22 @@ spec:
                 bmcVersionTemplate:
                   description: BMCVersionTemplate defines the template for the BMCVersion resource to be applied to the BMCs.
                   properties:
+                    completionConditionType:
+                      description: |-
+                        CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                        related Server(s) once this resource reaches its terminal success state. Downstream
+                        resources can reference this Type in their own ReadinessGates to build a manual
+                        sequence across resources.
+                        Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                        afterwards.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                      x-kubernetes-validations:
+                        - message: completionConditionType is immutable once set
+                          rule: oldSelf == '' || self == oldSelf
                     image:
-                      description: Image specifies the image to use to upgrade to the given BMC version.
+                      description: Image specifies the image to use to upgrade to the given version.
                       properties:
                         URI:
                           description: URI is the URI of the software image to install.
@@ -2452,6 +3505,37 @@ spec:
                       required:
                         - URI
                       type: object
+                    readinessGates:
+                      description: |-
+                        ReadinessGates is a list of Server conditions that must be satisfied before the
+                        controller starts applying this resource. Semantics mirror Kubernetes
+                        Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                        Server(s) with the required status.
+                      items:
+                        description: |-
+                          ConditionRequirement defines a specific Server condition and the status value
+                          required to trigger the controller's action.
+                        properties:
+                          requiredStatus:
+                            description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                            enum:
+                              - "True"
+                              - "False"
+                              - Unknown
+                            type: string
+                          type:
+                            description: |-
+                              Type of server condition
+
+                              Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                            maxLength: 316
+                            minLength: 1
+                            type: string
+                        required:
+                          - requiredStatus
+                          - type
+                        type: object
+                      type: array
                     retryPolicy:
                       description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
                       properties:
@@ -2466,13 +3550,13 @@ spec:
                           type: integer
                       type: object
                     serverMaintenancePolicy:
-                      description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
+                      description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
                       type: string
                     updatePolicy:
                       description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
                       type: string
                     version:
-                      description: Version specifies the BMC version to upgrade to.
+                      description: Version specifies the software version (e.g. BIOS, BMC) to upgrade to.
                       type: string
                   required:
                     - image
@@ -2522,7 +3606,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: consoles.vendorconsole.metal.ironcore.dev
 spec:
   group: vendorconsole.metal.ironcore.dev
@@ -2713,7 +3797,998 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
+  name: firmwareupdates.system.metal.ironcore.dev
+spec:
+  group: system.metal.ironcore.dev
+  names:
+    kind: FirmwareUpdate
+    listKind: FirmwareUpdateList
+    plural: firmwareupdates
+    shortNames:
+      - fwu
+    singular: firmwareupdate
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .status.state
+          name: State
+          type: string
+        - jsonPath: .spec.serverRef.name
+          name: ServerRef
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: FirmwareUpdate is the Schema for the firmwareupdates API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: FirmwareUpdateSpec defines the desired state of FirmwareUpdate.
+              properties:
+                completionConditionType:
+                  description: |-
+                    CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                    related Server(s) once this resource reaches its terminal success state. Downstream
+                    resources can reference this Type in their own ReadinessGates to build a manual
+                    sequence across resources.
+                    Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                    afterwards.
+                  maxLength: 316
+                  pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                  type: string
+                  x-kubernetes-validations:
+                    - message: completionConditionType is immutable once set
+                      rule: oldSelf == '' || self == oldSelf
+                dellRepository:
+                  description: DellRepository describes the network share hosting the Dell update repository/catalog.
+                  properties:
+                    address:
+                      description: Address is the share's hostname or IP address (e.g. downloads.dell.com).
+                      type: string
+                    applyVersionPolicy:
+                      description: |-
+                        ApplyVersionPolicy controls whether packages already at the same version and/or older
+                        than the currently installed version are applied. If unset, only genuine upgrades are applied.
+                      enum:
+                        - AllowSameVersion
+                        - AllowDowngradeVersion
+                        - AllowSameAndDowngradeVersion
+                      type: string
+                    catalogFile:
+                      description: CatalogFile is the catalog file name within the share. Defaults to "Catalog.xml".
+                      type: string
+                    certificateVerification:
+                      description: |-
+                        CertificateVerification controls whether iDRAC verifies the TLS certificate presented by
+                        the repository share, or ignores certificate warnings (e.g. self-signed/untrusted
+                        certificates). If unset, certificates are verified.
+                      enum:
+                        - Verify
+                        - Ignore
+                      type: string
+                    credentialsRef:
+                      description: |-
+                        CredentialsRef references the credentials used to authenticate against the share, if required.
+                        Must not be set when ShareType is HTTP.
+                      properties:
+                        name:
+                          description: name is unique within a namespace to reference a secret resource.
+                          type: string
+                        namespace:
+                          description: namespace defines the space within which the secret name must be unique.
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    rebootNeeded:
+                      description: RebootNeeded, if true, allows the BMC to reboot the server to apply updates.
+                      type: boolean
+                    shareName:
+                      description: ShareName is the network share name. Not required for HTTP/HTTPS catalogs.
+                      type: string
+                    shareType:
+                      description: ShareType is the type of network share hosting the repository.
+                      enum:
+                        - NFS
+                        - CIFS
+                        - HTTP
+                        - HTTPS
+                      type: string
+                  required:
+                    - shareType
+                  type: object
+                progressDeadlineSeconds:
+                  default: 3600
+                  description: |-
+                    ProgressDeadlineSeconds is the maximum time in seconds to wait without observable forward
+                    progress before the update is marked Failed. Defaults to 3600 (1 hour).
+                  format: int32
+                  type: integer
+                readinessGates:
+                  description: |-
+                    ReadinessGates is a list of Server conditions that must be satisfied before the
+                    controller starts applying this resource. Semantics mirror Kubernetes
+                    Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                    Server(s) with the required status.
+                  items:
+                    description: |-
+                      ConditionRequirement defines a specific Server condition and the status value
+                      required to trigger the controller's action.
+                    properties:
+                      requiredStatus:
+                        description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: |-
+                          Type of server condition
+
+                          Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                        maxLength: 316
+                        minLength: 1
+                        type: string
+                    required:
+                      - requiredStatus
+                      - type
+                    type: object
+                  type: array
+                retryPolicy:
+                  description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                  properties:
+                    maxAttempts:
+                      description: |-
+                        MaxAttempts is the maximum number of automatic retry attempts after failure.
+                        0 means no automatic retries. Must be between 0 and 10 inclusive.
+                        If not set, the operator-level default is used.
+                      format: int32
+                      maximum: 10
+                      minimum: 0
+                      type: integer
+                  type: object
+                serverMaintenancePolicy:
+                  description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
+                  type: string
+                serverRef:
+                  description: ServerRef is a reference to a specific server to apply the firmware update on.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                  x-kubernetes-validations:
+                    - message: serverRef is immutable
+                      rule: self == oldSelf
+                ttlSecondsAfterFinished:
+                  description: |-
+                    TTLSecondsAfterFinished, if set, causes the FirmwareUpdate to be deleted that many seconds
+                    after it reaches Completed state. Failed objects are retained for operator inspection.
+
+                    When set via a FirmwareUpdateSet's firmwareUpdateTemplate, this value is not propagated to
+                    the owned FirmwareUpdate children themselves (they are never auto-deleted individually);
+                    instead the FirmwareUpdateSet reads it directly from its own template to delete itself once
+                    all of its owned FirmwareUpdates have reached Completed.
+                  format: int32
+                  type: integer
+              required:
+                - serverRef
+              type: object
+            status:
+              description: FirmwareUpdateStatus defines the observed state of FirmwareUpdate.
+              properties:
+                conditions:
+                  description: Conditions represents the latest available observations of the firmware update state.
+                  items:
+                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                dellStatus:
+                  description: |-
+                    DellStatus contains status fields specific to Dell's repository-based firmware update
+                    mechanism. Populated only when Spec.DellRepository is set.
+                  properties:
+                    baselineJobIDs:
+                      description: |-
+                        BaselineJobIDs contains the iDRAC job IDs present just before issuing the apply call for the
+                        current pass, used to diff and discover newly spawned component jobs. A non-nil (possibly
+                        empty) slice indicates the baseline has been captured for the current pass.
+                      items:
+                        type: string
+                      type: array
+                    checkJob:
+                      description: CheckJob contains the state of the dry-run catalog-check job.
+                      properties:
+                        jobID:
+                          type: string
+                        jobType:
+                          type: string
+                        message:
+                          type: string
+                        name:
+                          type: string
+                        percentComplete:
+                          format: int32
+                          type: integer
+                        state:
+                          type: string
+                      type: object
+                    componentJobs:
+                      description: ComponentJobs contains the state of the per-component jobs spawned by the current pass's apply job.
+                      items:
+                        description: |-
+                          RepositoryJob represents a Dell iDRAC job resource tracking a repository-based firmware
+                          operation. State is intentionally a plain string mirroring bmc.DellJob.
+                        properties:
+                          jobID:
+                            type: string
+                          jobType:
+                            type: string
+                          message:
+                            type: string
+                          name:
+                            type: string
+                          percentComplete:
+                            format: int32
+                            type: integer
+                          state:
+                            type: string
+                        type: object
+                      type: array
+                    componentJobsSummary:
+                      description: ComponentJobsSummary tallies ComponentJobs by completion state.
+                      properties:
+                        completed:
+                          description: Completed is the number of component jobs that finished successfully.
+                          format: int32
+                          type: integer
+                        failed:
+                          description: Failed is the number of component jobs that finished in a failed state.
+                          format: int32
+                          type: integer
+                        inProgress:
+                          description: InProgress is the number of component jobs that have not yet reached a terminal state.
+                          format: int32
+                          type: integer
+                        total:
+                          description: Total is the number of component jobs discovered so far in the current pass.
+                          format: int32
+                          type: integer
+                      type: object
+                    updateJob:
+                      description: UpdateJob contains the state of the main apply job.
+                      properties:
+                        jobID:
+                          type: string
+                        jobType:
+                          type: string
+                        message:
+                          type: string
+                        name:
+                          type: string
+                        percentComplete:
+                          format: int32
+                          type: integer
+                        state:
+                          type: string
+                      type: object
+                  type: object
+                failedAttempts:
+                  description: FailedAttempts is the number of automatic retry attempts made after failure.
+                  format: int32
+                  type: integer
+                lastProgressTime:
+                  description: |-
+                    LastProgressTime records the last time the controller observed forward progress.
+                    Used together with ProgressDeadlineSeconds to detect stalled updates.
+                  format: date-time
+                  type: string
+                observedGeneration:
+                  description: ObservedGeneration is the most recent generation observed by the controller.
+                  format: int64
+                  type: integer
+                passCount:
+                  description: PassCount is the number of check->apply->track->recheck passes completed so far.
+                  format: int32
+                  type: integer
+                serverMaintenanceRef:
+                  description: ServerMaintenanceRef is a reference to the ServerMaintenance object the controller created for this update.
+                  properties:
+                    name:
+                      description: Name is the name of the referenced object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of the referenced object.
+                      type: string
+                  required:
+                    - name
+                    - namespace
+                  type: object
+                state:
+                  description: State represents the current state of the firmware update.
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.22.0
+  name: firmwareupdatesets.system.metal.ironcore.dev
+spec:
+  group: system.metal.ironcore.dev
+  names:
+    kind: FirmwareUpdateSet
+    listKind: FirmwareUpdateSetList
+    plural: firmwareupdatesets
+    shortNames:
+      - fwus
+    singular: firmwareupdateset
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .status.fullyLabeledServers
+          name: TotalServers
+          type: string
+        - jsonPath: .status.availableFirmwareUpdate
+          name: AvailableFirmwareUpdate
+          type: string
+        - jsonPath: .status.pendingFirmwareUpdate
+          name: Pending
+          type: string
+        - jsonPath: .status.inProgressFirmwareUpdate
+          name: InProgress
+          type: string
+        - jsonPath: .status.completedFirmwareUpdate
+          name: Completed
+          type: string
+        - jsonPath: .status.failedFirmwareUpdate
+          name: Failed
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: FirmwareUpdateSet is the Schema for the firmwareupdatesets API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: FirmwareUpdateSetSpec defines the desired state of FirmwareUpdateSet.
+              properties:
+                firmwareUpdateTemplate:
+                  description: |-
+                    FirmwareUpdateTemplate defines the template for the FirmwareUpdate resource to be applied to the servers.
+                    Its ttlSecondsAfterFinished field, if set, causes this FirmwareUpdateSet to be deleted that
+                    many seconds after all of its owned FirmwareUpdates have reached the Completed state (it is
+                    not propagated to the owned FirmwareUpdates themselves). See FirmwareUpdateTemplate for details.
+                  properties:
+                    completionConditionType:
+                      description: |-
+                        CompletionConditionType, if set, is the condition Type patched (status True) onto the
+                        related Server(s) once this resource reaches its terminal success state. Downstream
+                        resources can reference this Type in their own ReadinessGates to build a manual
+                        sequence across resources.
+                        Immutable once set: it can be patched from empty to a value, but not changed or cleared
+                        afterwards.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                      x-kubernetes-validations:
+                        - message: completionConditionType is immutable once set
+                          rule: oldSelf == '' || self == oldSelf
+                    dellRepository:
+                      description: DellRepository describes the network share hosting the Dell update repository/catalog.
+                      properties:
+                        address:
+                          description: Address is the share's hostname or IP address (e.g. downloads.dell.com).
+                          type: string
+                        applyVersionPolicy:
+                          description: |-
+                            ApplyVersionPolicy controls whether packages already at the same version and/or older
+                            than the currently installed version are applied. If unset, only genuine upgrades are applied.
+                          enum:
+                            - AllowSameVersion
+                            - AllowDowngradeVersion
+                            - AllowSameAndDowngradeVersion
+                          type: string
+                        catalogFile:
+                          description: CatalogFile is the catalog file name within the share. Defaults to "Catalog.xml".
+                          type: string
+                        certificateVerification:
+                          description: |-
+                            CertificateVerification controls whether iDRAC verifies the TLS certificate presented by
+                            the repository share, or ignores certificate warnings (e.g. self-signed/untrusted
+                            certificates). If unset, certificates are verified.
+                          enum:
+                            - Verify
+                            - Ignore
+                          type: string
+                        credentialsRef:
+                          description: |-
+                            CredentialsRef references the credentials used to authenticate against the share, if required.
+                            Must not be set when ShareType is HTTP.
+                          properties:
+                            name:
+                              description: name is unique within a namespace to reference a secret resource.
+                              type: string
+                            namespace:
+                              description: namespace defines the space within which the secret name must be unique.
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        rebootNeeded:
+                          description: RebootNeeded, if true, allows the BMC to reboot the server to apply updates.
+                          type: boolean
+                        shareName:
+                          description: ShareName is the network share name. Not required for HTTP/HTTPS catalogs.
+                          type: string
+                        shareType:
+                          description: ShareType is the type of network share hosting the repository.
+                          enum:
+                            - NFS
+                            - CIFS
+                            - HTTP
+                            - HTTPS
+                          type: string
+                      required:
+                        - shareType
+                      type: object
+                    progressDeadlineSeconds:
+                      default: 3600
+                      description: |-
+                        ProgressDeadlineSeconds is the maximum time in seconds to wait without observable forward
+                        progress before the update is marked Failed. Defaults to 3600 (1 hour).
+                      format: int32
+                      type: integer
+                    readinessGates:
+                      description: |-
+                        ReadinessGates is a list of Server conditions that must be satisfied before the
+                        controller starts applying this resource. Semantics mirror Kubernetes
+                        Pod.Spec.ReadinessGates: every listed condition type must be present on the related
+                        Server(s) with the required status.
+                      items:
+                        description: |-
+                          ConditionRequirement defines a specific Server condition and the status value
+                          required to trigger the controller's action.
+                        properties:
+                          requiredStatus:
+                            description: RequiredStatus is status of the condition, one of True, False, Unknown.
+                            enum:
+                              - "True"
+                              - "False"
+                              - Unknown
+                            type: string
+                          type:
+                            description: |-
+                              Type of server condition
+
+                              Following kubebuilder validation is referred from https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Condition
+                            maxLength: 316
+                            minLength: 1
+                            type: string
+                        required:
+                          - requiredStatus
+                          - type
+                        type: object
+                      type: array
+                    retryPolicy:
+                      description: RetryPolicy defines the retry behavior for automatic retries on transient failures.
+                      properties:
+                        maxAttempts:
+                          description: |-
+                            MaxAttempts is the maximum number of automatic retry attempts after failure.
+                            0 means no automatic retries. Must be between 0 and 10 inclusive.
+                            If not set, the operator-level default is used.
+                          format: int32
+                          maximum: 10
+                          minimum: 0
+                          type: integer
+                      type: object
+                    serverMaintenancePolicy:
+                      description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
+                      type: string
+                    ttlSecondsAfterFinished:
+                      description: |-
+                        TTLSecondsAfterFinished, if set, causes the FirmwareUpdate to be deleted that many seconds
+                        after it reaches Completed state. Failed objects are retained for operator inspection.
+
+                        When set via a FirmwareUpdateSet's firmwareUpdateTemplate, this value is not propagated to
+                        the owned FirmwareUpdate children themselves (they are never auto-deleted individually);
+                        instead the FirmwareUpdateSet reads it directly from its own template to delete itself once
+                        all of its owned FirmwareUpdates have reached Completed.
+                      format: int32
+                      type: integer
+                  type: object
+                serverSelector:
+                  description: ServerSelector specifies a label selector to identify the servers that are to be selected.
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                      items:
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      type: object
+                  type: object
+                  x-kubernetes-map-type: atomic
+              required:
+                - firmwareUpdateTemplate
+                - serverSelector
+              type: object
+            status:
+              description: FirmwareUpdateSetStatus defines the observed state of FirmwareUpdateSet.
+              properties:
+                availableFirmwareUpdate:
+                  description: AvailableFirmwareUpdate is the number of FirmwareUpdate resources currently created by the set.
+                  format: int32
+                  type: integer
+                completedFirmwareUpdate:
+                  description: CompletedFirmwareUpdate is the total number of completed FirmwareUpdate resources in the set.
+                  format: int32
+                  type: integer
+                failedFirmwareUpdate:
+                  description: FailedFirmwareUpdate is the total number of failed FirmwareUpdate resources in the set.
+                  format: int32
+                  type: integer
+                fullyLabeledServers:
+                  description: FullyLabeledServers is the number of servers in the set.
+                  format: int32
+                  type: integer
+                inProgressFirmwareUpdate:
+                  description: InProgressFirmwareUpdate is the total number of FirmwareUpdate resources in the set that are currently in progress.
+                  format: int32
+                  type: integer
+                pendingFirmwareUpdate:
+                  description: PendingFirmwareUpdate is the total number of pending FirmwareUpdate resources in the set.
+                  format: int32
+                  type: integer
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.22.0
+  name: metadata.discovery.metal.ironcore.dev
+spec:
+  group: discovery.metal.ironcore.dev
+  names:
+    kind: Metadata
+    listKind: MetadataList
+    plural: metadata
+    singular: metadata
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: |-
+            Metadata is a pure data object holding the hardware inventory discovered
+            during the discovery boot of a Server. By convention a Metadata object is
+            named exactly like the Server it describes.
+            The payload fields mirror what the metalprobe agent posts to the registry.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            cpu:
+              description: CPU holds the discovered CPU information.
+              items:
+                description: CPUInfo holds information about a single CPU.
+                properties:
+                  capabilities:
+                    items:
+                      type: string
+                    type: array
+                  id:
+                    format: int32
+                    type: integer
+                  model:
+                    type: string
+                  totalCores:
+                    format: int32
+                    type: integer
+                  totalHardwareThreads:
+                    format: int32
+                    type: integer
+                  vendor:
+                    type: string
+                type: object
+              type: array
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            lldp:
+              description: LLDP holds the discovered LLDP interface information.
+              items:
+                description: LLDPInterface holds LLDP information of a single interface.
+                properties:
+                  name:
+                    type: string
+                  neighbors:
+                    items:
+                      description: LLDPNeighbor describes a single LLDP neighbor.
+                      properties:
+                        capabilities:
+                          items:
+                            type: string
+                          type: array
+                        chassisId:
+                          type: string
+                        mgmtIp:
+                          type: string
+                        portDescription:
+                          type: string
+                        portId:
+                          type: string
+                        systemDescription:
+                          type: string
+                        systemName:
+                          type: string
+                        vlanId:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              type: array
+            memory:
+              description: Memory holds the discovered memory devices.
+              items:
+                description: MemoryDevice describes a discovered memory device.
+                properties:
+                  assetTag:
+                    type: string
+                  bankLocator:
+                    type: string
+                  configuredMemorySpeed:
+                    type: string
+                  configuredVoltage:
+                    type: string
+                  deviceLocator:
+                    type: string
+                  deviceSet:
+                    type: string
+                  maximumVoltage:
+                    type: string
+                  memoryType:
+                    type: string
+                  minimumVoltage:
+                    type: string
+                  partNumber:
+                    type: string
+                  serialNumber:
+                    type: string
+                  size:
+                    description: SizeBytes is the memory device size in bytes.
+                    format: int64
+                    type: integer
+                  speed:
+                    type: string
+                  vendor:
+                    type: string
+                type: object
+              type: array
+            metadata:
+              type: object
+            networkInterfaces:
+              description: NetworkInterfaces holds the discovered network interfaces.
+              items:
+                description: NetworkInterface describes a discovered network interface.
+                properties:
+                  carrierStatus:
+                    description: CarrierStatus is the operational carrier status of the interface.
+                    type: string
+                  ipAddresses:
+                    description: IPAddresses is the list of IP addresses assigned to the interface.
+                    items:
+                      type: string
+                    type: array
+                  macAddress:
+                    description: MACAddress is the MAC address of the network interface.
+                    type: string
+                  name:
+                    description: Name is the name of the network interface.
+                    type: string
+                required:
+                  - macAddress
+                  - name
+                type: object
+              type: array
+            nics:
+              description: NICs holds the discovered NIC details.
+              items:
+                description: NIC describes a discovered network interface card.
+                properties:
+                  firmwareVersion:
+                    type: string
+                  linkModes:
+                    items:
+                      type: string
+                    type: array
+                  mac:
+                    type: string
+                  name:
+                    type: string
+                  pciAddress:
+                    type: string
+                  speed:
+                    type: string
+                  supportedPorts:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              type: array
+            pciDevices:
+              description: PCIDevices holds the discovered PCI devices.
+              items:
+                description: PCIDevice describes a discovered PCI device.
+                properties:
+                  address:
+                    type: string
+                  numaNodeID:
+                    format: int32
+                    type: integer
+                  product:
+                    type: string
+                  productID:
+                    type: string
+                  vendor:
+                    type: string
+                  vendorID:
+                    type: string
+                type: object
+              type: array
+            storage:
+              description: Storage holds the discovered block devices.
+              items:
+                description: BlockDevice describes a discovered block device.
+                properties:
+                  hWSectorSize:
+                    format: int64
+                    type: integer
+                  logicalBlockSize:
+                    format: int64
+                    type: integer
+                  model:
+                    type: string
+                  name:
+                    type: string
+                  numaNodeID:
+                    format: int32
+                    type: integer
+                  path:
+                    type: string
+                  physicalBlockSize:
+                    format: int64
+                    type: integer
+                  readOnly:
+                    type: boolean
+                  removable:
+                    type: boolean
+                  rotational:
+                    type: boolean
+                  serial:
+                    type: string
+                  sizeBytes:
+                    format: int64
+                    type: integer
+                  vendor:
+                    type: string
+                  wwid:
+                    type: string
+                type: object
+              type: array
+            systemInfo:
+              description: SystemInfo holds DMI/SMBIOS information about the system.
+              properties:
+                biosInformation:
+                  description: BIOSInformation holds DMI BIOS information.
+                  properties:
+                    date:
+                      type: string
+                    vendor:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                boardInformation:
+                  description: BoardInformation holds DMI baseboard information.
+                  properties:
+                    assetTag:
+                      type: string
+                    manufacturer:
+                      type: string
+                    product:
+                      type: string
+                    serialNumber:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                systemInformation:
+                  description: SystemInformation holds DMI system information.
+                  properties:
+                    family:
+                      type: string
+                    manufacturer:
+                      type: string
+                    productName:
+                      type: string
+                    serialNumber:
+                      type: string
+                    skuNumber:
+                      type: string
+                    uuid:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+              type: object
+            timestamp:
+              description: Timestamp is when the discovery data has been collected.
+              format: date-time
+              type: string
+          type: object
+      served: true
+      storage: true
+      subresources: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: servermaintenances.maintenance.metal.ironcore.dev
 spec:
   group: maintenance.metal.ironcore.dev
@@ -2827,7 +4902,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: serverwirings.readiness.metal.ironcore.dev
 spec:
   group: readiness.metal.ironcore.dev
@@ -2957,6 +5032,13 @@ spec:
       subresources:
         status: {}
 ---
+# Source: metal-maintenance-operator/templates/extras/namespaces.yaml
+# Sanitization Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metal-maintenance-sanitization
+---
 # Source: metal-maintenance-operator/templates/rbac/controller-manager.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -2964,7 +5046,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: metal-maintenance-operator
-    helm.sh/chart: metal-maintenance-operator-0.1.0
+    helm.sh/chart: metal-maintenance-operator-0.1.1-20261120143107-a922f62
     app.kubernetes.io/instance: metal-maintenance-operator
   name: metal-maintenance-operator-controller-manager
   namespace: kube-system
@@ -2986,6 +5068,13 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - ""
+    resources:
       - secrets
     verbs:
       - create
@@ -3000,7 +5089,9 @@ rules:
     resources:
       - bmcsettings
       - bmcsettingssets
+      - bmcuserrotations
       - bmcusers
+      - bmcusersets
       - bmcversions
       - bmcversionsets
     verbs:
@@ -3017,6 +5108,7 @@ rules:
       - bmcsettings/finalizers
       - bmcsettingssets/finalizers
       - bmcusers/finalizers
+      - bmcusersets/finalizers
       - bmcversions/finalizers
       - bmcversionsets/finalizers
     verbs:
@@ -3026,7 +5118,9 @@ rules:
     resources:
       - bmcsettings/status
       - bmcsettingssets/status
+      - bmcuserrotations/status
       - bmcusers/status
+      - bmcusersets/status
       - bmcversions/status
       - bmcversionsets/status
     verbs:
@@ -3037,6 +5131,18 @@ rules:
       - batch
     resources:
       - jobs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - discovery.metal.ironcore.dev
+    resources:
+      - metadata
     verbs:
       - create
       - delete
@@ -3105,14 +5211,6 @@ rules:
   - apiGroups:
       - metal.ironcore.dev
     resources:
-      - endpoints
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - metal.ironcore.dev
-    resources:
       - servers/status
     verbs:
       - get
@@ -3151,6 +5249,8 @@ rules:
       - biossettingssets
       - biosversions
       - biosversionsets
+      - firmwareupdates
+      - firmwareupdatesets
     verbs:
       - create
       - delete
@@ -3166,6 +5266,8 @@ rules:
       - biossettingssets/finalizers
       - biosversions/finalizers
       - biosversionsets/finalizers
+      - firmwareupdates/finalizers
+      - firmwareupdatesets/finalizers
     verbs:
       - update
   - apiGroups:
@@ -3175,6 +5277,8 @@ rules:
       - biossettingssets/status
       - biosversions/status
       - biosversionsets/status
+      - firmwareupdates/status
+      - firmwareupdatesets/status
     verbs:
       - get
       - patch
@@ -3213,7 +5317,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: metal-maintenance-operator
-    helm.sh/chart: metal-maintenance-operator-0.1.0
+    helm.sh/chart: metal-maintenance-operator-0.1.1-20261120143107-a922f62
     app.kubernetes.io/instance: metal-maintenance-operator
   name: metal-maintenance-operator-manager-rolebinding
 roleRef:
@@ -3224,3 +5328,7 @@ subjects:
   - kind: ServiceAccount
     name: metal-maintenance-operator-controller-manager
     namespace: kube-system
+---
+
+---
+
