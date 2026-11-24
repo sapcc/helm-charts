@@ -59,6 +59,9 @@ argora-operator-core:
         networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
 
     extraVolumes:
+    - name: secret-volume
+      secret:
+        secretName: argora-secret
     - name: remote-kubeconfig
       secret:
         secretName: argora-operator-remote-kubeconfig
@@ -68,6 +71,9 @@ argora-operator-core:
         - key: bundle.crt
           path: ca.crt
     extraVolumeMounts:
+    - mountPath: /etc/credentials
+      name: secret-volume
+      readOnly: true
     - name: remote-kubeconfig
       mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
