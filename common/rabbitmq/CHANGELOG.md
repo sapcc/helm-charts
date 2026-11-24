@@ -2,6 +2,12 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.26.3 - 2026/11/23
+
+- Support digest-qualified image tags in Deployment and StatefulSet version labels
+- Keep non-version labels empty and quoted; require literal dots in version extraction
+- Chart version bumped
+
 ## 0.26.2 - 2026/11/12
 
 - Add linkerd `skip-inbound-ports` annotation for the TLS listener port in the RabbitMQ statefulset, if enabled
