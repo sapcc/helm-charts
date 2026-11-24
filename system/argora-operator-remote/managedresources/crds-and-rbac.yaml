@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/component: argora-operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: argora
-    helm.sh/chart: argora-0.0.1-20261023094418-9e2ccc2-crds
+    helm.sh/chart: argora-0.0.1-20261124084815-b9b43b4-crds
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/part-of: argora-operator
   name: argora-operator-controller-manager
@@ -23,7 +23,7 @@ metadata:
     app.kubernetes.io/component: argora-operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: argora
-    helm.sh/chart: argora-0.0.1-20261023094418-9e2ccc2-crds
+    helm.sh/chart: argora-0.0.1-20261124084815-b9b43b4-crds
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/part-of: argora-operator
   name: clusterimports.argora.cloud.sap
@@ -67,7 +67,27 @@ spec:
               properties:
                 clusters:
                   items:
+                    description: |-
+                      ClusterSelector is intentionally shared between ClusterImport and Update CRDs.
+                      Controller-specific fields (e.g. BMCCredentialsRef) are simply ignored by controllers that don't need them.
                     properties:
+                      bmcCredentialsRef:
+                        description: |-
+                          BMCCredentialsRef optionally references a Secret (same namespace) containing
+                          bmcUser and bmcPassword keys to override central BMC credentials.
+                          Used by the ironcore controller; ignored by others.
+                        properties:
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
                       name:
                         type: string
                       region:
@@ -161,7 +181,7 @@ metadata:
     app.kubernetes.io/component: argora-operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: argora
-    helm.sh/chart: argora-0.0.1-20261023094418-9e2ccc2-crds
+    helm.sh/chart: argora-0.0.1-20261124084815-b9b43b4-crds
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/part-of: argora-operator
   name: ippoolimports.argora.cloud.sap
@@ -326,7 +346,7 @@ metadata:
     app.kubernetes.io/component: argora-operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: argora
-    helm.sh/chart: argora-0.0.1-20261023094418-9e2ccc2-crds
+    helm.sh/chart: argora-0.0.1-20261124084815-b9b43b4-crds
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/part-of: argora-operator
   name: updates.argora.cloud.sap
@@ -370,7 +390,27 @@ spec:
               properties:
                 clusters:
                   items:
+                    description: |-
+                      ClusterSelector is intentionally shared between ClusterImport and Update CRDs.
+                      Controller-specific fields (e.g. BMCCredentialsRef) are simply ignored by controllers that don't need them.
                     properties:
+                      bmcCredentialsRef:
+                        description: |-
+                          BMCCredentialsRef optionally references a Secret (same namespace) containing
+                          bmcUser and bmcPassword keys to override central BMC credentials.
+                          Used by the ironcore controller; ignored by others.
+                        properties:
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
                       name:
                         type: string
                       region:
@@ -462,7 +502,7 @@ metadata:
     app.kubernetes.io/component: argora-operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: argora
-    helm.sh/chart: argora-0.0.1-20261023094418-9e2ccc2-crds
+    helm.sh/chart: argora-0.0.1-20261124084815-b9b43b4-crds
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/part-of: argora-operator
   name: argora-operator-manager-role
@@ -549,6 +589,18 @@ rules:
       - update
       - watch
   - apiGroups:
+      - dhcp.metal.ironcore.dev
+    resources:
+      - subnets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
       - ipam.cluster.x-k8s.io
     resources:
       - globalinclusterippools
@@ -612,6 +664,18 @@ rules:
       - update
       - watch
   - apiGroups:
+      - onboarding.metal.ironcore.dev
+    resources:
+      - metalclusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
       - readiness.metal.ironcore.dev
     resources:
       - serverwirings
@@ -632,7 +696,7 @@ metadata:
     app.kubernetes.io/component: argora-operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: argora
-    helm.sh/chart: argora-0.0.1-20261023094418-9e2ccc2-crds
+    helm.sh/chart: argora-0.0.1-20261124084815-b9b43b4-crds
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/part-of: argora-operator
   name: argora-operator-manager-rolebinding
