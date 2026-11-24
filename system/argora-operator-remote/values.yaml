@@ -19,9 +19,12 @@ argora-operator-core:
     #   - --zap-log-level=debug
 
     env:
-      KUBERNETES_SERVICE_HOST: "apiserver-url"
-      ENABLE_WEBHOOKS: "false"
-      KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      - name: KUBERNETES_SERVICE_HOST
+        value: "apiserver-url"
+      - name: ENABLE_WEBHOOKS
+        value: "false"
+      - name: KUBERNETES_CLUSTER_DOMAIN
+        value: "cluster.local"
 
     # podSecurityContext:
     #   runAsNonRoot: true
@@ -46,44 +49,46 @@ argora-operator-core:
     # nodeSelector: {}
     # tolerations: []
 
-    podLabels:
-      networking.gardener.cloud/to-dns: allowed
-      networking.gardener.cloud/to-private-networks: allowed
-      networking.gardener.cloud/to-public-networks: allowed
-      networking.gardener.cloud/to-runtime-apiserver: allowed
-      networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
-      networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    pod:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
 
-    volumes:
+    extraVolumes:
+    - name: remote-kubeconfig
+      secret:
+        secretName: argora-operator-remote-kubeconfig
+        items:
+        - key: token
+          path: token
+        - key: bundle.crt
+          path: ca.crt
+    extraVolumeMounts:
     - name: remote-kubeconfig
       mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
-      source:
-        secret:
-          secretName: argora-operator-remote-kubeconfig
-          items:
-          - key: token
-            path: token
-          - key: bundle.crt
-            path: ca.crt
 
     serviceAccountName: default
 
   rbac:
-    enable: false
+    enabled: false
 
   # crd:
-  #   enable: false
+  #   enabled: false
   #   keep: true
 
   metrics:
-    enable: false
+    enabled: false
 
   # certManager:
-  #   enable: false
+  #   enabled: false
 
   # prometheus:
-  #   enable: false
+  #   enabled: false
 
   prometheusRules:
     create: true
@@ -91,7 +96,7 @@ argora-operator-core:
     annotations: {}
 
   # ironcore:
-  #   enable: true
+  #   enabled: true
 
   netboxURL: "https://netbox-url"
 
