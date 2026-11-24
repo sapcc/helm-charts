@@ -1,17 +1,19 @@
-# Source: metaldhcp/templates/dhcp.metal.ironcore.dev_dhcpleases.yaml
+# Source: metaldhcp/templates/dhcp.metal.ironcore.dev_leases.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
-  name: dhcpleases.dhcp.metal.ironcore.dev
+  name: leases.dhcp.metal.ironcore.dev
 spec:
   group: dhcp.metal.ironcore.dev
   names:
-    kind: DHCPLease
-    listKind: DHCPLeaseList
-    plural: dhcpleases
-    singular: dhcplease
+    kind: Lease
+    listKind: LeaseList
+    plural: leases
+    shortNames:
+      - dl
+    singular: lease
   scope: Cluster
   versions:
     - additionalPrinterColumns:
@@ -46,7 +48,7 @@ spec:
       schema:
         openAPIV3Schema:
           description: |-
-            DHCPLease records an IPv4 lease issued by metaldhcp. It is the durable allocation
+            Lease records an IPv4 lease issued by metaldhcp. It is the durable allocation
             ledger (the oob plugin rebuilds its in-memory allocator from these on startup) and
             the event that triggers the onboarding flow in the onboarding operator. metaldhcp
             owns these objects; the object name is the normalized MAC (e.g. "3cecefaabbcc") so
@@ -110,20 +112,22 @@ spec:
       storage: true
       subresources: {}
 ---
-# Source: metaldhcp/templates/dhcp.metal.ironcore.dev_oobsubnets.yaml
+# Source: metaldhcp/templates/dhcp.metal.ironcore.dev_subnets.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
-  name: oobsubnets.dhcp.metal.ironcore.dev
+  name: subnets.dhcp.metal.ironcore.dev
 spec:
   group: dhcp.metal.ironcore.dev
   names:
-    kind: OOBSubnet
-    listKind: OOBSubnetList
-    plural: oobsubnets
-    singular: oobsubnet
+    kind: Subnet
+    listKind: SubnetList
+    plural: subnets
+    shortNames:
+      - sn
+    singular: subnet
   scope: Cluster
   versions:
     - additionalPrinterColumns:
@@ -138,7 +142,7 @@ spec:
       schema:
         openAPIV3Schema:
           description: |-
-            OOBSubnet defines an IPv4 pool for out-of-band / BMC management ports. Each
+            Subnet defines an IPv4 pool for out-of-band / BMC management ports. Each
             instance selects subnets by label, allocates addresses from them, and optionally
             filters by MAC allowlist or delays offers to let other instances respond first.
           properties:
