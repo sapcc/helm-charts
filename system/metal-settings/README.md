@@ -1441,7 +1441,8 @@ hpe-dl380-gen11.yaml           hpe-dl380-gen11-latest-kvm.yaml  hpe-dl380-gen12.
 hpe-dl560-gen11-kvm.yaml       hpe-dl560-gen11-latest-kvm.yaml  hpe-dl560-gen11-sci.yaml
 lenovo-sr650.yaml              lenovo-sr650-v3.yaml           lenovo-sr655-v3.yaml
 lenovo-sr850p.yaml             lenovo-sr850p-kvm.yaml         lenovo-sr850-v3.yaml
-lenovo-sr850-v3-new.yaml       lenovo-sr950.yaml              lenovo-sr950-v3.yaml
+lenovo-sr850-v3-new.yaml       lenovo-sr850-v4.yaml           lenovo-sr950.yaml
+lenovo-sr950-v3.yaml
 ```
 
 ### BMC Settings (`bmc_settings/`)
@@ -1449,7 +1450,7 @@ lenovo-sr850-v3-new.yaml       lenovo-sr950.yaml              lenovo-sr950-v3.ya
 BMC settings are stored under `bmc_settings/` and also rendered via `tpl`. They may contain `{{ .Values.clusterConfig.* }}` references for the ConfigMap/Secret values. Per-BMC dynamic values (hostname, region, building-block) are resolved at reconcile time via `objectFieldRef` — not Helm templating.
 
 ```
-dell-default.yaml   dell-initial-default.yaml   dell-r6715.yaml   dell-r770.yaml   hpe-default.yaml   lenovo-default.yaml
+dell-default.yaml   dell-initial-default.yaml   dell-r6715.yaml   dell-r770.yaml   hpe-default.yaml   lenovo-default.yaml   lenovo-sr850-v4.yaml
 ```
 
 See each model's `parameters.<vendor>.<model>.<bmc|bios>.settings` in `values.yaml` for which file it actually uses.

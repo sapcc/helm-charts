@@ -50,7 +50,9 @@ cannot be required of the whole selection without tainting the other Servers for
 {{- end }}
 {{- end }}
 {{- if $conditions }}
-{{- $ruleName := printf "metal-settings-%s-%s-%s-%s" (lower $vendor) (lower $model) (lower $clusterType) (join "," $conditions | sha256sum | trunc 8) }}
+{{/* metal-operator derives an annotation key "bootstrap-completed-<name>" from the rule name, whose name part is capped at 63 chars, so the rule name must stay <= 43 chars. */}}
+{{- $ruleHash := printf "%s/%s/%s/%s" $vendor $model $clusterType (join "," $conditions) | sha256sum | trunc 8 }}
+{{- $ruleName := printf "%s-%s" (printf "%s-%s" (lower $model) (lower $clusterType) | trunc 34 | trimSuffix "-") $ruleHash }}
 {{- if hasKey $usedNames $ruleName }}
 {{- fail (printf "metal-settings: duplicate ServerReadinessRule name %q (model %q, clusterType %q)" $ruleName $model $clusterType) }}
 {{- end }}
