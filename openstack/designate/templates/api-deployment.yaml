@@ -160,6 +160,11 @@ spec:
                     path: secrets.conf
             - secret:
                 name: {{ .Release.Name }}-secrets-rndc
+                items:
+                {{- range $pool := .Values.bind_pools }}
+                  - key: {{ $pool.name }}.pool.key
+                    path: {{ $pool.name }}.pool.key
+                {{- end }}
 {{- if .Values.rate_limit.enabled }}
             - secret:
                 name: {{ .Release.Name }}-api-ratelimit-redis-user-default
