@@ -36,8 +36,8 @@
         host: {{$srv.ip}}
         port: 53
         rndc_host: {{ $srv.ip }}
-        rndc_port: {{ $pool.rndc_port }}
-        rndc_key_file: {{ $pool.rndc_key_file }}
+        rndc_port: {{ $pool.rndc.port }}
+        rndc_key_file: /etc/designate/{{ $pool.name }}.pool.key
         clean_zonefile: {{ $pool.clean_zonefile | default "False" }}
     {{- end}}
 {{- end }}
