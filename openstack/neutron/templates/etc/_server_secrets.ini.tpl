@@ -1,14 +1,17 @@
+{{- $name := required "No defaultUser defined in service_users" .Values.service_users.defaultUser }}
+{{- $creds := required (printf "No user '%s' in service_users.users" $name) (index .Values.service_users.users $name) }}
+
 [nova]
-username = {{ .Values.global.neutron_service_user | default "neutron" | include "resolve_secret" }}
-password = {{ .Values.global.neutron_service_password | default "" | include "resolve_secret" }}
+username = {{ $creds.username | include "resolve_secret" }}
+password = {{ $creds.password | include "resolve_secret" }}
 
 [designate]
-username = {{ .Values.global.neutron_service_user | default "neutron" | include "resolve_secret" }}
-password = {{ .Values.global.neutron_service_password | default "" | include "resolve_secret" }}
+username = {{ $creds.username | include "resolve_secret" }}
+password = {{ $creds.password | include "resolve_secret" }}
 
 [placement]
-username = {{ .Values.global.neutron_service_user | default "neutron" | include "resolve_secret" }}
-password = {{ .Values.global.neutron_service_password | default "" | include "resolve_secret" }}
+username = {{ $creds.username | include "resolve_secret" }}
+password = {{ $creds.password | include "resolve_secret" }}
 
 [database]
 connection = {{ include "utils.db_url" . }}
