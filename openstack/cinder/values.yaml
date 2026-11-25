@@ -410,6 +410,18 @@ mysql_metrics:
           snapshots.status;
       values:
         - "size_gauge"
+    # message_ttl defaults to 30 days; expires_at is indexed.
+    - help: Cinder ERROR messages when asynchronous Volume API operations fail after a 2xx response, in the last hour
+      labels: []
+      name: openstack_cinder_async_error_messages_1h_gauge
+      query: |
+        SELECT COUNT(*) AS count_gauge
+        FROM messages
+        WHERE message_level = 'ERROR'
+          AND expires_at >= DATE_SUB(DATE_ADD(NOW(), INTERVAL 30 DAY), INTERVAL 1 HOUR)
+          AND expires_at <= DATE_ADD(NOW(), INTERVAL 30 DAY);
+      values:
+        - "count_gauge"
 
 audit:
   enabled: false
