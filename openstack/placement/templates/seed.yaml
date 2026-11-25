@@ -32,11 +32,15 @@ spec:
   domains:
   - name: Default
     users:
-    - name: placement
+    {{- range $userKey, $userValue := .Values.service_users.users }}
+    {{- $username := $userValue.username | required (printf "'.Values.service_users.users.%s.username' is required" $userKey) }}
+    {{- $password := $userValue.password | required (printf "'.Values.service_users.users.%s.password' is required" $userKey) }}
+    - name: '{{ $username | include "resolve_secret" }}'
       description: Placement API Service User
-      password: '{{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password | include "resolve_secret" }}'
+      password: '{{ $password | include "resolve_secret" }}'
       role_assignments:
       - project: service
         role: service
       - project: service
         role: admin
+    {{- end }}
