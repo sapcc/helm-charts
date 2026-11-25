@@ -79,9 +79,10 @@ spec:
         role: cloud_compute_admin
 {{- end }}
 {{- if .Values.interconnection.enabled }}
-    - name: {{ .Values.interconnection.user }}
-      description: Neutron Interconnection Plugin User
-      password: {{ required "Interconnection password is missing" .Values.interconnection.password }}
+{{- range $name, $user := .Values.interconnection.users }}
+    - name: {{ required ( printf "No username for interconnection user '%s' in .interconnection.users" $name )  $user.username }}
+      description: "Neutron Interconnection Plugin User {{ $name }}"
+      password: {{ required ( printf "No password for interconnection user '%s' in .interconnection.users" $name )  $user.password }}
       role_assignments:
       - project: service
         role: service
@@ -89,6 +90,7 @@ spec:
         role: cloud_network_admin
       - project: l3admin
         role: cloud_network_admin
+{{- end }}
 {{- end }}
     - name: admin
       role_assignments:
