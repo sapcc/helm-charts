@@ -1,4 +1,4 @@
-{{- if and .Values.apacheMetrics.enabled .Values.apacheMetrics.podMonitor.enabled }}
+{{- if .Values.apacheMetrics.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
@@ -21,7 +21,7 @@ spec:
       path: /metrics
       honorLabels: true
       interval: 60s
-      {{- if .Values.apacheMetrics.podMonitor.linkerdMTLS }}
+      {{- if .Values.apacheMetrics.linkerdMTLS }}
       # Scrape via Linkerd mTLS: the apache-exporter port is proxied by Linkerd,
       # so scheme=https with the cluster trust anchor authenticates the scrape.
       # Requires: (a) this Prometheus is Linkerd-meshed, (b) the trust anchor
