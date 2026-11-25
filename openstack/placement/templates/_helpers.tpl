@@ -94,3 +94,15 @@ Params:
   {{- $params := dict "target" .target "users" .users "defaultUser" .defaultUser "key" "name" }}
   {{- include "placement.helpers.default_user_value" $params }}
 {{- end }}
+
+{{- define "placement.helpers.default_service_user_username" }}
+  {{- $su := .Values.service_users }}
+  {{- $params := dict "target" "service_users" "users" $su.users "defaultUser" $su.defaultUser "key" "username" }}
+  {{- include "placement.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "placement.helpers.default_service_user_password" }}
+  {{- $su := .Values.service_users }}
+  {{- $params := dict "target" "service_users" "users" $su.users "defaultUser" $su.defaultUser "key" "password" }}
+  {{- include "placement.helpers.default_user_value" $params }}
+{{- end }}
