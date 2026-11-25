@@ -1,0 +1,40 @@
+{{- if .Values.statsd.podMonitor.enabled }}
+# SCIBPL-365: scoped PodMonitor for the statsd-exporter metrics port.
+# Using a PodMonitor (instead of pod/service prometheus.io/ annotations) limits
+# discovery to the Prometheus labeled prometheus={{ .Values.alerts.prometheus }},
+# preventing any other Prometheus or scraper in the cluster from reaching the
+# metrics port without an explicit policy.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ .Release.Name }}-statsd
+  labels:
+    app: barbican
+    system: openstack
+    component: barbican
+    type: podmonitor
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      honorLabels: true
+      interval: 60s
+      scrapeTimeout: 55s
+      {{- if .Values.statsd.podMonitor.linkerdMTLS }}
+      # Scrape via Linkerd mTLS: the statsd-exporter port is proxied by Linkerd,
+      # so scheme=https with the cluster trust anchor authenticates the scrape.
+      # Requires: (a) this Prometheus is Linkerd-meshed, (b) the trust anchor
+      # secret "linkerd-trust-anchor" is projected into the Prometheus pod.
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/secrets/linkerd-trust-anchor/ca.crt
+        insecureSkipVerify: false
+      {{- end }}
+{{- end }}
