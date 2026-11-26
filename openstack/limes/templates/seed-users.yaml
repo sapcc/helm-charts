@@ -13,6 +13,9 @@
 {{- if not .Values.limes.local_liquids.designate.skip -}}
   {{- $liquid_roles = append $liquid_roles "cloud_dns_admin" -}}
 {{- end -}}
+{{- if not .Values.limes.local_liquids.ironic.skip -}}
+  {{- $liquid_roles = append $liquid_roles "cloud_baremetal_admin" -}}
+{{- end -}}
 {{- if not .Values.limes.local_liquids.neutron.skip -}}
   {{- $liquid_roles = append $liquid_roles "cloud_network_admin" -}}
 {{- end -}}
@@ -33,9 +36,6 @@ spec:
   - {{ .Values.global.keystoneNamespace }}/{{ .Values.global.is_global_region | ternary "keystone-global-seed" "keystone-seed" }}
   - {{ .Values.global.keystoneNamespace }}/domain-default-seed
   - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
-  {{- if not .Values.limes.local_liquids.ironic.skip }}
-  - monsoon3/ironic-seed
-  {{- end }}
 
   roles:
     # our own roles
@@ -86,8 +86,4 @@ spec:
           {{- range $liquid_roles }}
           - user: limes@Default
             role: {{ . }}
-          {{- end }}
-          {{- if not $.Values.limes.local_liquids.ironic.skip }}
-          - user: limes@Default
-            role: cloud_baremetal_admin
           {{- end }}
