@@ -66,10 +66,26 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{- define "keystone.job_dependencies" }}
-  {{- if or .Release.IsInstall .Values.run_db_migration }}
-    {{- printf "%s," (tuple . "job-migration" | include "job_name") }}
+  {{- if or .Values.run_db_migration .Release.IsInstall }}
+    {{- printf "%s," (tuple . "db-expansion" | include "job_name") }}
   {{- end }}
   {{- tuple . "job-bootstrap" | include "job_name" }}
+{{- end }}
+
+{{- define "keystone.upgrade_labels" }}
+cloud.sap/keystone-release: {{ .Release.Name | quote }}
+cloud.sap/keystone-revision: {{ .Release.Revision | quote }}
+{{- end }}
+
+{{- define "keystone.rollout_env" }}
+- name: KEYSTONE_RELEASE
+  value: {{ .Release.Name | quote }}
+- name: KEYSTONE_NAMESPACE
+  value: {{ .Release.Namespace | quote }}
+- name: KEYSTONE_REVISION
+  value: {{ .Release.Revision | quote }}
+- name: KEYSTONE_API_IMAGE
+  value: {{ printf "%s/%s:%v" .Values.global.registryAlternateRegion .Values.api.image .Values.api.imageTag | quote }}
 {{- end }}
 
 {{/*
