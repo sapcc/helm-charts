@@ -6,7 +6,7 @@ log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [lunaclient] $*"; }
 lunaclient ()
     {
     log "starting init"
-    mv /usr/safenet /thales
+    [ -d /thales/safenet ] || mv /usr/safenet /thales
     NOW="$(date +%Y%m%d)"
     cd /thales/safenet/lunaclient/libs/64/
     rm -f libCryptoki2_64.so
