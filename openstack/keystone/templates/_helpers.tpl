@@ -165,3 +165,19 @@ Empty values are skipped so callers may pass "" for optional dependencies.
   {{- end }}
 {{- end }}
 {{- end }}
+
+{{- define "keystone.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list (printf "%s-secrets" $ctx.Release.Name) (printf "%s-bootstrap" $ctx.Release.Name) (printf "%s-federation" $ctx.Release.Name) -}}
+{{- if $ctx.Values.federation.saml.enabled -}}
+{{- $names = append $names (printf "%s-federation-saml" $ctx.Release.Name) -}}
+{{- $names = append $names ($ctx.Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp") -}}
+{{- end -}}
+{{- if (include "keystone.tls.serving" $ctx) -}}
+{{- $names = append $names ($ctx.Values.tls.secretName | default "keystone-tls") -}}
+{{- end -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-proxysql-etc" $ctx.Release.Name) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}

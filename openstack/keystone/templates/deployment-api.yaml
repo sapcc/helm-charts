@@ -13,7 +13,7 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-bootstrap,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}{{- if (include "keystone.tls.serving" .) }},{{ .Values.tls.secretName | default "keystone-tls" }}{{- end }}"
+    secret.reloader.stakater.com/reload: {{ include "keystone.reloader.secrets" (dict "ctx" .) | quote }}
     {{- if .Values.federation.saml.enabled }}
     configmap.reloader.stakater.com/reload: "keystone-saml-shibboleth-config,keystone-saml-federation-saml-tenants,{{ .Values.federation.saml.idp.metadataConfigMap }}"
     {{- end }}
