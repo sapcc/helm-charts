@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "keystone.upgrade_config" . }}
+  labels:
+    component: keystone
+    release: {{ .Release.Name }}
+immutable: true
+data:
+  db-migration.sh: |
+{{ include (print .Template.BasePath "/bin/_db-migration.sh.tpl") . | indent 4 }}
+  rollout-check.py: |
+{{ include (print .Template.BasePath "/bin/_rollout-check.py.tpl") . | indent 4 }}
