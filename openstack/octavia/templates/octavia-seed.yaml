@@ -38,9 +38,10 @@ spec:
   domains:
   - name: Default
     users:
-    - name: octavia
-      description: 'Octavia Service'
-      password: {{ .Values.global.octavia_service_password | replace "$" "" | quote }}
+{{- range $name, $user := .Values.service_users.users }}
+    - name: {{ $user.username }}
+      description: 'Octavia Service user {{ $name }}'
+      password: {{ $user.password }}
       role_assignments:
       - project: service
         role: service
@@ -50,6 +51,7 @@ spec:
         role: cloud_keymanager_admin
       - project: service
         role: cloud_dns_admin
+{{- end }}
 
 # all other group role assignments are granted by neutron seed, because
 # network_* is functionally equivalent to loadbalancer_*, due to the Octavia
