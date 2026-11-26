@@ -92,3 +92,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
   {{- end }}
 {{- end }}
 {{- end }}
+
+{{- define "barbican.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list (printf "%s-secrets" $ctx.Release.Name) -}}
+{{- if .serving -}}
+{{- $names = append $names ($ctx.Values.tls.secretName | default "barbican-tls") -}}
+{{- end -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-proxysql-etc" $ctx.Release.Name) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}
