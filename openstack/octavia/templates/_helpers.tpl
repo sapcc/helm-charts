@@ -51,3 +51,13 @@ Create chart name and version as used by the chart label.
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set octavia.imageVersion" }}
   {{- end }}
 {{- end }}
+
+{{- define "octavia.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list (printf "%s-secrets" $ctx.Release.Name) -}}
+{{- range .extra | default list -}}{{- $names = append $names . -}}{{- end -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-proxysql-etc" $ctx.Release.Name) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}
