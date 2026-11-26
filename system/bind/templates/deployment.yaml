@@ -107,12 +107,21 @@ spec:
             mountPath: /opt/bind/scripts
           {{- end }}
           {{- if .Values.override_conf }}
-          - name: bind-keys-rndc
+          - name: bind-keys
+            mountPath: "/etc/bind/rndc.conf"
+            subPath: rndc.conf
+          - name: bind-keys
+            mountPath: "/etc/bind/rndc.keys"
+            subPath: rndc.keys
+          - name: bind-keys
             mountPath: "/etc/bind/rndc.key"
             subPath: rndc.key
-          - name: bind-keys-tsig
-            mountPath: "/etc/bind/tsig.key"
-            subPath: tsig.key
+          - name: bind-keys
+            mountPath: "/etc/bind/tsig.conf"
+            subPath: tsig.conf
+          - name: bind-keys
+            mountPath: "/etc/bind/tsig.keys"
+            subPath: tsig.keys
           {{- if .Values.nsi_key }}
           - name: bind-keys-nsi
             mountPath: "/etc/bind/nsi.key"
@@ -174,7 +183,7 @@ spec:
             mountPath: "/etc/zabbix/zabbix_agentd.d/"
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
-          - name: bind-rndc-key
+          - name: bind-keys
             mountPath: "/etc/bind/rndc.key"
             subPath: rndc.key
 {{ end }}
@@ -201,7 +210,7 @@ spec:
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
           - name: sshd-persistent-storage
             mountPath: "/etc/ssh/keys"
-          - name: bind-rndc-key
+          - name: bind-keys
             mountPath: "/etc/bind/rndc.key"
             subPath: rndc.key
 {{ end }}
@@ -216,18 +225,9 @@ spec:
           defaultMode: 0755
       {{- end }}
       {{- if .Values.override_conf }}
-      - name: bind-keys-rndc
+      - name: bind-keys
         secret:
           secretName: {{ .Release.Name }}-keys
-          items:
-          - key: rndc.key
-            path: rndc.key
-      - name: bind-keys-tsig
-        secret:
-          secretName: {{ .Release.Name }}-keys
-          items:
-          - key: tsig.key
-            path: tsig.key
       - name: bind-conf
         configMap:
           name: {{ .Release.Name }}
@@ -250,11 +250,6 @@ spec:
           items:
           - key: zabbix-bind.conf
             path: zabbix-bind.conf
-      {{- end }}
-      {{- if or .Values.zabbix.enabled .Values.sshd.enabled }}
-      - name: bind-rndc-key
-        secret:
-          secretName: {{ .Release.Name }}-rndc-key
       {{- end }}
       {{- if .Values.sshd.enabled }}
       - name: sshd-persistent-storage
