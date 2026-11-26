@@ -171,3 +171,17 @@ Params:
     {{- $activeCell := include "nova.helpers.get_active_cell" . }}
     {{- include "nova.helpers.cell_rabbitmq_url" (tuple . $activeCell) }}
 {{- end }}
+
+{{- define "nova.helpers.default_service_user_username" }}
+  {{- $su := .Values.service_users }}
+  {{- $defaultUsers := dict "service_user" $su.defaultUser }}
+  {{- $params := dict "target" "service_user" "users" $su.users "defaultUsers" $defaultUsers "key" "username" }}
+  {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "nova.helpers.default_service_user_password" }}
+  {{- $su := .Values.service_users }}
+  {{- $defaultUsers := dict "service_user" $su.defaultUser }}
+  {{- $params := dict "target" "service_user" "users" $su.users "defaultUsers" $defaultUsers "key" "password" }}
+  {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
