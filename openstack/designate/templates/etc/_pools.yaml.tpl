@@ -76,8 +76,8 @@
   catalog_zone:
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
       catalog_zone_refresh: 60
-      catalog_zone_tsig_key: {{ tpl $pool.tsigkey $ | include "resolve_secret" }}
-      catalog_zone_tsig_algorithm: {{ tpl ($pool.tsigkeyalgorithm | default "hmac-sha512") $ | include "resolve_secret" }}
+      catalog_zone_tsig_key: {{ $pool.tsig.secret }}
+      catalog_zone_tsig_algorithm: {{ $pool.tsig.algo }}
 {{- end }}
 {{- range $pool := .Values.akamai_pools_v2 }}
 - name: {{ $pool.name }}
@@ -126,7 +126,7 @@
         akamai_client_secret: {{ $pool.options.akamai_client_secret | include "resolve_secret" }}
         akamai_contract_id: {{ $pool.options.akamai_contract_id | include "resolve_secret" }}
         akamai_gid: {{ $pool.options.akamai_gid }}
-        tsig_key_name: "{{ $pool.options.tsig_key_name }}"
-        tsig_key_secret: {{ $pool.options.tsig_key_secret | include "resolve_secret" }}
-        tsig_key_algorithm: "{{ $pool.options.tsig_key_algorithm }}"
+        tsig_key_name: "{{ $pool.options.tsig.keyname }}"
+        tsig_key_secret: {{ $pool.options.tsig.secret }}
+        tsig_key_algorithm: "{{ $pool.options.tsig.algo }}"
 {{- end }}
