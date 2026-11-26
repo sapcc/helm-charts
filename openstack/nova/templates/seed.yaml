@@ -70,9 +70,12 @@ spec:
         role: cloud_compute_admin
       - project: admin
         role: cloud_compute_admin
-    - name: '{{ .Values.global.nova_service_user | default "nova" | include "resolve_secret" }}'
+    {{- range $userKey, $userValue := .Values.service_users.users }}
+    {{- $username := $userValue.username | required (printf "'.Values.service_users.users.%s.username' is required" $userKey) }}
+    {{- $password := $userValue.password | required (printf "'.Values.service_users.users.%s.password' is required" $userKey) }}
+    - name: '{{ $username | include "resolve_secret" }}'
       description: Nova Service
-      password: '{{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}'
+      password: '{{ $password | include "resolve_secret" }}'
       role_assignments:
       - project: service
         role: service
@@ -92,6 +95,7 @@ spec:
         role: cloud_image_admin
       - project: service
         role: cloud_objectstore_admin
+    {{- end }}
     groups:
     - name: administrators
       role_assignments:
@@ -111,8 +115,10 @@ spec:
         role: cloud_compute_admin
     - name: master
       role_assignments:
-      - user: {{ $.Values.global.nova_service_user | default "nova" }}{{ $.Values.global.user_suffix | default "" }}@Default
+      {{- range $_, $userValue := $.Values.service_users.users }}
+      - user: '{{ $userValue.username | include "resolve_secret" }}@Default'
         role: objectstore_admin
+      {{- end }}
     {{- end }}
     groups:
     {{- if eq . "ccadmin"}}
