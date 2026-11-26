@@ -54,3 +54,13 @@ annotations:
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set cinder.imageVersion or similar"}}
   {{- end }}
 {{- end }}
+
+{{- define "cinder.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list (printf "%s-secrets" $ctx.Release.Name) -}}
+{{- range .extra | default list -}}{{- $names = append $names . -}}{{- end -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-%s" $ctx.Release.Name (.proxysqlSecretName | default "proxysql-etc")) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}

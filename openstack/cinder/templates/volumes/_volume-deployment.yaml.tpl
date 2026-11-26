@@ -11,7 +11,7 @@ metadata:
     type: backend
     component: cinder
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-volume-{{ $name }}-secret"
+    secret.reloader.stakater.com/reload: {{ include "cinder.reloader.secrets" (dict "ctx" . "extra" (list (printf "%s-volume-%s-secret" .Release.Name $name))) | quote }}
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: 1
