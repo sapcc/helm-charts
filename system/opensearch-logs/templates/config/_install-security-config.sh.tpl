@@ -21,7 +21,7 @@ for i in $USER_NAME; do
       echo "check vault injector or password, looks like it was not retrieved from vaul"
       exit 1
     else
-      HASHED_VALUE=`$OPENSEARCH_BASE/plugins/opensearch-security/tools/hash.sh -p "$PASSWORD_VALUE" | tail -1`
+      HASHED_VALUE=`$OPENSEARCH_BASE/plugins/opensearch-security/tools/hash.sh -p "$PASSWORD_VALUE" | grep '^\$2'`
       # Check if the hashing was successful
       if [ -z "$HASHED_VALUE" ]; then
         echo "Error: Failed to hash the secret value."
