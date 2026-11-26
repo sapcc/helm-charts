@@ -9,4 +9,3 @@ controls {
 {{- end }}
 
 include "/etc/bind/rndc.keys";
-include "/etc/bind/rndc.key";
