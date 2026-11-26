@@ -55,26 +55,20 @@ spec:
         env:
         - name: OS_AUTH_URL
           value: {{ required ".Values.osAuthUrl is missing" .Values.osAuthUrl }}
-        - name: OS_USERNAME
+        - name: OS_APPLICATION_CREDENTIAL_ID
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}
-              key: OS_USERNAME
-        - name: OS_USER_DOMAIN_NAME
-          value: {{ .Values.swiftUserDomainName }}
-        - name: OS_PROJECT_NAME
-          value: {{ .Values.swiftProjectName }}
-        - name: OS_PROJECT_DOMAIN_NAME
-          value: {{ .Values.swiftProjectDomainName }}
+              key: OS_APPLICATION_CREDENTIAL_ID
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}
+              key: OS_APPLICATION_CREDENTIAL_SECRET
         - name: OS_REGION_NAME
           value: {{ .Values.global.region | required ".Values.global.region missing" }}
         - name: OS_ENDPOINT_TYPE
           value: {{ .Values.swiftEndpointType }}
-        - name: OS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}
-              key: OS_PASSWORD
         - name: HOME
           value: /tmp
         - name: SWIFT_CONTAINER

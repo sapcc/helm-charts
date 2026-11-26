@@ -87,7 +87,7 @@ spec:
             {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf", "--config-file", "/etc/nova/nova.conf.d/keystoneauth-secrets.conf", "--token_cache_file", "/tmp/liveness-token.cache"]
+              command: ["python3", "/etc/nova/agent-liveness.py", "--component", "nova", "--config-file", "/etc/nova/nova.conf", "--config-file", "/etc/nova/nova.conf.d/keystoneauth-secrets.conf", "--token_cache_file", "/tmp/liveness-token.cache"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -129,6 +129,8 @@ spec:
               items:
               - key:  nova.conf
                 path: nova.conf
+              - key: agent-liveness.py
+                path: agent-liveness.py
               - key:  {{ $configMapKey }}
                 path: nova-conductor.conf
               - key:  logging.ini

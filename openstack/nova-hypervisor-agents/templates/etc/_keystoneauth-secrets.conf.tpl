@@ -1,19 +1,14 @@
 [cinder]
-username = nova
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}
+{{ include "nova.helpers.keystone_credentials" . }}
 
 [neutron]
-username = nova
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}
+{{ include "nova.helpers.keystone_credentials" . }}
 
 [keystone_authtoken]
-username = nova
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}
+{{ include "nova.helpers.keystone_credentials" . }}
 
 [placement]
-username = nova
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}
+{{ include "nova.helpers.keystone_credentials" . }}
 
 [service_user]
-username = nova
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}
+{{ include "nova.helpers.keystone_credentials" . }}

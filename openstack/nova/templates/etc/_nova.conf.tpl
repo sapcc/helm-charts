@@ -59,33 +59,24 @@ num_retries = 10
 os_region_name = {{.Values.global.region}}
 cross_az_attach={{.Values.cross_az_attach}}
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
-auth_type = v3password
-user_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
+auth_type = v3applicationcredential
 region_name = {{.Values.global.region}}
-project_name = {{.Values.global.keystone_service_project | default "service" }}
-project_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 http_retries = {{.Values.cinder_http_retries}}
 
 [neutron]
 service_metadata_proxy = true
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
-auth_type = v3password
-user_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
+auth_type = v3applicationcredential
 region_name = {{.Values.global.region}}
-project_name = {{.Values.global.keystone_service_project | default "service" }}
-project_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 http_retries = {{.Values.neutron_http_retries}}
 timeout = {{.Values.neutron_timeout}}
 
 [keystone_authtoken]
-auth_type = v3password
+auth_type = v3applicationcredential
 auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-project_name = "{{.Values.global.keystone_service_project | default "service" }}"
-project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 region_name = {{.Values.global.region}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
@@ -105,12 +96,9 @@ driver = noop
 enable_proxy_headers_parsing = true
 
 [placement]
-auth_type = v3password
+auth_type = v3applicationcredential
 auth_version = v3
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
-user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-project_name = "{{.Values.global.keystone_service_project | default "service" }}"
-project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 valid_interfaces = internal
 region_name = {{.Values.global.region}}
 timeout = {{.Values.placement_timeout}}
@@ -123,13 +111,10 @@ auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | defau
 
 [service_user]
 send_service_user_token = true
-auth_type = v3password
+auth_type = v3applicationcredential
 auth_version = v3
 auth_interface = internal
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-project_name = "{{.Values.global.keystone_service_project | default "service" }}"
-project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 region_name = {{.Values.global.region}}
 
 [wsgi]

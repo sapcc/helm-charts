@@ -347,3 +347,8 @@ Params:
     }}
   {{- include "utils.rabbitmq_url" (tuple $envAll $data) }}
 {{- end }}
+
+{{- define "nova.helpers.keystone_credentials" -}}
+application_credential_id = {{ required ".Values.global.nova_service_application_credential_id is missing" .Values.global.nova_service_application_credential_id | include "resolve_secret" }}
+application_credential_secret = {{ required ".Values.global.nova_service_application_credential_secret is missing" .Values.global.nova_service_application_credential_secret | include "resolve_secret" }}
+{{- end }}

@@ -14,17 +14,21 @@ takes everything, later passes only files newer than
 | --- | --- | --- |
 | `imageName` / `imageVersion` | rclone | rclone image, pulled via `global.dockerHubMirror`; version is required |
 | `osAuthUrl` | – | Keystone v3 URL, set per region |
-| `swiftUserDomainName` | `Default` | user domain |
-| `swiftProjectName` | `master` | project that owns the container |
-| `swiftProjectDomainName` | `ccadmin` | project domain |
 | `swiftContainer` | `coredump-exporter` | target container |
 | `swiftEndpointType` | `internal` | Keystone catalog endpoint type |
-| `username` / `password` | – | secrets-injector references, set per region |
+| `applicationCredentialID` / `applicationCredentialSecret` | – | required application credentials, supplied through secrets-injector per region |
 | `pollingDelay` | `300` | seconds between passes |
 | `pollingFudging` | `30` | seconds added to the age window of a pass |
 | `swiftDeleteAfter` | `864000` | Swift object expiry in seconds |
 | `rcloneOperation` | `copyto` | rclone operation, `moveto` would remove local dumps |
 | `pod.nodeSelector`, `pod.tolerations` | `{}` | scheduling constraints |
+
+## Authentication
+
+Create the application credential as the existing coredump-exporter user in
+project `master`, domain `ccadmin`, with the `objectstore_admin` role. The
+credential supplies its project scope; username/password authentication is not
+used. Configure the returned ID and secret in the two required values above.
 
 ## Troubleshooting
 
