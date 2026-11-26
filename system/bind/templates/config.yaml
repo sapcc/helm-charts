@@ -43,17 +43,11 @@ data:
       };
       {{- end }}
      };
-     server {{ .Values.master_server }} {
-      keys {{ tpl ( $.Values.tsig_key_name | default "tsig-key" ) $ }};
-     };
-     include "/etc/bind/rndc.key";
-     include "/etc/bind/tsig.key";
+     include "/etc/bind/rndc.conf";
+     include "/etc/bind/tsig.conf";
      {{- if .Values.nsi_key }}
      include "/etc/bind/nsi.key";
      {{- end }}
-     controls {
-       inet * allow { {{ .Values.rndc_allow }} } keys { {{ tpl ( $.Values.rndc_key_name | default "rndc-key" ) $ }}; };
-     };
      statistics-channels {
        inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
      };
