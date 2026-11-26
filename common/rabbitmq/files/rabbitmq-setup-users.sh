@@ -49,7 +49,9 @@ main() {
         manage_user "${username}" "${password}" "${tag}" "${users}" || { log ERROR "Failed: ${username}"; ((errors++)); }
     done
 
-    rabbitmqctl clear_password guest 2>/dev/null || { log ERROR "Failed to clear password for guest user"; ((errors++)); }
+    if user_exists guest "${users}"; then
+        rabbitmqctl delete_user guest 2>/dev/null || { log ERROR "Failed to delete guest user"; ((errors++)); }
+    fi
 
     if ((errors > 0)); then
         log WARN "${errors} user(s) failed to configure"
