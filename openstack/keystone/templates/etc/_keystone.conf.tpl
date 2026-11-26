@@ -184,6 +184,8 @@ refill_seconds = {{ .Values.lifesaver.refill_seconds | default 1 }}
 refill_amount = {{ .Values.lifesaver.refill_amount | default 5 }}
 # cost of each status
 status_cost = {{ .Values.lifesaver.status_cost | default "default:1,401:10,403:5,404:0,429:0" }}
+# Credit deducted when token or S3/EC2 credential validation fails.
+token_cost = {{ .Values.lifesaver.token_cost | default "default:1,401:10,403:5,404:10,429:0" }}
 
 {{- if .Values.cors.enabled }}
 [cors]
