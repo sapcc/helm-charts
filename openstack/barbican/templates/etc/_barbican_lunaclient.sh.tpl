@@ -46,25 +46,25 @@ lunaclient ()
 
     #REGISTER HSM1
     log "registering HSM01"
-    /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip | include "resolve_secret" }}:.
-    /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip | include "resolve_secret" }}:server.pem /thales/safenet/lunaclient/config/certs/
+    /thales/safenet/lunaclient/bin/64/pscp -pw '{{ .Values.lunaclient.conn.pwd | include "resolve_secret" }}' /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip | include "resolve_secret" }}:.
+    /thales/safenet/lunaclient/bin/64/pscp -pw '{{ .Values.lunaclient.conn.pwd | include "resolve_secret" }}' {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip | include "resolve_secret" }}:server.pem /thales/safenet/lunaclient/config/certs/
     /thales/safenet/lunaclient/bin/64/vtl addserver -n {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -c  /thales/safenet/lunaclient/config/certs/server.pem
     echo "client register -c $HOSTNAME-$NOW" -h $HOSTNAME-$NOW > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.conn.par | include "resolve_secret"  }}" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
-    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
+    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw '{{ .Values.lunaclient.conn.pwd | include "resolve_secret" }}' < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     log "HSM01 registered"
     
     {{- if .Values.hsm.ha.enabled }}
     #REGISTER HSM2
     log "registering HSM02"
-    /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }}:.
-    /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }}:server.pem /thales/safenet/lunaclient/config/certs/
+    /thales/safenet/lunaclient/bin/64/pscp -pw '{{ .Values.lunaclient.conn.pwd | include "resolve_secret" }}' /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }}:.
+    /thales/safenet/lunaclient/bin/64/pscp -pw '{{ .Values.lunaclient.conn.pwd | include "resolve_secret" }}' {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }}:server.pem /thales/safenet/lunaclient/config/certs/
     /thales/safenet/lunaclient/bin/64/vtl addserver -n {{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }} -c  /thales/safenet/lunaclient/config/certs/server.pem
     echo "client register -c $HOSTNAME-$NOW" -h $HOSTNAME-$NOW > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.conn.par02 | include "resolve_secret" }}" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
-    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
+    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw '{{ .Values.lunaclient.conn.pwd | include "resolve_secret" }}' < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     log "HSM02 registered"
     {{- end}}
 
