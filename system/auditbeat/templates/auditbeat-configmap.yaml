@@ -112,6 +112,10 @@ data:
       hash_types: [sha1]
       recursive: true
     - module: auditd
+{{- if include "auditbeat.multicast" . }}
+      # The node's own auditd manages the audit rules: listen only, load no rules.
+      socket_type: multicast
+{{- else }}
       audit_rules: |
         ## First rule - delete all
         #-D
@@ -246,3 +250,4 @@ data:
 
         ## Make the configuration immutable - reboot is required to change audit rules
         #-e 2
+{{- end }}

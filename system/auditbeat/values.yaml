@@ -5,7 +5,18 @@ image:
   pullPolicy: IfNotPresent
   tag: "9.4.2-amd64"
 
+# Flatcar only: turns on TTY auditing in Flatcar's PAM config
+# (/usr/lib64/pam.d/system-auth). Set to false on other nodes, such as Garden Linux.
 enable_pamd_tty: true
+
+auditd:
+  # Empty (Flatcar): auditbeat loads the chart's audit rules and is the only
+  # receiver of the kernel's audit events (unicast).
+  # multicast: for nodes that run their own auditd with their own rules, such as
+  # Garden Linux. auditbeat then listens next to auditd in the host network (the
+  # kernel multicasts audit events only there) and loads no rules, because
+  # loading rules first deletes all audit rules on the node.
+  socket_type: ""
 
 elasticsearch:
   enabled: false
