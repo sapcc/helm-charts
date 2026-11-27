@@ -111,6 +111,9 @@ spec:
             mountPath: "/etc/bind/named.conf.controls"
             subPath: named.conf.controls
           - name: bind-keys
+            mountPath: "/etc/bind/named.conf.allow-transfer"
+            subPath: named.conf.allow-transfer
+          - name: bind-keys
             mountPath: "/etc/bind/rndc.keys"
             subPath: rndc.keys
           - name: bind-keys
@@ -122,11 +125,6 @@ spec:
           - name: bind-keys
             mountPath: "/etc/bind/tsig.keys"
             subPath: tsig.keys
-          {{- if .Values.nsi_key }}
-          - name: bind-keys-nsi
-            mountPath: "/etc/bind/nsi.key"
-            subPath: nsi.key
-          {{- end }}
           - name: bind-conf
             mountPath: "/etc/bind/named.conf"
             subPath: named.conf
@@ -231,14 +229,6 @@ spec:
       - name: bind-conf
         configMap:
           name: {{ .Release.Name }}
-      {{- end }}
-      {{- if .Values.nsi_key }}
-      - name: bind-keys-nsi
-        secret:
-          secretName: {{ .Release.Name }}-keys
-          items:
-          - key: nsi.key
-            path: nsi.key
       {{- end }}
       {{- if .Values.zabbix.enabled }}
       - name: zabbix-tls

@@ -13,16 +13,16 @@ data:
       listen-on { any; };
       listen-on-v6 { none; };
       allow-query { any; };
-      {{- if .Values.nsi_key }}
-      allow-transfer { key "nsi-key"; };
-      {{ else }}
-      allow-transfer { none; };
-      {{- end }}
+
+      include "/etc/bind/named.conf.allow-transfer";
+
       allow-new-zones yes;
-      {{- if .Values.nsi_server }}
+
+      {{- if .Values.also_notify }}
       notify yes;
-      also-notify { {{ .Values.nsi_server }}; };
+      also-notify { {{ range .Values.also_notify }} {{ . }}; {{ end }} };
       {{- end }}
+
       request-ixfr no;
       allow-update { none; };
       allow-notify { {{ .Values.allow_notify }} };
@@ -45,9 +45,6 @@ data:
      };
      include "/etc/bind/named.conf.controls";
      include "/etc/bind/tsig.conf";
-     {{- if .Values.nsi_key }}
-     include "/etc/bind/nsi.key";
-     {{- end }}
      statistics-channels {
        inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
      };

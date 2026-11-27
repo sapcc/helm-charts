@@ -9,3 +9,12 @@ key "{{ tpl ( $.Values.tsig_key_name | default "tsig-key" ) $ }}" {
     secret "{{ tpl $.Values.tsig_key $ | include "resolve_secret" }}";
 };
 {{- end }}
+
+{{- if $.Values.allow_transfer }}
+{{- range $tsig := $.Values.allow_transfer.tsig }}
+key "{{ $tsig.keyname }}" {
+    algorithm "{{ $tsig.algo }}";
+    secret "{{ $tsig.secret }}";
+};
+{{- end }}
+{{- end }}
