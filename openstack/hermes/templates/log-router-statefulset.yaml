@@ -85,15 +85,18 @@ spec:
               mountPath: /var/run/secrets/log-router
           # startup compacts and recovers the WAL before the http server is up.
           # after a long storage outage that can take well over 10m, so give it 30m.
+          # startup and liveness use /metrics: /healthcheck pings storage, and a storage outage must not
+          # restart the pods that hold its events. readiness keeps it. not tcpSocket: behind linkerd it always passes.
           startupProbe:
             httpGet:
-              path: /healthcheck
+              path: /metrics
               port: http
+            timeoutSeconds: 5
             failureThreshold: 180
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthcheck
+              path: /metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 30
