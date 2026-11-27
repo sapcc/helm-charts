@@ -1,3 +1,7 @@
+## 6.8.2
+
+* Support digest-qualified Thanos versions while preserving the operator's semantic version and rejecting conflicting image pins.
+
 ## 6.8.1
 
 * adapt Thanos flag to endpoint

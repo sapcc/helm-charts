@@ -52,12 +52,53 @@ prometheus-{{- (include "prometheus.name" .) -}}
 {{- end -}}
 {{- end -}}
 
+{{- define "prometheus-server-pre7.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "prometheus-server-pre7.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}
+{{- index $parts 1 -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Keep the operator's semantic version separate from the complete image pin. */}}
+{{- define "prometheus-server-pre7.thanos.spec" -}}
+{{- $spec := deepCopy .Values.thanos.spec -}}
+{{- with $spec.version -}}
+{{- $pin := . -}}
+{{- $tag := include "prometheus-server-pre7.image.tag" $pin -}}
+{{- $digest := include "prometheus-server-pre7.image.digest" $pin -}}
+{{- if $digest -}}
+{{- $repository := required ".Values.thanos.spec.baseImage missing" $spec.baseImage -}}
+{{- $image := default "" $spec.image -}}
+{{- $plainImage := include "prometheus-server-pre7.image.tag" $image -}}
+{{- $imageDigest := include "prometheus-server-pre7.image.digest" $image -}}
+{{- $imageTag := regexFind ":[^/:]+$" $plainImage | trimPrefix ":" -}}
+{{- if and $imageDigest (or (ne $imageDigest $digest) (and $imageTag (ne $imageTag $tag))) -}}
+{{- fail "thanos.spec.image pin conflicts with thanos.spec.version tag or digest" -}}
+{{- end -}}
+{{- $_ := set $spec "version" $tag -}}
+{{- $_ := set $spec "image" (printf "%s:%s" $repository $pin) -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $spec -}}
+{{- end -}}
+
 {{/* Image for Thanos components. Do not use for Thanos sidecar! */}}
 {{- define "thanos.image" -}}
 {{- if and .Values.thanos.components.baseImage .Values.thanos.components.version -}}
 {{- .Values.thanos.components.baseImage -}}:{{- .Values.thanos.components.version -}}
 {{- else -}}
-{{- required ".Values.thanos.spec.baseImage missing" .Values.thanos.spec.baseImage -}}:{{- required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
+{{- $repository := required ".Values.thanos.spec.baseImage missing" .Values.thanos.spec.baseImage -}}
+{{- $pin := required ".Values.thanos.spec.version missing" .Values.thanos.spec.version -}}
+{{- if include "prometheus-server-pre7.image.digest" $pin -}}
+{{- $spec := include "prometheus-server-pre7.thanos.spec" . | fromYaml -}}
+{{- $spec.image -}}
+{{- else -}}
+{{- $repository -}}:{{- $pin -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
