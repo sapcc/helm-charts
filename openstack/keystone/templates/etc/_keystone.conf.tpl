@@ -138,8 +138,8 @@ project_name_url_safe = new
 domain_name_url_safe = new
 
 [security_compliance]
-lockout_failure_attempts = 5
-lockout_duration = 300
+# Leave lockout_failure_attempts unset to disable account lockout.
+# Consumers may still use old service-user passwords during rotation.
 unique_last_password_count = 5
 {{- if hasKey .Values "disable_user_account_days_inactive" }}
 disable_user_account_days_inactive = {{ .Values.disable_user_account_days_inactive }}
