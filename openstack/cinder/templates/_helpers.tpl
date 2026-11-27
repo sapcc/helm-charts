@@ -45,12 +45,34 @@ annotations:
   {{- end }}
 {{- end }}
 
+{{- define "cinder.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "cinder.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}{{- index $parts 1 -}}{{- end -}}
+{{- end -}}
+
 {{- define "job_name" }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
     {{- $bin := include (print .Template.BasePath "/bin/_" $name ".tpl") . }}
     {{- $all := list $bin (include (print .Template.BasePath "/etc-configmap.yaml") .) (include (print .Template.BasePath "/secrets.yaml") .) (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container") | join "\n" }}
-    {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
-{{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set cinder.imageVersion or similar"}}
+    {{- $pin := .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+    {{- $tag := include "cinder.image.tag" $pin }}
+    {{- $digest := include "cinder.image.digest" $pin }}
+    {{- $hashInput := empty .Values.proxysql.mode | ternary $bin $all }}
+    {{- if $digest }}
+      {{- $hashInput = printf "%s\n%s" $hashInput $digest }}
+    {{- end }}
+    {{- $hash := $hashInput | sha256sum }}
+    {{- if $digest }}
+      {{- $suffix := printf "-%s-%s" $name (substr 0 4 $hash) }}
+      {{- $prefix := regexReplaceAll "[^a-z0-9-]" (printf "%s-%s" .Release.Name $tag | lower) "-" }}
+      {{- printf "%s%s" ($prefix | trunc (int (sub 63 (len $suffix))) | trimAll "-") $suffix }}
+    {{- else }}
+      {{- printf "%s-%s-%s-%s" .Release.Name $name (substr 0 4 $hash) $tag }}
+    {{- end }}
   {{- end }}
 {{- end }}
