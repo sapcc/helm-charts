@@ -5,7 +5,7 @@ metadata:
   name: aurora
   annotations:
     # redeploy on secret "aurora-feedback" change so all the aurora pods gets the same secrets
-    secret.reloader.stakater.com/reload: "aurora-feedback"
+    secret.reloader.stakater.com/reload: "aurora-feedback,aurora-config"
 
 spec:
   selector:
@@ -43,6 +43,10 @@ spec:
                         - aurora
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
+      volumes:
+        - name: app-config
+          secret:
+            secretName: aurora-config
       containers:
         - name: server
           image: "{{.Values.global.registry}}/aurora:{{.Values.image.tag}}"
@@ -53,6 +57,10 @@ spec:
               containerPort: {{ .Values.port }}
           env:
 {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          volumeMounts:
+            - name: app-config
+              mountPath: '/etc/config'
+              readOnly: true
           envFrom:
           - secretRef:
               name: aurora-feedback
