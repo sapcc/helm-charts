@@ -686,9 +686,12 @@ spec:
   domains:
   - name: Default
     users:
-    - name: '{{ .Values.global.ironicServiceUser | default "ironic" | include "resolve_secret" }}'
+    {{- range $userKey, $userValue := .Values.service_users.users }}
+    {{- $username := $userValue.username | required (printf "'.Values.service_users.users.%s.username' is required" $userKey) }}
+    {{- $password := $userValue.password | required (printf "'.Values.service_users.users.%s.password' is required" $userKey) }}
+    - name: '{{ $username | include "resolve_secret" }}'
       description: Ironic Service
-      password: '{{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password | include "resolve_secret" }}'
+      password: '{{ $password | include "resolve_secret" }}'
       role_assignments:
       - project: service
         role: service
@@ -702,6 +705,7 @@ spec:
         role: cloud_image_admin
       - project: service
         role: cloud_objectstore_admin
+    {{- end }}
 
   {{- range $domains}}
   {{- if and (not (hasPrefix "iaas-" .)) (not (eq . "Default"))}}
@@ -716,8 +720,10 @@ spec:
         role: cloud_baremetal_admin
       - user: ipmi_exporter@Default
         role: cloud_compute_admin
-      - user: ironic@Default
+      {{- range $_, $userValue := $.Values.service_users.users }}
+      - user: '{{ $userValue.username | include "resolve_secret" }}@Default'
         role: objectstore_admin
+      {{- end }}
     {{- end }}
     groups:
     {{- if eq . "ccadmin"}}
