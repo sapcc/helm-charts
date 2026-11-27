@@ -26,12 +26,6 @@ https://www.percona.com/doc/percona-xtradb-cluster/LATEST/wsrep-system-index.htm
 {{- end -}}
 {{- end -}}
 
-{{/* Helper to turn list into a comma-separated string */}}
-{{- define "helm-toolkit.utils.joinListWithComma" -}}
-{{- $local := dict "first" true -}}
-{{- range $k, $v := . -}}{{- if not $local.first -}},{{- end -}}{{- $v -}}{{- $_ := set $local "first" false -}}{{- end -}}
-{{- end -}}
-
 {{/* Generate the service label for the templated Prometheus alerts. */}}
 {{- define "alerts.service" -}}
 {{- if .Values.alerts.service -}}
