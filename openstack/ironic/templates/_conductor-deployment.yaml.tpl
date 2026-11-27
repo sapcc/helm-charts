@@ -14,7 +14,7 @@ metadata:
     type: conductor
     component: ironic
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    secret.reloader.stakater.com/reload: {{ include "ironic.reloader.secrets" (dict "ctx" .) | quote }}
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ $conductor.replicas | default 1 }}

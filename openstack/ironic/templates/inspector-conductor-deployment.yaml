@@ -8,6 +8,11 @@ metadata:
     system: openstack
     type: backend
     component: none
+  {{- if .Values.proxysql.mode }}
+  annotations:
+    secret.reloader.stakater.com/reload: {{ include "ironic.reloader.secrets" (dict "ctx" . "withSecrets" false) | quote }}
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.inspector }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}

@@ -39,3 +39,15 @@ ironic-rabbitmq
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set ironic.imageVersion" }}
   {{- end }}
 {{- end }}
+
+{{- define "ironic.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list -}}
+{{- if ne (.withSecrets | toString) "false" -}}
+{{- $names = append $names (printf "%s-secrets" $ctx.Release.Name) -}}
+{{- end -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-proxysql-etc" $ctx.Release.Name) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}
