@@ -98,6 +98,11 @@ insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
 ptr_zone_email = dns@sap-ag.de
+{{- if .Values.global.designate_default_pool_id }}
+# PTR zones go into the default pool of Designate (same global as its
+# default_pool_id), Designate cannot choose between shared pools itself
+ptr_zone_pool_id = {{ .Values.global.designate_default_pool_id }}
+{{- end }}
 
 [oslo_concurrency]
 lock_path = /var/lib/neutron/tmp
