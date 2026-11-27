@@ -347,6 +347,14 @@ output {
       format => "json"
       http_method => "post"
     }
+    tcp {
+      id => "output_awx_tcp"
+      host => "logs-collector-external.eu-de-1.cloud.sap"
+      port => 514
+      codec => line {
+        format => "%{message} forwarded_by=logstash-audit-external"
+      }
+    }
   } else if [sap][cc][audit][source] == "flatcar" {
     http {
       id => "output_flatcar"
@@ -354,6 +362,14 @@ output {
       url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
       format => "json"
       http_method => "post"
+    }
+    tcp {
+      id => "output_flatcar_tcp"
+      host => "logs-collector-external.eu-de-1.cloud.sap"
+      port => 514
+      codec => line {
+        format => "%{message} forwarded_by=logstash-audit-external"
+      }
     }
   } else if [type] == "audit" or "audit" in [tags] {
     http {
@@ -363,6 +379,14 @@ output {
       format => "json"
       http_method => "post"
     }
+    tcp {
+      id => "output_else_audit_tcp"
+      host => "logs-collector-external.eu-de-1.cloud.sap"
+      port => 514
+      codec => line {
+        format => "%{message} forwarded_by=logstash-audit-external"
+      }
+    }
   } else if [type] == "kube-api" or "kube-api" in [tags] {
     http {
       id => "output_kube-api"
@@ -371,11 +395,27 @@ output {
       format => "json"
       http_method => "post"
     }
+    tcp {
+      id => "output_kube-api_tcp"
+      host => "logs-collector-external.eu-de-1.cloud.sap"
+      port => 514
+      codec => line {
+        format => "%{message} forwarded_by=logstash-audit-external"
+      }
+    }
   } else if "dropped_syslog" in [tags] {
     file {
       id => "output_dropped_syslog"
       path => "/dev/stdout"
       codec => json_lines
+    }
+    tcp {
+      id => "output_dropped_syslog_tcp"
+      host => "logs-collector-external.eu-de-1.cloud.sap"
+      port => 514
+      codec => line {
+        format => "%{message} forwarded_by=logstash-audit-external"
+      }
     }
   }
 }
