@@ -52,6 +52,10 @@ spec:
                   items:
                   - key: api-db.conf
                     path: nova.conf.d/api-db.conf
+                  {{- if $values.add_keystoneauth_conf }}
+                  - key: keystoneauth-secrets.conf
+                    path: nova.conf.d/keystoneauth-secrets.conf
+                  {{- end }}
                   {{- if $values.add_cell0_conf }}
                   - key: cell0.conf
                     path: nova.conf.d/cell0.conf

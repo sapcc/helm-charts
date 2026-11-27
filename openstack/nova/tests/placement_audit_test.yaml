@@ -1,0 +1,86 @@
+---
+suite: placement allocation audit nanny
+templates:
+  - nanny.yaml
+  - bin-configmap.yaml
+values:
+  - ../ci/test-values.yaml
+tests:
+  - it: enables the allocation audit every three hours by default without overlapping runs
+    template: nanny.yaml
+    documentSelector:
+      path: metadata.name
+      value: nova-nanny-placement-audit
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: spec.schedule
+          value: "10 */3 * * *"
+      - equal:
+          path: spec.concurrencyPolicy
+          value: Forbid
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.volumes[0].configMap.items
+          content:
+            key: nanny-placement-audit
+            path: nanny-script
+
+  - it: removes only the allocation audit cronjob when its feature flag is disabled
+    template: nanny.yaml
+    set:
+      nanny.placement_audit.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 5
+
+  - it: allows overriding the allocation audit schedule
+    template: nanny.yaml
+    set:
+      nanny.placement_audit.schedule: "5 */6 * * *"
+    documentSelector:
+      path: metadata.name
+      value: nova-nanny-placement-audit
+    asserts:
+      - equal:
+          path: spec.schedule
+          value: "5 */6 * * *"
+
+  - it: mounts the API DB and Placement authentication configuration
+    template: nanny.yaml
+    documentSelector:
+      path: metadata.name
+      value: nova-nanny-placement-audit
+    asserts:
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.volumes[2].projected.sources[1].secret.items
+          content:
+            key: api-db.conf
+            path: nova.conf.d/api-db.conf
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.volumes[2].projected.sources[1].secret.items
+          content:
+            key: keystoneauth-secrets.conf
+            path: nova.conf.d/keystoneauth-secrets.conf
+
+  - it: leaves Placement credentials out of existing DB-only nannies
+    template: nanny.yaml
+    documentSelector:
+      path: metadata.name
+      value: nova-nanny-db-purge
+    asserts:
+      - notContains:
+          path: spec.jobTemplate.spec.template.spec.volumes[2].projected.sources[1].secret.items
+          content:
+            key: keystoneauth-secrets.conf
+            path: nova.conf.d/keystoneauth-secrets.conf
+
+  - it: provides an orphan cleanup script and accepts the successful deletion exit code
+    template: bin-configmap.yaml
+    asserts:
+      - matchRegex:
+          path: data.nanny-placement-audit
+          pattern: 'nova-manage placement audit --verbose --delete'
+      - matchRegex:
+          path: data.nanny-placement-audit
+          pattern: '\|\| \[\[ "\$\?" == "4" \]\]'

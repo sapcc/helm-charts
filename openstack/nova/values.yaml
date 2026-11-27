@@ -1347,6 +1347,7 @@ nanny:
   default:
     enabled: true
     add_cell0_conf: false
+    add_keystoneauth_conf: false
     resources:
       requests:
         memory: "500Mi"
@@ -1368,6 +1369,15 @@ nanny:
     older_than: 3
     max_rows: 1000
     add_cell0_conf: true
+  # Remove orphan Placement allocations using Nova's native audit. This scans
+  # all providers and retains migrations that Nova considers in progress.
+  placement_audit:
+    enabled: true
+    # Configurable cron schedule; default is every three hours at minute 10.
+    # (minute | hour | day of month | month | day of week)
+    schedule: "10 */3 * * *"
+    # Required for authenticating to the Placement API.
+    add_keystoneauth_conf: true
   # Delete db rows soft-deleted before more than older_than days from shadow
   # tables.
   db_purge:
