@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.29.6 - 2026/11/23
+* support digest-qualified software/build versions for all six component images
+  * retain numeric build conversion and append matching pins after the complete tag
+  * reject conflicting pins and keep version labels and Kopia MARIADB_VERSION plain
+  * extend image/label unit tests
+* chart version bumped
+
 ## v0.29.5 - 2024/07/30
 * labels standardized for all components
   * `sharedservices.labels` renamed to `mariadb-galera.labels` to avoid [conflicts with templates from other charts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#sharing-templates-with-subcharts)

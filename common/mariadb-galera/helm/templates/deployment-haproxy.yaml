@@ -69,7 +69,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "haproxy")) }}
-        image: "{{ $.Values.image.haproxy.registry }}/{{ $.Values.image.haproxy.project }}/{{ $.Values.image.haproxy.softwarename }}:{{ $.Values.image.haproxy.softwareversion }}-{{ $.Values.image.haproxy.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.haproxy | quote }}
         imagePullPolicy: {{ $.Values.image.haproxy.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}

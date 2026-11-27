@@ -42,6 +42,22 @@ templates:
   - configmap-haproxy.yaml
   - configmap-kopia.yaml
 tests:
+  - it: version labels use the plain assembled tag for pinned software versions
+    template: statefulset-mariadb.yaml
+    set:
+      image.database.softwareversion: "10.5.25@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "10.5.25-20240724035543"
+  - it: version labels are bounded and have valid endpoints for long software tags
+    template: statefulset-mariadb.yaml
+    set:
+      image.database.softwareversion: "v123456789.v123456789.v123456789.v123456789.v123456789.v123456789.v123456789@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          pattern: "^[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?$"
   - it: labels for the mariadb-galera statefulset are correct
     template: statefulset-mariadb.yaml
     asserts:

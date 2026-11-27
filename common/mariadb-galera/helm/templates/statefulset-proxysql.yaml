@@ -80,7 +80,7 @@ spec:
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.os | quote }}
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -91,7 +91,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       {{- if $.Values.proxy.proxysql.fixFsPermissions}}
       - name: fix-proxysql-fs-permissions
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.os | quote }}
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -119,7 +119,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
-        image: "{{ $.Values.image.proxysql.registry }}/{{ $.Values.image.proxysql.project }}/{{ $.Values.image.proxysql.softwarename }}:{{ $.Values.image.proxysql.softwareversion }}-{{ $.Values.image.proxysql.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.proxysql | quote }}
         imagePullPolicy: {{ $.Values.image.proxysql.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}

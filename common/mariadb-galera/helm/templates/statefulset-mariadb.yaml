@@ -76,7 +76,7 @@ spec:
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.os | quote }}
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -87,7 +87,7 @@ spec:
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
       {{- if $.Values.mariadb.fixFsPermissions}}
       - name: fix-mariadb-fs-permissions
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.os | quote }}
         imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
         command:
         - sh
@@ -115,7 +115,7 @@ spec:
       {{- end }}
       containers:
       - name: db
-        image: "{{ $.Values.image.database.registry }}/{{ $.Values.image.database.project }}/{{ $.Values.image.database.softwarename }}:{{ $.Values.image.database.softwareversion }}-{{ $.Values.image.database.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.database | quote }}
         imagePullPolicy: {{ $.Values.image.database.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.database | default 101 | int }}
@@ -354,7 +354,7 @@ spec:
         {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
         {{- else if $.Values.monitoring.mysqld_exporter.enabled }}
       - name: metrics
-        image: "{{ $.Values.image.monitoring.registry }}/{{ $.Values.image.monitoring.project }}/{{ $.Values.image.monitoring.softwarename }}:{{ $.Values.image.monitoring.softwareversion }}-{{ $.Values.image.monitoring.imageversion | int }}"
+        image: {{ include "mariadb-galera.component.image" $.Values.image.monitoring | quote }}
         imagePullPolicy: {{ $.Values.image.monitoring.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.monitoring | default 3000 | int }}
