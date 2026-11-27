@@ -76,8 +76,6 @@
   catalog_zone:
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
       catalog_zone_refresh: 60
-      catalog_zone_tsig_key: {{ $pool.tsig.secret }}
-      catalog_zone_tsig_algorithm: {{ $pool.tsig.algo }}
 {{- end }}
 {{- range $pool := .Values.akamai_pools_v2 }}
 - name: {{ $pool.name }}
