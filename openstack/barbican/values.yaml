@@ -69,12 +69,23 @@ statsd:
     requests:
       memory: 64Mi
       cpu: 100m
+  # SCIBPL-365: when enabled, deploys a PodMonitor for the statsd port
+  # (prometheus: openstack) instead of the broad prometheus.io/ Service annotation,
+  # restricting metric discovery to the labeled Prometheus only.
+  podMonitor:
+    enabled: false
+    # Set to true once the openstack Prometheus is Linkerd-meshed and the
+    # linkerd-trust-anchor secret is projected into it; scraping then uses mTLS.
+    linkerdMTLS: false
 
 apacheMetrics:
   enabled: true
   port: 9117
   image: 'apache-exporter'
   imageTag: 'latest'
+  # SCIBPL-365: set to true once the openstack Prometheus is Linkerd-meshed and
+  # the linkerd-trust-anchor secret is projected into it; enables mTLS scraping.
+  linkerdMTLS: false
   resources:
     requests:
       memory: 32Mi

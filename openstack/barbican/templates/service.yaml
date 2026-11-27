@@ -13,9 +13,15 @@ metadata:
     type: api
     component: barbican
   annotations:
+    {{- if not .Values.statsd.podMonitor.enabled }}
+    # prometheus.io/ annotations are a broad discovery mechanism: any Prometheus
+    # with pod/service annotation scraping enabled will reach these metrics.
+    # Prefer statsd.podMonitor.enabled=true to scope discovery to the labeled
+    # Prometheus only (SCIBPL-365).
     prometheus.io/scrape: "true"
     prometheus.io/port: {{.Values.statsd.port | quote }}
     prometheus.io/targets: {{ .Values.alerts.prometheus | quote }}
+    {{- end }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   selector:

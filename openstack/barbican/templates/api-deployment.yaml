@@ -51,8 +51,10 @@ spec:
         config.linkerd.io/skip-inbound-ports: "443"
         {{- end }}
         {{- if .Values.proxysql.mode }}
+        {{- if not .Values.statsd.podMonitor.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
         {{- end }}
         {{- if and .Values.apacheMetrics.enabled (not .Values.api.metrics.enabled) }}
           {{- fail "apacheMetrics.enabled requires api.metrics.enabled" }}
