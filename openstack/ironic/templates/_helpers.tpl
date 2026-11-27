@@ -39,3 +39,30 @@ ironic-rabbitmq
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set ironic.imageVersion" }}
   {{- end }}
 {{- end }}
+
+{{- /*
+Helper function to fetch a value (e.g., password, name, user) from a user object in a users map.
+Params:
+  .valueName: values map name to help print better error messages
+  .usersMap: a map containing .users and .defaultUser
+  .key: the key to fetch from the user object (e.g., "password", "name", "user")
+*/ -}}
+{{- define "ironic.helpers.default_user_value" -}}
+  {{- $valueName := .valueName }}
+  {{- $usersMap := .usersMap | required (printf "Missing %s" $valueName) }}
+  {{- $key := .key }}
+  {{- $users := $usersMap.users | required (printf "Missing %s.users" $valueName) }}
+  {{- $defaultUserKey := $usersMap.defaultUser | required (printf "Missing %s.defaultUser" $valueName) }}
+  {{- $user := index $users $defaultUserKey | required (printf "Missing entry for %s in %s.users" $defaultUserKey $valueName) }}
+  {{- index $user $key | required (printf "No key '%s' in '%s.users.%s'." $key $valueName $defaultUserKey) }}
+{{- end }}
+
+{{- define "ironic.helpers.service_user_username" -}}
+{{- $params := dict "valueName" "service_users" "usersMap" .Values.service_users "key" "username" }}
+{{- include "ironic.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "ironic.helpers.service_user_password" -}}
+{{- $params := dict "valueName" "service_users" "usersMap" .Values.service_users "key" "password" }}
+{{- include "ironic.helpers.default_user_value" $params }}
+{{- end }}

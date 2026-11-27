@@ -9,12 +9,12 @@ url_auth_digest_secret = {{required "A valid .Values.console.secret required!" .
 connection = {{ include "utils.db_url" . }}
 
 [keystone_authtoken]
-username = {{ .Values.global.ironicServiceUser | include "resolve_secret" }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword | include "resolve_secret" }}
+username = {{ include "ironic.helpers.service_user_username" . | include "resolve_secret" }}
+password = {{ include "ironic.helpers.service_user_password" . | include "resolve_secret" }}
 
 [service_catalog]
-username = {{ .Values.global.ironicServiceUser | include "resolve_secret" }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword | include "resolve_secret" }}
+username = {{ include "ironic.helpers.service_user_username" . | include "resolve_secret" }}
+password = {{ include "ironic.helpers.service_user_password" . | include "resolve_secret" }}
 
 [glance]
 {{- if .Values.swift_store_multi_tenant }}
