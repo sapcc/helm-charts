@@ -45,9 +45,12 @@ spec:
   domains:
   - name: Default
     users:
-    - name: cinder
+    {{- range $userKey, $userValue := .Values.service_users.users }}
+    {{- $username := $userValue.username | required (printf "'.Values.service_users.users.%s.username' is required" $userKey) }}
+    {{- $password := $userValue.password | required (printf "'.Values.service_users.users.%s.password' is required" $userKey) }}
+    - name: '{{ $username | include "resolve_secret" }}'
       description: Cinder Service
-      password: '{{ .Values.global.cinder_service_password | include "resolve_secret" }}'
+      password: '{{ $password | include "resolve_secret" }}'
       role_assignments:
       - project: service
         role: service
@@ -55,6 +58,7 @@ spec:
         role: cloud_volume_admin
       - project: service
         role: cloud_compute_admin
+    {{- end }}
     - name: admin
       role_assignments:
       - project: admin

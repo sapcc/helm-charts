@@ -1,3 +1,7 @@
+{{- $serviceUserKey := .Values.service_users.defaultUser | required "service_users.defaultUser is missing" }}
+{{- $serviceUser := index .Values.service_users.users $serviceUserKey | required (printf "'service_users.users' is missing key '%s' defined as 'defaultUser'" $serviceUserKey) }}
+{{- $serviceUserName := $serviceUser.username | required (printf "'service_users.users.%s.username' is required" $serviceUserKey) }}
+{{- $serviceUserPassword := $serviceUser.password | required (printf "'service_users.users.%s.password' is required" $serviceUserKey) }}
 [DEFAULT]
 {{- template "ini_sections.default_transport_url" . }}
 
@@ -6,15 +10,15 @@
 {{- include "osprofiler" . }}
 
 [keystone_authtoken]
-username = {{ .Values.global.cinder_service_user | default "cinder" | include "resolve_secret" }}
-password = {{ required ".Values.global.cinder_service_password is missing" .Values.global.cinder_service_password | replace "$" "$$" | include "resolve_secret" }}
+username = {{ $serviceUserName | include "resolve_secret" }}
+password = {{ $serviceUserPassword | include "resolve_secret" }}
 
 [service_user]
-username = {{ .Values.global.cinder_service_user | default "cinder" | include "resolve_secret" }}
-password = {{ required ".Values.global.cinder_service_password is missing" .Values.global.cinder_service_password | include "resolve_secret" }}
+username = {{ $serviceUserName | include "resolve_secret" }}
+password = {{ $serviceUserPassword | include "resolve_secret" }}
 
 [nova]
-username = {{ .Values.global.cinder_service_user | default "cinder" | include "resolve_secret" }}
-password = {{ required ".Values.global.cinder_service_password is missing" .Values.global.cinder_service_password | include "resolve_secret" }}
+username = {{ $serviceUserName | include "resolve_secret" }}
+password = {{ $serviceUserPassword | include "resolve_secret" }}
 
 {{- include "ini_sections.audit_middleware_notifications" . }}
