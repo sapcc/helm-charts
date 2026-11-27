@@ -1,0 +1,22 @@
+{{- if eq .Values.agent.workload.kind "CronJob" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.agent.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.agent.name }}
+spec:
+  schedule: {{ .Values.agent.workload.schedule | quote }}
+  concurrencyPolicy: {{ .Values.agent.workload.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.agent.workload.backoffLimit }}
+      {{- with .Values.agent.workload.ttlSecondsAfterFinished }}
+      ttlSecondsAfterFinished: {{ . }}
+      {{- end }}
+      template:
+        metadata:
+          {{- include "agent-sandbox.podMeta" . | nindent 10 }}
+        spec:
+          {{- tuple .Values.agent.workload.kind $ | include "agent-sandbox.podSpec" | nindent 10 }}
+{{- end }}
