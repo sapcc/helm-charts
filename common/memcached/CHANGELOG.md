@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.20 - 2026/11/23
+
+* support digest-qualified image tags in version labels
+* keep non-version labels empty and quoted; require literal dots in version extraction
+* chart version bumped
+
 ## v0.6.19 - 2026/08/21
 
 * memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1645) bumped to `1.6.45-alpine3.24`
