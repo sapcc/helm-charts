@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ required ".Values.ingress.className missing" .Values.ingress.className }}
+  rules:
+    - host: "{{ include "external-plugin.hostname" $ }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - "{{ include "external-plugin.hostname" $ }}"
+      secretName: "tls-{{ .Release.Name }}"
