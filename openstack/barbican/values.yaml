@@ -605,6 +605,22 @@ barbican_nanny:
     clean_unassociated_projects: false
     soft_delete_expired_secrets: false
 
+# SCIBPL-364: Kubernetes NetworkPolicy resources for barbican-api pod segmentation.
+# See templates/networkpolicy.yaml.
+networkPolicy:
+  # Set to true to deploy NetworkPolicy resources.  When enabled the chart adds
+  # explicit allow rules and two default-deny policies (ingress + egress) so that
+  # only listed traffic is permitted.
+  enabled: false
+  # CIDR blocks for external services that barbican-api must reach: Vault, HSM
+  # devices, and any other off-cluster endpoints.  Leave empty to omit the
+  # external-egress policy (useful in test environments with no HSMs).
+  # Example:
+  #   externalCIDRs:
+  #     - 10.180.0.0/16   # Vault cluster
+  #     - 10.181.5.0/24   # Thales Luna HSM devices
+  externalCIDRs: []
+
 # SCIBPL-218: restrict kubectl exec / port-forward / attach on the
 # barbican-api pods via a ValidatingAdmissionPolicy (K8s >= 1.30).
 # See templates/validating-admission-policy.yaml.

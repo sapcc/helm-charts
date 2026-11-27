@@ -1,0 +1,230 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $apiPort := int .Values.api_port_internal }}
+{{- $statsdPort := int .Values.statsd.port }}
+{{- $apacheMetricsPort := int .Values.apacheMetrics.port }}
+---
+# Default-deny all ingress to barbican-api pods; explicit allows below override this.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-deny-all-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Ingress
+---
+# Default-deny all egress from barbican-api pods; explicit allows below override this.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-deny-all-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Egress
+---
+# Allow inbound API traffic on port {{ $apiPort }} (HTTP) and 443 (TLS) from anywhere.
+# Barbican is published via a LoadBalancer VIP (barbican-public-tls); the cloud network
+# layer enforces external ACLs, so a broad allow here is correct — the NetworkPolicy
+# layer handles pod-to-pod segmentation, not edge firewall.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-api-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - port: {{ $apiPort }}
+      protocol: TCP
+    {{- if (include "barbican.tls.serving" .) }}
+    - port: 443
+      protocol: TCP
+    {{- end }}
+---
+# Allow Prometheus (openstack tier) to scrape the statsd-exporter metrics port.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-metrics-ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: prometheus-openstack
+    ports:
+    - port: {{ $statsdPort }}
+      protocol: TCP
+    {{- if .Values.apacheMetrics.enabled }}
+    - port: {{ $apacheMetricsPort }}
+      protocol: TCP
+    {{- end }}
+---
+# Allow DNS resolution (UDP+TCP/53) to kube-dns in kube-system.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-dns-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+---
+# Allow egress to the MariaDB (via ProxySQL) within this namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-mariadb-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: mariadb
+          app.kubernetes.io/part-of: {{ .Release.Name }}
+    ports:
+    - port: 3306
+      protocol: TCP
+---
+# Allow egress to the Memcached token cache within this namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-memcached-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: memcached
+          app.kubernetes.io/part-of: {{ .Release.Name }}
+    ports:
+    - port: 11211
+      protocol: TCP
+---
+# Allow egress to Keystone (identity) for token validation.
+# Keystone runs in the same namespace as barbican; use podSelector only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-keystone-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          name: keystone-api
+    ports:
+    - port: 5000
+      protocol: TCP
+    - port: 443
+      protocol: TCP
+---
+# Allow egress to external services: Vault (secret backend, port 8200) and
+# HSM devices (Thales Luna TCP/1792, Utimaco TCP/2223).
+# ipBlock CIDRs are set per-deployment via networkPolicy.externalCIDRs.
+{{- if .Values.networkPolicy.externalCIDRs }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-external-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    {{- range .Values.networkPolicy.externalCIDRs }}
+    - ipBlock:
+        cidr: {{ . }}
+    {{- end }}
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 8200
+      protocol: TCP
+    {{- if .Values.hsm.enabled }}
+    - port: 1792
+      protocol: TCP
+    {{- end }}
+    {{- if .Values.hsm.utimaco_hsm.enabled }}
+    - port: 2223
+      protocol: TCP
+    {{- end }}
+{{- end }}
+---
+# Allow egress to the rate-limit Redis sidecar within the namespace.
+{{- if .Values.sapcc_rate_limit.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-api-allow-redis-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: {{ .Release.Name }}-api-ratelimit-redis
+    ports:
+    - port: 6379
+      protocol: TCP
+{{- end }}
+{{- end }}
