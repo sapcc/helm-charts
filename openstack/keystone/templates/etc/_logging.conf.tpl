@@ -1,6 +1,6 @@
 [loggers]
 {{- if .Values.debug }}
-keys = root
+keys = root, oslo_policy
 {{- else }}
 keys = root, warnings, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging, oslo_policy, sqlalchemy
 {{- end }}
@@ -81,11 +81,10 @@ handlers = stdout
 qualname = oslo.messaging
 
 [logger_oslo_policy]
+level = INFO
 {{- if .Values.debug }}
-level = DEBUG
 handlers = null
 {{- else }}
-level = INFO
 handlers = stdout
 {{- end }}
 qualname = oslo_policy
