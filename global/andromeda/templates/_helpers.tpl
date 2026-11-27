@@ -6,6 +6,30 @@ Expand the name of the chart.
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/* Keep the image pin separate from the readable tag used in metadata. */}}
+{{- define "andromeda.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "andromeda.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}{{- index $parts 1 -}}{{- end -}}
+{{- end -}}
+
+{{- define "andromeda.migrationName" -}}
+{{- $pin := required ".Values.image.tag is required" .Values.image.tag -}}
+{{- $tag := include "andromeda.image.tag" $pin -}}
+{{- $digest := include "andromeda.image.digest" $pin -}}
+{{- $fullname := include "andromeda.fullname" . -}}
+{{- if $digest -}}
+{{- $suffix := printf "-migration-%s" (sha256sum $digest | trunc 8) -}}
+{{- $prefix := regexReplaceAll "[^a-z0-9-]" (printf "%s-%s" $fullname $tag | lower) "-" -}}
+{{- printf "%s%s" ($prefix | trunc (int (sub 63 (len $suffix))) | trimAll "-") $suffix -}}
+{{- else -}}
+{{- printf "%s-migration-%s" $fullname $tag -}}
+{{- end -}}
+{{- end -}}
+
 {{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
@@ -89,4 +113,3 @@ identity-3.{{ include "host_fqdn" . }}
   {{ include "andromeda.fullname" . }}-postgresql
 {{- end -}}
 {{- end -}}
-
