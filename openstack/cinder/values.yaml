@@ -273,7 +273,7 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM volumes
         WHERE
-          status IN ('attaching', 'deleting', 'detaching') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+          status IN ('attaching', 'deleting', 'detaching', 'reserved', 'retyping') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           cinder_host,
           availability_zone,
@@ -303,7 +303,7 @@ mysql_metrics:
           MAX(NOW() - updated_at) AS max_duration_gauge
         FROM volumes
         WHERE
-          status IN ('attaching', 'deleting', 'detaching') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+          status IN ('attaching', 'deleting', 'detaching', 'reserved', 'retyping') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           cinder_host,
           availability_zone,
