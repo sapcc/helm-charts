@@ -12,4 +12,6 @@
   value: {{ .Values.dashboard_cookie_name | quote }}
 - name: COOKIE_DOMAIN
   value: {{ $cookieDomain | quote }}
+- name: AURORA_APP_CONFIG_PATH
+  value: "/etc/config/auroraConfig.yaml"
 
