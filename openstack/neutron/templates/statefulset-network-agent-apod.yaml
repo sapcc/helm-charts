@@ -17,12 +17,11 @@ metadata:
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-dhcp-agent
 spec:
+  minReadySeconds: {{ $.Values.statefulSet.minReadySeconds }}
   updateStrategy:
-{{- if or (eq $.Values.global.region "qa-de-1") (eq $.Values.global.region "qa-de-2") }}
     type: RollingUpdate
-{{- else }}
-    type: OnDelete
-{{- end }}
+    rollingUpdate:
+      maxUnavailable: 1
   selector:
     matchLabels:
       name: neutron-network-agent-{{ $apod }}
@@ -45,6 +44,7 @@ spec:
         name: neutron-network-agent-{{ $apod }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
+      terminationGracePeriodSeconds: {{ $.Values.pod.terminationGracePeriodSeconds }}
       {{- if index $.Values.pod.tolerations $apod }}
       tolerations:
         {{- toYaml (index $.Values.pod.tolerations $apod) | nindent 8 }}
