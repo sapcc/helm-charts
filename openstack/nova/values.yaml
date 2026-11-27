@@ -23,6 +23,17 @@ global:
 
   linkerd_requested: false
 
+# ccloud ADR Invariant 2 (network-reachability containment), ccadmin-only, per-region.
+# When enforce_ccadmin_member is true AND ccadmin_domain_id is set to the ccadmin domain
+# UUID, a plain member scoped into that domain may not boot/wire a VM (servers:create /
+# create:attach_network / create:attach_volume) unless it also holds role:extended_member.
+# Compute/network admins and service users are unaffected. Both unset/false by default =>
+# the gate is NOT emitted => behaviour identical to today. Set per-region (e.g. eu-de-1) in
+# secrets. Independent of keystone api.adminDomainIds by design.
+oslo_policy:
+  enforce_ccadmin_member: false
+  ccadmin_domain_id: ""
+
 osprofiler: {}
 
 rbac:

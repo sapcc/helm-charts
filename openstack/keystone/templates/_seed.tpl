@@ -7,6 +7,8 @@ roles:
   description: Keystone Role Administrator
 - name: role_viewer
   description: Keystone Role Read-Only
+- name: extended_member
+  description: ccloud ADR Invariant 2 - extended member boot/network authority in restricted domains (ccadmin)
 
 role_inferences:
   - prior_role: admin
