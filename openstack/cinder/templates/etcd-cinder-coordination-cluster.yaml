@@ -1,7 +1,8 @@
+{{- if eq .Values.coordinationBackend "etcd" }}
 apiVersion: druid.gardener.cloud/v1alpha1
 kind: Etcd
 metadata:
-  name: etcd-cinder
+  name: {{ .Values.etcd.service_name }}
   namespace: monsoon3
   labels:
     app: etcd-cinder-statefulset
@@ -26,7 +27,7 @@ spec:
     resources:
       limits: { cpu: 150m, memory: 1Gi }
       requests: { cpu: 50m, memory: 200Mi }
-    clientPort: 2379
+    clientPort: {{ .Values.etcd.port }}
     serverPort: 2380
     quota: 2Gi
   backup: {}
@@ -34,3 +35,4 @@ spec:
     autoCompactionMode: periodic
     autoCompactionRetention: "15m"
   replicas: 3
+{{- end }}
