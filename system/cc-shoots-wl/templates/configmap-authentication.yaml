@@ -1,0 +1,14 @@
+{{- range $cluster := .Values.clusters -}}
+{{- range $region := $cluster.regions -}}
+{{- $shootName := default (printf "wl-%s-%s" $cluster.name $region) $cluster.shootName -}}
+{{- $authConfig := default dict $cluster.authenticationConfig -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentication-config-{{ $shootName }}
+data:
+  config.yaml: |
+{{- toYaml $authConfig | nindent 4 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,50 @@
+{{- range $cluster := .Values.clusters -}}
+{{- range $region := $cluster.regions -}}
+{{- $shootName := default (printf "wl-%s-%s" $cluster.name $region) $cluster.shootName -}}
+{{- $kubernetesVersion := $.Values.global.kubernetes.version -}}
+{{- if $cluster.kubernetes -}}
+  {{- if $cluster.kubernetes.version -}}
+    {{- $kubernetesVersion = $cluster.kubernetes.version -}}
+  {{- end -}}
+{{- end -}}
+{{- $featureGates := $.Values.global.kubernetes.featureGates -}}
+{{- if $cluster.kubernetes -}}
+  {{- if $cluster.kubernetes.featureGates -}}
+    {{- $featureGates = $cluster.kubernetes.featureGates -}}
+  {{- end -}}
+{{- end -}}
+{{- $networkingServices := $.Values.global.networking.services -}}
+{{- if $cluster.networking -}}
+  {{- if $cluster.networking.services -}}
+    {{- $networkingServices = $cluster.networking.services -}}
+  {{- end -}}
+{{- end -}}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: {{ $shootName }}
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: {{ $.Values.global.cloudProfile }}
+  region: {{ $region }}
+  networking:
+    services: {{ $networkingServices }}
+  provider:
+    type: {{ $.Values.global.provider }}
+  kubernetes:
+    version: {{ $kubernetesVersion }}
+    kubeAPIServer:
+      {{- if $featureGates }}
+      featureGates:
+        {{- toYaml $featureGates | nindent 8 }}
+      {{- end }}
+      structuredAuthentication:
+        configMapName: authentication-config-{{ $shootName }}
+  seedName: rt-{{ $region }}
+  {{- if $cluster.spec }}
+  {{- toYaml $cluster.spec | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end }}
