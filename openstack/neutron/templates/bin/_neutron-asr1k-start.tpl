@@ -10,7 +10,7 @@ function process_config {
     cp /neutron-etc/neutron.conf /etc/neutron/neutron.conf
     cp /neutron-etc/asr1k-global.ini /etc/neutron/asr1k-global.ini
     cp /neutron-etc/logging.conf /etc/neutron/logging.conf
-    cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
+    cp /neutron-etc/neutron-policy.yaml  /etc/neutron/policy.yaml
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
 
     cp /neutron-etc-asr1k/asr1k.conf /etc/neutron/asr1k.conf
