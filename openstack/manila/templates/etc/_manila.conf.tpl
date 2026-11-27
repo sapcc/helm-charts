@@ -67,7 +67,7 @@ ensure_driver_resources_interval = {{ .Values.ensure_driver_resources_interval |
 
 # SCI: we don't want snapshot_policy here as driver_updatable_metadata,
 # because we configured 'netapp_volume_snapshot_policy_exceptions' option
-driver_updatable_metadata = cross_volume_dedupe
+driver_updatable_metadata = cross_volume_dedupe,all_squash
 driver_updatable_subnet_metadata = showmount,pnfs
 # Prevent shares from transitioning to 'ensuring' status (2025.1 default changed to True)
 update_shares_status_on_ensure = False
