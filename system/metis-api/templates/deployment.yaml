@@ -7,7 +7,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     {{- include "labels" . | indent 4 }}
-    app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
+    app.kubernetes.io/version: {{ include "metis-api.image.label" $.Values.metisAPI.imageTag | quote }}
   annotations:
     secret.reloader.stakater.com/reload: "metis-api-secrets"
 spec:
@@ -21,7 +21,7 @@ spec:
     metadata:
       labels:
         {{- include "labels" . | indent 8 }}
-        app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
+        app.kubernetes.io/version: {{ include "metis-api.image.label" $.Values.metisAPI.imageTag | quote }}
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
