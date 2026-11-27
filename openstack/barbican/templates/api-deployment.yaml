@@ -13,7 +13,7 @@ metadata:
     type: api
     component: barbican
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets{{- if (include "barbican.tls.serving" .) }},{{ .Values.tls.secretName | default "barbican-tls" }}{{- end }}"
+    secret.reloader.stakater.com/reload: {{ include "barbican.reloader.secrets" (dict "ctx" . "serving" (include "barbican.tls.serving" .)) | quote }}
     deployment.reloader.stakater.com/pause-period: "60s"
     cloud.sap/tls-state: {{ .Values.tls.state | quote }}
 spec:
