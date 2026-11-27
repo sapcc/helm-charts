@@ -1,3 +1,14 @@
+{{/* Keep image pins in images, but use only the tag for version metadata. */}}
+{{- define "mariadb.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{/* Sync uses the readable tag directly, bounded to a valid label value. */}}
+{{- define "mariadb.image.versionLabel" -}}
+{{- $tag := include "mariadb.image.tag" . -}}
+{{- regexReplaceAll "^[^A-Za-z0-9]+|[^A-Za-z0-9]+$" ($tag | trunc 63) "" -}}
+{{- end -}}
+
 {{/* Generate the full name. */}}
 {{- define "fullName" -}}
 {{- required ".Values.name missing" .Values.name -}}-mariadb
@@ -208,7 +219,7 @@ app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
 app.kubernetes.io/component: {{ include "label.component" (list $component $type $function) }}
 app.kubernetes.io/part-of: {{ $.Release.Name }}
   {{- if eq (index . 1) "version" }}
-app.kubernetes.io/version: {{ $.Values.image | regexFind "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" }}
+app.kubernetes.io/version: {{ include "mariadb.image.tag" $.Values.image | regexFind "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}" | quote }}
 app.kubernetes.io/managed-by: "helm"
 helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
   {{- end }}
