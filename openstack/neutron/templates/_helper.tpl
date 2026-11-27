@@ -1,9 +1,34 @@
+{{- define "neutron.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "neutron.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}
+{{- index $parts 1 -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "neutron.migration_job_name" -}}
+  {{- $pin := .Values.imageVersion | required "Please set neutron.imageVersion or similar" }}
+  {{- $tag := include "neutron.image.tag" $pin }}
+  {{- $digest := include "neutron.image.digest" $pin }}
   {{- $bin := include "utils.script.job_finished_hook" . | trim }}
   {{- $all := list $bin (include "utils.linkerd.pod_and_service_annotation" .) (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container") (include "utils.trust_bundle.volume_mount" . ) (include "utils.trust_bundle.volumes" . ) (include "utils.trust_bundle.env" . )  | join "\n" }}
-  {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
-
-  {{- .Release.Name }}-migration-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+  {{- $hashInput := empty .Values.proxysql.mode | ternary $bin $all }}
+  {{- if $digest }}
+    {{- $hashInput = printf "%s\n%s" $hashInput $digest }}
+  {{- end }}
+  {{- $hash := $hashInput | sha256sum }}
+  {{- if $digest }}
+    {{- /* Budget the readable prefix first, retaining the migration/hash suffix. */ -}}
+    {{- $suffix := printf "-migration-%s" (substr 0 4 $hash) }}
+    {{- $prefix := regexReplaceAll "[^a-z0-9-]" (printf "%s-%s" .Release.Name $tag | lower) "-" | trimAll "-" }}
+    {{- $prefix = $prefix | trunc (int (sub 63 (len $suffix))) | trimSuffix "-" }}
+    {{- printf "%s%s" $prefix $suffix }}
+  {{- else }}
+    {{- .Release.Name }}-migration-{{ substr 0 4 $hash }}-{{ $tag }}
+  {{- end }}
 {{- end }}
 
 {{- define "neutron.aci_config_count" -}}
