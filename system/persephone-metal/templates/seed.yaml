@@ -49,7 +49,9 @@ spec:
         - name: persephone-{{ $landscape }}-gardener
           description: A service user for the gardener operator
           password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-operator/password" $vbase $region $landscape | quote }}
+      {{- end }}
 
+      {{- if or (eq $region "eu-de-1") (eq $region "qa-de-1") }}
         - name: persephone-{{ $landscape }}-operator
           description: A service user for the persephone-operator
           password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-operator/password" $vbase $region $landscape | quote }}
@@ -73,7 +75,7 @@ spec:
         {{- range $_, $landscape := $landscapes }}
         - name: cloud_admin
           role_assignments:
-            {{- if eq $region "eu-de-1" }}
+            {{- if or (eq $region "eu-de-1") (eq $region "qa-de-1") }}
             # TODO: how to achieve the same permissions without assigning such high privileges?
             # expected: user can CRUD "shoot service users" in 'persephone' domain; user can list domains to resolve 'persephone' domain name to domain ID
             - role: admin
@@ -114,7 +116,7 @@ spec:
         # the seeder creates these projects if they don't exist
         - name: persephone-{{ $landscape }}
           role_assignments:
-            {{- if eq $region "eu-de-1" }}
+            {{- if or (eq $region "eu-de-1") (eq $region "qa-de-1") }}
             - role: admin
               user: persephone-{{ $landscape }}-operator@Default
             - role: admin
