@@ -68,3 +68,12 @@ qualname={{$item}}
 {{- define "designate.service_dependencies" }}
   {{- template "designate.db_dependencies" . }},{{ template "designate.rabbitmq_dependencies" . }}
 {{- end }}
+
+{{- define "designate.reloader.secrets" -}}
+{{- $ctx := .ctx -}}
+{{- $names := list (printf "%s-secrets" $ctx.Release.Name) (printf "%s-secrets-rndc" $ctx.Release.Name) -}}
+{{- if $ctx.Values.proxysql.mode -}}
+{{- $names = append $names (printf "%s-proxysql-etc" $ctx.Release.Name) -}}
+{{- end -}}
+{{- $names | join "," -}}
+{{- end }}
