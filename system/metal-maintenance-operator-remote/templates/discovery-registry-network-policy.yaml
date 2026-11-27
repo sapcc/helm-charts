@@ -1,0 +1,28 @@
+{{- if .Values.discoveryRegistry.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "chart.fullname" . }}-discovery-registry-ingress-nginx
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: mmo-core
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      control-plane: controller-manager
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+              app.kubernetes.io/component: controller
+      ports:
+        - port: {{ index (.Values.discoveryRegistry.service.ports | first) "targetPort" }}
+          protocol: TCP
+  policyTypes:
+    - Ingress
+{{- end }}
