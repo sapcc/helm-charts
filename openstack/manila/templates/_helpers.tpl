@@ -30,9 +30,22 @@ Define the Manila dependency services for kubernetes-entrypoint init container
   {{- .Release.Name }}-memcached
 {{- end }}
 
+{{/* Keep the original pin for images; extract metadata only when naming Jobs. */}}
+{{- define "manila.image.tag" -}}
+{{- first (splitList "@" (toString .)) -}}
+{{- end -}}
+
+{{- define "manila.image.digest" -}}
+{{- $parts := splitList "@" (toString .) -}}
+{{- if gt (len $parts) 1 -}}{{- index $parts 1 -}}{{- end -}}
+{{- end -}}
+
 {{- define "job_name" }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
+    {{- $pin := .Values.loci.imageVersion | required "Please set manila.loci.imageVersion" }}
+    {{- $tag := include "manila.image.tag" $pin }}
+    {{- $digest := include "manila.image.digest" $pin }}
     {{- $bin := include (print .Template.BasePath "/bin/_db_migrate.sh.tpl") . }}
     {{- $all := list $bin
           (include (print .Template.BasePath "/etc-configmap.yaml") .)
@@ -43,8 +56,17 @@ Define the Manila dependency services for kubernetes-entrypoint init container
           (include "utils.proxysql.volumes" .)
           (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container")
       | join "\n" }}
-    {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
-{{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.loci.imageVersion | required "Please set manila.loci.imageVersion" }}
+    {{- $hashInput := empty .Values.proxysql.mode | ternary $bin $all }}
+    {{- if $digest }}{{- $hashInput = printf "%s\n%s" $hashInput $digest }}{{- end }}
+    {{- $hash := $hashInput | sha256sum }}
+    {{- if $digest }}
+      {{- /* Budget the readable prefix, retaining the Job kind and rotating hash. */ -}}
+      {{- $suffix := printf "-%s-%s" $name (substr 0 4 $hash) }}
+      {{- $prefix := regexReplaceAll "[^a-z0-9-]+" (printf "%s-%s" .Release.Name $tag | lower) "-" | trimAll "-" }}
+      {{- printf "%s%s" ($prefix | trunc (int (sub 63 (len $suffix))) | trimSuffix "-") $suffix }}
+    {{- else }}
+      {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ $tag }}
+    {{- end }}
   {{- end }}
 {{- end }}
 
